@@ -1,0 +1,51 @@
+export const generateFollowUpEmail = async (
+    originalEmail: { subject: string; body: string; },
+    analysis: GradingResult,
+    goal: FollowUpGoal,
+    context?: string
+): Promise<FollowUpEmail> => {
+    try {
+        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${originalEmail.body}`;
+        const analysisSummary = `The original email was analyzed and received an overall grade of ${analysis.overallGrade.grade}. Key feedback was: ${analysis.overallGrade.summary}. The main spam concern was: ${analysis.spamAnalysis[0]?.reason || 'none'}.`;
+
+        let goalInstruction = '';
+        switch (goal) {
+            case 'reminder':
+                goalInstruction = 'The goal is to send a gentle, polite reminder to the recipient, prompting them to take the original call-to-action without being pushy.';
+                break;
+            case 'discount':
+                goalInstruction = 'The goal is to re-engage the recipient by offering a special discount or incentive. The offer should be clearly stated and create a sense of value and urgency.';
+                break;
+            case 'query':
+                goalInstruction = `The goal is to address a specific question or concern from the recipient. The context for the query is: "${context}". The tone should be helpful, reassuring, and aim to resolve their query while gently guiding them back to the original call-to-action.`;
+                break;
+        }
+
+        const systemInstruction = `You are an expert email marketing strategist. Your task is to write a follow-up email based on a provided original email and its performance analysis.
+
+        -   You must adhere to the specific 'goal' provided.
+        -   The tone should be consistent with a professional and friendly brand voice.
+        -   The follow-up must be concise, clear, and focused on its single goal.
+        -   AVOID all spam triggers and poor formatting practices identified in the original analysis.
+        -   Reference the original email's context subtly, so the recipient knows what it's about. Do not be repetitive.
+        -   The call-to-action should be clear and singular.
+        -   Return the result as a single JSON object.`;
+
+        const result = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: `Here is the original email:\n${originalContent}\n\nHere is a summary of its analysis:\n${analysisSummary}\n\nPlease write a follow-up email. ${goalInstruction}`,
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: followUpSchema,
+            }
+        });
+
+        const jsonString = result.text.trim();
+        return JSON.parse(jsonString) as FollowUpEmail;
+
+    } catch (error) {
+        console.error("Error calling AI follow-up generation service:", error);
+        throw new Error("Failed to get follow-up email from the AI service.");
+    }
+};
