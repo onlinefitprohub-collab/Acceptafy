@@ -1,0 +1,474 @@
+I want to build a React + TypeScript + Vite application called "Inbox Authority".
+Please initialize the project with npm install @google/genai clsx tailwind-merge lucide-react.
+Then, overwrite the project files with the EXACT content provided below. Do not summarize or use placeholders. Write every line of code as written.
+1. index.html
+code
+Html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inbox Authority</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body { background-color: #0f172a; color: white; }
+      @keyframes pulse-red-border { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); } }
+      .animate-pulse-red-border { animation: pulse-red-border 2s infinite; }
+      @keyframes gradient-animation { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      .dark-bg { background: linear-gradient(-45deg, #020617, #4c1d95, #86198f, #1e40af); background-size: 400% 400%; animation: gradient-animation 18s ease infinite; }
+      @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
+      @keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      .animate-scale-in { animation: scale-in 0.3s ease-out forwards; }
+      @keyframes shimmer { 0% { background-position: -1000px 0; } 100% { background-position: 1000px 0; } }
+      .shimmer-effect { position: relative; overflow: hidden; }
+      .shimmer-effect::after { content: ''; position: absolute; top: 0; left: 0; width: 200%; height: 100%; transform: translateX(-100%); background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0, rgba(255, 255, 255, 0.08) 20%, rgba(255, 255, 255, 0.15) 60%, rgba(255, 255, 255, 0) 100%); animation: shimmer 2s infinite; }
+      @keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+      .aurora-background { background: linear-gradient(-45deg, #102d5a, #0f4c3a, #2c1a4c, #0e3b5f); background-size: 400% 400%; animation: aurora 15s ease infinite; }
+      .bg-glow-red { box-shadow: 0 0 35px 5px rgba(239, 68, 68, 0.3); }
+      .bg-glow-yellow { box-shadow: 0 0 35px 5px rgba(234, 179, 8, 0.25); }
+      .bg-glow-green { box-shadow: 0 0 35px 5px rgba(74, 222, 128, 0.3); }
+      .dark-preview-container.dark { background-color: #121212 !important; }
+      .dark-preview-container.dark * { border-color: rgba(255, 255, 255, 0.2) !important; }
+      .dark-preview-content.dark { filter: invert(1) hue-rotate(180deg); }
+      .dark-preview-content.dark img, .dark-preview-content.dark .re-invert { filter: invert(1) hue-rotate(180deg); }
+      .input-glow-focus:focus { border-color: rgba(168, 85, 247, 0.8); box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2), inset 0 2px 4px 0 rgba(0, 0, 0, 0.25); }
+      .input-inset-shadow { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2); }
+      .btn-gradient-purple { background-image: linear-gradient(to right, #9333ea 0%, #7c3aed 50%, #6d28d9 100%); background-size: 200% auto; transition: all 0.5s ease; box-shadow: 0 4px 15px 0 rgba(147, 51, 234, 0.4); }
+      .btn-gradient-purple:hover { background-position: right center; box-shadow: 0 6px 20px 0 rgba(147, 51, 234, 0.5); }
+      .tooltip-container { position: relative; display: inline-flex; cursor: help; outline: none; }
+      .tooltip-text { visibility: hidden; width: 240px; background-color: #1e293b; color: #cbd5e1; text-align: left; font-size: 0.875rem; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 30; bottom: 135%; left: 50%; margin-left: -120px; opacity: 0; transition: opacity 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.1); }
+      .tooltip-container:hover .tooltip-text, .tooltip-container:focus .tooltip-text { visibility: visible; opacity: 1; }
+      .tooltip-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #1e293b transparent transparent transparent; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+2. src/main.tsx
+code
+Tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+3. src/index.css
+code
+CSS
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+4. src/types.ts
+code
+TypeScript
+export interface SectionGrade { grade: string; summary: string; feedback: string[]; }
+export interface SpamTrigger { word: string; reason: string; suggestions: string[]; suggestion: string; severity: 'High' | 'Medium' | 'Low'; rephraseExamples: string[]; }
+export interface StructuralFinding { type: 'Capitalization' | 'Punctuation' | 'Sentence Structure'; summary: string; feedback: string; suggestion: string; severity: 'High' | 'Medium' | 'Low'; originalText: string; }
+export interface SubjectLineVariation { subject: string; previewText: string; predictionScore: number; rationale: string; isWinner: boolean; }
+export interface PersonalizationScore { score: number; summary: string; feedback: string[]; }
+export interface LinkAnalysisFinding { url: string; anchorText: string; status: 'Good' | 'Warning' | 'Bad'; reason: string; suggestion: string; }
+export interface ReplyAbilityAnalysis { score: number; summary: string; feedback: string[]; }
+export interface PlainTextAnalysis { plainTextVersion: string; readabilityScore: number; feedback: string[]; }
+export interface InboxPlacementPrediction { gmail: { placement: 'Primary' | 'Promotions' | 'Spam'; reason: string; }; outlook: { placement: 'Focused' | 'Other' | 'Junk'; reason: string; }; appleMail: { placement: 'Inbox' | 'Junk'; reason: string; }; }
+export interface AccessibilityFinding { type: 'Alt Text' | 'Contrast' | 'Semantic HTML' | 'Link Text'; summary: string; suggestion: string; severity: 'High' | 'Medium' | 'Low'; }
+export interface GradingResult { inboxPlacementScore: { score: number; summary: string; }; overallGrade: { grade: string; summary: string; }; subjectLine: SectionGrade; previewText: SectionGrade; bodyCopy: SectionGrade; callToAction: SectionGrade; spamAnalysis: SpamTrigger[]; structuralAnalysis: StructuralFinding[]; subjectLineAnalysis: SubjectLineVariation[]; personalizationScore: PersonalizationScore; linkAnalysis: LinkAnalysisFinding[]; replyAbilityAnalysis: ReplyAbilityAnalysis; plainTextAnalysis: PlainTextAnalysis; inboxPlacementPrediction: InboxPlacementPrediction; accessibilityAnalysis: AccessibilityFinding[]; }
+export interface HistoryItem { id: string; date: string; content: { body: string; variations: { subject: string; previewText: string }[]; }; result: GradingResult; }
+export interface RewrittenEmail { subject: string; previewText: string; body: string; }
+export type RewriteGoal = 'general' | 'urgency' | 'clarity' | 'concise';
+export interface FollowUpEmail { subject: string; body: string; }
+export type FollowUpGoal = 'reminder' | 'discount' | 'query' | 'sequence';
+export interface FollowUpSequenceEmail { timingSuggestion: string; subject: string; body: string; rationale: string; }
+export interface DnsRecords { spf: string; dkim: string; dmarc: string; }
+export interface SentenceGrade { isGood: boolean; feedback: string; }
+export interface DomainHealth { status: 'Clean' | 'Warning' | 'Blacklisted'; report: string; recommendation: string; }
+export interface ListQualityAnalysis { roleBasedAccountPercentage: number; freeMailProviderPercentage: number; disposableDomainIndicators: boolean; spamTrapIndicators: boolean; summaryReport: string; }
+export interface BimiRecord { dmarcPrerequisite: string; logoRequirements: string; bimiRecord: string; }
+export interface GlossaryTerm { simpleDefinition: string; detailedExplanation: string; practicalExample: string; }
+5. src/services/historyService.ts
+code
+TypeScript
+import type { HistoryItem, GradingResult } from '../types';
+const HISTORY_KEY = 'inboxAuthorityHistory';
+const MAX_HISTORY_ITEMS = 20;
+export const getHistory = (): HistoryItem[] => { try { const h = localStorage.getItem(HISTORY_KEY); return h ? JSON.parse(h) : []; } catch { return []; } };
+export const saveAnalysis = (content: any, result: GradingResult): HistoryItem[] => { 
+    const item: HistoryItem = { id: Date.now().toString(), date: new Date().toISOString(), content, result };
+    let h = getHistory(); h.unshift(item); if(h.length > MAX_HISTORY_ITEMS) h = h.slice(0, MAX_HISTORY_ITEMS);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); return h; 
+};
+export const deleteHistoryItem = (id: string): HistoryItem[] => { const h = getHistory().filter(i => i.id !== id); localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); return h; };
+export const clearHistory = (): HistoryItem[] => { localStorage.removeItem(HISTORY_KEY); return []; };
+6. src/services/geminiService.ts
+code
+TypeScript
+import { GoogleGenAI, Type } from "@google/genai";
+import type { GradingResult, RewrittenEmail, FollowUpEmail, FollowUpSequenceEmail, DnsRecords, SentenceGrade, DomainHealth, ListQualityAnalysis, BimiRecord, GlossaryTerm } from '../types';
+
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
+// Reuse standard schema definitions here to save char count, agent can infer or I can paste full schemas if needed but logic is key.
+const gradingSchema = { type: Type.OBJECT, properties: { inboxPlacementScore: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, summary: { type: Type.STRING } } }, overallGrade: { type: Type.OBJECT, properties: { grade: { type: Type.STRING }, summary: { type: Type.STRING } } }, subjectLine: { type: Type.OBJECT, properties: { grade: { type: Type.STRING }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, previewText: { type: Type.OBJECT, properties: { grade: { type: Type.STRING }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, bodyCopy: { type: Type.OBJECT, properties: { grade: { type: Type.STRING }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, callToAction: { type: Type.OBJECT, properties: { grade: { type: Type.STRING }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, spamAnalysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { word: { type: Type.STRING }, reason: { type: Type.STRING }, suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }, suggestion: { type: Type.STRING }, severity: { type: Type.STRING }, rephraseExamples: { type: Type.ARRAY, items: { type: Type.STRING } } } } }, structuralAnalysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, summary: { type: Type.STRING }, feedback: { type: Type.STRING }, suggestion: { type: Type.STRING }, severity: { type: Type.STRING }, originalText: { type: Type.STRING } } } }, subjectLineAnalysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { subject: { type: Type.STRING }, previewText: { type: Type.STRING }, predictionScore: { type: Type.NUMBER }, rationale: { type: Type.STRING }, isWinner: { type: Type.BOOLEAN } } } }, personalizationScore: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, linkAnalysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { url: { type: Type.STRING }, anchorText: { type: Type.STRING }, status: { type: Type.STRING }, reason: { type: Type.STRING }, suggestion: { type: Type.STRING } } } }, replyAbilityAnalysis: { type: Type.OBJECT, properties: { score: { type: Type.NUMBER }, summary: { type: Type.STRING }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, plainTextAnalysis: { type: Type.OBJECT, properties: { plainTextVersion: { type: Type.STRING }, readabilityScore: { type: Type.NUMBER }, feedback: { type: Type.ARRAY, items: { type: Type.STRING } } } }, inboxPlacementPrediction: { type: Type.OBJECT, properties: { gmail: { type: Type.OBJECT, properties: { placement: { type: Type.STRING }, reason: { type: Type.STRING } } }, outlook: { type: Type.OBJECT, properties: { placement: { type: Type.STRING }, reason: { type: Type.STRING } } }, appleMail: { type: Type.OBJECT, properties: { placement: { type: Type.STRING }, reason: { type: Type.STRING } } } } }, accessibilityAnalysis: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { type: { type: Type.STRING }, summary: { type: Type.STRING }, suggestion: { type: Type.STRING }, severity: { type: Type.STRING } } } } } };
+
+export const gradeCopy = async (body: string, variations: any[]): Promise<GradingResult> => {
+    if (!process.env.API_KEY) throw new Error("API Key missing");
+    const prompt = `Analyze email. Body: ${body}. Variations: ${JSON.stringify(variations)}. Return JSON.`;
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: prompt, config: { responseMimeType: 'application/json', responseSchema: gradingSchema } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const rewriteCopy = async (body: string, subject: string, preview: string, goal: string): Promise<RewrittenEmail> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: `Rewrite for ${goal}. Subject: ${subject}, Body: ${body}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const generateFollowUpEmail = async (original: any, analysis: any, goal: string, context: string): Promise<FollowUpEmail> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: `Write follow-up. Goal: ${goal}. Context: ${context}. Original: ${original.body}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const generateFollowUpSequence = async (original: any, analysis: any, goal: string): Promise<FollowUpSequenceEmail[]> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-pro', contents: `Write 10-email sequence. Goal: ${goal}. Original: ${original.body}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '[]');
+};
+
+export const generateDnsRecords = async (domain: string): Promise<DnsRecords> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Generate SPF, DKIM, DMARC for ${domain}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const checkDomainHealth = async (domain: string): Promise<DomainHealth> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Simulate domain health check for ${domain}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const analyzeEmailList = async (sample: string): Promise<ListQualityAnalysis> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Analyze email list: ${sample}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const generateBimiRecord = async (domain: string): Promise<BimiRecord> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Generate BIMI for ${domain}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const generatePostscript = async (body: string): Promise<string> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Write P.S. for: ${body}` });
+    return res.text || '';
+};
+
+export const rewriteSentence = async (text: string): Promise<string> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Rewrite: ${text}` });
+    return res.text || '';
+};
+
+export const gradeSentence = async (text: string): Promise<SentenceGrade> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Grade: ${text}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+
+export const explainTerm = async (term: string): Promise<GlossaryTerm> => {
+    const res = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: `Explain: ${term}`, config: { responseMimeType: 'application/json' } });
+    return JSON.parse(res.text || '{}');
+};
+7. UI Components (Icons)
+src/components/icons/CategoryIcons.tsx
+code
+Tsx
+import React from 'react';
+import { Mail, Eye, FileText, MousePointerClick, ShieldAlert, AlertTriangle, Type, Hash, AlignLeft, HelpCircle, Edit, Sun, Moon, Share, Copy, Check, X, History, UploadCloud, Trash2, Globe, Users, Activity, ShieldCheck, FileCode, Play, Search, ArrowLeft, Layers, BarChart, FileSearch, Monitor, Smartphone, Lock } from 'lucide-react';
+export const SubjectIcon = Mail; export const PreviewIcon = Eye; export const BodyIcon = FileText;
+export const CtaIcon = MousePointerClick; export const SpamIcon = ShieldAlert; export const StructuralIcon = Type; 
+export const CapitalizationIcon = Type; export const PunctuationIcon = Hash; export const SentenceStructureIcon = AlignLeft;
+export const ChevronDownIcon = ({className}: any) => <ArrowLeft className={`transform -rotate-90 ${className}`} />;
+export const SubjectShowdownIcon = Layers; export const PersonalizationIcon = Users; export const LinkIcon = Globe; 
+export const GoodStatusIcon = Check; export const WarningStatusIcon = AlertTriangle; export const BadStatusIcon = X;
+export const AlertIcon = AlertTriangle; export const RewriteIcon = Edit; export const SunIcon = Sun; 
+export const MoonIcon = Moon; export const InfoIcon = HelpCircle; export const FollowUpIcon = Share; 
+export const CopyIcon = Copy; export const CheckIcon = Check; export const CloseIcon = X; export const HistoryIcon = History; 
+export const EyeIcon = Eye; export const UploadCloudIcon = UploadCloud; export const TrashIcon = Trash2;
+export const ChecklistIcon = Check; export const DnsIcon = Globe; export const ReplyIcon = Share; 
+export const PlainTextIcon = FileCode; export const AcademyIcon = FileSearch; export const SearchIcon = Search; 
+export const BackArrowIcon = ArrowLeft; export const TeardownIcon = FileSearch; export const UserGroupIcon = Users; 
+export const AutomationIcon = Activity; export const AnalyticsIcon = BarChart; export const LegalIcon = ShieldCheck; 
+export const BranchingIcon = Layers; export const PreFlightIcon = ShieldCheck; export const DomainHealthIcon = Activity;
+export const ListHealthIcon = Users; export const BimiIcon = ShieldCheck; export const BlueprintIcon = FileText; 
+export const MonitorIcon = Monitor; export const GmailIcon = Mail; export const OutlookIcon = Mail; 
+export const AppleMailIcon = Mail; export const InboxIcon = Mail; export const TagIcon = Hash; export const LockIcon = Lock;
+export const AccessibilityIcon = Eye; export const MobileIcon = Smartphone;
+src/components/icons/Logo.tsx
+code
+Tsx
+import React from 'react';
+export const Logo: React.FC = () => (
+    <svg width="100%" height="100%" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="20" fill="#8B5CF6" /><path d="M35 40 L50 55 L65 40" stroke="white" strokeWidth="5" fill="none"/></svg>
+);
+8. Feature Components
+src/components/EmailInput.tsx
+(This one is long, but critical)
+code
+Tsx
+import React, { useState } from 'react';
+import { HighlightedTextarea } from './HighlightedTextarea';
+import { HighlightedInput } from './HighlightedInput';
+import { ChevronDownIcon, AlertIcon } from './icons/CategoryIcons';
+export const EmailInput = ({ variations, setVariations, body, setBody, onGrade, isLoading, spamTriggers }: any) => {
+  const addVariation = () => setVariations([...variations, { subject: '', previewText: '' }]);
+  const handleChange = (i: number, f: string, v: string) => { const n = [...variations]; n[i][f] = v; setVariations(n); };
+  return (
+    <div className="bg-white/5 p-6 rounded-2xl border border-white/10 space-y-6">
+      {variations.map((v: any, i: number) => (
+        <div key={i} className="bg-white/5 p-4 rounded-lg">
+          <HighlightedInput value={v.subject} onChange={(e: any) => handleChange(i, 'subject', e.target.value)} spamTriggers={spamTriggers} className="w-full bg-transparent border-b border-gray-600 mb-2 p-2 text-white" placeholder="Subject" />
+          <HighlightedInput value={v.previewText} onChange={(e: any) => handleChange(i, 'previewText', e.target.value)} spamTriggers={spamTriggers} className="w-full bg-transparent border-b border-gray-600 p-2 text-white" placeholder="Preview Text" />
+        </div>
+      ))}
+      <button onClick={addVariation} className="text-purple-400">+ Add Variation</button>
+      <HighlightedTextarea value={body} onChange={(e: any) => setBody(e.target.value)} spamTriggers={spamTriggers} className="w-full h-64 bg-gray-900/50 p-4 rounded-lg text-white border border-gray-600" />
+      <button onClick={onGrade} disabled={isLoading} className="w-full py-3 bg-purple-600 rounded-lg font-bold text-white hover:bg-purple-700">{isLoading ? 'Analyzing...' : 'Grade Email'}</button>
+    </div>
+  );
+};
+src/components/HighlightedInput.tsx
+code
+Tsx
+import React from 'react';
+export const HighlightedInput = ({ value, spamTriggers, className, ...props }: any) => (
+    <input value={value} className={className} {...props} />
+);
+src/components/HighlightedTextarea.tsx
+code
+Tsx
+import React from 'react';
+export const HighlightedTextarea = ({ value, spamTriggers, className, ...props }: any) => (
+    <textarea value={value} className={className} {...props} />
+);
+src/components/ResultsHub.tsx
+code
+Tsx
+import React from 'react';
+export const ResultsHub = ({ scoreData, gradeData }: any) => (
+    <div className="flex gap-8 justify-center items-center bg-white/5 p-6 rounded-2xl border border-white/10">
+        <div className="text-center"><div className="text-5xl font-bold text-purple-400">{scoreData.score}</div><div className="text-gray-400">Score</div></div>
+        <div className="text-center"><div className="text-5xl font-bold text-purple-400">{gradeData.grade}</div><div className="text-gray-400">Grade</div></div>
+        <div className="text-gray-300 italic max-w-md">{scoreData.summary}</div>
+    </div>
+);
+src/components/ReputationDashboard.tsx
+code
+Tsx
+import React, { useState } from 'react';
+import { DomainHealthChecker } from './DomainHealthChecker';
+import { ListQualityChecker } from './ListQualityChecker';
+import { DeliverabilityChecklist } from './DeliverabilityChecklist';
+import { BimiGenerator } from './BimiGenerator';
+import { ScoreHistoryChart } from './ScoreHistoryChart';
+import { ChevronDownIcon, PreFlightIcon } from './icons/CategoryIcons';
+
+export const ReputationDashboard: React.FC<any> = ({ history, onGenerateDns, isGeneratingDns, dnsRecords }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    return (
+        <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl">
+            <button onClick={() => setIsExpanded(!isExpanded)} className="w-full p-6 flex justify-between items-center text-white">
+                <div className="flex gap-3"><PreFlightIcon /> <h3 className="font-bold">Reputation Dashboard</h3></div>
+                <ChevronDownIcon />
+            </button>
+            {isExpanded && <div className="p-6 border-t border-white/10 space-y-8">
+                <ScoreHistoryChart history={history} />
+                <div className="grid md:grid-cols-2 gap-8"><DomainHealthChecker /><ListQualityChecker /></div>
+                <DeliverabilityChecklist onGenerateDns={onGenerateDns} isGeneratingDns={isGeneratingDns} dnsRecords={dnsRecords} />
+                <BimiGenerator />
+            </div>}
+        </div>
+    );
+};
+src/components/Academy/AcademyHub.tsx
+code
+Tsx
+import React, { useState } from 'react';
+import { CloseIcon, AcademyIcon } from '../icons/CategoryIcons';
+import { ModuleCard } from './ModuleComponents';
+import { DeliverabilityFoundations } from './DeliverabilityFoundations';
+
+export const AcademyHub: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+    const [module, setModule] = useState<string | null>(null);
+    return (
+        <div className="fixed inset-0 bg-slate-900/90 z-50 p-4 flex items-center justify-center">
+            <div className="bg-slate-900 border border-white/10 w-full max-w-5xl h-[90vh] rounded-2xl flex flex-col">
+                <header className="p-6 border-b border-white/10 flex justify-between">
+                    <h2 className="text-2xl font-bold text-white flex gap-2"><AcademyIcon /> Academy</h2>
+                    <button onClick={onClose}><CloseIcon /></button>
+                </header>
+                <main className="p-6 overflow-y-auto flex-1">
+                    {!module ? (
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <ModuleCard title="Deliverability Foundations" description="Master SPF, DKIM, DMARC" onClick={() => setModule('foundations')} />
+                        </div>
+                    ) : (
+                        module === 'foundations' ? <DeliverabilityFoundations onBack={() => setModule(null)} /> : null
+                    )}
+                </main>
+            </div>
+        </div>
+    );
+};
+src/components/Academy/ModuleComponents.tsx
+code
+Tsx
+import React from 'react';
+import { BackArrowIcon } from '../icons/CategoryIcons';
+export const ModuleHeader = ({ onBack, title }: any) => <div className="flex gap-4 items-center mb-6"><button onClick={onBack}><BackArrowIcon /></button><h3 className="text-2xl font-bold text-white">{title}</h3></div>;
+export const ModuleCard = ({ title, description, onClick }: any) => <button onClick={onClick} className="bg-white/5 p-6 rounded-lg text-left hover:bg-white/10"><h4 className="font-bold text-white mb-2">{title}</h4><p className="text-gray-400">{description}</p></button>;
+export const SectionWrapper = ({ title, children }: any) => <div className="bg-white/5 p-6 rounded-lg mb-4"><h4 className="text-xl font-bold text-purple-300 mb-2">{title}</h4><div className="text-gray-300 space-y-2">{children}</div></div>;
+export const InfoBox = ({ children }: any) => <div className="p-4 bg-purple-900/30 border border-purple-500 rounded-lg">{children}</div>;
+export const KnowledgeCheck = ({ question, options }: any) => <div className="p-6 border border-white/10 rounded-lg"><h4 className="font-bold text-white mb-4">{question}</h4>{options.map((o:any, i:number) => <div key={i} className="p-2 border border-white/10 mb-2 rounded cursor-pointer hover:bg-white/5">{o.text}</div>)}</div>;
+src/components/Academy/DeliverabilityFoundations.tsx
+code
+Tsx
+import React from 'react';
+import { ModuleHeader, SectionWrapper } from './ModuleComponents';
+export const DeliverabilityFoundations = ({ onBack }: any) => (
+    <div className="animate-fade-in">
+        <ModuleHeader onBack={onBack} title="Deliverability Foundations" />
+        <SectionWrapper title="SPF"><p>Sender Policy Framework...</p></SectionWrapper>
+        <SectionWrapper title="DKIM"><p>DomainKeys Identified Mail...</p></SectionWrapper>
+        <SectionWrapper title="DMARC"><p>Domain-based Message Authentication...</p></SectionWrapper>
+    </div>
+);
+src/components/ResultsTabs.tsx
+code
+Tsx
+import React from 'react';
+import { ResultCard } from './ResultCard';
+export const ResultsTabs = ({ result }: any) => (
+    <div className="space-y-4">
+        <ResultCard title="Subject Line" gradeData={result.subjectLine} />
+        <ResultCard title="Body Copy" gradeData={result.bodyCopy} />
+    </div>
+);
+src/components/ResultCard.tsx
+code
+Tsx
+import React from 'react';
+export const ResultCard = ({ title, gradeData }: any) => (
+    <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+        <div className="flex justify-between font-bold text-white"><span>{title}</span><span>{gradeData.grade}</span></div>
+        <p className="text-gray-400 mt-2">{gradeData.summary}</p>
+    </div>
+);
+9. Main Application
+src/App.tsx
+code
+Tsx
+import React, { useState, useEffect } from 'react';
+import { EmailInput } from './components/EmailInput';
+import { ResultsHub } from './components/ResultsHub';
+import { ResultsTabs } from './components/ResultsTabs';
+import { ReputationDashboard } from './components/ReputationDashboard';
+import { AcademyHub } from './components/Academy/AcademyHub';
+import { HistoryPanel } from './components/HistoryPanel';
+import { gradeCopy, generateDnsRecords } from './services/geminiService';
+import { getHistory, saveAnalysis } from './services/historyService';
+import { AcademyIcon, Logo } from './components/icons/CategoryIcons'; // Assuming Logo is exported here or create a placeholder
+
+const App = () => {
+    const [viewState, setViewState] = useState('input');
+    const [body, setBody] = useState("Hi [Name],\n\nCheck out our sale!");
+    const [variations, setVariations] = useState([{ subject: "Sale!", previewText: "Look inside" }]);
+    const [result, setResult] = useState<any>(null);
+    const [history, setHistory] = useState<any[]>([]);
+    const [showAcademy, setShowAcademy] = useState(false);
+    const [dnsRecords, setDnsRecords] = useState<any>(null);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => { setHistory(getHistory()); }, []);
+
+    const handleGrade = async () => {
+        setLoading(true);
+        try {
+            const res = await gradeCopy(body, variations);
+            setResult(res);
+            setHistory(saveAnalysis({ body, variations }, res));
+            setViewState('results');
+        } catch (e: any) { alert(e.message); }
+        setLoading(false);
+    };
+
+    const handleDns = async (domain: string) => {
+        setLoading(true);
+        try { setDnsRecords(await generateDnsRecords(domain)); } catch (e) { console.error(e); }
+        setLoading(false);
+    };
+
+    return (
+        <div className="min-h-screen dark-bg text-white font-sans">
+            <header className="p-6 border-b border-white/10 flex justify-between items-center backdrop-blur-md sticky top-0 z-10">
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">Inbox Authority</h1>
+                <button onClick={() => setShowAcademy(true)} className="flex gap-2 items-center px-4 py-2 bg-white/10 rounded-lg hover:bg-white/20"><AcademyIcon /> Academy</button>
+            </header>
+            <main className="container mx-auto p-6 max-w-5xl">
+                <EmailInput body={body} setBody={setBody} variations={variations} setVariations={setVariations} onGrade={handleGrade} isLoading={loading} />
+                {viewState === 'results' && result && (
+                    <div className="space-y-8 mt-8 animate-fade-in">
+                        <ResultsHub scoreData={result.inboxPlacementScore} gradeData={result.overallGrade} />
+                        <ResultsTabs result={result} body={body} />
+                        <ReputationDashboard history={history} onGenerateDns={handleDns} isGeneratingDns={loading} dnsRecords={dnsRecords} />
+                    </div>
+                )}
+                {viewState === 'results' && <HistoryPanel history={history} />}
+            </main>
+            {showAcademy && <AcademyHub onClose={() => setShowAcademy(false)} />}
+        </div>
+    );
+};
+export default App;
+10. Placeholders for missing files
+Create these simple files to prevent build errors for imports used above:
+src/components/HistoryPanel.tsx: export const HistoryPanel = ({history}: any) => <div>History Panel Placeholder</div>;
+src/components/DomainHealthChecker.tsx: export const DomainHealthChecker = () => <div>Domain Health Placeholder</div>;
+src/components/ListQualityChecker.tsx: export const ListQualityChecker = () => <div>List Quality Placeholder</div>;
+src/components/DeliverabilityChecklist.tsx: export const DeliverabilityChecklist = ({onGenerateDns}: any) => <div>Checklist Placeholder <button onClick={() => onGenerateDns('example.com')}>Test DNS</button></div>;
+src/components/BimiGenerator.tsx: export const BimiGenerator = () => <div>BIMI Placeholder</div>;
+src/components/ScoreHistoryChart.tsx: export const ScoreHistoryChart = () => <div>Chart Placeholder</div>;
+src/components/InfoTooltip.tsx: export const InfoTooltip = ({text}: any) => <span title={text}>ℹ️</span>;
+src/components/Loader.tsx: export const Loader = () => <div>Loading...</div>;
+src/components/FollowUpGenerator.tsx: export const FollowUpGenerator = () => <div>FollowUp Placeholder</div>;
+src/components/FollowUpDisplay.tsx: export const FollowUpDisplay = () => <div>Display Placeholder</div>;
+src/components/FollowUpSequenceDisplay.tsx: export const FollowUpSequenceDisplay = () => <div>Sequence Placeholder</div>;
+src/components/RewriteComparison.tsx: export const RewriteComparison = () => <div>Compare Placeholder</div>;
+src/components/EmailClientPreview.tsx: export const EmailClientPreview = () => <div>Preview Placeholder</div>;
+src/components/InboxPlacementSimulator.tsx: export const InboxPlacementSimulator = () => <div>Simulator Placeholder</div>;
+src/components/AccessibilityCard.tsx: export const AccessibilityCard = () => <div>Accessibility Placeholder</div>;
+src/components/PlainTextAnalysisCard.tsx: export const PlainTextAnalysisCard = () => <div>PlainText Placeholder</div>;
+src/components/ReplyAbilityCard.tsx: export const ReplyAbilityCard = () => <div>ReplyAbility Placeholder</div>;
+src/components/LinkAnalysisCard.tsx: export const LinkAnalysisCard = () => <div>LinkAnalysis Placeholder</div>;
+src/components/PersonalizationScoreCard.tsx: export const PersonalizationScoreCard = () => <div>Personalization Placeholder</div>;
+src/components/SubjectShowdownCard.tsx: export const SubjectShowdownCard = () => <div>Showdown Placeholder</div>;
+src/components/StructuralAnalysisCard.tsx: export const StructuralAnalysisCard = () => <div>Structural Placeholder</div>;
+src/components/SpamAnalysisCard.tsx: export const SpamAnalysisCard = () => <div>Spam Analysis Placeholder</div>;
+src/components/ErrorMessage.tsx: export const ErrorMessage = () => <div>Error Placeholder</div>;
+src/components/UpgradeModal.tsx: export const UpgradeModal = () => <div>Upgrade Placeholder</div>;
+src/components/Academy/ArtOfTheInbox.tsx: export const ArtOfTheInbox = () => <div>Art Placeholder</div>;
+src/components/Academy/AdvancedStrategy.tsx: export const AdvancedStrategy = () => <div>Strategy Placeholder</div>;
+src/components/Academy/RealWorldTeardowns.tsx: export const RealWorldTeardowns = () => <div>Teardowns Placeholder</div>;
+src/components/Academy/Glossary.tsx: export const Glossary = () => <div>Glossary Placeholder</div>;
+src/components/Academy/ListSegmentation.tsx: export const ListSegmentation = () => <div>Segmentation Placeholder</div>;
+src/components/Academy/AutomationWorkflows.tsx: export const AutomationWorkflows = () => <div>Automation Placeholder</div>;
+src/components/Academy/AnalyticsKPIs.tsx: export const AnalyticsKPIs = () => <div>Analytics Placeholder</div>;
+src/components/Academy/LegalCompliance.tsx: export const LegalCompliance = () => <div>Legal Placeholder</div>;
+src/components/Academy/ScenarioSimulator.tsx: export const ScenarioSimulator = () => <div>Scenario Placeholder</div>;
+src/components/Academy/ColdOutreachBlueprint.tsx: export const ColdOutreachBlueprint = () => <div>Cold Placeholder</div>;
+src/components/Academy/NewsletterBlueprint.tsx: export const NewsletterBlueprint = () => <div>Newsletter Placeholder</div>;
+src/components/Academy/EcommerceBlueprint.tsx: export const EcommerceBlueprint = () => <div>Ecommerce Placeholder</div>;
+src/components/Academy/SenderReputation.tsx: export const SenderReputation = () => <div>Reputation Placeholder</div>;
+src/components/Academy/AdvancedAutomation.tsx: export const AdvancedAutomation = () => <div>Advanced Automation Placeholder</div>;
+src/components/Academy/ReEngagementBlueprint.tsx: export const ReEngagementBlueprint = () => <div>ReEngagement Placeholder</div>;
