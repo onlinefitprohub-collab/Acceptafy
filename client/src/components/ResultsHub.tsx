@@ -57,7 +57,7 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, in
         </div>
       </div>
 
-      {inboxPrediction && (
+      {inboxPrediction && inboxPrediction.gmail && inboxPrediction.outlook && inboxPrediction.appleMail && (
         <div className="mt-8 pt-6 border-t border-white/10">
           <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider mb-4 text-center">
             Inbox Placement Prediction
@@ -68,10 +68,10 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, in
                 <GmailIcon className="w-5 h-5 text-red-400" />
                 <span className="font-semibold text-white">Gmail</span>
               </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.gmail.placement)}`}>
-                {inboxPrediction.gmail.placement}
+              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.gmail.placement || 'Unknown')}`}>
+                {inboxPrediction.gmail.placement || 'Unknown'}
               </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.gmail.reason}</p>
+              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.gmail.reason || 'Analysis pending'}</p>
             </div>
 
             <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center">
@@ -79,10 +79,10 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, in
                 <OutlookIcon className="w-5 h-5 text-blue-400" />
                 <span className="font-semibold text-white">Outlook</span>
               </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.outlook.placement)}`}>
-                {inboxPrediction.outlook.placement}
+              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.outlook.placement || 'Unknown')}`}>
+                {inboxPrediction.outlook.placement || 'Unknown'}
               </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.outlook.reason}</p>
+              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.outlook.reason || 'Analysis pending'}</p>
             </div>
 
             <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center">
@@ -90,10 +90,10 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, in
                 <AppleMailIcon className="w-5 h-5 text-gray-400" />
                 <span className="font-semibold text-white">Apple Mail</span>
               </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.appleMail.placement)}`}>
-                {inboxPrediction.appleMail.placement}
+              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.appleMail.placement || 'Unknown')}`}>
+                {inboxPrediction.appleMail.placement || 'Unknown'}
               </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.appleMail.reason}</p>
+              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.appleMail.reason || 'Analysis pending'}</p>
             </div>
           </div>
         </div>
