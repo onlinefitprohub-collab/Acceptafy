@@ -1,19 +1,50 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Logo } from './components/icons/Logo';
 import { EmailInput } from './components/EmailInput';
 import { ResultsHub } from './components/ResultsHub';
+import { Loader } from './components/Loader';
+import { RewriteComparison } from './components/RewriteComparison';
+import { HistoryPanel } from './components/HistoryPanel';
+import { HistoryViewBanner } from './components/HistoryViewBanner';
+import { FollowUpGenerator } from './components/FollowUpGenerator';
+import { FollowUpDisplay } from './components/FollowUpDisplay';
+import { FollowUpSequenceDisplay } from './components/FollowUpSequenceDisplay';
 import { ReputationDashboard } from './components/ReputationDashboard';
+import { ErrorMessage } from './components/ErrorMessage';
 import { AcademyHub } from './components/Academy/AcademyHub';
 import { 
-  AcademyIcon, HistoryIcon, EyeIcon, TrashIcon, CloseIcon,
-  SubjectIcon, PreviewIcon, BodyIcon, CtaIcon, SpamIcon, 
-  StructuralIcon, SubjectShowdownIcon, PersonalizationIcon, 
-  LinkIcon, ReplyIcon, PlainTextIcon, AccessibilityIcon,
-  CheckIcon, AlertIcon, BadStatusIcon, RewriteIcon, FollowUpIcon,
-  CopyIcon, ChevronDownIcon
+  AcademyIcon, 
+  RewriteIcon,
+  HistoryIcon,
+  EyeIcon,
+  TrashIcon,
+  SubjectIcon,
+  PreviewIcon,
+  BodyIcon,
+  CtaIcon,
+  SpamIcon,
+  SubjectShowdownIcon,
+  PersonalizationIcon,
+  ReplyIcon,
+  CheckIcon,
+  CopyIcon,
+  FollowUpIcon
 } from './components/icons/CategoryIcons';
+import { InboxPlacementSimulator } from './components/InboxPlacementSimulator';
+import { ResultsTabs } from './components/ResultsTabs';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
-import type { GradingResult, HistoryItem, SpamTrigger, EmailVariation, DnsRecords, RewrittenEmail, FollowUpEmail, FollowUpSequenceEmail } from './types';
+import type { 
+  GradingResult, 
+  HistoryItem, 
+  SpamTrigger, 
+  EmailVariation, 
+  DnsRecords, 
+  RewrittenEmail, 
+  FollowUpEmail, 
+  FollowUpSequenceEmail,
+  RewriteGoal,
+  FollowUpGoal
+} from './types';
 
 type ActiveView = 'grader' | 'history' | 'academy';
 
@@ -194,6 +225,43 @@ function App() {
     await navigator.clipboard.writeText(text);
     setCopiedItem(id);
     setTimeout(() => setCopiedItem(null), 2000);
+  };
+
+  const handleQuickFix = (word: string, replacement: string) => {
+    const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedWord, 'gi');
+    
+    setBody(prev => prev.replace(regex, replacement));
+    setVariations(prev => prev.map(v => ({
+      ...v,
+      subject: v.subject.replace(regex, replacement),
+      previewText: v.previewText.replace(regex, replacement)
+    })));
+    
+    setSpamTriggers(prev => prev.filter(t => t.word.toLowerCase() !== word.toLowerCase()));
+  };
+
+  const handleAcceptRewrite = () => {
+    if (rewrittenEmail) {
+      setBody(rewrittenEmail.body);
+      setVariations([{ 
+        subject: rewrittenEmail.subject, 
+        previewText: rewrittenEmail.previewText 
+      }]);
+      setRewrittenEmail(null);
+      setResult(null);
+    }
+  };
+
+  const handleLoadFollowUp = (email: { subject: string; body: string }) => {
+    setBody(email.body);
+    setVariations([{ 
+      subject: email.subject, 
+      previewText: '' 
+    }]);
+    setFollowUpEmail(null);
+    setFollowUpSequence([]);
+    setResult(null);
   };
 
   const getGradeColor = (grade: string) => {
@@ -378,10 +446,19 @@ function App() {
                           </div>
                           <p className="text-sm opacity-90 mb-2">{trigger.reason}</p>
                           {trigger.suggestions?.length > 0 && (
-                            <div className="text-xs">
+                            <div className="text-xs mb-2">
                               <span className="opacity-70">Alternatives: </span>
                               {trigger.suggestions.join(', ')}
                             </div>
+                          )}
+                          {trigger.suggestion && (
+                            <button
+                              onClick={() => handleQuickFix(trigger.word, trigger.suggestion)}
+                              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
+                              data-testid={`button-quickfix-${i}`}
+                            >
+                              Quick Fix: Replace with "{trigger.suggestion}"
+                            </button>
                           )}
                         </div>
                       ))}
@@ -508,6 +585,22 @@ function App() {
                         </div>
                         <p className="text-gray-300 whitespace-pre-line">{rewrittenEmail.body}</p>
                       </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={handleAcceptRewrite}
+                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors"
+                          data-testid="button-accept-rewrite"
+                        >
+                          Accept & Load into Editor
+                        </button>
+                        <button
+                          onClick={() => setRewrittenEmail(null)}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition-colors"
+                          data-testid="button-discard-rewrite"
+                        >
+                          Discard
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -578,11 +671,36 @@ function App() {
                         </div>
                         <p className="text-gray-300 whitespace-pre-line">{followUpEmail.body}</p>
                       </div>
+                      <div className="flex gap-3 mt-4">
+                        <button
+                          onClick={() => handleLoadFollowUp(followUpEmail)}
+                          className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
+                          data-testid="button-load-followup"
+                        >
+                          Load into Editor
+                        </button>
+                        <button
+                          onClick={() => setFollowUpEmail(null)}
+                          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition-colors"
+                          data-testid="button-dismiss-followup"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </div>
                   )}
 
                   {followUpSequence.length > 0 && (
                     <div className="space-y-4 animate-fade-in">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-400">Generated {followUpSequence.length} emails</span>
+                        <button
+                          onClick={() => setFollowUpSequence([])}
+                          className="text-sm text-gray-400 hover:text-white transition-colors"
+                        >
+                          Clear Sequence
+                        </button>
+                      </div>
                       {followUpSequence.map((email, i) => (
                         <div key={i} className="bg-gray-900/50 p-4 rounded-lg border border-white/10">
                           <div className="flex items-center justify-between mb-3">
@@ -592,12 +710,24 @@ function App() {
                               </span>
                               <span className="text-sm text-gray-400">{email.timingSuggestion}</span>
                             </div>
-                            <button
-                              onClick={() => copyToClipboard(`Subject: ${email.subject}\n\n${email.body}`, `sequence-${i}`)}
-                              className="p-1 hover:bg-white/10 rounded"
-                            >
-                              {copiedItem === `sequence-${i}` ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4 text-gray-400" />}
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleLoadFollowUp(email)}
+                                className="p-1.5 hover:bg-white/10 rounded text-purple-400 hover:text-purple-300 transition-colors"
+                                title="Load into Editor"
+                                data-testid={`button-load-sequence-${i}`}
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => copyToClipboard(`Subject: ${email.subject}\n\n${email.body}`, `sequence-${i}`)}
+                                className="p-1 hover:bg-white/10 rounded"
+                              >
+                                {copiedItem === `sequence-${i}` ? <CheckIcon className="w-4 h-4 text-green-400" /> : <CopyIcon className="w-4 h-4 text-gray-400" />}
+                              </button>
+                            </div>
                           </div>
                           <div className="mb-2">
                             <span className="text-xs text-gray-500">Subject:</span>
