@@ -22,3 +22,8 @@ export interface ListQualityAnalysis { roleBasedAccountPercentage: number; freeM
 export interface BimiRecord { dmarcPrerequisite: string; logoRequirements: string; bimiRecord: string; }
 export interface GlossaryTerm { simpleDefinition: string; detailedExplanation: string; practicalExample: string; }
 export interface EmailVariation { subject: string; previewText: string; }
+export interface SubjectVariation { subject: string; previewText: string; predictedOpenRate: number; style: string; rationale: string; }
+export interface OptimizationItem { priority: number; category: string; issue: string; impact: string; action: string; actionType: 'quickfix' | 'rewrite' | 'manual'; targetWord?: string; replacement?: string; }
+export interface ToneRewrite { subject: string; previewText: string; body: string; toneNotes: string; }
+export type ToneProfile = 'professional' | 'friendly' | 'urgent' | 'fomo' | 'storytelling';
+export interface EmailPreview { gmail: { inboxDisplay: string; mobileDisplay: string }; outlook: { inboxDisplay: string; mobileDisplay: string }; apple: { inboxDisplay: string; mobileDisplay: string }; characterCounts: { subject: number; preview: number; subjectOptimal: boolean; previewOptimal: boolean }; truncationWarnings: string[]; }

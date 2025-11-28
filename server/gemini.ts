@@ -603,3 +603,246 @@ Return as JSON with keys: simpleDefinition, detailedExplanation, practicalExampl
   });
   return JSON.parse(res.text || '{}');
 };
+
+export interface SubjectVariation {
+  subject: string;
+  previewText: string;
+  predictedOpenRate: number;
+  style: string;
+  rationale: string;
+}
+
+export const generateSubjectVariations = async (
+  originalSubject: string,
+  originalPreview: string,
+  bodyContext: string
+): Promise<SubjectVariation[]> => {
+  const prompt = `You are an expert email marketing copywriter. Generate 5 A/B test variations of this subject line and preview text combination.
+
+Original Subject: ${originalSubject}
+Original Preview: ${originalPreview}
+Email Context: ${bodyContext.slice(0, 500)}
+
+Create 5 distinct variations using these styles:
+1. Curiosity Gap - Create intrigue without clickbait
+2. Benefit-Focused - Lead with the value proposition
+3. Urgency/Scarcity - Create time sensitivity (without spam triggers)
+4. Personalization - Make it feel tailored and personal
+5. Question-Based - Engage with a thought-provoking question
+
+For each variation, predict the open rate (15-45% range) based on industry benchmarks.`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          variations: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                subject: { type: Type.STRING },
+                previewText: { type: Type.STRING },
+                predictedOpenRate: { type: Type.NUMBER },
+                style: { type: Type.STRING },
+                rationale: { type: Type.STRING }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  const data = JSON.parse(res.text || '{}');
+  return data.variations || [];
+};
+
+export interface OptimizationItem {
+  priority: number;
+  category: string;
+  issue: string;
+  impact: string;
+  action: string;
+  actionType: 'quickfix' | 'rewrite' | 'manual';
+  targetWord?: string;
+  replacement?: string;
+}
+
+export const generateOptimizationRoadmap = async (
+  gradingResult: GradingResult,
+  subject: string,
+  body: string
+): Promise<OptimizationItem[]> => {
+  const prompt = `Based on this email grading analysis, create a prioritized optimization roadmap.
+
+Subject: ${subject}
+Body: ${body.slice(0, 1000)}
+
+Grading Summary:
+- Overall Grade: ${gradingResult.overallGrade.grade}
+- Inbox Score: ${gradingResult.inboxPlacementScore.score}
+- Subject Grade: ${gradingResult.subjectLine.grade}
+- Preview Grade: ${gradingResult.previewText.grade}
+- Body Grade: ${gradingResult.bodyCopy.grade}
+- CTA Grade: ${gradingResult.callToAction.grade}
+- Spam Triggers Found: ${gradingResult.spamAnalysis?.length || 0}
+- Structural Issues: ${gradingResult.structuralAnalysis?.length || 0}
+
+Create a prioritized list of 5-8 optimization actions. Priority 1 = most impactful.
+For each item, specify:
+- The category (spam, subject, preview, body, cta, structure, personalization)
+- The specific issue
+- The impact if fixed (e.g., "+5-10 inbox score")
+- The recommended action
+- The action type: "quickfix" (word replacement), "rewrite" (AI rewrite needed), or "manual" (user action needed)
+- If quickfix, include targetWord and replacement`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          items: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                priority: { type: Type.NUMBER },
+                category: { type: Type.STRING },
+                issue: { type: Type.STRING },
+                impact: { type: Type.STRING },
+                action: { type: Type.STRING },
+                actionType: { type: Type.STRING },
+                targetWord: { type: Type.STRING },
+                replacement: { type: Type.STRING }
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+  const data = JSON.parse(res.text || '{}');
+  return data.items || [];
+};
+
+export interface ToneRewrite {
+  subject: string;
+  previewText: string;
+  body: string;
+  toneNotes: string;
+}
+
+export const rewriteWithTone = async (
+  body: string,
+  subject: string,
+  preview: string,
+  tone: 'professional' | 'friendly' | 'urgent' | 'fomo' | 'storytelling'
+): Promise<ToneRewrite> => {
+  const toneInstructions: Record<string, string> = {
+    professional: 'Use formal, business-appropriate language. Be concise and authoritative. Focus on credibility and expertise.',
+    friendly: 'Use warm, conversational language like talking to a friend. Add personality and be approachable. Use contractions naturally.',
+    urgent: 'Create genuine urgency without spam triggers. Use time-sensitive language and emphasize immediate action benefits.',
+    fomo: 'Emphasize exclusivity and what readers will miss out on. Use social proof and scarcity. Make them feel special for being included.',
+    storytelling: 'Open with a mini-story or scenario. Create emotional connection. Use narrative techniques like tension and resolution.'
+  };
+
+  const prompt = `Rewrite this email with a ${tone.toUpperCase()} tone.
+
+Tone Guidelines: ${toneInstructions[tone]}
+
+Original Subject: ${subject}
+Original Preview: ${preview}
+Original Body:
+${body}
+
+Rewrite the entire email (subject, preview, and body) to match the ${tone} tone while:
+1. Maintaining the core message and offer
+2. Avoiding spam trigger words
+3. Keeping it engaging and actionable
+4. Optimizing for inbox placement`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          subject: { type: Type.STRING },
+          previewText: { type: Type.STRING },
+          body: { type: Type.STRING },
+          toneNotes: { type: Type.STRING }
+        }
+      }
+    }
+  });
+  return JSON.parse(res.text || '{}');
+};
+
+export interface EmailPreview {
+  gmail: { inboxDisplay: string; mobileDisplay: string };
+  outlook: { inboxDisplay: string; mobileDisplay: string };
+  apple: { inboxDisplay: string; mobileDisplay: string };
+  characterCounts: {
+    subject: number;
+    preview: number;
+    subjectOptimal: boolean;
+    previewOptimal: boolean;
+  };
+  truncationWarnings: string[];
+}
+
+export const generateEmailPreviews = async (
+  subject: string,
+  preview: string,
+  senderName: string
+): Promise<EmailPreview> => {
+  const subjectLength = subject.length;
+  const previewLength = preview.length;
+  
+  const truncationWarnings: string[] = [];
+  
+  if (subjectLength > 50) {
+    truncationWarnings.push(`Subject will be truncated on mobile (${subjectLength} chars, max 50 recommended)`);
+  }
+  if (subjectLength > 70) {
+    truncationWarnings.push(`Subject will be truncated on desktop Gmail (${subjectLength} chars, max 70 visible)`);
+  }
+  if (previewLength > 90) {
+    truncationWarnings.push(`Preview text will be truncated on most clients (${previewLength} chars, max 90 recommended)`);
+  }
+  if (previewLength < 40) {
+    truncationWarnings.push(`Preview text is short - email body may show (${previewLength} chars, 40-90 recommended)`);
+  }
+
+  const gmailDesktop = `${subject.slice(0, 70)}${subject.length > 70 ? '...' : ''} - ${preview.slice(0, 90)}`;
+  const gmailMobile = `${subject.slice(0, 40)}${subject.length > 40 ? '...' : ''}`;
+  
+  const outlookDesktop = `${subject.slice(0, 60)}${subject.length > 60 ? '...' : ''} ${preview.slice(0, 50)}`;
+  const outlookMobile = `${subject.slice(0, 35)}${subject.length > 35 ? '...' : ''}`;
+  
+  const appleDesktop = `${subject.slice(0, 65)}${subject.length > 65 ? '...' : ''} - ${preview.slice(0, 75)}`;
+  const appleMobile = `${subject.slice(0, 38)}${subject.length > 38 ? '...' : ''}`;
+
+  return {
+    gmail: { inboxDisplay: gmailDesktop, mobileDisplay: gmailMobile },
+    outlook: { inboxDisplay: outlookDesktop, mobileDisplay: outlookMobile },
+    apple: { inboxDisplay: appleDesktop, mobileDisplay: appleMobile },
+    characterCounts: {
+      subject: subjectLength,
+      preview: previewLength,
+      subjectOptimal: subjectLength >= 30 && subjectLength <= 50,
+      previewOptimal: previewLength >= 40 && previewLength <= 90
+    },
+    truncationWarnings
+  };
+};

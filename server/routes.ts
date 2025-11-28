@@ -9,7 +9,11 @@ import {
   checkDomainHealth,
   analyzeEmailList,
   generateBimiRecord,
-  explainTerm 
+  explainTerm,
+  generateSubjectVariations,
+  generateOptimizationRoadmap,
+  rewriteWithTone,
+  generateEmailPreviews
 } from "./gemini";
 
 export async function registerRoutes(
@@ -113,6 +117,50 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Glossary explanation error:', error);
       res.status(500).json({ error: 'Failed to explain term' });
+    }
+  });
+
+  app.post('/api/subjects/variations', async (req, res) => {
+    try {
+      const { subject, preview, body } = req.body;
+      const result = await generateSubjectVariations(subject, preview, body);
+      res.json(result);
+    } catch (error) {
+      console.error('Subject variations error:', error);
+      res.status(500).json({ error: 'Failed to generate subject variations' });
+    }
+  });
+
+  app.post('/api/optimization/roadmap', async (req, res) => {
+    try {
+      const { gradingResult, subject, body } = req.body;
+      const result = await generateOptimizationRoadmap(gradingResult, subject, body);
+      res.json(result);
+    } catch (error) {
+      console.error('Optimization roadmap error:', error);
+      res.status(500).json({ error: 'Failed to generate optimization roadmap' });
+    }
+  });
+
+  app.post('/api/rewrite/tone', async (req, res) => {
+    try {
+      const { body, subject, preview, tone } = req.body;
+      const result = await rewriteWithTone(body, subject, preview, tone);
+      res.json(result);
+    } catch (error) {
+      console.error('Tone rewrite error:', error);
+      res.status(500).json({ error: 'Failed to rewrite with tone' });
+    }
+  });
+
+  app.post('/api/email/preview', async (req, res) => {
+    try {
+      const { subject, preview, senderName } = req.body;
+      const result = await generateEmailPreviews(subject, preview, senderName || 'Your Brand');
+      res.json(result);
+    } catch (error) {
+      console.error('Email preview error:', error);
+      res.status(500).json({ error: 'Failed to generate email previews' });
     }
   });
 
