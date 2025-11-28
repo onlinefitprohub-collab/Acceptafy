@@ -1,0 +1,87 @@
+export const generateFollowUpSequence = async (
+    originalEmail: { subject: string; body: string; },
+    analysis: GradingResult,
+    sequenceGoal: string
+): Promise<FollowUpSequenceEmail[]> => {
+    try {
+        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${originalEmail.body}`;
+        const analysisSummary = `The original email was analyzed and received an overall grade of ${analysis.overallGrade.grade}. Key feedback was: ${analysis.overallGrade.summary}. The main spam concern was: ${analysis.spamAnalysis[0]?.reason || 'none'}. The personalization score was ${analysis.personalizationScore.score}/100.`;
+
+        const systemInstruction = `You are an expert email marketing and deliverability strategist. Your task is to write a 10-email follow-up sequence based on an original email and its performance analysis. The overall goal of this sequence is to: "${sequenceGoal}".
+
+        **CRITICAL DELIVERABILITY RULES:**
+        1.  **High Inbox Probability:** Your primary objective is to create emails that land in the primary inbox. AVOID ALL spam triggers, especially those identified in the original analysis summary. Use natural, conversational language.
+        2.  **Vary Content:** Each email must be unique. Do not repeat phrases or sentences. Vary the structure and call to action.
+        3.  **Concise & Scannable:** Keep emails short, focused, and easy to read. Use short paragraphs and bullet points where appropriate.
+        4.  **Personalized Tone:** Write as if a human is writing to another human. Reference the original context subtly.
+        
+        **SEQUENCE STRUCTURE:**
+        -   The sequence must have exactly 10 emails.
+        -   Provide a logical 'timingSuggestion' for each (e.g., "Day 1", "Day 3", "Day 7", "Day 14").
+        -   The tone should progress logically, starting friendly and gradually becoming more direct or offering more value.
+        -   Each email must have a 'rationale' explaining its strategic purpose.
+        -   Return the result as a single JSON array of 10 email objects.`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: `Here is the original email:\n${originalContent}\n\nHere is a summary of its analysis:\n${analysisSummary}\n\nPlease write a 10-email follow-up sequence. The overall goal is: "${sequenceGoal}".`,
+            config: {
+                systemInstruction,
+                responseMimeType: "application/json",
+                responseSchema: followUpSequenceSchema,
+            }
+        });
+
+        if (response.promptFeedback?.blockReason === 'SAFETY') {
+            const flaggedCategories = response.promptFeedback.safetyRatings
+                ?.filter(rating => rating.probability !== 'NEGLIGIBLE' && rating.probability !== 'LOW')
+                .map(rating => rating.category.replace('HARM_CATEGORY_', '').replace(/_/g, ' ').toLowerCase());
+
+            if (flaggedCategories && flaggedCategories.length > 0) {
+                const categoriesString = flaggedCategories.join(', ');
+                throw new Error(`Your email copy was blocked for safety reasons related to: ${categoriesString}. Please revise the content to remove sensitive topics.`);
+            } else {
+                throw new Error('Your email copy was blocked for violating safety policies. Please try rephrasing any potentially sensitive topics.');
+            }
+        }
+        
+        if (response.promptFeedback?.blockReason) {
+             throw new Error(`The request was blocked by the API. Reason: ${response.promptFeedback.blockReason}. This can sometimes happen with content that is very long or complex.`);
+        }
+
+        if (!response.candidates || response.candidates.length === 0) {
+            throw new Error("The AI model did not return a response. This often happens if the content is flagged by safety filters that are not explicitly reported. Try simplifying or rephrasing your copy.");
+        }
+        
+        const jsonString = response.text.trim();
+        if (!jsonString) {
+            throw new Error("The AI model returned an empty response. Your content might be too ambiguous or complex. Please try modifying your email copy.");
+        }
+
+        try {
+            const parsedResult = JSON.parse(jsonString);
+            if (Array.isArray(parsedResult) && parsedResult.length > 0) {
+                return parsedResult as FollowUpSequenceEmail[];
+            } else {
+                throw new Error("AI did not return a valid email sequence.");
+            }
+        } catch (jsonError) {
+             throw new Error("The AI model returned a malformed response. This can be caused by very long copy or content that pushes the boundaries of safety policies. Please try simplifying your email.");
+        }
+
+    } catch (error) {
+        console.error("Error calling AI follow-up sequence generation service:", error);
+         if (error instanceof Error) {
+            if (error.message.startsWith('Your email copy was blocked') || 
+                error.message.startsWith('The request was blocked') ||
+                error.message.startsWith('The AI model did not return') ||
+                error.message.startsWith('The AI model returned an empty response') ||
+                error.message.startsWith('The AI model returned a malformed response') ||
+                error.message.startsWith('AI did not return a valid')) {
+                throw error;
+            }
+             throw new Error(`An unexpected issue occurred with the AI service. This could be a temporary network problem or an issue with the service itself. Please try again shortly. Details: ${error.message}`);
+        }
+        throw new Error("An unknown and unexpected error occurred.");
+    }
+};
