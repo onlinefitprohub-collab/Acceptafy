@@ -15,6 +15,19 @@ import {
   rewriteWithTone,
   generateEmailPreviews
 } from "./gemini";
+import { 
+  generateVariationsRequestSchema,
+  generateToneRewriteRequestSchema,
+  generatePreviewRequestSchema,
+  gradingResultSchema
+} from "@shared/schema";
+import { z } from "zod";
+
+const generateRoadmapRequestSchema = z.object({
+  analysisResult: gradingResultSchema,
+  subject: z.string().default(''),
+  body: z.string().default(''),
+});
 
 export async function registerRoutes(
   httpServer: Server,
@@ -122,7 +135,11 @@ export async function registerRoutes(
 
   app.post('/api/subjects/variations', async (req, res) => {
     try {
-      const { subject, preview, body } = req.body;
+      const validated = generateVariationsRequestSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid request' });
+      }
+      const { subject, preview, body } = validated.data;
       const result = await generateSubjectVariations(subject, preview, body);
       res.json(result);
     } catch (error) {
@@ -133,8 +150,12 @@ export async function registerRoutes(
 
   app.post('/api/optimization/roadmap', async (req, res) => {
     try {
-      const { gradingResult, subject, body } = req.body;
-      const result = await generateOptimizationRoadmap(gradingResult, subject, body);
+      const validated = generateRoadmapRequestSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid request' });
+      }
+      const { analysisResult, subject, body } = validated.data;
+      const result = await generateOptimizationRoadmap(analysisResult, subject, body);
       res.json(result);
     } catch (error) {
       console.error('Optimization roadmap error:', error);
@@ -144,7 +165,11 @@ export async function registerRoutes(
 
   app.post('/api/rewrite/tone', async (req, res) => {
     try {
-      const { body, subject, preview, tone } = req.body;
+      const validated = generateToneRewriteRequestSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid request' });
+      }
+      const { body, subject, preview, tone } = validated.data;
       const result = await rewriteWithTone(body, subject, preview, tone);
       res.json(result);
     } catch (error) {
@@ -155,8 +180,12 @@ export async function registerRoutes(
 
   app.post('/api/email/preview', async (req, res) => {
     try {
-      const { subject, preview, senderName } = req.body;
-      const result = await generateEmailPreviews(subject, preview, senderName || 'Your Brand');
+      const validated = generatePreviewRequestSchema.safeParse(req.body);
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid request' });
+      }
+      const { subject, previewText, senderName } = validated.data;
+      const result = await generateEmailPreviews(subject, previewText, senderName || 'Your Brand');
       res.json(result);
     } catch (error) {
       console.error('Email preview error:', error);

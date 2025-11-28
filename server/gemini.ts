@@ -1,5 +1,20 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { GradingResult, RewrittenEmail, FollowUpEmail, FollowUpSequenceEmail, DnsRecords, SentenceGrade, DomainHealth, ListQualityAnalysis, BimiRecord, GlossaryTerm } from "../client/src/types";
+import type { 
+  GradingResult, 
+  RewrittenEmail, 
+  FollowUpEmail, 
+  FollowUpSequenceEmail, 
+  DnsRecords, 
+  SentenceGrade, 
+  DomainHealth, 
+  ListQualityAnalysis, 
+  BimiRecord, 
+  GlossaryTerm,
+  SubjectVariation, 
+  OptimizationItem, 
+  ToneRewrite, 
+  EmailPreview 
+} from "@shared/schema";
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
 const ai = new GoogleGenAI({
@@ -604,14 +619,6 @@ Return as JSON with keys: simpleDefinition, detailedExplanation, practicalExampl
   return JSON.parse(res.text || '{}');
 };
 
-export interface SubjectVariation {
-  subject: string;
-  previewText: string;
-  predictedOpenRate: number;
-  style: string;
-  rationale: string;
-}
-
 export const generateSubjectVariations = async (
   originalSubject: string,
   originalPreview: string,
@@ -660,17 +667,6 @@ For each variation, predict the open rate (15-45% range) based on industry bench
   const data = JSON.parse(res.text || '{}');
   return data.variations || [];
 };
-
-export interface OptimizationItem {
-  priority: number;
-  category: string;
-  issue: string;
-  impact: string;
-  action: string;
-  actionType: 'quickfix' | 'rewrite' | 'manual';
-  targetWord?: string;
-  replacement?: string;
-}
 
 export const generateOptimizationRoadmap = async (
   gradingResult: GradingResult,
@@ -733,13 +729,6 @@ For each item, specify:
   return data.items || [];
 };
 
-export interface ToneRewrite {
-  subject: string;
-  previewText: string;
-  body: string;
-  toneNotes: string;
-}
-
 export const rewriteWithTone = async (
   body: string,
   subject: string,
@@ -787,19 +776,6 @@ Rewrite the entire email (subject, preview, and body) to match the ${tone} tone 
   });
   return JSON.parse(res.text || '{}');
 };
-
-export interface EmailPreview {
-  gmail: { inboxDisplay: string; mobileDisplay: string };
-  outlook: { inboxDisplay: string; mobileDisplay: string };
-  apple: { inboxDisplay: string; mobileDisplay: string };
-  characterCounts: {
-    subject: number;
-    preview: number;
-    subjectOptimal: boolean;
-    previewOptimal: boolean;
-  };
-  truncationWarnings: string[];
-}
 
 export const generateEmailPreviews = async (
   subject: string,

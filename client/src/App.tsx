@@ -12,6 +12,7 @@ import { FollowUpSequenceDisplay } from './components/FollowUpSequenceDisplay';
 import { ReputationDashboard } from './components/ReputationDashboard';
 import { ErrorMessage } from './components/ErrorMessage';
 import { AcademyHub } from './components/Academy/AcademyHub';
+import { useToast } from '@/hooks/use-toast';
 import { 
   AcademyIcon, 
   RewriteIcon,
@@ -54,6 +55,7 @@ import type {
 type ActiveView = 'grader' | 'history' | 'academy';
 
 function App() {
+  const { toast } = useToast();
   const [variations, setVariations] = useState<EmailVariation[]>([{ subject: '', previewText: '' }]);
   const [body, setBody] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -287,7 +289,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           subject: variations[0].subject,
-          preview: variations[0].previewText,
+          preview: variations[0].previewText || '',
           body
         })
       });
@@ -295,9 +297,21 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setSubjectVariations(data);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.error || "Failed to generate subject variations",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error generating variations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate subject variations. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsGeneratingVariations(false);
     }
@@ -312,7 +326,7 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          gradingResult: result,
+          analysisResult: result,
           subject: variations[0]?.subject || '',
           body
         })
@@ -321,9 +335,21 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setOptimizationRoadmap(data);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.error || "Failed to generate optimization roadmap",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error generating roadmap:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate optimization roadmap. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsGeneratingRoadmap(false);
     }
@@ -348,9 +374,21 @@ function App() {
       if (response.ok) {
         const data = await response.json();
         setToneRewrite(data);
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.error || "Failed to generate tone rewrite",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error generating tone rewrite:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate tone rewrite. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsGeneratingTone(false);
     }
