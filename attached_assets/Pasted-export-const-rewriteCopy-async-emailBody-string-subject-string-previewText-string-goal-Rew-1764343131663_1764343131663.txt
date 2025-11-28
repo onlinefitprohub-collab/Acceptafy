@@ -1,0 +1,47 @@
+export const rewriteCopy = async (emailBody: string, subject: string, previewText: string, goal: RewriteGoal): Promise<RewrittenEmail> => {
+  try {
+    const content = `---Original Email---\nSubject: ${subject}\nPreview: ${previewText}\n\n---Body---\n${emailBody}`;
+    
+    let systemInstruction: string;
+    const baseInstruction = `You are an expert email copywriter specializing in high-conversion, high-deliverability emails. Rewrite the provided email content (subject, preview text, and body). Preserve the core message and intent of the original email. Return the result as a single JSON object.`;
+
+    switch (goal) {
+        case 'urgency':
+            systemInstruction = `${baseInstruction} Your primary goal is to increase the sense of urgency. Focus on using time-sensitive language, scarcity principles, and compelling calls-to-action that encourage immediate response, while still eliminating spam triggers.`;
+            break;
+        case 'clarity':
+            systemInstruction = `${baseInstruction} Your primary goal is to maximize clarity and readability. Focus on simplifying complex sentences, using direct and unambiguous language, and ensuring the main message is immediately understandable.`;
+            break;
+        case 'concise':
+            systemInstruction = `${baseInstruction} Your primary goal is to make the copy more concise. Focus on eliminating filler words, tightening sentences, and conveying the message in as few words as possible without losing impact.`;
+            break;
+        case 'general':
+        default:
+            systemInstruction = `You are an expert email copywriter specializing in high-conversion, high-deliverability emails. Rewrite the provided email content (subject, preview text, and body). Your goals are:
+1.  Maximize clarity and impact.
+2.  Eliminate spam trigger words and phrases.
+3.  Improve sentence structure and readability.
+4.  Strengthen the call to action.
+5.  Preserve the core message and intent of the original email.
+Return the result as a single JSON object.`;
+            break;
+    }
+    
+    const result = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: `Please rewrite the following email. The main goal of the rewrite is: ${goal}.\n\n${content}`,
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: rewriteSchema,
+      }
+    });
+
+    const jsonString = result.text.trim();
+    return JSON.parse(jsonString) as RewrittenEmail;
+
+  } catch (error) {
+    console.error("Error calling AI rewrite service:", error);
+    throw new Error("Failed to get rewritten copy from the AI service.");
+  }
+};
