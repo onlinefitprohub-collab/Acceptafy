@@ -1,0 +1,77 @@
+export const gradeCopy = async (emailBody: string, variations: { subject: string; previewText: string }[]): Promise<GradingResult> => {
+    try {
+        const fullEmailCopy = variations.map((v, i) => 
+            `---Variation ${i + 1}---\nSubject: ${v.subject}\nPreview: ${v.previewText}`
+        ).join('\n\n') + `\n\n---Email Body (Common to all variations)---\n${emailBody}`;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-pro',
+            contents: `Please analyze the following email copy and its variations, providing a detailed grade and deliverability analysis.\n\n${fullEmailCopy}`,
+            config: {
+                systemInstruction: `You are an expert email marketing and deliverability analyst. Your task is to perform a comprehensive analysis of the provided email copy. Your response MUST be a single JSON object matching the provided schema.
+
+1.  **Inbox Placement Score:** Based on a holistic review of all the other factors, provide a single predictive 'score' from 0 to 100 representing the probability of this email landing in the recipient's primary inbox, avoiding spam and promotions folders. Provide a brief 'summary' explaining the main reasons for this score.
+2.  **Inbox Placement PREDICTION:** Based on all factors, predict where this email will land for each major provider. For Gmail, choose 'Primary', 'Promotions', or 'Spam'. For Outlook, choose 'Focused', 'Other', or 'Junk'. For Apple Mail, choose 'Inbox' or 'Junk'. Provide a concise 'reason' for each prediction.
+3.  **Standard Grading:** Provide a grade (A+, B, C-, etc.), a one-sentence summary, and actionable feedback for each section: Subject Line, Preview Text (base these on the winning variation), Body Copy, and Call to Action. Also provide an overall grade and summary.
+4.  **Spam Trigger Word Analysis:** Identify words/phrases likely to be flagged by spam filters. For each, provide the 'word', a detailed 'reason', a wide range of safer alternative words ('suggestions'), a single, direct replacement 'suggestion' from that list, a 'severity' score ('High', 'Medium', 'Low'), and an array of 'rephraseExamples' containing 1-2 examples of how to rewrite the surrounding sentence to avoid the trigger. If none are found, return an empty array.
+5.  **Structural Analysis:** Identify non-keyword issues: Excessive Capitalization, Excessive Punctuation, and poor Sentence Structure. For each, provide its type, summary, feedback, suggestion, severity, and the exact 'originalText' from the email that triggered the finding. If none are found, return an empty array.
+6.  **Subject Line Showdown (A/B Test Simulation):** Analyze all provided Subject/Preview text variations. For each variation, provide its text, a 'predictionScore' (0-100) for its likely success, and a 'rationale'. Designate exactly one variation as the winner by setting 'isWinner' to true. The winner should be the one with the highest potential open rate based on clarity, engagement, and low spam risk.
+7.  **Personalization & Authenticity Score:** Analyze the email body. Provide a 'score' (0-100) for how personalized and authentic it feels. Also, provide a 'summary' and a list of actionable 'feedback' points to make it feel more one-to-one and less like a generic blast.
+8.  **Link & Reputation Analysis:** Scan the email body for all hyperlinks. For each link found, analyze it for deliverability red flags. Provide the 'url', the 'anchorText', a 'status' ('Good', 'Warning', 'Bad'), a 'reason' for the status (e.g., "Uses a public URL shortener", "Non-descriptive anchor text"), and a 'suggestion' for improvement. If no links are found, return an empty array.
+9.  **Reply-Ability Analysis:** A reply is a strong positive signal for deliverability. Analyze the email for its likelihood of getting a reply. Provide a 'score' (0-100), a 'summary', and 'feedback' on how to encourage a response (e.g., by asking a question).
+10. **Plain-Text Version Analysis:** A clean plain-text version is crucial for deliverability. Generate a 'plainTextVersion' of the email body, ensuring it's readable and all links are preserved. Provide a 'readabilityScore' (0-100) for this plain-text version and 'feedback' on its quality.
+11. **Accessibility Analysis:** Analyze the email body for common accessibility issues as if it were HTML. Check for missing 'alt' text on implied images, poor color contrast between text and background, non-descriptive link text (like "click here"), and use of non-semantic HTML for layout. Provide a 'type', 'summary', 'suggestion', and 'severity'. If no issues are found, return an empty array.`,
+                responseMimeType: "application/json",
+                responseSchema: responseSchema,
+                thinkingConfig: { thinkingBudget: 8192 },
+            }
+        });
+
+        if (response.promptFeedback?.blockReason === 'SAFETY') {
+            const flaggedCategories = response.promptFeedback.safetyRatings
+                ?.filter(rating => rating.probability !== 'NEGLIGIBLE' && rating.probability !== 'LOW')
+                .map(rating => rating.category.replace('HARM_CATEGORY_', '').replace(/_/g, ' ').toLowerCase());
+
+            if (flaggedCategories && flaggedCategories.length > 0) {
+                const categoriesString = flaggedCategories.join(', ');
+                throw new Error(`Your email copy was blocked for safety reasons related to: ${categoriesString}. Please revise the content to remove sensitive topics.`);
+            } else {
+                throw new Error('Your email copy was blocked for violating safety policies. Please try rephrasing any potentially sensitive topics.');
+            }
+        }
+        
+        if (response.promptFeedback?.blockReason) {
+            throw new Error(`The request was blocked by the API. Reason: ${response.promptFeedback.blockReason}. This can sometimes happen with content that is very long or complex.`);
+        }
+
+        if (!response.candidates || response.candidates.length === 0) {
+            throw new Error("The AI model did not return a response. This often happens if the content is flagged by safety filters that are not explicitly reported. Try simplifying or rephrasing your copy.");
+        }
+
+        const jsonString = response.text.trim();
+        if (!jsonString) {
+            throw new Error("The AI model returned an empty response. Your content might be too ambiguous or complex. Please try modifying your email copy.");
+        }
+        
+        try {
+            const parsedResult = JSON.parse(jsonString);
+            return parsedResult as GradingResult;
+        } catch (jsonError) {
+             throw new Error("The AI model returned a malformed response. This can be caused by very long copy or content that pushes the boundaries of safety policies. Please try simplifying your email.");
+        }
+
+    } catch (error) {
+        console.error("Error calling AI service:", error);
+        if (error instanceof Error) {
+            if (error.message.startsWith('Your email copy was blocked') || 
+                error.message.startsWith('The request was blocked') ||
+                error.message.startsWith('The AI model did not return') ||
+                error.message.startsWith('The AI model returned an empty response') ||
+                error.message.startsWith('The AI model returned a malformed response')) {
+                throw error;
+            }
+             throw new Error(`An unexpected issue occurred with the AI service. This could be a temporary network problem or an issue with the service itself. Please try again shortly. Details: ${error.message}`);
+        }
+        throw new Error("An unknown and unexpected error occurred.");
+    }
+};
