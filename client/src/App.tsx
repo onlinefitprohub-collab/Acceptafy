@@ -498,36 +498,29 @@ function App() {
 
   return (
     <div className="min-h-screen dark-bg">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <header className="flex items-center justify-between mb-8">
+      <header className="py-4 sm:py-6 border-b border-white/10 sticky top-0 bg-gray-900/80 backdrop-blur-lg z-20">
+        <div className="container mx-auto px-4 sm:px-8 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12">
+            <div className="w-10 h-10 sm:w-12 sm:h-12">
               <Logo />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-white">Inbox Authority</h1>
-              <p className="text-sm text-gray-400">AI-Powered Email Optimization</p>
-            </div>
+            <h1 className="text-xl sm:text-3xl font-bold text-white">Inbox Authority</h1>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setActiveView(activeView === 'history' ? 'grader' : 'history')}
-              className={`p-2 rounded-lg transition-colors ${activeView === 'history' ? 'bg-purple-600 text-white' : 'bg-white/10 text-gray-400 hover:text-white'}`}
-              data-testid="button-toggle-history"
-            >
-              <HistoryIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowAcademy(true)}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-white flex items-center gap-2 transition-colors"
-              data-testid="button-open-academy"
-            >
-              <AcademyIcon className="w-5 h-5" />
-              Academy
-            </button>
-          </div>
-        </header>
+          <button
+            onClick={() => setShowAcademy(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            data-testid="button-open-academy"
+          >
+            <AcademyIcon className="w-5 h-5" />
+            <span className="hidden sm:inline">Academy</span>
+          </button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 sm:px-8 py-8">
+        <p className="text-center text-lg text-gray-400 mb-8 max-w-3xl mx-auto">
+          Write emails with authority. Our powerful grader analyzes every aspect of your copy—from spam triggers and formatting to deliverability red flags—giving you the expert insights to land in the primary inbox and convert with confidence.
+        </p>
 
         {activeView === 'history' ? (
           <div className="animate-fade-in">
@@ -1211,7 +1204,11 @@ function App() {
         )}
 
         {showAcademy && <AcademyHub onClose={() => setShowAcademy(false)} />}
-      </div>
+      </main>
+
+      <footer className="text-center py-8 text-gray-500 text-sm border-t border-white/10 mt-8">
+        <p>&copy; {new Date().getFullYear()} Inbox Authority. All rights reserved.</p>
+      </footer>
     </div>
   );
 }
