@@ -1,23 +1,106 @@
+import { useMemo, useRef, useEffect } from 'react';
 import type { SpamTrigger } from '../types';
 
 interface HighlightedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  spamTriggers: SpamTrigger[];
+    spamTriggers: SpamTrigger[];
 }
 
-export const HighlightedInput: React.FC<HighlightedInputProps> = ({ 
-  value, 
-  spamTriggers, 
-  className, 
-  ...props 
+const getSeverityHighlightClass = (severity: 'High' | 'Medium' | 'Low'): string => {
+    switch (severity) {
+        case 'High': return 'bg-red-500/40';
+        case 'Medium': return 'bg-yellow-500/40';
+        case 'Low': return 'bg-blue-500/40';
+        default: return '';
+    }
+};
+
+const escapeRegExp = (string: string) => {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const escapeHtml = (unsafe: string) => 
+    unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+
+export const HighlightedInput: React.FC<HighlightedInputProps> = ({
+    value,
+    spamTriggers,
+    className,
+    ...props
 }) => {
-  return (
-    <input 
-      value={value} 
-      className={`${className || ''} outline-none transition-all`} 
-      data-testid="input-email-field"
-      {...props} 
-    />
-  );
+    const backdropRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const highlightedHtml = useMemo(() => {
+        const textValue = String(value || '');
+        if (!spamTriggers || spamTriggers.length === 0 || !textValue) {
+            return escapeHtml(textValue);
+        }
+
+        const triggerMap = new Map<string, SpamTrigger>();
+        spamTriggers.forEach(trigger => {
+            triggerMap.set(trigger.word.toLowerCase(), trigger);
+        });
+
+        const wordsToMatch = spamTriggers.map(t => escapeRegExp(t.word));
+        if (wordsToMatch.length === 0) return escapeHtml(textValue);
+        
+        const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
+        
+        const parts: string[] = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(textValue)) !== null) {
+            if (match.index > lastIndex) {
+                parts.push(escapeHtml(textValue.substring(lastIndex, match.index)));
+            }
+            const matchedWord = match[0];
+            const trigger = triggerMap.get(matchedWord.toLowerCase());
+            const highlightClass = trigger ? getSeverityHighlightClass(trigger.severity) : '';
+            parts.push(`<span class="rounded ${highlightClass}">${escapeHtml(matchedWord)}</span>`);
+            lastIndex = regex.lastIndex;
+        }
+
+        if (lastIndex < textValue.length) {
+            parts.push(escapeHtml(textValue.substring(lastIndex)));
+        }
+        
+        return parts.join('');
+    }, [value, spamTriggers]);
+
+    const handleScroll = () => {
+        if (backdropRef.current && inputRef.current) {
+            backdropRef.current.scrollLeft = inputRef.current.scrollLeft;
+        }
+    };
+    
+    useEffect(() => {
+        handleScroll();
+    }, [value]);
+
+    const sharedClasses = `${className} whitespace-nowrap overflow-hidden`;
+
+    return (
+        <div className="relative">
+            <div
+                ref={backdropRef}
+                aria-hidden="true"
+                className={`${sharedClasses} pointer-events-none absolute top-0 left-0 text-transparent select-none`}
+                dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+            />
+            <input
+                ref={inputRef}
+                value={value}
+                onScroll={handleScroll}
+                className={`${sharedClasses} bg-transparent caret-white relative z-10 block`}
+                data-testid="input-highlighted"
+                {...props}
+            />
+        </div>
+    );
 };
