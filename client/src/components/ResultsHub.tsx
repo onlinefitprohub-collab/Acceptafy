@@ -1,103 +1,128 @@
-import { GmailIcon, OutlookIcon, AppleMailIcon } from './icons/CategoryIcons';
-import type { GradingResult } from '../types';
+import { useState, useEffect } from 'react';
 
 interface ResultsHubProps {
-  scoreData: { score: number; summary: string };
-  gradeData: { grade: string; summary: string };
-  inboxPrediction?: GradingResult['inboxPlacementPrediction'];
+  scoreData: {
+    score: number;
+    summary: string;
+  };
+  gradeData: {
+    grade: string;
+    summary: string;
+  };
+  isComparison?: boolean;
 }
 
-const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-green-400';
-  if (score >= 60) return 'text-yellow-400';
-  return 'text-red-400';
+const getScoreVisualStyle = (score: number): { stroke: string; text: string; glow: string } => {
+  if (score >= 80) {
+    return { 
+      stroke: 'stroke-green-400', 
+      text: 'text-green-300', 
+      glow: 'bg-glow-green' 
+    };
+  }
+  if (score >= 50) {
+    return { 
+      stroke: 'stroke-yellow-400', 
+      text: 'text-yellow-300', 
+      glow: 'bg-glow-yellow' 
+    };
+  }
+  return { 
+    stroke: 'stroke-red-400', 
+    text: 'text-red-300', 
+    glow: 'bg-glow-red' 
+  };
 };
 
-const getGlowClass = (score: number) => {
-  if (score >= 80) return 'bg-glow-green';
-  if (score >= 60) return 'bg-glow-yellow';
-  return 'bg-glow-red';
+const getGamifiedGradeTitle = (grade: string): string => {
+    grade = grade.toUpperCase();
+    if (grade.startsWith('A+')) return "Inbox Legend";
+    if (grade.startsWith('A')) return "Deliverability Master";
+    if (grade.startsWith('B')) return "Solid Performer";
+    if (grade.startsWith('C')) return "Needs Some Polish";
+    if (grade.startsWith('D') || grade.startsWith('F')) return "Spam Folder Risk";
+    return "Overall Content Grade";
 };
 
-const getGradeColor = (grade: string) => {
-  if (grade.startsWith('A')) return 'text-green-400';
-  if (grade.startsWith('B')) return 'text-yellow-400';
-  if (grade.startsWith('C')) return 'text-orange-400';
-  return 'text-red-400';
+const useCountUp = (end: number, duration: number = 1000) => {
+    const [count, setCount] = useState(0);
+    
+    useEffect(() => {
+        let start = 0;
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const now = Date.now();
+            const progress = Math.min((now - startTime) / duration, 1);
+            const current = Math.floor(start + (end - start) * progress);
+            setCount(current);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        requestAnimationFrame(animate);
+
+    }, [end, duration]);
+    
+    return count;
 };
 
-const getPlacementColor = (placement: string) => {
-  const good = ['Primary', 'Focused', 'Inbox'];
-  const bad = ['Spam', 'Junk'];
-  if (good.includes(placement)) return 'text-green-400';
-  if (bad.includes(placement)) return 'text-red-400';
-  return 'text-yellow-400';
-};
+export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, isComparison = false }) => {
+  const { stroke, text, glow } = getScoreVisualStyle(scoreData.score);
+  const animatedScore = useCountUp(scoreData.score);
+  const isExcellentScore = scoreData.score >= 90;
+  const gradeTitle = getGamifiedGradeTitle(gradeData.grade);
 
-export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, inboxPrediction }) => {
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference - (animatedScore / 100) * circumference;
+
   return (
-    <div className="bg-white/5 p-6 rounded-2xl border border-white/10 animate-scale-in">
-      <div className="flex flex-col lg:flex-row gap-8 items-center justify-center">
-        <div className={`text-center p-6 rounded-xl ${getGlowClass(scoreData.score)}`}>
-          <div className={`text-6xl font-bold ${getScoreColor(scoreData.score)}`} data-testid="text-inbox-score">
-            {scoreData.score}
+    <div className={`bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 text-center transition-shadow duration-500 ${glow} ${isExcellentScore && !isComparison ? 'aurora-background shimmer-effect' : ''} animate-fade-in`} data-testid="results-hub">
+      <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
+        {/* Score Circle */}
+        <div className="flex-shrink-0">
+          <div className="relative w-32 h-32 sm:w-40 sm:h-40">
+            <svg className="w-full h-full" viewBox="0 0 120 120">
+              <circle
+                className="stroke-current text-gray-900/50"
+                strokeWidth="10"
+                fill="transparent"
+                r="54"
+                cx="60"
+                cy="60"
+              />
+              <circle
+                className={`transition-all duration-500 ease-out ${stroke}`}
+                strokeWidth="10"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                fill="transparent"
+                r="54"
+                cx="60"
+                cy="60"
+                transform="rotate(-90 60 60)"
+              />
+            </svg>
+            <div className={`absolute inset-0 flex flex-col items-center justify-center ${text}`}>
+                <span className="text-4xl sm:text-5xl font-bold tracking-tighter" data-testid="text-inbox-score">{animatedScore}<span className="text-2xl sm:text-3xl">%</span></span>
+            </div>
           </div>
-          <div className="text-gray-400 text-sm mt-1">Inbox Placement Score</div>
+          <h2 className="text-base sm:text-xl font-bold mt-2 text-white">Inbox Authority Score</h2>
+        </div>
+        
+        {/* Summary Text */}
+        <div className="text-center md:text-left max-w-md">
+            <p className="text-lg text-gray-300 italic" data-testid="text-score-summary">"{scoreData.summary}"</p>
+            <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="text-gray-400"><span className="font-semibold text-gray-200">{gradeTitle}:</span> <span className={`font-bold text-xl ${text}`} data-testid="text-overall-grade">{gradeData.grade}</span></p>
+                <p className="text-gray-400 mt-1 italic text-sm" data-testid="text-grade-summary">"{gradeData.summary}"</p>
+            </div>
         </div>
 
-        <div className="text-center p-6">
-          <div className={`text-6xl font-bold ${getGradeColor(gradeData.grade)}`} data-testid="text-overall-grade">
-            {gradeData.grade}
-          </div>
-          <div className="text-gray-400 text-sm mt-1">Overall Grade</div>
-        </div>
-
-        <div className="text-gray-300 italic max-w-md text-center lg:text-left">
-          <p data-testid="text-grade-summary">{gradeData.summary}</p>
-        </div>
       </div>
-
-      {inboxPrediction && inboxPrediction.gmail && inboxPrediction.outlook && inboxPrediction.appleMail && (
-        <div className="mt-8 pt-6 border-t border-white/10">
-          <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider mb-4 text-center">
-            Inbox Placement Prediction
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <GmailIcon className="w-5 h-5 text-red-400" />
-                <span className="font-semibold text-white">Gmail</span>
-              </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.gmail.placement || 'Unknown')}`}>
-                {inboxPrediction.gmail.placement || 'Unknown'}
-              </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.gmail.reason || 'Analysis pending'}</p>
-            </div>
-
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <OutlookIcon className="w-5 h-5 text-blue-400" />
-                <span className="font-semibold text-white">Outlook</span>
-              </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.outlook.placement || 'Unknown')}`}>
-                {inboxPrediction.outlook.placement || 'Unknown'}
-              </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.outlook.reason || 'Analysis pending'}</p>
-            </div>
-
-            <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <AppleMailIcon className="w-5 h-5 text-gray-400" />
-                <span className="font-semibold text-white">Apple Mail</span>
-              </div>
-              <div className={`text-xl font-bold ${getPlacementColor(inboxPrediction.appleMail.placement || 'Unknown')}`}>
-                {inboxPrediction.appleMail.placement || 'Unknown'}
-              </div>
-              <p className="text-xs text-gray-400 mt-1">{inboxPrediction.appleMail.reason || 'Analysis pending'}</p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
