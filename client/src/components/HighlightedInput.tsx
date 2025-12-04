@@ -1,11 +1,9 @@
 import type { SpamTrigger } from '../types';
 
-interface HighlightedInputProps {
+interface HighlightedInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   spamTriggers: SpamTrigger[];
-  className?: string;
-  placeholder?: string;
 }
 
 export const HighlightedInput: React.FC<HighlightedInputProps> = ({ 
@@ -17,7 +15,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
   return (
     <input 
       value={value} 
-      className={`${className} input-glow-focus input-inset-shadow outline-none transition-all`} 
+      className={`${className || ''} outline-none transition-all`} 
       data-testid="input-email-field"
       {...props} 
     />
