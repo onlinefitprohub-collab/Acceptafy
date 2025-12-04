@@ -1,121 +1,105 @@
 import { useState } from 'react';
-import { BimiIcon, CopyIcon, CheckIcon, InfoIcon } from './icons/CategoryIcons';
+import { generateBimiRecord } from '../services/geminiService';
 import type { BimiRecord } from '../types';
+import { BimiIcon, InfoIcon, CopyIcon, CheckIcon } from './icons/CategoryIcons';
+
+const useCopyToClipboard = (): [boolean, (text: string) => void] => {
+    const [isCopied, setIsCopied] = useState(false);
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        });
+    };
+    return [isCopied, copy];
+};
 
 export const BimiGenerator: React.FC = () => {
     const [domain, setDomain] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<BimiRecord | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [copiedRecord, setCopiedRecord] = useState(false);
+    const [result, setResult] = useState<BimiRecord | null>(null);
+    const [isCopied, copy] = useCopyToClipboard();
 
-    const generateBimi = async () => {
+    const handleGenerate = async () => {
         if (!domain.trim()) return;
-        
         setIsLoading(true);
         setError(null);
-        
+        setResult(null);
         try {
-            const response = await fetch('/api/bimi/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domain: domain.trim() })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                setResult(data);
-            } else {
-                setError('Failed to generate BIMI record. Please try again.');
-            }
+            const record = await generateBimiRecord(domain.trim());
+            setResult(record);
         } catch (err) {
-            setError('Network error. Please check your connection.');
+            setError('An error occurred while generating the BIMI record.');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const copyToClipboard = async (text: string) => {
-        await navigator.clipboard.writeText(text);
-        setCopiedRecord(true);
-        setTimeout(() => setCopiedRecord(false), 2000);
-    };
-
     return (
-        <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+        <div className="p-4 bg-white/5 rounded-lg border border-white/10" data-testid="bimi-generator">
             <div className="flex items-center gap-3 mb-4">
-                <BimiIcon className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-bold text-white">BIMI Record Generator</h3>
+                <span className="text-purple-400"><BimiIcon /></span>
+                <h4 className="text-lg font-semibold text-white">BIMI Record Generator</h4>
             </div>
-            
-            <div className="p-3 bg-purple-900/30 border border-purple-500/50 rounded-lg mb-4 flex items-start gap-2">
-                <InfoIcon className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-purple-200">
-                    BIMI (Brand Indicators for Message Identification) displays your brand logo next to emails in supported inboxes, increasing trust and recognition.
-                </p>
-            </div>
+            <p className="text-sm text-gray-400 mb-4">
+                BIMI is an advanced standard that allows your logo to appear next to your email in the inbox, acting as a powerful visual trust signal.
+            </p>
 
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
                     type="text"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    placeholder="Enter your domain"
-                    className="flex-1 bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 input-glow-focus outline-none"
+                    placeholder="Enter your domain (e.g., yourcompany.com)"
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    disabled={isLoading}
                     data-testid="input-bimi-domain"
                 />
                 <button
-                    onClick={generateBimi}
-                    disabled={isLoading || !domain.trim()}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-colors"
+                    onClick={handleGenerate}
+                    disabled={!domain.trim() || isLoading}
+                    className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
                     data-testid="button-generate-bimi"
                 >
-                    {isLoading ? 'Generating...' : 'Generate'}
+                    {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                    Generate BIMI Info
                 </button>
             </div>
 
-            {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 text-sm mb-4">
-                    {error}
-                </div>
-            )}
+            {error && <p className="text-red-400 text-sm mt-2" data-testid="text-bimi-error">{error}</p>}
 
             {result && (
-                <div className="animate-fade-in space-y-4">
-                    <div className="bg-gray-900/50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-yellow-400 mb-2">Prerequisites</h4>
-                        <p className="text-sm text-gray-300">{result.dmarcPrerequisite}</p>
+                <div className="mt-4 pt-4 border-t border-white/10 space-y-4 animate-fade-in" data-testid="bimi-result">
+                    <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/50 text-yellow-200">
+                        <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <h5 className="font-bold">Prerequisite: DMARC Enforcement</h5>
+                            <p className="text-xs">{result.dmarcPrerequisite}</p>
+                        </div>
                     </div>
-
-                    <div className="bg-gray-900/50 p-4 rounded-lg">
-                        <h4 className="font-semibold text-purple-300 mb-2">Logo Requirements</h4>
-                        <p className="text-sm text-gray-300">{result.logoRequirements}</p>
+                     <div className="flex items-start gap-3 p-3 rounded-md bg-sky-500/10 border border-sky-500/50 text-sky-200">
+                        <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                         <div>
+                            <h5 className="font-bold">Logo Requirement</h5>
+                            <p className="text-xs">{result.logoRequirements}</p>
+                        </div>
                     </div>
-
-                    <div className="bg-gray-900/50 p-4 rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-green-400">Your BIMI Record</h4>
-                            <button
-                                onClick={() => copyToClipboard(result.bimiRecord)}
-                                className="p-1.5 hover:bg-white/10 rounded transition-colors flex items-center gap-1"
+                    <div>
+                        <h5 className="text-sm font-semibold text-gray-300">Generated TXT Record for `default._bimi.{domain}`</h5>
+                        <div className="flex items-center gap-2 mt-1">
+                            <pre className="flex-1 p-2 bg-gray-900/50 rounded text-xs text-gray-400 overflow-x-auto">
+                                <code>{result.bimiRecord}</code>
+                            </pre>
+                            <button 
+                                onClick={() => copy(result.bimiRecord)}
+                                className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${isCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                data-testid="button-copy-bimi"
                             >
-                                {copiedRecord ? (
-                                    <>
-                                        <CheckIcon className="w-4 h-4 text-green-400" />
-                                        <span className="text-xs text-green-400">Copied!</span>
-                                    </>
-                                ) : (
-                                    <CopyIcon className="w-4 h-4 text-gray-400" />
-                                )}
+                                {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                                <span>{isCopied ? 'Copied' : 'Copy'}</span>
                             </button>
                         </div>
-                        <code className="text-sm text-gray-300 break-all block bg-black/30 p-2 rounded">
-                            {result.bimiRecord}
-                        </code>
-                    </div>
-
-                    <div className="text-xs text-gray-500">
-                        Add this TXT record to your domain's DNS settings at: default._bimi.{domain}
                     </div>
                 </div>
             )}
