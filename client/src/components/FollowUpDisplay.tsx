@@ -1,63 +1,87 @@
+import { useState } from 'react';
 import type { FollowUpEmail } from '../types';
+import { CopyIcon, CheckIcon, UploadCloudIcon } from './icons/CategoryIcons';
 
 interface FollowUpDisplayProps {
   followUp: FollowUpEmail;
-  onLoad: () => void;
-  onDismiss: () => void;
+  onLoad: (followUp: FollowUpEmail) => void;
+  onDiscard: () => void;
 }
 
-export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLoad, onDismiss }) => {
-  return (
-    <div className="bg-purple-500/10 p-6 rounded-xl border border-purple-500/30">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-purple-300 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M3 10l6.75 4.5M21 10l-6.75 4.5m0 0l-1.14.76a2 2 0 01-2.22 0l-1.14-.76" />
-          </svg>
-          Generated Follow-Up
-        </h3>
-        <button
-          onClick={onDismiss}
-          className="text-gray-400 hover:text-white transition-colors"
-          data-testid="button-dismiss-followup"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
+const useCopyToClipboard = (): [boolean, (text: string) => void] => {
+    const [isCopied, setIsCopied] = useState(false);
 
-      <div className="space-y-4">
-        <div>
-          <div className="text-xs text-purple-400 uppercase tracking-wider mb-1">Subject Line</div>
-          <div className="text-white font-medium">{followUp.subject}</div>
-        </div>
-        <div>
-          <div className="text-xs text-purple-400 uppercase tracking-wider mb-1">Email Body</div>
-          <div className="text-gray-300 whitespace-pre-wrap text-sm bg-white/5 p-4 rounded-lg max-h-64 overflow-y-auto">
-            {followUp.body}
-          </div>
-        </div>
-      </div>
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setIsCopied(true);
+            setTimeout(() => {
+                setIsCopied(false);
+            }, 2000);
+        });
+    };
 
-      <div className="flex gap-3 mt-4">
-        <button
-          onClick={onLoad}
-          className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors"
-          data-testid="button-load-followup"
-        >
-          Load into Editor
-        </button>
-        <button
-          onClick={() => navigator.clipboard.writeText(`Subject: ${followUp.subject}\n\n${followUp.body}`)}
-          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-gray-300 rounded-lg transition-colors"
-          data-testid="button-copy-followup"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
+    return [isCopied, copy];
+};
+
+export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLoad, onDiscard }) => {
+    const [isSubjectCopied, copySubject] = useCopyToClipboard();
+    const [isBodyCopied, copyBody] = useCopyToClipboard();
+
+    return (
+        <div className="my-8 p-4 sm:p-6 bg-indigo-900/30 rounded-xl border border-indigo-500/50 animate-fade-in shadow-lg" data-testid="followup-display">
+            <h3 className="text-xl font-bold text-indigo-300 mb-4">Generated Follow-up</h3>
+            
+            <div className="space-y-4">
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-300">Subject</label>
+                        <button 
+                            onClick={() => copySubject(followUp.subject)}
+                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isSubjectCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                            data-testid="button-copy-subject"
+                        >
+                            {isSubjectCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                            <span>{isSubjectCopied ? 'Copied' : 'Copy'}</span>
+                        </button>
+                    </div>
+                    <p className="p-3 bg-gray-900/50 rounded-lg text-gray-200 border border-white/10">{followUp.subject}</p>
+                </div>
+
+                <div>
+                    <div className="flex justify-between items-center mb-1">
+                        <label className="block text-sm font-medium text-gray-300">Body</label>
+                         <button 
+                            onClick={() => copyBody(followUp.body)}
+                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isBodyCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                            data-testid="button-copy-body"
+                        >
+                            {isBodyCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                            <span>{isBodyCopied ? 'Copied' : 'Copy'}</span>
+                        </button>
+                    </div>
+                    <div className="p-3 h-48 overflow-y-auto bg-gray-900/50 rounded-lg text-gray-300 border border-white/10 whitespace-pre-wrap font-sans text-sm">
+                        {followUp.body}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6 pt-4 border-t border-indigo-500/30">
+                <button
+                    onClick={onDiscard}
+                    className="px-5 py-2 text-sm font-semibold bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    data-testid="button-discard-followup"
+                >
+                    Discard
+                </button>
+                <button
+                    onClick={() => onLoad(followUp)}
+                    className="flex items-center justify-center gap-2 px-5 py-2 text-sm font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-[0_0_10px_rgba(129,140,248,0.4)]"
+                    data-testid="button-load-followup"
+                >
+                    <UploadCloudIcon className="w-5 h-5" />
+                    <span>Load into Editor</span>
+                </button>
+            </div>
+        </div>
+    );
 };
