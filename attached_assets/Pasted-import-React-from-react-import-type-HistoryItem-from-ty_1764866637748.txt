@@ -1,0 +1,75 @@
+import React from 'react';
+import type { HistoryItem } from '../types';
+
+interface ScoreHistoryChartProps {
+  history: HistoryItem[];
+}
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
+};
+
+export const ScoreHistoryChart: React.FC<ScoreHistoryChartProps> = ({ history }) => {
+    if (history.length < 2) {
+        return (
+            <div className="h-48 flex items-center justify-center bg-gray-900/50 rounded-lg text-center text-gray-400 p-4">
+                <p>Analyze more emails to see your score history and track your improvements over time.</p>
+            </div>
+        );
+    }
+
+    // Use the last 10 items, and reverse so oldest is first
+    const data = history.slice(0, 10).reverse();
+    const width = 500;
+    const height = 180;
+    const padding = 30;
+
+    const points = data.map((item, index) => {
+        const x = padding + (index * (width - padding * 2)) / (data.length - 1);
+        const y = height - padding - (item.result.inboxPlacementScore.score * (height - padding * 2)) / 100;
+        return { x, y, score: item.result.inboxPlacementScore.score, date: item.date };
+    });
+
+    const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + `${p.x} ${p.y}`).join(' ');
+
+    return (
+        <div className="bg-gray-900/50 rounded-lg p-4">
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
+                {/* Y-axis lines and labels */}
+                {[0, 25, 50, 75, 100].map(val => {
+                    const y = height - padding - (val * (height - padding * 2)) / 100;
+                    return (
+                        <g key={val}>
+                            <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="rgba(255,255,255,0.1)" />
+                            <text x={padding - 8} y={y + 4} fill="rgb(156, 163, 175)" fontSize="10" textAnchor="end">{val}</text>
+                        </g>
+                    );
+                })}
+                
+                {/* X-axis labels */}
+                {points.map((p, i) => (
+                    <text key={i} x={p.x} y={height - padding + 15} fill="rgb(156, 163, 175)" fontSize="10" textAnchor="middle">
+                        {formatDate(p.date)}
+                    </text>
+                ))}
+
+                {/* Gradient for line */}
+                <defs>
+                    <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#a855f7" />
+                        <stop offset="100%" stopColor="#6366f1" />
+                    </linearGradient>
+                </defs>
+                
+                {/* Data line */}
+                <path d={pathD} fill="none" stroke="url(#lineGradient)" strokeWidth="2" />
+                
+                {/* Data points */}
+                {points.map((p, i) => (
+                    <circle key={i} cx={p.x} cy={p.y} r="3" fill="#a855f7" stroke="#0f172a" strokeWidth="2" />
+                ))}
+            </svg>
+        </div>
+    );
+};
