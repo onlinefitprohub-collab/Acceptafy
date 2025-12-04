@@ -1,17 +1,56 @@
 import type { InboxPlacementPrediction } from '../types';
-import { GmailIcon, OutlookIcon, AppleMailIcon } from './icons/CategoryIcons';
+import { GmailIcon, OutlookIcon, AppleMailIcon, InboxIcon, TagIcon, SpamIcon } from './icons/CategoryIcons';
 
 interface InboxPlacementSimulatorProps {
   prediction: InboxPlacementPrediction;
 }
 
-const getPlacementColor = (placement: string) => {
-  const good = ['Primary', 'Focused', 'Inbox'];
-  const bad = ['Spam', 'Junk'];
-  if (good.includes(placement)) return 'text-green-400 bg-green-500/10 border-green-500/30';
-  if (bad.includes(placement)) return 'text-red-400 bg-red-500/10 border-red-500/30';
-  return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30';
+const getPlacementIcon = (placement: string) => {
+    placement = placement.toLowerCase();
+    if (placement.includes('primary') || placement.includes('focused') || placement.includes('inbox')) {
+        return <InboxIcon className="w-5 h-5 text-green-400" />;
+    }
+    if (placement.includes('promotions') || placement.includes('other')) {
+        return <TagIcon className="w-5 h-5 text-yellow-400" />;
+    }
+    return <SpamIcon className="w-5 h-5" />;
 };
+
+const ProviderCard: React.FC<{ 
+    providerName: string, 
+    providerIcon: React.ReactNode, 
+    placement: string, 
+    reason: string 
+}> = ({ providerName, providerIcon, placement, reason }) => {
+    
+    const getPlacementStyles = (p: string): { text: string, bg: string, border: string } => {
+        p = p.toLowerCase();
+        if (p.includes('primary') || p.includes('focused') || p.includes('inbox')) {
+            return { text: 'text-green-300', bg: 'bg-green-500/10', border: 'border-green-500/30' };
+        }
+        if (p.includes('promotions') || p.includes('other')) {
+            return { text: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/30' };
+        }
+        return { text: 'text-red-300', bg: 'bg-red-500/10', border: 'border-red-500/30' };
+    };
+    
+    const styles = getPlacementStyles(placement);
+
+    return (
+        <div className={`p-4 rounded-lg border ${styles.border} ${styles.bg}`} data-testid={`provider-card-${providerName.toLowerCase().replace(/\s+/g, '-')}`}>
+            <div className="flex items-center gap-3 mb-3">
+                {providerIcon}
+                <h4 className="text-lg font-bold text-white">{providerName}</h4>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+                {getPlacementIcon(placement)}
+                <span className={`font-bold text-xl ${styles.text}`}>{placement}</span>
+            </div>
+            <p className="text-sm text-gray-400 italic">"{reason}"</p>
+        </div>
+    );
+};
+
 
 export const InboxPlacementSimulator: React.FC<InboxPlacementSimulatorProps> = ({ prediction }) => {
   if (!prediction || !prediction.gmail || !prediction.outlook || !prediction.appleMail) {
@@ -19,41 +58,27 @@ export const InboxPlacementSimulator: React.FC<InboxPlacementSimulatorProps> = (
   }
 
   return (
-    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-        Inbox Placement Prediction
-      </h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className={`p-4 rounded-lg border ${getPlacementColor(prediction.gmail.placement)}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <GmailIcon className="w-6 h-6" />
-            <span className="font-semibold text-white">Gmail</span>
-          </div>
-          <div className="text-2xl font-bold mb-2">{prediction.gmail.placement}</div>
-          <p className="text-sm text-gray-400">{prediction.gmail.reason}</p>
-        </div>
-
-        <div className={`p-4 rounded-lg border ${getPlacementColor(prediction.outlook.placement)}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <OutlookIcon className="w-6 h-6" />
-            <span className="font-semibold text-white">Outlook</span>
-          </div>
-          <div className="text-2xl font-bold mb-2">{prediction.outlook.placement}</div>
-          <p className="text-sm text-gray-400">{prediction.outlook.reason}</p>
-        </div>
-
-        <div className={`p-4 rounded-lg border ${getPlacementColor(prediction.appleMail.placement)}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <AppleMailIcon className="w-6 h-6" />
-            <span className="font-semibold text-white">Apple Mail</span>
-          </div>
-          <div className="text-2xl font-bold mb-2">{prediction.appleMail.placement}</div>
-          <p className="text-sm text-gray-400">{prediction.appleMail.reason}</p>
-        </div>
+    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg animate-fade-in" data-testid="inbox-placement-simulator">
+      <h3 className="text-lg sm:text-xl font-semibold text-white mb-4">Inbox Placement Prediction</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <ProviderCard 
+            providerName="Gmail"
+            providerIcon={<GmailIcon className="w-6 h-6 text-[#db4437]" />}
+            placement={prediction.gmail.placement}
+            reason={prediction.gmail.reason}
+        />
+        <ProviderCard 
+            providerName="Outlook"
+            providerIcon={<OutlookIcon className="w-6 h-6 text-[#0078d4]" />}
+            placement={prediction.outlook.placement}
+            reason={prediction.outlook.reason}
+        />
+        <ProviderCard 
+            providerName="Apple Mail"
+            providerIcon={<AppleMailIcon className="w-6 h-6 text-gray-300" />}
+            placement={prediction.appleMail.placement}
+            reason={prediction.appleMail.reason}
+        />
       </div>
     </div>
   );
