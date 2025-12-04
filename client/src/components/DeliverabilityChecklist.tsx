@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChecklistIcon, CheckIcon, CloseIcon, CopyIcon, DnsIcon } from './icons/CategoryIcons';
+import { CheckIcon, DnsIcon, InfoIcon, CopyIcon } from './icons/CategoryIcons';
 import type { DnsRecords } from '../types';
 
 interface DeliverabilityChecklistProps {
@@ -8,196 +8,113 @@ interface DeliverabilityChecklistProps {
     dnsRecords: DnsRecords | null;
 }
 
-const checklistItems = [
-    {
-        id: 'spf',
-        title: 'SPF Record',
-        description: 'Sender Policy Framework - Lists authorized mail servers',
-        importance: 'Critical'
-    },
-    {
-        id: 'dkim',
-        title: 'DKIM Signing',
-        description: 'DomainKeys Identified Mail - Digital signature verification',
-        importance: 'Critical'
-    },
-    {
-        id: 'dmarc',
-        title: 'DMARC Policy',
-        description: 'Domain-based Message Authentication - Enforcement policy',
-        importance: 'Critical'
-    },
-    {
-        id: 'warmup',
-        title: 'IP/Domain Warmup',
-        description: 'Gradually increase send volume on new infrastructure',
-        importance: 'Important'
-    },
-    {
-        id: 'list-hygiene',
-        title: 'List Hygiene',
-        description: 'Regularly clean bounces and unengaged subscribers',
-        importance: 'Important'
-    },
-    {
-        id: 'double-optin',
-        title: 'Double Opt-in',
-        description: 'Confirm subscriber intent with verification email',
-        importance: 'Recommended'
-    },
-    {
-        id: 'unsubscribe',
-        title: 'Easy Unsubscribe',
-        description: 'One-click unsubscribe in every email',
-        importance: 'Required'
-    },
-    {
-        id: 'physical-address',
-        title: 'Physical Address',
-        description: 'Include your mailing address (CAN-SPAM requirement)',
-        importance: 'Required'
-    }
-];
+const ChecklistItem: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
+    <div className="flex items-start gap-3">
+        <div className="w-5 h-5 mt-1 flex-shrink-0 bg-green-500/20 text-green-300 rounded-full flex items-center justify-center">
+            <CheckIcon className="w-3 h-3" />
+        </div>
+        <div>
+            <h4 className="font-semibold text-gray-200">{title}</h4>
+            <p className="text-sm text-gray-400">{children}</p>
+        </div>
+    </div>
+);
 
-export const DeliverabilityChecklist: React.FC<DeliverabilityChecklistProps> = ({
-    onGenerateDns,
-    isGeneratingDns,
-    dnsRecords
-}) => {
-    const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
-    const [domain, setDomain] = useState('');
-    const [copiedRecord, setCopiedRecord] = useState<string | null>(null);
-
-    const toggleItem = (id: string) => {
-        const newChecked = new Set(checkedItems);
-        if (newChecked.has(id)) {
-            newChecked.delete(id);
-        } else {
-            newChecked.add(id);
-        }
-        setCheckedItems(newChecked);
+const useCopyToClipboard = (): [boolean, (text: string) => void] => {
+    const [isCopied, setIsCopied] = useState(false);
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        });
     };
+    return [isCopied, copy];
+};
 
-    const copyToClipboard = async (text: string, recordType: string) => {
-        await navigator.clipboard.writeText(text);
-        setCopiedRecord(recordType);
-        setTimeout(() => setCopiedRecord(null), 2000);
-    };
-
-    const getImportanceColor = (importance: string) => {
-        switch (importance) {
-            case 'Critical': return 'text-red-400';
-            case 'Required': return 'text-orange-400';
-            case 'Important': return 'text-yellow-400';
-            default: return 'text-gray-400';
-        }
-    };
-
-    const completionPercentage = Math.round((checkedItems.size / checklistItems.length) * 100);
-
+const RecordDisplay: React.FC<{ label: string, value: string }> = ({ label, value }) => {
+    const [isCopied, copy] = useCopyToClipboard();
     return (
-        <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <ChecklistIcon className="w-6 h-6 text-purple-400" />
-                    <h3 className="text-lg font-bold text-white">Deliverability Checklist</h3>
-                </div>
-                <div className="text-sm">
-                    <span className="text-purple-400 font-bold">{completionPercentage}%</span>
-                    <span className="text-gray-400"> complete</span>
-                </div>
+        <div>
+            <h5 className="text-sm font-semibold text-gray-300">{label} Record</h5>
+            <div className="flex items-center gap-2 mt-1">
+                <pre className="flex-1 p-2 bg-gray-900/50 rounded text-xs text-gray-400 overflow-x-auto">
+                    <code>{value}</code>
+                </pre>
+                <button 
+                    onClick={() => copy(value)}
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${isCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                    data-testid={`button-copy-${label.toLowerCase()}`}
+                >
+                    {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                </button>
             </div>
+        </div>
+    );
+};
 
-            <div className="w-full bg-gray-700 rounded-full h-2 mb-6">
-                <div 
-                    className="bg-purple-600 h-2 rounded-full transition-all duration-500"
-                    style={{ width: `${completionPercentage}%` }}
-                />
+export const DeliverabilityChecklist: React.FC<DeliverabilityChecklistProps> = ({ onGenerateDns, isGeneratingDns, dnsRecords }) => {
+    const [domain, setDomain] = useState('');
+
+    const handleGenerateClick = () => {
+        if (domain.trim()) {
+            onGenerateDns(domain.trim());
+        }
+    };
+    
+    return (
+        <div className="space-y-6" data-testid="deliverability-checklist">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ChecklistItem title="Use a Custom Domain">
+                    Sending from a professional email address (e.g., `you@yourdomain.com`) drastically improves trust and deliverability over free providers like Gmail or Yahoo.
+                </ChecklistItem>
+                <ChecklistItem title="Warm Up Your Domain">
+                    If your domain is new, start by sending emails to a small, engaged group. Gradually increase volume to build a positive sender reputation with inbox providers.
+                </ChecklistItem>
+                <ChecklistItem title="Maintain List Health">
+                    Never use purchased lists. Regularly clean your subscriber list by removing users who haven't engaged with your emails in the last 90-120 days.
+                </ChecklistItem>
             </div>
-
-            <div className="space-y-3 mb-6">
-                {checklistItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => toggleItem(item.id)}
-                        className={`w-full text-left p-3 rounded-lg border transition-all ${
-                            checkedItems.has(item.id)
-                                ? 'bg-green-500/20 border-green-500/50'
-                                : 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/50'
-                        }`}
-                        data-testid={`checkbox-${item.id}`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                checkedItems.has(item.id)
-                                    ? 'bg-green-500 border-green-500'
-                                    : 'border-gray-500'
-                            }`}>
-                                {checkedItems.has(item.id) && <CheckIcon className="w-3 h-3 text-white" />}
-                            </div>
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <span className={`font-semibold ${checkedItems.has(item.id) ? 'text-green-300' : 'text-white'}`}>
-                                        {item.title}
-                                    </span>
-                                    <span className={`text-xs ${getImportanceColor(item.importance)}`}>
-                                        {item.importance}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-0.5">{item.description}</p>
-                            </div>
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            <div className="border-t border-white/10 pt-6">
+            
+            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
                 <div className="flex items-center gap-3 mb-4">
-                    <DnsIcon className="w-5 h-5 text-purple-400" />
-                    <h4 className="font-semibold text-white">DNS Record Generator</h4>
+                    <span className="text-purple-400"><DnsIcon /></span>
+                    <h4 className="text-lg font-semibold text-white">Authentication (SPF, DKIM, DMARC)</h4>
                 </div>
-                
-                <div className="flex gap-2 mb-4">
+                <p className="text-sm text-gray-400 mb-4">
+                    These DNS records are like a digital passport for your emails, proving to inbox providers that you are a legitimate sender. This is the single most important technical step for deliverability.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
                     <input
                         type="text"
                         value={domain}
                         onChange={(e) => setDomain(e.target.value)}
-                        placeholder="Enter your domain"
-                        className="flex-1 bg-gray-900/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-500 input-glow-focus outline-none"
+                        placeholder="Enter your domain (e.g., yourcompany.com)"
+                        className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                        disabled={isGeneratingDns}
                         data-testid="input-dns-domain"
                     />
                     <button
-                        onClick={() => onGenerateDns(domain)}
-                        disabled={isGeneratingDns || !domain.trim()}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-colors"
+                        onClick={handleGenerateClick}
+                        disabled={!domain.trim() || isGeneratingDns}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
                         data-testid="button-generate-dns"
                     >
-                        {isGeneratingDns ? 'Generating...' : 'Generate'}
+                        {isGeneratingDns && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        Generate Records
                     </button>
                 </div>
-
+                
                 {dnsRecords && (
-                    <div className="space-y-3 animate-fade-in">
-                        {['spf', 'dkim', 'dmarc'].map((recordType) => (
-                            <div key={recordType} className="bg-gray-900/50 p-3 rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-semibold text-purple-300 uppercase">{recordType}</span>
-                                    <button
-                                        onClick={() => copyToClipboard(dnsRecords[recordType as keyof DnsRecords], recordType)}
-                                        className="p-1.5 hover:bg-white/10 rounded transition-colors"
-                                    >
-                                        {copiedRecord === recordType ? (
-                                            <CheckIcon className="w-4 h-4 text-green-400" />
-                                        ) : (
-                                            <CopyIcon className="w-4 h-4 text-gray-400" />
-                                        )}
-                                    </button>
-                                </div>
-                                <code className="text-xs text-gray-300 break-all">
-                                    {dnsRecords[recordType as keyof DnsRecords]}
-                                </code>
-                            </div>
-                        ))}
+                    <div className="mt-4 pt-4 border-t border-white/10 space-y-3 animate-fade-in" data-testid="dns-records-display">
+                        <div className="flex items-start gap-2 p-3 rounded-md bg-purple-900/30 border border-purple-500/50 text-purple-200 text-xs">
+                            <InfoIcon className="w-4 h-4 flex-shrink-0 mt-px" />
+                            <span>Copy these values and add them as TXT records in your domain provider's (e.g., GoDaddy, Namecheap) DNS settings.</span>
+                        </div>
+                        <RecordDisplay label="SPF" value={dnsRecords.spf} />
+                        <RecordDisplay label="DKIM" value={dnsRecords.dkim} />
+                        <RecordDisplay label="DMARC" value={dnsRecords.dmarc} />
                     </div>
                 )}
             </div>
