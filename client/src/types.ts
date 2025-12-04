@@ -181,15 +181,21 @@ export type ToneProfile = 'professional' | 'friendly' | 'urgent' | 'fomo' | 'sto
 
 export interface SubjectVariation {
   subject: string;
+  previewText: string;
+  style: string;
   predictedOpenRate: number;
   rationale: string;
 }
 
 export interface OptimizationItem {
   priority: number;
+  issue: string;
   action: string;
   category: string;
   impact: string;
+  actionType?: 'quickfix' | 'rewrite' | 'manual';
+  targetWord?: string;
+  replacement?: string;
 }
 
 export interface ToneRewrite {
