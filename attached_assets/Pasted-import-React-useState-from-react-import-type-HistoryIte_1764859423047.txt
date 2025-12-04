@@ -1,0 +1,111 @@
+import React, { useState } from 'react';
+import type { HistoryItem } from '../types';
+import { HistoryIcon, ChevronDownIcon, EyeIcon, UploadCloudIcon, TrashIcon } from './icons/CategoryIcons';
+
+interface HistoryPanelProps {
+  history: HistoryItem[];
+  onView: (item: HistoryItem) => void;
+  onLoad: (item: HistoryItem) => void;
+  onDelete: (id: string) => void;
+  onClear: () => void;
+}
+
+const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+    });
+};
+
+export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onView, onLoad, onDelete, onClear }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg mt-8">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-left p-4 sm:p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-2xl"
+        aria-expanded={isExpanded}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-purple-400"><HistoryIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-white">Analysis History</h3>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="text-sm px-2 py-1 bg-gray-900/50 text-gray-400 rounded-md">{history.length} saved</span>
+            <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+
+      <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="pt-4 mt-4 border-t border-white/10">
+              {history.length === 0 ? (
+                <div className="text-center py-8 text-gray-400">
+                  <p>Your graded emails will appear here.</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+                  {history.map((item, index) => {
+                    const winner = item.result.subjectLineAnalysis.find(v => v.isWinner) || item.result.subjectLineAnalysis[0];
+                    const previousItem = history[index + 1];
+                    let scoreDiff: number | null = null;
+                    if (previousItem) {
+                        scoreDiff = item.result.inboxPlacementScore.score - previousItem.result.inboxPlacementScore.score;
+                    }
+
+                    return (
+                      <div key={item.id} className="bg-white/5 p-3 rounded-lg border border-white/10 flex items-center justify-between gap-4 animate-fade-in">
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-300 truncate">{winner?.subject || 'Untitled Analysis'}</p>
+                            <div className="flex items-center gap-3 text-xs text-gray-400 mt-1 flex-wrap">
+                                <span>{formatDate(item.date)}</span>
+                                <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
+                                <span>Score: <b className="text-purple-300">{item.result.inboxPlacementScore.score}</b></span>
+                                
+                                {scoreDiff !== null && scoreDiff !== 0 && (
+                                    <span className={`flex items-center font-bold ${scoreDiff > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {scoreDiff > 0 ? '▲' : '▼'} {Math.abs(scoreDiff)}
+                                    </span>
+                                )}
+
+                                <span className="w-1 h-1 bg-gray-500 rounded-full"></span>
+                                <span>Grade: <b className="text-purple-300">{item.result.overallGrade.grade}</b></span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                           <button onClick={() => onView(item)} title="View Report" className="p-2 text-gray-400 hover:text-purple-400 transition-colors rounded-full hover:bg-white/10">
+                                <EyeIcon className="w-5 h-5" />
+                           </button>
+                           <button onClick={() => onLoad(item)} title="Load into Editor" className="p-2 text-gray-400 hover:text-green-400 transition-colors rounded-full hover:bg-white/10">
+                                <UploadCloudIcon className="w-5 h-5" />
+                           </button>
+                           <button onClick={() => onDelete(item.id)} title="Delete" className="p-2 text-gray-400 hover:text-red-400 transition-colors rounded-full hover:bg-white/10">
+                                <TrashIcon className="w-5 h-5" />
+                           </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {history.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-white/10 flex justify-end">
+                    <button onClick={onClear} className="text-sm text-red-500 hover:text-red-400 hover:underline">
+                        Clear All History
+                    </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
