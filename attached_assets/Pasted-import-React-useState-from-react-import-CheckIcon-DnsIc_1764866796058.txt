@@ -1,0 +1,121 @@
+import React, { useState } from 'react';
+import { CheckIcon, DnsIcon, InfoIcon, CopyIcon } from './icons/CategoryIcons';
+// Fix: Import DnsRecords type from types.ts to resolve module export error.
+import type { DnsRecords } from '../types';
+
+interface DeliverabilityChecklistProps {
+    onGenerateDns: (domain: string) => void;
+    isGeneratingDns: boolean;
+    dnsRecords: DnsRecords | null;
+}
+
+const ChecklistItem: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
+    <div className="flex items-start gap-3">
+        <div className="w-5 h-5 mt-1 flex-shrink-0 bg-green-500/20 text-green-300 rounded-full flex items-center justify-center">
+            <CheckIcon className="w-3 h-3" />
+        </div>
+        <div>
+            <h4 className="font-semibold text-gray-200">{title}</h4>
+            <p className="text-sm text-gray-400">{children}</p>
+        </div>
+    </div>
+);
+
+const useCopyToClipboard = (): [boolean, (text: string) => void] => {
+    const [isCopied, setIsCopied] = useState(false);
+    const copy = (text: string) => {
+        navigator.clipboard.writeText(text).then(() => {
+            setIsCopied(true);
+            setTimeout(() => setIsCopied(false), 2000);
+        });
+    };
+    return [isCopied, copy];
+};
+
+const RecordDisplay: React.FC<{ label: string, value: string }> = ({ label, value }) => {
+    const [isCopied, copy] = useCopyToClipboard();
+    return (
+        <div>
+            <h5 className="text-sm font-semibold text-gray-300">{label} Record</h5>
+            <div className="flex items-center gap-2 mt-1">
+                <pre className="flex-1 p-2 bg-gray-900/50 rounded text-xs text-gray-400 overflow-x-auto">
+                    <code>{value}</code>
+                </pre>
+                <button 
+                    onClick={() => copy(value)}
+                    className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${isCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                >
+                    {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                </button>
+            </div>
+        </div>
+    );
+};
+
+export const DeliverabilityChecklist: React.FC<DeliverabilityChecklistProps> = ({ onGenerateDns, isGeneratingDns, dnsRecords }) => {
+    const [domain, setDomain] = useState('');
+
+    const handleGenerateClick = () => {
+        if (domain.trim()) {
+            onGenerateDns(domain.trim());
+        }
+    };
+    
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ChecklistItem title="Use a Custom Domain">
+                    Sending from a professional email address (e.g., `you@yourdomain.com`) drastically improves trust and deliverability over free providers like Gmail or Yahoo.
+                </ChecklistItem>
+                <ChecklistItem title="Warm Up Your Domain">
+                    If your domain is new, start by sending emails to a small, engaged group. Gradually increase volume to build a positive sender reputation with inbox providers.
+                </ChecklistItem>
+                <ChecklistItem title="Maintain List Health">
+                    Never use purchased lists. Regularly clean your subscriber list by removing users who haven't engaged with your emails in the last 90-120 days.
+                </ChecklistItem>
+            </div>
+            
+            <div className="p-4 bg-white/5 rounded-lg border border-white/10">
+                <div className="flex items-center gap-3 mb-4">
+                    <span className="text-purple-400"><DnsIcon /></span>
+                    <h4 className="text-lg font-semibold text-white">Authentication (SPF, DKIM, DMARC)</h4>
+                </div>
+                <p className="text-sm text-gray-400 mb-4">
+                    These DNS records are like a digital passport for your emails, proving to inbox providers that you are a legitimate sender. This is the single most important technical step for deliverability.
+                </p>
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <input
+                        type="text"
+                        value={domain}
+                        onChange={(e) => setDomain(e.target.value)}
+                        placeholder="Enter your domain (e.g., yourcompany.com)"
+                        className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                        disabled={isGeneratingDns}
+                    />
+                    <button
+                        onClick={handleGenerateClick}
+                        disabled={!domain.trim() || isGeneratingDns}
+                        className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                    >
+                        {isGeneratingDns && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        Generate Records
+                    </button>
+                </div>
+                
+                {dnsRecords && (
+                    <div className="mt-4 pt-4 border-t border-white/10 space-y-3 animate-fade-in">
+                        <div className="flex items-start gap-2 p-3 rounded-md bg-purple-900/30 border border-purple-500/50 text-purple-200 text-xs">
+                            <InfoIcon className="w-4 h-4 flex-shrink-0 mt-px" />
+                            <span>Copy these values and add them as TXT records in your domain provider's (e.g., GoDaddy, Namecheap) DNS settings.</span>
+                        </div>
+                        <RecordDisplay label="SPF" value={dnsRecords.spf} />
+                        <RecordDisplay label="DKIM" value={dnsRecords.dkim} />
+                        <RecordDisplay label="DMARC" value={dnsRecords.dmarc} />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
