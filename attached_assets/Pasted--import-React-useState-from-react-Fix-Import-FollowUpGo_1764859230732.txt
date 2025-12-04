@@ -1,0 +1,86 @@
+
+import React, { useState } from 'react';
+// Fix: Import FollowUpGoal type from types.ts to resolve module export error.
+import type { FollowUpGoal } from '../types';
+import { FollowUpIcon } from './icons/CategoryIcons';
+
+interface FollowUpGeneratorProps {
+  onGenerate: (goal: FollowUpGoal, context: string) => void;
+  isGenerating: boolean;
+  isRewriting: boolean;
+}
+
+export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate, isGenerating, isRewriting }) => {
+  const [goal, setGoal] = useState<FollowUpGoal>('reminder');
+  const [context, setContext] = useState('');
+  const [sequenceGoal, setSequenceGoal] = useState('');
+
+  const handleGenerateClick = () => {
+    onGenerate(goal, goal === 'sequence' ? sequenceGoal : context);
+  };
+
+  const isDisabled = isGenerating || isRewriting;
+  const isButtonDisabled = isDisabled || (goal === 'query' && !context.trim()) || (goal === 'sequence' && !sequenceGoal.trim());
+  
+
+  return (
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+        <div className="flex items-center gap-2 w-full sm:w-80 flex-shrink-0">
+          <label htmlFor="followup-goal" className="text-sm font-medium text-gray-300 flex-shrink-0">Follow-up Goal:</label>
+          <select
+            id="followup-goal"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value as FollowUpGoal)}
+            disabled={isDisabled}
+            className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+          >
+            <option value="reminder">Gentle Reminder</option>
+            <option value="discount">Offer Discount</option>
+            <option value="query">Address a Query</option>
+            <option value="sequence">Generate 10-Email Sequence</option>
+          </select>
+        </div>
+        <div className="w-full sm:flex-1 transition-opacity duration-300 animate-fade-in">
+            {goal === 'query' && (
+                <input
+                    type="text"
+                    value={context}
+                    onChange={(e) => setContext(e.target.value)}
+                    placeholder="Enter recipient's query here..."
+                    disabled={isDisabled}
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                />
+            )}
+            {goal === 'sequence' && (
+                 <input
+                    type="text"
+                    value={sequenceGoal}
+                    onChange={(e) => setSequenceGoal(e.target.value)}
+                    placeholder="Enter the main goal of the sequence (e.g., convert trial users)"
+                    disabled={isDisabled}
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                />
+            )}
+        </div>
+      </div>
+      <button
+        onClick={handleGenerateClick}
+        disabled={isButtonDisabled}
+        className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.5)] flex items-center gap-2 w-full sm:w-auto justify-center sm:min-w-72"
+      >
+        {isGenerating && goal !== 'sequence' ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Generating...</span>
+          </>
+        ) : (
+          <>
+            <FollowUpIcon />
+            <span>{goal === 'sequence' ? 'Generate Sequence' : 'Generate Follow-up'}</span>
+          </>
+        )}
+      </button>
+    </div>
+  );
+};

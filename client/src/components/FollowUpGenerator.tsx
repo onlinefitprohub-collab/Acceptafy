@@ -1,88 +1,85 @@
 import { useState } from 'react';
 import type { FollowUpGoal } from '../types';
+import { FollowUpIcon } from './icons/CategoryIcons';
 
 interface FollowUpGeneratorProps {
   onGenerate: (goal: FollowUpGoal, context: string) => void;
   isGenerating: boolean;
+  isRewriting: boolean;
 }
 
-export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate, isGenerating }) => {
-  const [selectedGoal, setSelectedGoal] = useState<FollowUpGoal>('reminder');
+export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate, isGenerating, isRewriting }) => {
+  const [goal, setGoal] = useState<FollowUpGoal>('reminder');
   const [context, setContext] = useState('');
-  const [showContextInput, setShowContextInput] = useState(false);
+  const [sequenceGoal, setSequenceGoal] = useState('');
 
-  const goals: { id: FollowUpGoal; label: string; description: string }[] = [
-    { id: 'reminder', label: 'Gentle Reminder', description: 'Politely nudge the recipient to take action' },
-    { id: 'discount', label: 'Offer Discount', description: 'Re-engage with a special offer or incentive' },
-    { id: 'query', label: 'Address Query', description: 'Respond to a specific question or concern' },
-    { id: 'sequence', label: 'Full Sequence', description: 'Generate a 10-email follow-up sequence' },
-  ];
-
-  const handleGenerate = () => {
-    onGenerate(selectedGoal, context);
+  const handleGenerateClick = () => {
+    onGenerate(goal, goal === 'sequence' ? sequenceGoal : context);
   };
 
+  const isDisabled = isGenerating || isRewriting;
+  const isButtonDisabled = isDisabled || (goal === 'query' && !context.trim()) || (goal === 'sequence' && !sequenceGoal.trim());
+  
+
   return (
-    <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-      <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-        <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-        </svg>
-        Generate Follow-Up
-      </h3>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-        {goals.map((goal) => (
-          <button
-            key={goal.id}
-            onClick={() => {
-              setSelectedGoal(goal.id);
-              setShowContextInput(goal.id === 'query');
-            }}
-            className={`p-3 rounded-lg border text-left transition-colors ${
-              selectedGoal === goal.id
-                ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
-                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-            }`}
-            data-testid={`button-goal-${goal.id}`}
+    <div className="flex flex-col sm:flex-row justify-between items-center gap-4" data-testid="followup-generator">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+        <div className="flex items-center gap-2 w-full sm:w-80 flex-shrink-0">
+          <label htmlFor="followup-goal" className="text-sm font-medium text-gray-300 flex-shrink-0">Follow-up Goal:</label>
+          <select
+            id="followup-goal"
+            value={goal}
+            onChange={(e) => setGoal(e.target.value as FollowUpGoal)}
+            disabled={isDisabled}
+            className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+            data-testid="select-followup-goal"
           >
-            <div className="font-semibold text-sm">{goal.label}</div>
-            <div className="text-xs opacity-70 mt-1">{goal.description}</div>
-          </button>
-        ))}
-      </div>
-
-      {showContextInput && (
-        <div className="mb-4">
-          <label className="block text-sm text-gray-400 mb-2">Query Context</label>
-          <textarea
-            value={context}
-            onChange={(e) => setContext(e.target.value)}
-            placeholder="What specific question or concern should the follow-up address?"
-            className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 resize-none"
-            rows={3}
-            data-testid="input-followup-context"
-          />
+            <option value="reminder">Gentle Reminder</option>
+            <option value="discount">Offer Discount</option>
+            <option value="query">Address a Query</option>
+            <option value="sequence">Generate 10-Email Sequence</option>
+          </select>
         </div>
-      )}
-
+        <div className="w-full sm:flex-1 transition-opacity duration-300 animate-fade-in">
+            {goal === 'query' && (
+                <input
+                    type="text"
+                    value={context}
+                    onChange={(e) => setContext(e.target.value)}
+                    placeholder="Enter recipient's query here..."
+                    disabled={isDisabled}
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    data-testid="input-query-context"
+                />
+            )}
+            {goal === 'sequence' && (
+                 <input
+                    type="text"
+                    value={sequenceGoal}
+                    onChange={(e) => setSequenceGoal(e.target.value)}
+                    placeholder="Enter the main goal of the sequence (e.g., convert trial users)"
+                    disabled={isDisabled}
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    data-testid="input-sequence-goal"
+                />
+            )}
+        </div>
+      </div>
       <button
-        onClick={handleGenerate}
-        disabled={isGenerating}
-        className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+        onClick={handleGenerateClick}
+        disabled={isButtonDisabled}
+        className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.5)] flex items-center gap-2 w-full sm:w-auto justify-center sm:min-w-72"
         data-testid="button-generate-followup"
       >
-        {isGenerating ? (
+        {isGenerating && goal !== 'sequence' ? (
           <>
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            Generating...
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            <span>Generating...</span>
           </>
         ) : (
           <>
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Generate {selectedGoal === 'sequence' ? 'Sequence' : 'Follow-Up'}
+            <FollowUpIcon />
+            <span>{goal === 'sequence' ? 'Generate Sequence' : 'Generate Follow-up'}</span>
           </>
         )}
       </button>
