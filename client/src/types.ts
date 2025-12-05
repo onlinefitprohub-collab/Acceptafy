@@ -1,4 +1,3 @@
-
 export interface SectionGrade {
   grade: string;
   summary: string;
