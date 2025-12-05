@@ -1,21 +1,122 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, jsonb, index, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table (required for Replit Auth)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table (required for Replit Auth + SaaS features)
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  subscriptionStatus: varchar("subscription_status").default("free"),
+  subscriptionTier: varchar("subscription_tier").default("free"),
+  role: varchar("role").default("user"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+
+// Usage tracking table
+export const usageCounters = pgTable("usage_counters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  gradeCount: integer("grade_count").default(0),
+  rewriteCount: integer("rewrite_count").default(0),
+  followupCount: integer("followup_count").default(0),
+  deliverabilityChecks: integer("deliverability_checks").default(0),
+  aiTokensUsed: integer("ai_tokens_used").default(0),
+});
+
+export type UsageCounter = typeof usageCounters.$inferSelect;
+export type InsertUsageCounter = typeof usageCounters.$inferInsert;
+
+// Email analyses history table (replaces localStorage)
+export const emailAnalyses = pgTable("email_analyses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  subject: text("subject"),
+  previewText: text("preview_text"),
+  body: text("body"),
+  variations: jsonb("variations"),
+  result: jsonb("result").notNull(),
+  score: integer("score"),
+  grade: varchar("grade"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type EmailAnalysis = typeof emailAnalyses.$inferSelect;
+export type InsertEmailAnalysis = typeof emailAnalyses.$inferInsert;
+
+// Gamification data table
+export const userGamification = pgTable("user_gamification", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  xp: integer("xp").default(0),
+  level: integer("level").default(1),
+  streak: integer("streak").default(0),
+  lastActiveDate: varchar("last_active_date"),
+  achievements: jsonb("achievements").default(sql`'[]'::jsonb`),
+  totalGrades: integer("total_grades").default(0),
+  bestScore: integer("best_score").default(0),
+});
+
+export type UserGamification = typeof userGamification.$inferSelect;
+export type InsertUserGamification = typeof userGamification.$inferInsert;
+
+// Subscription tier limits
+export const SUBSCRIPTION_LIMITS = {
+  free: {
+    gradesPerMonth: 5,
+    rewritesPerMonth: 3,
+    followupsPerMonth: 2,
+    deliverabilityChecksPerMonth: 2,
+    historyLimit: 10,
+  },
+  pro: {
+    gradesPerMonth: 100,
+    rewritesPerMonth: 50,
+    followupsPerMonth: 30,
+    deliverabilityChecksPerMonth: 20,
+    historyLimit: 500,
+  },
+  business: {
+    gradesPerMonth: -1,
+    rewritesPerMonth: -1,
+    followupsPerMonth: -1,
+    deliverabilityChecksPerMonth: -1,
+    historyLimit: -1,
+  },
+} as const;
+
+export type SubscriptionTier = keyof typeof SUBSCRIPTION_LIMITS;
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = typeof users.$inferSelect;
 
 // Base types used by both client and server
 export const sectionGradeSchema = z.object({

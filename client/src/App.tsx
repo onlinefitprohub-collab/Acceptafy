@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Switch, Route, useLocation } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput } from './components/EmailInput';
 import { ResultsHub } from './components/ResultsHub';
@@ -19,8 +20,15 @@ import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
 import { CelebrationModal, useCelebration } from './components/CelebrationModal';
 import { PriorityIssues } from './components/PriorityIssues';
 import { GamificationProvider, useGamification } from './hooks/use-gamification';
+import { useAuth } from './hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import Landing from './pages/Landing';
+import Pricing from './pages/Pricing';
+import Account from './pages/Account';
 import { 
   SidebarProvider, 
   SidebarTrigger,
@@ -1485,11 +1493,44 @@ function AppContent() {
   );
 }
 
-function App() {
+function AuthenticatedApp() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-pulse flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500" />
+          <span className="text-lg font-semibold">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Landing />;
+  }
+
   return (
     <GamificationProvider>
       <AppContent />
     </GamificationProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Switch>
+          <Route path="/pricing" component={Pricing} />
+          <Route path="/account" component={Account} />
+          <Route path="/" component={AuthenticatedApp} />
+          <Route component={AuthenticatedApp} />
+        </Switch>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 
