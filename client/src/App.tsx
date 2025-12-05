@@ -508,11 +508,11 @@ function App() {
           </div>
           <button
             onClick={() => setShowAcademy(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-white/10 rounded-lg hover:bg-white/20 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-white/20 rounded-full hover:bg-white/10 transition-colors text-white"
             data-testid="button-open-academy"
           >
             <AcademyIcon className="w-5 h-5" />
-            <span className="hidden sm:inline">Academy</span>
+            <span>Academy</span>
           </button>
         </div>
       </header>
@@ -607,7 +607,6 @@ function App() {
                 <ResultsHub 
                   scoreData={result.inboxPlacementScore} 
                   gradeData={result.overallGrade}
-                  inboxPrediction={result.inboxPlacementPrediction}
                 />
 
                 <div className="grid md:grid-cols-2 gap-4">
@@ -1196,9 +1195,6 @@ function App() {
 
             <ReputationDashboard 
               history={history} 
-              onGenerateDns={handleGenerateDns} 
-              isGeneratingDns={isGeneratingDns} 
-              dnsRecords={dnsRecords} 
             />
           </>
         )}

@@ -88,14 +88,14 @@ export const ChevronDownIcon: React.FC<{ className?: string }> = ({ className })
     </svg>
 );
 
-export const SubjectShowdownIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps}>
+export const SubjectShowdownIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps} className={className || iconProps.className}>
         <path d="M9 12H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5m0 8v8m0-8h5a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-5m0 8V4m-2 8h4"></path>
     </svg>
 );
 
-export const PersonalizationIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps}>
+export const PersonalizationIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps} className={className || iconProps.className}>
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
         <circle cx="12" cy="7" r="4"></circle>
     </svg>
@@ -252,8 +252,8 @@ export const DnsIcon: React.FC = () => (
     </svg>
 );
 
-export const ReplyIcon: React.FC = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps}>
+export const ReplyIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...iconProps} className={className || iconProps.className}>
         <path d="M9 18l-6-6 6-6"/>
         <path d="M21 20v-7a4 4 0 0 0-4-4H3"/>
     </svg>
