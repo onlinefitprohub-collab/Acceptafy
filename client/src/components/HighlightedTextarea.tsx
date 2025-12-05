@@ -88,16 +88,29 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         handleScroll();
     }, [value]);
 
+    const sharedStyles: React.CSSProperties = {
+        fontFamily: 'inherit',
+        fontSize: '16px',
+        lineHeight: '1.5',
+        letterSpacing: 'normal',
+        wordSpacing: 'normal',
+        padding: '16px',
+        boxSizing: 'border-box',
+        whiteSpace: 'pre-wrap',
+        wordWrap: 'break-word',
+        overflowWrap: 'break-word',
+    };
+
     return (
         <div className={`relative ${className}`} style={{ overflow: 'hidden' }}>
             <div
                 ref={backdropRef}
                 aria-hidden="true"
-                className="absolute top-0 left-0 right-0 bottom-0 overflow-auto pointer-events-none text-transparent select-none whitespace-pre-wrap p-4 scrollbar-hide"
+                className="absolute top-0 left-0 right-0 bottom-0 overflow-auto pointer-events-none text-transparent select-none scrollbar-hide"
                 style={{ 
-                    lineHeight: 'inherit',
+                    ...sharedStyles,
                     msOverflowStyle: 'none',
-                    scrollbarWidth: 'none'
+                    scrollbarWidth: 'none',
                 }}
                 dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             />
@@ -105,7 +118,8 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
                 ref={textareaRef}
                 value={value}
                 onScroll={handleScroll}
-                className="w-full h-full bg-transparent caret-white relative z-10 block resize-none overflow-auto p-4 text-gray-300 whitespace-pre-wrap"
+                className="w-full h-full bg-transparent caret-white relative z-10 block resize-none overflow-auto text-gray-300"
+                style={sharedStyles}
                 data-testid="textarea-highlighted"
                 {...props}
             />

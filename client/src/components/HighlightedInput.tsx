@@ -83,16 +83,27 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
         handleScroll();
     }, [value]);
 
+    const sharedStyles: React.CSSProperties = {
+        fontFamily: 'inherit',
+        fontSize: '16px',
+        lineHeight: '1.5',
+        letterSpacing: 'normal',
+        wordSpacing: 'normal',
+        padding: '12px',
+        boxSizing: 'border-box',
+        whiteSpace: 'nowrap',
+    };
+
     return (
         <div className={`relative ${className}`} style={{ overflow: 'hidden' }}>
             <div
                 ref={backdropRef}
                 aria-hidden="true"
-                className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none text-transparent select-none whitespace-nowrap overflow-auto p-3 scrollbar-hide"
+                className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none text-transparent select-none overflow-auto scrollbar-hide flex items-center"
                 style={{ 
-                    lineHeight: 'inherit',
+                    ...sharedStyles,
                     msOverflowStyle: 'none',
-                    scrollbarWidth: 'none'
+                    scrollbarWidth: 'none',
                 }}
                 dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             />
@@ -100,7 +111,8 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
                 ref={inputRef}
                 value={value}
                 onScroll={handleScroll}
-                className="w-full bg-transparent caret-white relative z-10 block p-3 text-gray-300 whitespace-nowrap overflow-auto"
+                className="w-full bg-transparent caret-white relative z-10 block text-gray-300"
+                style={sharedStyles}
                 data-testid="input-highlighted"
                 {...props}
             />
