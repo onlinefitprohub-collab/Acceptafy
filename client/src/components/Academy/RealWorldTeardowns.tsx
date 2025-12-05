@@ -1,205 +1,161 @@
 import { useState } from 'react';
-import { ModuleHeader, SectionWrapper } from './ModuleComponents';
 import { CheckIcon, CloseIcon } from '../icons/CategoryIcons';
+import { ModuleHeader } from './ModuleComponents';
 
-interface TeardownExample {
-    title: string;
-    email: {
-        subject: string;
-        previewText: string;
-        body: string;
-    };
-    quiz: {
-        question: string;
-        options: string[];
-        correctIndex: number;
-    };
-    analysis: {
-        good: string[];
-        bad: string[];
-        overall: string;
-    };
+interface CaseStudy {
+    type: 'good' | 'bad',
+    title: string,
+    subject: string,
+    body: string,
+    analysis: string[],
+    interactive: {
+        question: string,
+        options: { text: string; isCorrect: boolean }[],
+        explanation: string,
+    }
 }
 
-const teardowns: TeardownExample[] = [
+const caseStudies: CaseStudy[] = [
     {
-        title: "E-commerce Abandoned Cart",
-        email: {
-            subject: "Did you forget something? 👀",
-            previewText: "Your cart is waiting...",
-            body: "Hey there!\n\nWe noticed you left some items in your cart. Don't worry, we saved them for you!\n\nComplete your purchase now and get FREE shipping on your order.\n\n[Complete My Order]\n\nHurry—your cart will expire in 24 hours!"
-        },
-        quiz: {
-            question: "What could be improved in this email?",
+        type: 'good',
+        title: "The Notion Welcome Email",
+        subject: "Welcome to Notion! Here's how to get started.",
+        body: `Hi Alex,\n\nWelcome! We're so excited to have you join the millions of people who use Notion to stay organized and productive.\n\nTo help you get started, here's a 2-minute video that covers the basics: [link]\n\nHave any questions? Just reply to this email, we're always happy to help.\n\nBest,\nThe Notion Team`,
+        analysis: [
+            "Clean, direct subject line that perfectly sets expectations.",
+            "Personalized with the user's name (`Alex`) to establish rapport.",
+            "Low-friction Call to Action ('2-minute video'). It provides immediate value without asking for a major commitment.",
+            "Opens a channel for direct replies ('Just reply to this email'), which is excellent for building sender reputation.",
+            "Contains zero common spam trigger words or deceptive formatting."
+        ],
+        interactive: {
+            question: "What is the strongest element of this welcome email?",
             options: [
-                "The subject line is too long",
-                "The email lacks specific product details",
-                "There's no call to action",
-                "The preview text repeats the subject"
+                { text: "The use of bright, engaging colors.", isCorrect: false },
+                { text: "The low-friction Call to Action (a 2-minute video).", isCorrect: true },
+                { text: "The detailed list of all product features.", isCorrect: false },
+                { text: "The very formal and corporate tone.", isCorrect: false },
             ],
-            correctIndex: 1
-        },
-        analysis: {
-            good: [
-                "Creates urgency with the 24-hour deadline",
-                "Offers a clear incentive (free shipping)",
-                "Friendly, conversational tone",
-                "Clear CTA button"
-            ],
-            bad: [
-                "Doesn't mention specific products left in cart",
-                "No personalization beyond basic greeting",
-                "Could include product images for visual reminder"
-            ],
-            overall: "This is a solid abandoned cart email that hits the basics. To improve, include the actual products and their images to remind the customer exactly what they're missing."
+            explanation: "Correct! The '2-minute video' is a perfect CTA for a welcome email. It respects the user's time and provides immediate value without asking for a purchase or a lengthy commitment, which is key to building trust."
         }
     },
     {
-        title: "B2B Cold Outreach",
-        email: {
-            subject: "Quick question about [Company]'s lead gen",
-            previewText: "I noticed something interesting...",
-            body: "Hi [Name],\n\nI was researching [Company] and noticed you're scaling your sales team. Congrats on the growth!\n\nI'm curious—are you finding it challenging to keep your pipeline full while onboarding new reps?\n\nWe help companies like [Similar Company] generate 40% more qualified leads without adding headcount.\n\nWorth a 15-minute chat?\n\nBest,\n[Sender]"
-        },
-        quiz: {
-            question: "What makes this cold email effective?",
+        type: 'bad',
+        title: "The Aggressive Sales Email",
+        subject: "$$$ MAKE MONEY FAST - EXCLUSIVE OFFER JUST FOR YOU!!! $$$",
+        body: `DON'T MISS OUT on this once-in-a-lifetime opportunity! Click here to claim your GUARANTEED success. This is not a scam, it is 100% legit.\n\nOur revolutionary system will make you rich overnight. ACT NOW before it's too late.\n\nClick this link: https://bit.ly/totally-safe-link`,
+        analysis: [
+            "Subject uses excessive capitalization and symbols, which are major spam filter red flags.",
+            "Relies on classic spam trigger phrases like 'MAKE MONEY FAST' and 'GUARANTEED success'.",
+            "Content is pure hype with no substance, creating distrust.",
+            "Uses a shortened URL, a common tactic to hide the destination link that filters are highly suspicious of.",
+            "Impersonal, desperate tone that alienates the reader."
+        ],
+        interactive: {
+            question: "Besides the subject line, what is the biggest deliverability mistake in this email's body?",
             options: [
-                "It's very long and detailed",
-                "It shows research and ends with a low-commitment ask",
-                "It focuses heavily on the sender's company",
-                "It uses lots of statistics"
+                { text: "The email is too short.", isCorrect: false },
+                { text: "It doesn't include the sender's name.", isCorrect: false },
+                { text: "It uses a public URL shortener (bit.ly).", isCorrect: true },
+                { text: "The font is not a standard one.", isCorrect: false },
             ],
-            correctIndex: 1
-        },
-        analysis: {
-            good: [
-                "Shows specific research about the company",
-                "Asks a relevant question rather than pitching immediately",
-                "Uses social proof (similar company reference)",
-                "Low-friction CTA (15-minute chat)"
-            ],
-            bad: [
-                "Could be more specific about the research finding",
-                "The stat could be more compelling with context"
-            ],
-            overall: "This cold email follows best practices: personalization, curiosity-driven opening, social proof, and an easy ask. The key is that it feels like a conversation starter, not a sales pitch."
+            explanation: "Exactly. Public URL shorteners are a massive red flag for spam filters because they obscure the link's true destination. Always use full, trustworthy URLs from your own domain."
         }
     }
 ];
 
-export const RealWorldTeardowns: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-    const [currentIndex, setCurrentIndex] = useState(0);
+const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy }) => {
+    const { type, title, subject, body, analysis, interactive } = caseStudy;
     const [answered, setAnswered] = useState(false);
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const [selected, setSelected] = useState<number | null>(null);
 
-    const current = teardowns[currentIndex];
+    const isGood = type === 'good';
+    const borderColor = isGood ? 'border-green-500/50' : 'border-red-500/50';
+    const textColor = isGood ? 'text-green-300' : 'text-red-300';
+    const bgColor = isGood ? 'bg-green-900/30' : 'bg-red-900/30';
 
-    const handleAnswer = (index: number) => {
+    const handleSelect = (index: number) => {
         if (answered) return;
-        setSelectedOption(index);
+        setSelected(index);
         setAnswered(true);
     };
 
-    const nextTeardown = () => {
-        if (currentIndex < teardowns.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-            setAnswered(false);
-            setSelectedOption(null);
-        }
-    };
-
     return (
-        <div className="space-y-8 animate-fade-in">
-            <ModuleHeader onBack={onBack} title="Interactive Case Studies" subtitle="Analyze real emails, test your knowledge, then see the expert breakdown." />
-            
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Case Study {currentIndex + 1} of {teardowns.length}</span>
-                <span className="text-sm font-semibold text-purple-400">{current.title}</span>
-            </div>
-
-            <SectionWrapper title="The Email" subtitle="Read it carefully, then answer the question below">
-                <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-                    <div className="mb-3">
-                        <span className="text-xs text-gray-500">Subject:</span>
-                        <p className="text-white font-semibold">{current.email.subject}</p>
-                    </div>
-                    <div className="mb-3">
-                        <span className="text-xs text-gray-500">Preview:</span>
-                        <p className="text-gray-400">{current.email.previewText}</p>
-                    </div>
-                    <div className="border-t border-gray-700 pt-3">
-                        <span className="text-xs text-gray-500">Body:</span>
-                        <p className="text-gray-300 whitespace-pre-line mt-1">{current.email.body}</p>
-                    </div>
+        <div className={`bg-white/5 p-4 sm:p-6 rounded-lg border ${borderColor}`}>
+            <h4 className={`text-xl font-bold ${textColor}`}>{isGood ? '✅ Effective Example:' : '❌ Ineffective Example:'} {title}</h4>
+            <div className="mt-4 space-y-4">
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
+                    <p className="text-sm font-semibold text-gray-400">Subject Line</p>
+                    <p className="text-gray-200 font-mono text-sm">{subject}</p>
                 </div>
-            </SectionWrapper>
-
-            <div className="bg-white/5 p-4 sm:p-6 rounded-lg border-2 border-dashed border-white/10">
-                <h4 className="text-lg font-bold text-purple-300 mb-3">Quick Quiz</h4>
-                <p className="font-semibold text-gray-200 mb-4">{current.quiz.question}</p>
-                <div className="space-y-2">
-                    {current.quiz.options.map((option, index) => {
-                        let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
-                        if (answered) {
-                            if (index === current.quiz.correctIndex) buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
-                            else if (selectedOption === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';
-                            else buttonClass = 'bg-gray-900/30 border-gray-700 text-gray-500';
-                        }
-                        return (
-                            <button
-                                key={index}
-                                onClick={() => handleAnswer(index)}
-                                disabled={answered}
-                                className={`w-full text-left p-3 text-sm rounded-lg border transition-all duration-300 ${buttonClass}`}
-                            >
-                                {option}
-                            </button>
-                        );
-                    })}
+                <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
+                     <p className="text-sm font-semibold text-gray-400 mb-2">Email Body</p>
+                     <div className="whitespace-pre-wrap font-sans text-sm text-gray-300">{body}</div>
                 </div>
-            </div>
 
-            {answered && (
-                <div className="space-y-4 animate-fade-in">
-                    <SectionWrapper title="Expert Analysis" subtitle="Here's what the pros see">
-                        <div className="space-y-4">
-                            <div>
-                                <h5 className="font-semibold text-green-400 flex items-center gap-2 mb-2">
-                                    <CheckIcon className="w-4 h-4" /> What Works Well
-                                </h5>
-                                <ul className="list-disc list-inside space-y-1">
-                                    {current.analysis.good.map((item, i) => (
-                                        <li key={i}>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div>
-                                <h5 className="font-semibold text-red-400 flex items-center gap-2 mb-2">
-                                    <CloseIcon className="w-4 h-4" /> Areas for Improvement
-                                </h5>
-                                <ul className="list-disc list-inside space-y-1">
-                                    {current.analysis.bad.map((item, i) => (
-                                        <li key={i}>{item}</li>
-                                    ))}
-                                </ul>
-                            </div>
-                            <div className="bg-purple-900/30 border border-purple-500/50 rounded-lg p-4">
-                                <h5 className="font-semibold text-purple-300 mb-2">Bottom Line</h5>
-                                <p>{current.analysis.overall}</p>
-                            </div>
+                <div className="bg-white/5 p-4 rounded-lg border-2 border-dashed border-white/10">
+                    <p className="font-semibold text-gray-200 mb-4">{interactive.question}</p>
+                    <div className="space-y-2 mb-4">
+                        {interactive.options.map((option, index) => {
+                             let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
+                             if (answered) {
+                                 if (option.isCorrect) buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
+                                 else if (selected === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';
+                                 else buttonClass = 'bg-gray-900/30 border-gray-700 text-gray-500';
+                             }
+                             return (
+                                 <button
+                                     key={index}
+                                     onClick={() => handleSelect(index)}
+                                     disabled={answered}
+                                     className={`w-full text-left p-3 text-sm rounded-lg border transition-all duration-300 flex items-center gap-3 ${buttonClass}`}
+                                 >
+                                     <span className="font-mono text-purple-400">[{index + 1}]</span>
+                                     <span>{option.text}</span>
+                                 </button>
+                             );
+                        })}
+                    </div>
+                    {answered && (
+                         <div className="p-3 bg-gray-900/50 rounded-md text-sm text-gray-300 animate-fade-in">
+                            <p>{interactive.explanation}</p>
                         </div>
-                    </SectionWrapper>
-
-                    {currentIndex < teardowns.length - 1 && (
-                        <button
-                            onClick={nextTeardown}
-                            className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-white transition-colors"
-                        >
-                            Next Case Study →
-                        </button>
                     )}
                 </div>
-            )}
+
+                {answered && (
+                    <div className={`p-4 ${bgColor} border-l-4 ${borderColor} rounded-r-lg animate-fade-in`}>
+                        <h5 className="font-bold text-gray-200 mb-2">Full Analysis: Why this {isGood ? 'Worked' : 'Failed'}</h5>
+                        <ul className="space-y-2">
+                            {analysis.map((point, index) => (
+                                <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                                    <div className={`mt-1 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${isGood ? 'bg-green-500 text-green-900' : 'bg-red-500 text-red-900'}`}>
+                                        {isGood ? <CheckIcon className="w-2 h-2" /> : <CloseIcon className="w-2 h-2" />}
+                                    </div>
+                                    <span>{point}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+interface ModuleProps {
+    onBack: () => void;
+}
+
+export const RealWorldTeardowns: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+             <ModuleHeader
+                onBack={onBack}
+                title="Interactive Case Studies"
+                subtitle="Theory is one thing, practice is another. Analyze these real-world emails and test your knowledge before we reveal the expert breakdown."
+            />
+            {caseStudies.map((cs, i) => <InteractiveCaseStudy key={i} caseStudy={cs} />)}
         </div>
     );
 };
