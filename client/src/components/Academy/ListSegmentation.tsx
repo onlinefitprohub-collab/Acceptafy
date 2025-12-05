@@ -1,55 +1,62 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { UserGroupIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const ListSegmentation: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Mastering List Segmentation" subtitle="Discover the power of a clean, segmented list for radically better engagement." />
-        
-        <SectionWrapper title="Why Segmentation Matters" subtitle="The Foundation of Relevance">
-            <p>Sending the same email to everyone is like shouting in a crowded room—most people will ignore you. Segmentation lets you whisper exactly what each person wants to hear.</p>
-            <p className="mt-2">Segmented campaigns have been shown to generate up to 760% more revenue than non-segmented campaigns. The reason? Relevance. When your message matches the recipient's interests and needs, they're far more likely to engage.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Demographic Segmentation" subtitle="Who Your Subscribers Are">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Age & Generation:</strong> Baby Boomers vs. Gen Z respond to very different messaging</li>
-                <li><strong>Location:</strong> Time zones, local events, regional preferences</li>
-                <li><strong>Job Title/Industry:</strong> Essential for B2B personalization</li>
-                <li><strong>Company Size:</strong> SMB vs. Enterprise have different needs and budgets</li>
-            </ul>
-        </SectionWrapper>
+export const ListSegmentation: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+             <ModuleHeader
+                onBack={onBack}
+                title="List Hygiene & Segmentation"
+                subtitle="Learn how to maintain a healthy subscriber list and group your audience to send more relevant, personalized content."
+            />
+            
+            <SectionWrapper
+                title="The Importance of List Hygiene"
+                subtitle="Quality Over Quantity"
+            >
+                <p>A smaller, highly engaged email list is far more valuable than a massive, unengaged one. Sending emails to inactive or invalid addresses damages your sender reputation, which tells inbox providers (like Gmail and Outlook) to send more of your mail to the spam folder.</p>
+                <p><strong className="text-gray-200">Key Hygiene Practices:</strong></p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Implement a Sunset Policy:</strong> Regularly remove subscribers who haven't opened or clicked an email in a set period (e.g., 90-120 days). This is the single most effective way to improve deliverability.</li>
+                    <li><strong className="text-gray-200">Use Double Opt-In:</strong> Requiring users to confirm their subscription via email ensures they genuinely want to be on your list and reduces invalid sign-ups.</li>
+                    <li><strong className="text-gray-200">Never Buy an Email List:</strong> Purchased lists are filled with unengaged users, spam traps, and invalid addresses. Using one is the fastest way to destroy your sender reputation.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Behavioral Segmentation" subtitle="How Your Subscribers Act">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Purchase History:</strong> Past buyers, average order value, product categories</li>
-                <li><strong>Email Engagement:</strong> Active openers vs. inactive subscribers</li>
-                <li><strong>Website Activity:</strong> Pages visited, content downloaded, time on site</li>
-                <li><strong>Funnel Stage:</strong> New leads vs. qualified prospects vs. customers</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="The Power of Segmentation"
+                subtitle="Sending the Right Message to the Right Person"
+            >
+                <p>Segmentation is the practice of dividing your email list into smaller groups based on specific criteria. Instead of sending one generic message to everyone, you can tailor your content to be highly relevant to each segment, which dramatically increases engagement.</p>
+                <p><strong className="text-gray-200">Common Segmentation Strategies:</strong></p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">By Demographics:</strong> Group users by location, age, or job title to send relevant offers and content.</li>
+                    <li><strong className="text-gray-200">By Behavior:</strong> Create segments based on past actions, such as purchase history, website activity, or previous email engagement.</li>
+                    <li><strong className="text-gray-200">By Stated Preferences:</strong> Allow users to choose the type of content they want to receive in a preference center.</li>
+                </ul>
+            </SectionWrapper>
+            
+            <InfoBox icon={<UserGroupIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Your First Segment</h4>
+                    <p className="text-purple-200 text-sm">A great place to start is to create a "VIP" segment of your most engaged subscribers (e.g., anyone who has opened an email in the last 30 days). Send them exclusive content or a special thank-you to reward their loyalty and boost your sender reputation.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="Engagement-Based Segmentation" subtitle="How Recently They've Engaged">
-            <p>One of the most powerful segmentation strategies is based on recency of engagement:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Hot:</strong> Engaged in last 30 days—send your best offers</li>
-                <li><strong>Warm:</strong> Engaged in last 60-90 days—re-engage with value</li>
-                <li><strong>Cold:</strong> No engagement in 90+ days—win-back campaigns</li>
-                <li><strong>Dead:</strong> No engagement in 6+ months—consider removing</li>
-            </ul>
-        </SectionWrapper>
-
-        <InfoBox icon={<UserGroupIcon />}>
-            <p className="text-purple-200 text-sm">Start with just 2-3 segments based on engagement level. As you get more sophisticated, add behavioral and demographic layers.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="Which type of segmentation is typically most impactful for email marketing results?"
-            options={[
-                { text: "Demographic (age, location, job title)", isCorrect: false },
-                { text: "Behavioral (actions, engagement, purchases)", isCorrect: true },
-                { text: "Psychographic (interests, values, lifestyle)", isCorrect: false }
-            ]}
-            explanation="Behavioral segmentation is usually most impactful because it's based on what people actually do, not just who they are. Actions like opening emails, clicking links, and making purchases are strong indicators of future behavior and intent."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="What is the main benefit of segmenting your email list?"
+                options={[
+                    { text: "It makes your list appear larger to email providers.", isCorrect: false },
+                    { text: "It allows you to send more relevant and personalized content.", isCorrect: true },
+                    { text: "It is a legal requirement under CAN-SPAM.", isCorrect: false },
+                    { text: "It automatically removes subscribers who don't open emails.", isCorrect: false },
+                ]}
+                explanation="That's right! Segmentation lets you tailor your message to smaller, specific groups, making your emails feel more personal and dramatically increasing engagement."
+            />
+        </div>
+    );
+};
