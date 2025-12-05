@@ -1,20 +1,16 @@
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, useCallback } from 'react';
 import type { SpamTrigger } from '../types';
 
 interface HighlightedTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     spamTriggers: SpamTrigger[];
 }
 
-const getSeverityHighlightClass = (severity: 'High' | 'Medium' | 'Low'): string => {
+const getSeverityColor = (severity: 'High' | 'Medium' | 'Low'): string => {
     switch (severity) {
-        case 'High':
-            return 'bg-red-500/40';
-        case 'Medium':
-            return 'bg-yellow-500/40';
-        case 'Low':
-            return 'bg-blue-500/40';
-        default:
-            return '';
+        case 'High': return 'rgba(239, 68, 68, 0.4)';
+        case 'Medium': return 'rgba(234, 179, 8, 0.4)';
+        case 'Low': return 'rgba(59, 130, 246, 0.4)';
+        default: return 'transparent';
     }
 };
 
@@ -42,7 +38,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
     const highlightedHtml = useMemo(() => {
         const textValue = String(value || '');
         if (!spamTriggers || spamTriggers.length === 0 || !textValue) {
-            return escapeHtml(textValue).replace(/\n/g, '<br />') + ' ';
+            return escapeHtml(textValue).replace(/\n/g, '\n') + '\u200b';
         }
 
         const triggerMap = new Map<string, SpamTrigger>();
@@ -51,7 +47,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         });
 
         const wordsToMatch = spamTriggers.map(t => escapeRegExp(t.word));
-        if (wordsToMatch.length === 0) return escapeHtml(textValue).replace(/\n/g, '<br />') + ' ';
+        if (wordsToMatch.length === 0) return escapeHtml(textValue) + '\u200b';
         
         const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
         
@@ -65,8 +61,8 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             }
             const matchedWord = match[0];
             const trigger = triggerMap.get(matchedWord.toLowerCase());
-            const highlightClass = trigger ? getSeverityHighlightClass(trigger.severity) : '';
-            parts.push(`<span class="rounded ${highlightClass}">${escapeHtml(matchedWord)}</span>`);
+            const bgColor = trigger ? getSeverityColor(trigger.severity) : 'transparent';
+            parts.push(`<mark style="background-color: ${bgColor}; color: transparent; border-radius: 3px;">${escapeHtml(matchedWord)}</mark>`);
             lastIndex = regex.lastIndex;
         }
 
@@ -74,31 +70,49 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             parts.push(escapeHtml(textValue.substring(lastIndex)));
         }
         
-        return parts.join('').replace(/\n/g, '<br />') + ' ';
+        return parts.join('') + '\u200b';
     }, [value, spamTriggers]);
 
-    const handleScroll = () => {
+    const syncScroll = useCallback(() => {
         if (backdropRef.current && textareaRef.current) {
             backdropRef.current.scrollTop = textareaRef.current.scrollTop;
             backdropRef.current.scrollLeft = textareaRef.current.scrollLeft;
         }
-    };
+    }, []);
     
     useEffect(() => {
-        handleScroll();
-    }, [value]);
+        syncScroll();
+    }, [value, syncScroll]);
 
-    const sharedStyles: React.CSSProperties = {
-        fontFamily: 'inherit',
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.addEventListener('scroll', syncScroll);
+            return () => textarea.removeEventListener('scroll', syncScroll);
+        }
+    }, [syncScroll]);
+
+    const baseStyles: React.CSSProperties = {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        padding: '16px',
+        margin: 0,
+        border: 'none',
+        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
         fontSize: '16px',
-        lineHeight: '1.5',
+        fontWeight: 400,
+        lineHeight: '24px',
         letterSpacing: 'normal',
         wordSpacing: 'normal',
-        padding: '16px',
-        boxSizing: 'border-box',
+        textAlign: 'left',
+        textIndent: 0,
         whiteSpace: 'pre-wrap',
         wordWrap: 'break-word',
         overflowWrap: 'break-word',
+        boxSizing: 'border-box',
     };
 
     return (
@@ -106,9 +120,14 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             <div
                 ref={backdropRef}
                 aria-hidden="true"
-                className="absolute top-0 left-0 right-0 bottom-0 overflow-auto pointer-events-none text-transparent select-none scrollbar-hide"
+                className="scrollbar-hide"
                 style={{ 
-                    ...sharedStyles,
+                    ...baseStyles,
+                    overflow: 'auto',
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    color: 'transparent',
+                    background: 'transparent',
                     msOverflowStyle: 'none',
                     scrollbarWidth: 'none',
                 }}
@@ -117,9 +136,16 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             <textarea
                 ref={textareaRef}
                 value={value}
-                onScroll={handleScroll}
-                className="w-full h-full bg-transparent caret-white relative z-10 block resize-none overflow-auto text-gray-300"
-                style={sharedStyles}
+                style={{
+                    ...baseStyles,
+                    position: 'relative',
+                    overflow: 'auto',
+                    background: 'transparent',
+                    color: '#d1d5db',
+                    caretColor: 'white',
+                    resize: 'none',
+                    outline: 'none',
+                }}
                 data-testid="textarea-highlighted"
                 {...props}
             />
