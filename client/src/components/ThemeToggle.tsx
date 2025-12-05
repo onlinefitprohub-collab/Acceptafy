@@ -1,23 +1,41 @@
-import { SunIcon, MoonIcon } from './icons/CategoryIcons';
+import { useState, useEffect } from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-interface ThemeToggleProps {
-  theme: 'light' | 'dark';
-  toggleTheme: () => void;
-}
+export const ThemeToggle: React.FC = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-export const ThemeToggle: React.FC<ThemeToggleProps> = ({ theme, toggleTheme }) => {
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    if (storedTheme) {
+      setTheme(storedTheme);
+      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
+
   return (
-    <button
+    <Button
       onClick={toggleTheme}
-      className="p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 dark:focus:ring-offset-gray-900 transition-colors"
+      variant="ghost"
+      size="icon"
+      className="rounded-full"
       aria-label="Toggle theme"
       data-testid="button-theme-toggle"
     >
       {theme === 'light' ? (
-        <MoonIcon className="w-6 h-6" />
+        <Moon className="w-5 h-5" />
       ) : (
-        <SunIcon className="w-6 h-6" />
+        <Sun className="w-5 h-5" />
       )}
-    </button>
+    </Button>
   );
 };

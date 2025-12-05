@@ -1,65 +1,159 @@
-# Acceptafy - Design Guidelines (User-Specified System)
+# Acceptafy - Design Guidelines
 
 ## Design Approach
-**System: Pre-Defined Custom Design System**
-This application uses an exact, pre-built design system with all visual specifications already defined in the provided codebase. All styling, animations, spacing, and component structures are explicitly coded and must be preserved precisely.
+**Hybrid System: Material Design + Gaming UI Patterns**
+Combining Material Design's information architecture with gamification patterns inspired by Duolingo and Habitica. Professional dashboard functionality enhanced with game-like reward systems and playful interactions.
+
+**Key Principle**: Data-driven productivity wrapped in an engaging, achievement-focused experience.
+
+---
 
 ## Core Design Elements
 
-### A. Color Palette (Fixed)
-- **Background**: Dark slate (`#0f172a`, `#121212`)
-- **Text**: White primary, gray-400 secondary
-- **Accent**: Purple gradients (`#9333ea`, `#7c3aed`, `#6d28d9`)
-- **Status Colors**: Red (`rgba(239, 68, 68)`), Yellow (`rgba(234, 179, 8)`), Green (`rgba(74, 222, 128)`)
-- **Borders**: `rgba(255, 255, 255, 0.1)` - subtle white transparency
+### A. Color Palette
+**Base Dark Theme:**
+- Background layers: `#0a0a0f` (deepest), `#121218` (cards), `#1a1a24` (elevated surfaces)
+- Text: White primary, `#a0a0b0` secondary, `#606070` tertiary
+
+**Gradient System:**
+- Purple Core: `#9333ea → #7c3aed → #6d28d9` (primary actions, XP elements)
+- Blue Energy: `#3b82f6 → #2563eb → #1d4ed8` (achievements, progress)
+- Pink Rewards: `#ec4899 → #db2777 → #be185d` (streaks, special badges)
+- Combo: Purple-to-pink diagonal gradients for premium features
+
+**Status & Gamification:**
+- XP Gain: Pulsing green `#10b981`
+- Level Up: Gold `#f59e0b` with glow
+- Streak Fire: Orange-red gradient `#f97316 → #ef4444`
+- Locked Content: `#4b5563` desaturated
 
 ### B. Typography
-- System font stack via browser defaults
-- **Sizes**: Text-xl, text-2xl for headers; text-sm for secondary content
-- **Weights**: Bold for headers, regular for body
-- **Hierarchy**: Established through size and color contrast (white → purple-300 → gray-400)
+**System font stack** (San Francisco, Segoe UI, Roboto fallbacks)
+
+**Hierarchy:**
+- Display (Level/XP counters): 2xl-3xl, bold, gradient text fill
+- Headers: xl-2xl, semibold
+- Body: base, regular
+- Metadata/stats: sm, medium, uppercase tracking-wide
+
+**Gamification Typography:** Numeric displays use tabular-nums for smooth counting animations
 
 ### C. Layout System
-**Spacing**: Tailwind units - p-4, p-6 for padding; gap-2, gap-3, gap-4 for element spacing
-**Grid**: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` for responsive card layouts
-**Containers**: max-w-5xl, max-w-3xl for content width constraints
-**Borders**: `border border-white/10` with `rounded-lg`, `rounded-2xl` for cards/modals
+**Spacing Primitives:** Tailwind units of 2, 3, 4, 6, 8 for consistent rhythm
+- Card padding: p-6
+- Section gaps: gap-4, gap-6
+- Page margins: p-8
+- Icon spacing: gap-2, gap-3
+
+**Grid Patterns:**
+- Dashboard: `grid-cols-1 lg:grid-cols-3` (sidebar 1fr, main 2fr)
+- Achievement grid: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`
+- Analytics cards: `grid-cols-1 md:grid-cols-2 gap-6`
+
+**Containers:** max-w-7xl for main content, max-w-sm for modals
 
 ### D. Component Library
 
-**Cards**: Dark backgrounds with subtle borders, hover effects with `hover:bg-white/10`
-**Buttons**: 
-- Primary: Purple gradient with shadow (`btn-gradient-purple`)
-- Secondary: Border-only with hover states
-- Blur backgrounds for overlay contexts
+**Sidebar Navigation (Fixed Left):**
+- Dark `#121218` background, `border-r border-white/5`
+- Width: 280px desktop, slide-in drawer mobile
+- Structure: Logo/profile top → main nav → gamification panel (XP, level, streak) bottom
+- Active state: Purple gradient left border + bg-white/5
 
-**Modals**: Fixed overlays with `backdrop-blur-sm`, dark-bg gradient animation, rounded-2xl
-**Inputs**: `input-glow-focus` with purple border on focus, `input-inset-shadow` for depth
-**Tooltips**: Dark slate (`#1e293b`) with arrow, 240px width
+**Gamification Components:**
 
-### E. Animations (All Pre-Defined)
-- `pulse-red-border`: 2s infinite pulsing shadow
-- `gradient-animation`: 18s infinite background position shift
-- `fade-in`: 0.5s opacity + translateY
-- `scale-in`: 0.3s scale transform
-- `shimmer-effect`: 2s infinite shimmer overlay
-- `aurora-background`: 15s infinite gradient animation
+*XP Bar*
+- Horizontal progress bar with gradient fill (purple-blue)
+- Animated fill on gain with number counter
+- Current/Next level display with glow effect on milestone
 
-**Animation Usage**: Applied to specific contexts (status indicators, page transitions, loading states)
+*Achievement Badges*
+- Circular icons 64x64px, gradient borders when unlocked
+- Grayscale with lock icon when locked
+- Pop-in animation with confetti effect on unlock
+- Tooltip shows title, description, progress
+
+*Level Display*
+- Prominent circular badge with level number
+- Rotating ring animation for "about to level up" state
+- Burst animation on level up with modal celebration
+
+*Streak Counter*
+- Flame icon with number, grows in size with longer streaks
+- Pulsing glow effect, color intensifies (orange → red) as streak increases
+- Warning state at risk of breaking (gray, dimmed)
+
+**Dashboard Cards:**
+- `rounded-2xl` corners, `border border-white/10`
+- Subtle gradient overlay (top-to-bottom, white/0 → white/5)
+- Hover: `hover:border-purple-500/30` with `scale-[1.02]` transform
+- Shadow: Soft purple glow on hover
+
+**Action Buttons:**
+- Primary: Purple gradient background, white text, shadow-lg with purple glow
+- Secondary: Border-only (border-purple-500), transparent bg
+- Icon buttons: Rounded-full, hover:bg-white/10
+
+**Data Visualizations:**
+- Score displays with radial progress indicators
+- Animated number counters (count-up effect)
+- Color-coded metrics (green positive, red negative, purple neutral)
+- Sparkline graphs with gradient fills
+
+### E. Animations & Micro-Interactions
+
+**Core Animations:**
+- XP gain: Pulse green flash → fill animation → number count-up (0.8s)
+- Level up: Scale burst → confetti particles → modal slide-in (2s sequence)
+- Achievement unlock: Icon shake → color flood → badge pop-in (1.2s)
+- Streak increment: Flame flicker → size bump → glow intensify (0.6s)
+- Loading: Gradient shimmer sweep (1.5s infinite)
+
+**Interaction States:**
+- Button press: Scale-down to 0.95
+- Card hover: Lift with shadow (translate-y -2px)
+- Sidebar items: Smooth color transition (0.3s ease)
+- Score updates: Brief highlight pulse
+
+**Page Transitions:**
+- Fade-in with slight translateY (0.5s)
+- Stagger child elements by 50ms
+
+**Playful Loading States:**
+- Skeleton loaders with gradient sweep
+- "Analyzing emails..." with animated dots
+- Progress bar with percentage + fun copy ("Counting the wins...")
 
 ### F. Special Effects
-- **Glow Effects**: `bg-glow-red`, `bg-glow-yellow`, `bg-glow-green` for status-based shadows
-- **Gradient Backgrounds**: `.dark-bg` and `.aurora-background` for immersive atmosphere
-- **Dark Mode Preview**: Invert filter system for email preview rendering
+- **Glow System:** Use box-shadow with gradient colors for status emphasis (purple for active, green for success, gold for level-up)
+- **Gradient Overlays:** Subtle animated gradients on backgrounds (slow 15s rotation)
+- **Particle Effects:** Reserved for major achievements (level up, milestone completion)
+- **Focus States:** Purple ring with offset for accessibility
+
+---
 
 ## Images
-No hero images specified. Application is tool-focused with data visualization and form-based interfaces. Visual interest comes from gradients, animations, and structured layouts rather than photography.
+**No hero image** - This is a dashboard application prioritizing data and functionality.
+
+**Icon System:** Use Heroicons via CDN for UI icons. Custom illustrated icons for:
+- Achievement badges (categories: Email Master, Engagement Pro, etc.)
+- Empty states (friendly illustrations, 200x200px, purple-pink gradient style)
+- Celebration modals (confetti, trophy graphics)
+
+---
+
+## Responsive Behavior
+- **Desktop (lg):** Full sidebar + 2-column main area
+- **Tablet (md):** Collapsible sidebar drawer + 1-column main
+- **Mobile:** Hidden sidebar (hamburger menu), single-column cards, stacked gamification elements
+
+---
 
 ## Implementation Notes
-- All CSS is provided via inline `<style>` blocks in index.html
-- Tailwind loaded via CDN (`https://cdn.tailwindcss.com`)
-- Icons from custom CategoryIcons component library
-- Responsive breakpoints: base (mobile), md (tablet), lg (desktop)
-- Accessibility: Focus states, ARIA labels, keyboard navigation support built into components
+- Tailwind CSS via CDN for rapid prototyping
+- Transition-all with duration-300 for smooth interactions
+- Z-index layers: Sidebar (40) → Modals (50) → Tooltips (60)
+- Accessibility: ARIA labels on all interactive elements, keyboard navigation for all actions, focus-visible states
+- Performance: CSS animations over JavaScript where possible, will-change hints for animated elements
 
-**Critical**: This design is complete and finalized. Implement exactly as specified in provided code without modifications or interpretations.
+**Philosophy:** Every interaction should feel rewarding. Even mundane tasks (opening an email report) should include subtle celebratory feedback. Professional enough for work, fun enough to want to use daily.

@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import type { SpamTrigger } from '../types';
 import { HighlightedTextarea } from './HighlightedTextarea';
 import { HighlightedInput } from './HighlightedInput';
-import { ChevronDownIcon, AlertIcon } from './icons/CategoryIcons';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail } from 'lucide-react';
 
 interface Variation {
   subject: string;
@@ -77,144 +80,186 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-lg border border-white/10 p-4 sm:p-6 rounded-2xl shadow-2xl space-y-6 animate-scale-in">
-      
-      {variations.map((variation, index) => {
-        const isOpen = openVariations.has(index);
-        const subjectLength = variation.subject.length;
-        const isSubjectOverLimit = subjectLength > SUBJECT_CHAR_LIMIT;
-        const previewLength = variation.previewText.length;
-        const isPreviewOverLimit = previewLength > PREVIEW_CHAR_LIMIT;
+    <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
+      <Card className="card-lift">
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+              <Mail className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle>Email Content</CardTitle>
+              <CardDescription>Enter your email to analyze</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {variations.map((variation, index) => {
+            const isOpen = openVariations.has(index);
+            const subjectLength = variation.subject.length;
+            const isSubjectOverLimit = subjectLength > SUBJECT_CHAR_LIMIT;
+            const previewLength = variation.previewText.length;
+            const isPreviewOverLimit = previewLength > PREVIEW_CHAR_LIMIT;
 
-        return (
-          <div key={index} className="bg-white/5 rounded-lg border border-white/10 transition-all duration-300 hover:border-purple-500/50 hover:bg-white/10">
-            <button
-              type="button"
-              onClick={() => toggleVariation(index)}
-              aria-expanded={isOpen}
-              className={`w-full flex justify-between items-center text-left p-4 transition-colors group ${isOpen ? 'rounded-t-lg bg-white/10' : 'rounded-lg'}`}
-              data-testid={`button-toggle-variation-${index}`}
-            >
-              <p className="font-bold text-gray-300 group-hover:text-purple-300 transition-colors">
-                {`Subject Variation ${index > 0 ? index + 1 : ''}`.trim()}
-              </p>
-              <div className="flex items-center gap-2">
-                {variations.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeVariation(index);
-                    }}
-                    className="text-gray-500 hover:text-red-400 rounded-full transition-colors p-1 z-10"
-                    aria-label={`Remove Variation ${index + 1}`}
-                    data-testid={`button-remove-variation-${index}`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                  </button>
-                )}
-                <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-              </div>
-            </button>
-            <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-              <div className="overflow-hidden">
-                <div className="space-y-4 p-4 border-t border-white/10">
-                  <div>
-                    <div className="flex justify-between items-baseline mb-2">
-                        <label htmlFor={`subject-${index}`} className="block text-sm font-medium text-gray-400">
-                            Subject Line
-                        </label>
-                        <span className={`text-xs transition-colors ${isSubjectOverLimit ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-                            {subjectLength} / {SUBJECT_CHAR_LIMIT}
-                        </span>
-                    </div>
-                    <div className="relative">
-                      <HighlightedInput
-                        id={`subject-${index}`}
-                        type="text"
-                        value={variation.subject}
-                        onChange={(e) => handleVariationChange(index, 'subject', e.target.value)}
-                        placeholder="e.g., Big News! Our Summer Sale is Here!"
-                        className={`w-full bg-gray-900 border rounded-lg focus:outline-none transition-all duration-300 input-inset-shadow ${isSubjectOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
-                        disabled={isLoading}
-                        spamTriggers={spamTriggers}
-                      />
-                      {isSubjectOverLimit && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <AlertIcon className="h-5 w-5 text-red-400" />
-                        </div>
-                      )}
-                    </div>
+            return (
+              <div 
+                key={index} 
+                className="rounded-lg border border-border bg-card/50 transition-all duration-300 hover:border-primary/30"
+              >
+                <button
+                  type="button"
+                  onClick={() => toggleVariation(index)}
+                  aria-expanded={isOpen}
+                  className={`w-full flex justify-between items-center text-left p-4 transition-colors group ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
+                  data-testid={`button-toggle-variation-${index}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="px-2 py-0.5">
+                      {index + 1}
+                    </Badge>
+                    <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                      Subject Variation {index > 0 ? index + 1 : ''}
+                    </span>
                   </div>
-                  <div>
-                    <div className="flex justify-between items-baseline mb-2">
-                        <label htmlFor={`preview-${index}`} className="block text-sm font-medium text-gray-400">
-                          Preview Text
-                        </label>
-                        <span className={`text-xs transition-colors ${isPreviewOverLimit ? 'text-red-500 font-bold' : 'text-gray-500'}`}>
-                            {previewLength} / {PREVIEW_CHAR_LIMIT}
-                        </span>
-                    </div>
-                    <div className="relative">
-                      <HighlightedInput
-                        id={`preview-${index}`}
-                        type="text"
-                        value={variation.previewText}
-                        onChange={(e) => handleVariationChange(index, 'previewText', e.target.value)}
-                        placeholder="e.g., Don't miss out on guaranteed savings..."
-                        className={`w-full bg-gray-900 border rounded-lg focus:outline-none transition-all duration-300 input-inset-shadow ${isPreviewOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
-                        disabled={isLoading}
-                        spamTriggers={spamTriggers}
-                      />
-                      {isPreviewOverLimit && (
-                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                            <AlertIcon className="h-5 w-5 text-red-400" />
+                  <div className="flex items-center gap-2">
+                    {variations.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeVariation(index);
+                        }}
+                        className="text-muted-foreground hover:text-destructive"
+                        data-testid={`button-remove-variation-${index}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    )}
+                    <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </button>
+                
+                <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                  <div className="overflow-hidden">
+                    <div className="space-y-4 p-4 border-t border-border">
+                      <div>
+                        <div className="flex justify-between items-baseline mb-2">
+                          <label htmlFor={`subject-${index}`} className="text-sm font-medium text-muted-foreground">
+                            Subject Line
+                          </label>
+                          <span className={`text-xs transition-colors ${isSubjectOverLimit ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                            {subjectLength} / {SUBJECT_CHAR_LIMIT}
+                          </span>
                         </div>
-                      )}
+                        <div className="relative">
+                          <HighlightedInput
+                            id={`subject-${index}`}
+                            type="text"
+                            value={variation.subject}
+                            onChange={(e) => handleVariationChange(index, 'subject', e.target.value)}
+                            placeholder="e.g., Big News! Our Summer Sale is Here!"
+                            className={`w-full bg-muted/50 border rounded-lg focus:outline-none transition-all duration-300 ${
+                              isSubjectOverLimit 
+                                ? 'border-destructive ring-2 ring-destructive/20' 
+                                : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+                            }`}
+                            disabled={isLoading}
+                            spamTriggers={spamTriggers}
+                          />
+                          {isSubjectOverLimit && (
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex justify-between items-baseline mb-2">
+                          <label htmlFor={`preview-${index}`} className="text-sm font-medium text-muted-foreground">
+                            Preview Text
+                          </label>
+                          <span className={`text-xs transition-colors ${isPreviewOverLimit ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                            {previewLength} / {PREVIEW_CHAR_LIMIT}
+                          </span>
+                        </div>
+                        <div className="relative">
+                          <HighlightedInput
+                            id={`preview-${index}`}
+                            type="text"
+                            value={variation.previewText}
+                            onChange={(e) => handleVariationChange(index, 'previewText', e.target.value)}
+                            placeholder="e.g., Don't miss out on guaranteed savings..."
+                            className={`w-full bg-muted/50 border rounded-lg focus:outline-none transition-all duration-300 ${
+                              isPreviewOverLimit 
+                                ? 'border-destructive ring-2 ring-destructive/20' 
+                                : 'border-border focus:border-primary focus:ring-2 focus:ring-primary/20'
+                            }`}
+                            disabled={isLoading}
+                            spamTriggers={spamTriggers}
+                          />
+                          {isPreviewOverLimit && (
+                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                              <AlertTriangle className="h-4 w-4 text-destructive" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
+            );
+          })}
+
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={addVariation}
+            disabled={isLoading}
+            className="w-full"
+            data-testid="button-add-variation"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Variation
+          </Button>
+
+          <div>
+            <label htmlFor="body" className="text-sm font-medium text-muted-foreground mb-2 block">
+              Email Body
+            </label>
+            <HighlightedTextarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              spamTriggers={spamTriggers}
+              disabled={isLoading}
+              placeholder="Hi [Name]..."
+              className="w-full h-64 bg-muted/50 border border-border rounded-lg focus:outline-none transition-all duration-300 font-sans focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-        );
-      })}
 
-      <div className="flex justify-start">
-        <button
-          type="button"
-          onClick={addVariation}
-          disabled={isLoading}
-          className="px-4 py-2 bg-white/10 text-gray-300 font-semibold rounded-lg hover:bg-white/20 transition-all duration-300 border border-white/20 hover:border-purple-500 hover:text-white transform hover:scale-105"
-          data-testid="button-add-variation"
-        >
-          + Add Variation
-        </button>
-      </div>
-
-      <div>
-        <label htmlFor="body" className="block text-sm font-medium text-gray-300 mb-2">
-          Email Body
-        </label>
-        <HighlightedTextarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          spamTriggers={spamTriggers}
-          disabled={isLoading}
-          placeholder="Hi [Name]..."
-          className="w-full h-64 bg-gray-900 border border-white/20 rounded-lg focus:outline-none transition-all duration-300 font-sans input-inset-shadow focus:border-purple-500 input-glow-focus"
-        />
-      </div>
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="px-8 py-3 text-white font-bold rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-105 btn-gradient-purple"
-          data-testid="button-grade-email"
-        >
-          {isLoading ? 'Analyzing...' : 'Grade My Email'}
-        </button>
-      </div>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
+            data-testid="button-grade-email"
+          >
+            {isLoading ? (
+              <>
+                <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-5 h-5 mr-2" />
+                Grade My Email
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
     </form>
   );
 };

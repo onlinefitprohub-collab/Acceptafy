@@ -93,37 +93,37 @@
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
-  --background: 0 0% 7%;
+  --background: 240 10% 4%;
   --foreground: 0 0% 98%;
-  --border: 0 0% 16%;
-  --card: 0 0% 9%;
+  --border: 240 6% 16%;
+  --card: 240 10% 6%;
   --card-foreground: 0 0% 98%;
-  --card-border: 0 0% 12%;
-  --sidebar: 0 0% 11%;
+  --card-border: 240 6% 12%;
+  --sidebar: 240 10% 5%;
   --sidebar-foreground: 0 0% 98%;
-  --sidebar-border: 0 0% 14%;
-  --sidebar-primary: 262 83% 58%;
+  --sidebar-border: 240 6% 10%;
+  --sidebar-primary: 270 91% 65%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 15%;
+  --sidebar-accent: 240 10% 12%;
   --sidebar-accent-foreground: 0 0% 98%;
-  --sidebar-ring: 262 83% 58%;
-  --popover: 0 0% 13%;
+  --sidebar-ring: 270 91% 65%;
+  --popover: 240 10% 8%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 0 0% 16%;
-  --primary: 262 83% 58%;
+  --popover-border: 240 6% 16%;
+  --primary: 270 91% 65%;
   --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 17%;
+  --secondary: 240 6% 17%;
   --secondary-foreground: 0 0% 98%;
   --muted: 260 6% 19%;
-  --muted-foreground: 0 0% 70%;
+  --muted-foreground: 0 0% 65%;
   --accent: 260 8% 18%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --input: 0 0% 35%;
-  --ring: 262 83% 58%;
-  --chart-1: 262 83% 75%;
-  --chart-2: 280 65% 70%;
+  --input: 240 6% 25%;
+  --ring: 270 91% 65%;
+  --chart-1: 270 91% 75%;
+  --chart-2: 330 81% 70%;
   --chart-3: 220 70% 65%;
   --chart-4: 340 75% 65%;
   --chart-5: 30 80% 60%;
@@ -484,4 +484,237 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ============================================ */
+/* GAMIFICATION & MODERN UI EFFECTS            */
+/* ============================================ */
+
+/* Gradient text effect */
+.gradient-text {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glowing score effects */
+.glow-purple {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4),
+              0 0 40px rgba(168, 85, 247, 0.2),
+              0 0 60px rgba(168, 85, 247, 0.1);
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4),
+              0 0 40px rgba(34, 197, 94, 0.2),
+              0 0 60px rgba(34, 197, 94, 0.1);
+}
+
+.glow-yellow {
+  box-shadow: 0 0 20px rgba(234, 179, 8, 0.4),
+              0 0 40px rgba(234, 179, 8, 0.2),
+              0 0 60px rgba(234, 179, 8, 0.1);
+}
+
+.glow-pink {
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.4),
+              0 0 40px rgba(236, 72, 153, 0.2),
+              0 0 60px rgba(236, 72, 153, 0.1);
+}
+
+/* Animated gradient border */
+@keyframes gradient-rotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-border {
+  position: relative;
+  background: linear-gradient(135deg, #a855f7, #ec4899, #8b5cf6, #a855f7);
+  background-size: 300% 300%;
+  animation: gradient-rotate 4s ease infinite;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  background: hsl(var(--card));
+  border-radius: inherit;
+}
+
+/* Confetti effect for achievements */
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+.confetti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  animation: confetti-fall 3s linear forwards;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Pulse animation for XP gains */
+@keyframes xp-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+.xp-pulse {
+  animation: xp-pulse 0.6s ease-in-out;
+}
+
+/* Level up burst effect */
+@keyframes level-burst {
+  0% { transform: scale(0.8); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.level-burst {
+  animation: level-burst 0.5s ease-out;
+}
+
+/* Streak fire animation */
+@keyframes fire-flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  25% { transform: scaleY(1.1) scaleX(0.95); }
+  50% { transform: scaleY(0.95) scaleX(1.05); }
+  75% { transform: scaleY(1.05) scaleX(0.98); }
+}
+
+.fire-animate {
+  animation: fire-flicker 0.5s ease-in-out infinite;
+}
+
+/* Orbital loader animation */
+@keyframes orbit {
+  0% { transform: rotate(0deg) translateX(24px) rotate(0deg); }
+  100% { transform: rotate(360deg) translateX(24px) rotate(-360deg); }
+}
+
+.orbit-dot {
+  animation: orbit 1.5s linear infinite;
+}
+
+.orbit-dot:nth-child(2) { animation-delay: -0.5s; }
+.orbit-dot:nth-child(3) { animation-delay: -1s; }
+
+/* Gradient ring animation */
+@keyframes ring-rotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.ring-rotate {
+  animation: ring-rotate 2s linear infinite;
+}
+
+/* Score counter animation */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.count-up {
+  animation: count-up 0.3s ease-out;
+}
+
+/* Card hover lift effect */
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(168, 85, 247, 0.15);
+}
+
+/* Shimmer loading effect */
+@keyframes shimmer-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.shimmer-loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  animation: shimmer-slide 1.5s ease-in-out infinite;
+}
+
+/* Score ring animation */
+@keyframes score-fill {
+  from { stroke-dashoffset: 339.292; }
+}
+
+.score-ring {
+  animation: score-fill 1.5s ease-out forwards;
+}
+
+/* Achievement unlock effect */
+@keyframes achievement-pop {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.achievement-pop {
+  animation: achievement-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Gradient card background */
+.gradient-card {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card)) 0%,
+    hsl(var(--card) / 0.8) 100%
+  );
+  border: 1px solid hsl(var(--border));
+}
+
+.gradient-card:hover {
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
