@@ -3,7 +3,11 @@ import { checkDomainHealth } from '../services/geminiService';
 import type { DomainHealth } from '../types';
 import { GoodStatusIcon, WarningStatusIcon, BadStatusIcon, InfoIcon } from './icons/CategoryIcons';
 
-const formatReport = (report: string) => {
+const formatReport = (report: string | undefined): { introText: string; sections: { label: string; content: string }[] } => {
+    if (!report || typeof report !== 'string') {
+        return { introText: '', sections: [] };
+    }
+
     const sectionPatterns = [
         { pattern: /SPF\s*\([^)]+\):/gi, label: 'SPF (Sender Policy Framework)' },
         { pattern: /DKIM\s*\([^)]+\):/gi, label: 'DKIM (DomainKeys Identified Mail)' },
@@ -88,7 +92,7 @@ export const DomainHealthChecker: React.FC = () => {
         }
     };
 
-    const formattedReport = result ? formatReport(result.report) : null;
+    const formattedReport = result ? formatReport(result.report) : { introText: '', sections: [] };
 
     return (
         <div className="space-y-4" data-testid="domain-health-checker">
@@ -118,7 +122,7 @@ export const DomainHealthChecker: React.FC = () => {
             
             {error && <p className="text-red-400 text-sm" data-testid="text-domain-error">{error}</p>}
 
-            {result && formattedReport && (
+            {result && (
                 <div className={`mt-4 p-4 rounded-lg border ${getStatusStyles(result.status).bg} ${getStatusStyles(result.status).border} animate-fade-in`} data-testid="domain-health-result">
                     <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">{getStatusStyles(result.status).icon}</div>
