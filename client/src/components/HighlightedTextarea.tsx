@@ -1,15 +1,20 @@
 import { useMemo, useRef, useEffect, useCallback } from 'react';
 import type { SpamTrigger } from '../types';
 
-interface HighlightedTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+interface HighlightedTextareaProps {
+    value: string;
+    onChange: (e: { target: { value: string } }) => void;
     spamTriggers: SpamTrigger[];
+    className?: string;
+    placeholder?: string;
+    disabled?: boolean;
 }
 
 const getSeverityColor = (severity: 'High' | 'Medium' | 'Low'): string => {
     switch (severity) {
-        case 'High': return 'rgba(239, 68, 68, 0.4)';
-        case 'Medium': return 'rgba(234, 179, 8, 0.4)';
-        case 'Low': return 'rgba(59, 130, 246, 0.4)';
+        case 'High': return 'rgba(239, 68, 68, 0.5)';
+        case 'Medium': return 'rgba(234, 179, 8, 0.5)';
+        case 'Low': return 'rgba(59, 130, 246, 0.5)';
         default: return 'transparent';
     }
 };
@@ -28,17 +33,21 @@ const escapeHtml = (unsafe: string) =>
 
 export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
     value,
+    onChange,
     spamTriggers,
     className,
-    ...props
+    placeholder,
+    disabled,
 }) => {
-    const backdropRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const editorRef = useRef<HTMLDivElement>(null);
+    const isInternalUpdate = useRef(false);
 
     const highlightedHtml = useMemo(() => {
         const textValue = String(value || '');
-        if (!spamTriggers || spamTriggers.length === 0 || !textValue) {
-            return escapeHtml(textValue).replace(/\n/g, '\n') + '\u200b';
+        if (!textValue) return '';
+        
+        if (!spamTriggers || spamTriggers.length === 0) {
+            return escapeHtml(textValue).replace(/\n/g, '<br>');
         }
 
         const triggerMap = new Map<string, SpamTrigger>();
@@ -47,7 +56,9 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         });
 
         const wordsToMatch = spamTriggers.map(t => escapeRegExp(t.word));
-        if (wordsToMatch.length === 0) return escapeHtml(textValue) + '\u200b';
+        if (wordsToMatch.length === 0) {
+            return escapeHtml(textValue).replace(/\n/g, '<br>');
+        }
         
         const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
         
@@ -62,7 +73,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             const matchedWord = match[0];
             const trigger = triggerMap.get(matchedWord.toLowerCase());
             const bgColor = trigger ? getSeverityColor(trigger.severity) : 'transparent';
-            parts.push(`<mark style="background-color: ${bgColor}; color: transparent; border-radius: 3px;">${escapeHtml(matchedWord)}</mark>`);
+            parts.push(`<mark style="background-color: ${bgColor}; color: inherit; border-radius: 3px; padding: 0 2px;">${escapeHtml(matchedWord)}</mark>`);
             lastIndex = regex.lastIndex;
         }
 
@@ -70,85 +81,137 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             parts.push(escapeHtml(textValue.substring(lastIndex)));
         }
         
-        return parts.join('') + '\u200b';
+        return parts.join('').replace(/\n/g, '<br>');
     }, [value, spamTriggers]);
 
-    const syncScroll = useCallback(() => {
-        if (backdropRef.current && textareaRef.current) {
-            backdropRef.current.scrollTop = textareaRef.current.scrollTop;
-            backdropRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    const getTextFromHtml = useCallback((element: HTMLElement): string => {
+        let text = '';
+        element.childNodes.forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                text += node.textContent;
+            } else if (node.nodeName === 'BR') {
+                text += '\n';
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                text += getTextFromHtml(node as HTMLElement);
+            }
+        });
+        return text;
+    }, []);
+
+    const handleInput = useCallback(() => {
+        if (editorRef.current && !isInternalUpdate.current) {
+            const newText = getTextFromHtml(editorRef.current);
+            onChange({ target: { value: newText } });
+        }
+    }, [onChange, getTextFromHtml]);
+
+    const saveCursorPosition = useCallback(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || !editorRef.current) return null;
+        
+        const range = selection.getRangeAt(0);
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(editorRef.current);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        return preCaretRange.toString().length;
+    }, []);
+
+    const restoreCursorPosition = useCallback((position: number | null) => {
+        if (position === null || !editorRef.current) return;
+        
+        const selection = window.getSelection();
+        if (!selection) return;
+
+        let currentPos = 0;
+        const range = document.createRange();
+        
+        const findPosition = (node: Node): boolean => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const textLength = node.textContent?.length || 0;
+                if (currentPos + textLength >= position) {
+                    range.setStart(node, position - currentPos);
+                    range.setEnd(node, position - currentPos);
+                    return true;
+                }
+                currentPos += textLength;
+            } else if (node.nodeName === 'BR') {
+                if (currentPos === position) {
+                    range.setStartAfter(node);
+                    range.setEndAfter(node);
+                    return true;
+                }
+                currentPos += 1;
+            } else {
+                for (const child of Array.from(node.childNodes)) {
+                    if (findPosition(child)) return true;
+                }
+            }
+            return false;
+        };
+
+        if (findPosition(editorRef.current)) {
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
     }, []);
-    
-    useEffect(() => {
-        syncScroll();
-    }, [value, syncScroll]);
 
     useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.addEventListener('scroll', syncScroll);
-            return () => textarea.removeEventListener('scroll', syncScroll);
+        if (editorRef.current) {
+            const currentText = getTextFromHtml(editorRef.current);
+            if (currentText !== value) {
+                isInternalUpdate.current = true;
+                const cursorPos = saveCursorPosition();
+                editorRef.current.innerHTML = highlightedHtml || '<br>';
+                restoreCursorPosition(cursorPos);
+                isInternalUpdate.current = false;
+            }
         }
-    }, [syncScroll]);
+    }, [highlightedHtml, value, getTextFromHtml, saveCursorPosition, restoreCursorPosition]);
 
-    const baseStyles: React.CSSProperties = {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        padding: '16px',
-        margin: 0,
-        border: 'none',
-        fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-        fontSize: '16px',
-        fontWeight: 400,
-        lineHeight: '24px',
-        letterSpacing: 'normal',
-        wordSpacing: 'normal',
-        textAlign: 'left',
-        textIndent: 0,
-        whiteSpace: 'pre-wrap',
-        wordWrap: 'break-word',
-        overflowWrap: 'break-word',
-        boxSizing: 'border-box',
-    };
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand('insertText', false, text);
+    }, []);
+
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.execCommand('insertLineBreak');
+        }
+    }, []);
 
     return (
-        <div className={`relative ${className}`} style={{ overflow: 'hidden' }}>
+        <div className={`relative ${className || ''}`}>
             <div
-                ref={backdropRef}
-                aria-hidden="true"
-                className="scrollbar-hide"
-                style={{ 
-                    ...baseStyles,
-                    overflow: 'auto',
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                    color: 'transparent',
-                    background: 'transparent',
-                    msOverflowStyle: 'none',
-                    scrollbarWidth: 'none',
-                }}
-                dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            />
-            <textarea
-                ref={textareaRef}
-                value={value}
+                ref={editorRef}
+                contentEditable={!disabled}
+                onInput={handleInput}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                className="w-full h-full overflow-auto outline-none"
                 style={{
-                    ...baseStyles,
-                    position: 'relative',
-                    overflow: 'auto',
-                    background: 'transparent',
+                    padding: '16px',
                     color: '#d1d5db',
                     caretColor: 'white',
-                    resize: 'none',
-                    outline: 'none',
+                    whiteSpace: 'pre-wrap',
+                    wordWrap: 'break-word',
+                    overflowWrap: 'break-word',
+                    minHeight: '100%',
                 }}
                 data-testid="textarea-highlighted"
-                {...props}
+                data-placeholder={placeholder}
+                suppressContentEditableWarning
+                dangerouslySetInnerHTML={{ __html: highlightedHtml || '<br>' }}
             />
+            {!value && placeholder && (
+                <div 
+                    className="absolute top-0 left-0 pointer-events-none text-gray-500"
+                    style={{ padding: '16px' }}
+                >
+                    {placeholder}
+                </div>
+            )}
         </div>
     );
 };
