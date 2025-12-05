@@ -51,7 +51,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 interface AppSidebarProps {
@@ -184,6 +184,19 @@ export function AppSidebar({
                         >
                           <Sparkles className="w-3 h-3" />
                           <span>Tone Profiles</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'preview'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('preview');
+                          }}
+                          data-testid="nav-tools-preview"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>Email Preview</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

@@ -46,6 +46,7 @@ import { DomainHealthChecker } from './components/DomainHealthChecker';
 import { ListQualityChecker } from './components/ListQualityChecker';
 import { BimiGenerator } from './components/BimiGenerator';
 import { WarmupPlanner } from './components/WarmupPlanner';
+import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,7 +71,7 @@ import type {
 } from './types';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1115,6 +1116,10 @@ function AppContent() {
         </Card>
       )}
 
+      {toolsSubView === 'preview' && (
+        <EmailPreviewTool />
+      )}
+
       {!toolsSubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
@@ -1158,6 +1163,17 @@ function AppContent() {
               <div>
                 <h3 className="font-semibold text-foreground">Tone Profiles</h3>
                 <p className="text-sm text-muted-foreground">Change your email's voice</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer md:col-span-2" onClick={() => setToolsSubView('preview')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Email Preview</h3>
+                <p className="text-sm text-muted-foreground">See how emails look in Gmail, Outlook & Apple Mail</p>
               </div>
             </CardContent>
           </Card>
