@@ -74,8 +74,8 @@ export default function Pricing() {
         `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
         "Advanced spam analysis (ISP-specific)",
         "Subject line A/B testing",
-        `${SUBSCRIPTION_LIMITS.pro.teamSeats} team seats`,
-        `${SUBSCRIPTION_LIMITS.pro.brandDomains} brand domains`,
+        "Priority email support",
+        `${SUBSCRIPTION_LIMITS.pro.historyLimit.toLocaleString()} analysis history`,
       ],
     },
     {
@@ -87,10 +87,10 @@ export default function Pricing() {
       features: [
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
         `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
-        `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats`,
         "API access",
         "White-label PDF reports",
-        `${SUBSCRIPTION_LIMITS.scale.brandDomains} brand domains`,
+        "Bulk email analysis",
+        `${SUBSCRIPTION_LIMITS.scale.historyLimit.toLocaleString()} analysis history`,
       ],
     },
   ];
@@ -135,8 +135,8 @@ export default function Pricing() {
       a: "You'll get a warning at 80% usage. At 100%, you can upgrade to a higher tier for more capacity, or wait until your next billing cycle when limits reset."
     },
     {
-      q: "Is there a free trial for paid plans?",
-      a: "Yes! All paid plans come with a 14-day free trial. Cancel anytime during the trial and you won't be charged."
+      q: "Can I try before I buy?",
+      a: "Absolutely! The Starter plan is completely free with 3 email grades and 3 AI rewrites per month. No credit card required to get started."
     },
     {
       q: "Do unused grades roll over?",
@@ -248,9 +248,11 @@ export default function Pricing() {
                       ) : isCurrentPlan ? (
                         "Current Plan"
                       ) : plan.key === "starter" ? (
-                        "Get Started Free"
+                        "Start Free"
+                      ) : plan.key === "pro" ? (
+                        "Get Pro"
                       ) : (
-                        "Start 14-Day Trial"
+                        "Get Scale"
                       )}
                     </Button>
                   </CardFooter>
@@ -304,9 +306,9 @@ export default function Pricing() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-sm" data-testid="badge-14-day-guarantee">
+              <div className="flex items-center gap-2 text-sm" data-testid="badge-cancel-anytime">
                 <ShieldCheck className="w-5 h-5 text-green-500" />
-                <span className="font-medium">14-day guarantee</span>
+                <span className="font-medium">Cancel anytime</span>
               </div>
             </CardContent>
           </Card>
