@@ -1,0 +1,88 @@
+import React, { useState } from 'react';
+import type { PersonalizationScore } from '../types';
+import { PersonalizationIcon, ChevronDownIcon } from './icons/CategoryIcons';
+import { InfoTooltip } from './InfoTooltip';
+
+interface PersonalizationScoreCardProps {
+  scoreData: PersonalizationScore;
+}
+
+export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> = ({ scoreData }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const circumference = 2 * Math.PI * 28; // 2 * pi * r
+  const offset = circumference - (scoreData.score / 100) * circumference;
+
+  const getColor = (score: number) => {
+    if (score > 75) return 'stroke-green-400 text-green-300';
+    if (score > 40) return 'stroke-yellow-400 text-yellow-300';
+    return 'stroke-red-400 text-red-300';
+  };
+  const colorClasses = getColor(scoreData.score);
+
+  return (
+    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg h-full flex flex-col">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-md"
+        aria-expanded={isExpanded}
+        tabIndex={0}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-purple-400"><PersonalizationIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-white">Personalization & Authenticity</h3>
+          <InfoTooltip text="Scores how personalized and human your email feels. High scores indicate the email feels like a 1-to-1 conversation, which boosts engagement and deliverability." />
+        </div>
+        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      <div className="flex-grow flex flex-col md:flex-row items-center gap-4 mt-4">
+        <div className="flex-shrink-0">
+          <div className="relative w-20 h-20">
+            <svg className="w-full h-full" viewBox="0 0 60 60">
+              <circle
+                className="stroke-current text-gray-900/50"
+                strokeWidth="4"
+                fill="transparent"
+                r="28"
+                cx="30"
+                cy="30"
+              />
+              <circle
+                className={`transition-all duration-1000 ease-in-out ${colorClasses}`}
+                strokeWidth="4"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                strokeLinecap="round"
+                fill="transparent"
+                r="28"
+                cx="30"
+                cy="30"
+                transform="rotate(-90 30 30)"
+              />
+            </svg>
+            <span className={`absolute inset-0 flex items-center justify-center text-xl font-bold ${colorClasses}`}>
+              {scoreData.score}
+            </span>
+          </div>
+        </div>
+        <div className="flex-1 text-center md:text-left">
+          <p className="text-gray-400 italic text-sm">"{scoreData.summary}"</p>
+        </div>
+      </div>
+
+      <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="border-t border-white/10 pt-4 mt-4">
+              <h4 className="font-semibold text-gray-300 mb-2">Detailed Feedback:</h4>
+              <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
+                {scoreData.feedback.map((item, index) => (
+                  <li key={index} className="leading-relaxed">{item}</li>
+                ))}
+              </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
