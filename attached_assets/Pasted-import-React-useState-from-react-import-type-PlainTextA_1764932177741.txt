@@ -1,0 +1,69 @@
+import React, { useState } from 'react';
+import type { PlainTextAnalysis } from '../types';
+import { PlainTextIcon, ChevronDownIcon } from './icons/CategoryIcons';
+import { InfoTooltip } from './InfoTooltip';
+
+interface PlainTextAnalysisCardProps {
+  analysis: PlainTextAnalysis;
+}
+
+export const PlainTextAnalysisCard: React.FC<PlainTextAnalysisCardProps> = ({ analysis }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [view, setView] = useState<'plain' | 'html'>('plain');
+
+  const getColor = (score: number) => {
+    if (score > 80) return 'bg-green-500';
+    if (score > 50) return 'bg-yellow-500';
+    return 'bg-red-500';
+  };
+  const colorClass = getColor(analysis.readabilityScore);
+
+  return (
+    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between text-left p-4 sm:p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-2xl"
+        aria-expanded={isExpanded}
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-purple-400"><PlainTextIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-white">Plain-Text Analysis</h3>
+          <InfoTooltip text="A clean plain-text version is crucial for deliverability and accessibility. This analysis ensures it's readable and properly formatted." />
+        </div>
+        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+        <div className="overflow-hidden">
+          <div className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="border-t border-white/10 pt-4 mt-4 space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-1">Readability Score: {analysis.readabilityScore}/100</h4>
+                <div className="w-full bg-gray-900/50 rounded-full h-2.5 border border-white/10">
+                    <div className={`${colorClass} h-2 rounded-full m-px`} style={{ width: `calc(${analysis.readabilityScore}% - 2px)` }}></div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-2">Feedback:</h4>
+                <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
+                    {analysis.feedback.map((item, index) => (
+                        <li key={index}>{item}</li>
+                    ))}
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="font-semibold text-gray-300 mb-2">Preview</h4>
+                <div className="p-3 bg-gray-900/50 rounded-lg text-gray-300 border border-white/10 h-48 overflow-y-auto whitespace-pre-wrap font-sans text-sm">
+                    {analysis.plainTextVersion}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
