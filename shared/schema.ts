@@ -95,32 +95,39 @@ export const SUBSCRIPTION_LIMITS = {
     apiAccess: false,
   },
   pro: {
-    gradesPerMonth: 400,
-    rewritesPerMonth: 200,
-    followupsPerMonth: 120,
-    deliverabilityChecksPerMonth: 80,
-    historyLimit: 2000,
-    brandDomains: 3,
-    teamSeats: 1,
+    gradesPerMonth: 600,
+    rewritesPerMonth: 300,
+    followupsPerMonth: 150,
+    deliverabilityChecksPerMonth: 100,
+    historyLimit: 5000,
+    brandDomains: 5,
+    teamSeats: 2,
     apiAccess: false,
   },
   scale: {
-    gradesPerMonth: 1500,
-    rewritesPerMonth: 800,
-    followupsPerMonth: 500,
-    deliverabilityChecksPerMonth: 300,
-    historyLimit: 10000,
-    brandDomains: 10,
-    teamSeats: 5,
+    gradesPerMonth: 2500,
+    rewritesPerMonth: 1200,
+    followupsPerMonth: 600,
+    deliverabilityChecksPerMonth: 400,
+    historyLimit: 50000,
+    brandDomains: 25,
+    teamSeats: 10,
     apiAccess: true,
   },
 } as const;
 
 // Pricing information
 export const PRICING = {
-  starter: { monthly: 0, name: 'Starter', tagline: 'Try before you commit' },
-  pro: { monthly: 39, name: 'Pro', tagline: 'For serious email marketers' },
-  scale: { monthly: 119, name: 'Scale', tagline: 'For teams and agencies' },
+  starter: { monthly: 0, name: 'Starter', tagline: 'Perfect for trying things out' },
+  pro: { monthly: 29, name: 'Pro', tagline: 'For growing email marketers' },
+  scale: { monthly: 89, name: 'Scale', tagline: 'For teams & agencies' },
+} as const;
+
+// Overage pricing (per pack)
+export const OVERAGE_PRICING = {
+  grades: { amount: 100, price: 5 },
+  rewrites: { amount: 50, price: 5 },
+  deliverability: { amount: 25, price: 5 },
 } as const;
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_LIMITS;

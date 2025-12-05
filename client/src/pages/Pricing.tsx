@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Users } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Users, Clock, Zap, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
@@ -56,12 +56,10 @@ export default function Pricing() {
       priceId: null,
       features: [
         `${SUBSCRIPTION_LIMITS.starter.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.starter.rewritesPerMonth} AI rewrites/month`,
-        `${SUBSCRIPTION_LIMITS.starter.followupsPerMonth} follow-up generations`,
-        `${SUBSCRIPTION_LIMITS.starter.deliverabilityChecksPerMonth} deliverability checks`,
-        "Basic spam analysis",
+        `${SUBSCRIPTION_LIMITS.starter.rewritesPerMonth} AI rewrites`,
+        "Spam & deliverability checks",
         "Email Academy access",
-        `${SUBSCRIPTION_LIMITS.starter.historyLimit} days history`,
+        "No credit card required",
       ],
     },
     {
@@ -73,14 +71,11 @@ export default function Pricing() {
       popular: true,
       features: [
         `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites/month`,
-        `${SUBSCRIPTION_LIMITS.pro.followupsPerMonth} follow-up generations`,
-        `${SUBSCRIPTION_LIMITS.pro.deliverabilityChecksPerMonth} deliverability checks`,
+        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
         "Advanced spam analysis",
         "Subject line A/B testing",
-        `${SUBSCRIPTION_LIMITS.pro.brandDomains} brand domains`,
+        `${SUBSCRIPTION_LIMITS.pro.teamSeats} team seats`,
         "Priority support",
-        "Template library",
       ],
     },
     {
@@ -91,11 +86,8 @@ export default function Pricing() {
       priceId: null,
       features: [
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites/month`,
-        `${SUBSCRIPTION_LIMITS.scale.followupsPerMonth} follow-up generations`,
-        `${SUBSCRIPTION_LIMITS.scale.deliverabilityChecksPerMonth} deliverability checks`,
-        `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats included`,
-        `${SUBSCRIPTION_LIMITS.scale.brandDomains} brand domains`,
+        `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
+        `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats`,
         "API access",
         "White-label reports",
         "Dedicated support",
@@ -133,6 +125,25 @@ export default function Pricing() {
     }
   };
 
+  const faqs = [
+    {
+      q: "Can I upgrade or downgrade anytime?",
+      a: "Yes! You can change your plan at any time. When upgrading, you'll be charged the prorated difference. When downgrading, your new rate starts at the next billing cycle."
+    },
+    {
+      q: "What happens if I hit my limit?",
+      a: "You'll get a warning at 80% usage. At 100%, you can either upgrade your plan or purchase additional grade packs ($5 per 100 grades)."
+    },
+    {
+      q: "Is there a free trial for paid plans?",
+      a: "Yes! All paid plans come with a 14-day free trial. Cancel anytime during the trial and you won't be charged."
+    },
+    {
+      q: "Do unused grades roll over?",
+      a: "No, usage resets each billing cycle. This keeps our pricing simple and affordable for everyone."
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -154,7 +165,7 @@ export default function Pricing() {
                   <a href="/api/login">Log in</a>
                 </Button>
                 <Button asChild data-testid="button-get-started">
-                  <a href="/api/login">Get Started</a>
+                  <a href="/api/login">Get Started Free</a>
                 </Button>
               </>
             )}
@@ -164,9 +175,13 @@ export default function Pricing() {
 
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that fits your email volume. All plans include core grading and deliverability tools.
+          <Badge variant="outline" className="mb-4" data-testid="badge-guarantee">
+            <Clock className="w-3 h-3 mr-1" />
+            14-Day Money-Back Guarantee
+          </Badge>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-heading">Simple Pricing, No Surprises</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-description">
+            Start free, upgrade when you need more. All plans include core grading and spam detection.
           </p>
         </div>
 
@@ -185,20 +200,21 @@ export default function Pricing() {
               return (
                 <Card 
                   key={plan.key} 
-                  className={`relative flex flex-col ${plan.popular ? 'border-purple-500 shadow-lg' : ''}`}
+                  className={`relative flex flex-col ${plan.popular ? 'border-purple-500 shadow-xl scale-105' : ''}`}
                   data-testid={`pricing-card-${plan.key}`}
                 >
                   {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg px-4 py-1" data-testid="badge-most-popular">
+                        <Sparkles className="w-3 h-3 mr-1" />
                         Most Popular
                       </Badge>
                     </div>
                   )}
                   
                   <CardHeader className="text-center pb-4">
-                    <div className="w-10 h-10 mx-auto rounded-lg bg-muted flex items-center justify-center mb-3">
-                      <Icon className="w-5 h-5 text-foreground" />
+                    <div className="w-12 h-12 mx-auto rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center mb-3">
+                      <Icon className="w-6 h-6 text-foreground" />
                     </div>
                     <CardTitle className="text-xl">{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
@@ -206,13 +222,13 @@ export default function Pricing() {
                   
                   <CardContent className="flex-1">
                     <div className="text-center mb-6">
-                      <span className="text-4xl font-bold">${plan.price}</span>
+                      <span className="text-5xl font-bold">${plan.price}</span>
                       {plan.price > 0 && (
-                        <span className="text-muted-foreground">/month</span>
+                        <span className="text-muted-foreground">/mo</span>
                       )}
                     </div>
                     
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
@@ -226,6 +242,7 @@ export default function Pricing() {
                     <Button 
                       className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
                       variant={plan.popular ? "default" : "outline"}
+                      size="lg"
                       onClick={() => handleSubscribe(plan.priceId, plan.key)}
                       disabled={checkoutMutation.isPending || isCurrentPlan}
                       data-testid={`button-subscribe-${plan.key}`}
@@ -235,9 +252,9 @@ export default function Pricing() {
                       ) : isCurrentPlan ? (
                         "Current Plan"
                       ) : plan.key === "starter" ? (
-                        "Get Started"
+                        "Get Started Free"
                       ) : (
-                        "Subscribe"
+                        "Start 14-Day Trial"
                       )}
                     </Button>
                   </CardFooter>
@@ -247,13 +264,62 @@ export default function Pricing() {
           </div>
         )}
 
-        <div className="mt-12 text-center space-y-4">
-          <p className="text-muted-foreground">
-            Need higher limits? <a href="mailto:support@acceptafy.com" className="text-foreground underline">Contact us</a> for custom enterprise plans.
+        <div className="mt-8 text-center space-y-2">
+          <p className="text-sm text-muted-foreground" data-testid="text-overage-info">
+            Need more? Add extra grades anytime: <span className="font-medium text-foreground">$5 per 100 grades</span>
           </p>
           <p className="text-sm text-muted-foreground">
-            14-day money-back guarantee on all paid plans.
+            Enterprise needs? <a href="mailto:hello@acceptafy.com" className="text-foreground underline" data-testid="link-enterprise">Contact us</a> for custom plans.
           </p>
+        </div>
+
+        <section className="mt-20 max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <Card key={index} data-testid={`faq-${index}`}>
+                <CardContent className="p-5">
+                  <h3 className="font-semibold mb-2">{faq.q}</h3>
+                  <p className="text-sm text-muted-foreground">{faq.a}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-16 max-w-2xl mx-auto" data-testid="section-all-plans">
+          <Card className="bg-gradient-to-br from-purple-500/5 to-pink-500/5 border-purple-500/20" data-testid="card-all-plans-include">
+            <CardContent className="p-6 flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg mb-2">All Plans Include</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2" data-testid="feature-spam">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Spam detection</span>
+                  </div>
+                  <div className="flex items-center gap-2" data-testid="feature-deliverability">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Deliverability checks</span>
+                  </div>
+                  <div className="flex items-center gap-2" data-testid="feature-academy">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Email Academy</span>
+                  </div>
+                  <div className="flex items-center gap-2" data-testid="feature-history">
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Analysis history</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm" data-testid="badge-14-day-guarantee">
+                <ShieldCheck className="w-5 h-5 text-green-500" />
+                <span className="font-medium">14-day guarantee</span>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <div className="mt-12 text-center">
           <Button variant="ghost" asChild data-testid="link-back-home">
             <a href="/">
               <ArrowLeft className="w-4 h-4 mr-2" />
