@@ -15,7 +15,8 @@ import {
   rewriteWithTone,
   generateEmailPreviews,
   generateWarmupPlan,
-  checkSpamTriggers
+  checkSpamTriggers,
+  analyzeSentiment
 } from "./gemini";
 import { 
   generateVariationsRequestSchema,
@@ -220,6 +221,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Spam check error:', error);
       res.status(500).json({ error: 'Failed to check for spam triggers' });
+    }
+  });
+
+  app.post('/api/sentiment/analyze', async (req, res) => {
+    try {
+      const { text, subject, previewText } = req.body;
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: 'Email text is required' });
+      }
+      const result = await analyzeSentiment(text, subject, previewText);
+      res.json(result);
+    } catch (error) {
+      console.error('Sentiment analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze sentiment' });
     }
   });
 

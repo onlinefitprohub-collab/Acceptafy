@@ -1027,3 +1027,114 @@ Also provide:
     inboxProbability: result.inboxProbability || 85
   };
 };
+
+interface SentimentAnalysisResult {
+  overallSentiment: 'Positive' | 'Neutral' | 'Negative' | 'Mixed';
+  sentimentScore: number;
+  emotionBreakdown: {
+    emotion: string;
+    percentage: number;
+    description: string;
+  }[];
+  toneDescription: string;
+  engagementPrediction: number;
+  emotionalTriggers: string[];
+  improvements: {
+    section: string;
+    currentTone: string;
+    suggestedTone: string;
+    originalText: string;
+    improvedText: string;
+    reason: string;
+  }[];
+  summary: string;
+}
+
+const sentimentAnalysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallSentiment: { type: Type.STRING },
+    sentimentScore: { type: Type.NUMBER },
+    emotionBreakdown: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          emotion: { type: Type.STRING },
+          percentage: { type: Type.NUMBER },
+          description: { type: Type.STRING }
+        }
+      }
+    },
+    toneDescription: { type: Type.STRING },
+    engagementPrediction: { type: Type.NUMBER },
+    emotionalTriggers: { type: Type.ARRAY, items: { type: Type.STRING } },
+    improvements: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          section: { type: Type.STRING },
+          currentTone: { type: Type.STRING },
+          suggestedTone: { type: Type.STRING },
+          originalText: { type: Type.STRING },
+          improvedText: { type: Type.STRING },
+          reason: { type: Type.STRING }
+        }
+      }
+    },
+    summary: { type: Type.STRING }
+  }
+};
+
+export const analyzeSentiment = async (text: string, subject?: string, previewText?: string): Promise<SentimentAnalysisResult> => {
+  const fullContent = [
+    subject ? `Subject: ${subject}` : '',
+    previewText ? `Preview: ${previewText}` : '',
+    `Body:\n${text}`
+  ].filter(Boolean).join('\n\n');
+
+  const prompt = `Analyze the emotional tone and sentiment of this email content to help improve reader engagement.
+
+${fullContent}
+
+Provide a comprehensive sentiment analysis including:
+
+1. **Overall Sentiment**: Classify as Positive, Neutral, Negative, or Mixed
+2. **Sentiment Score**: -100 (very negative) to +100 (very positive)
+3. **Emotion Breakdown**: Identify the top 3-5 emotions present (e.g., excitement, urgency, trust, fear, curiosity) with percentages that sum to 100%
+4. **Tone Description**: A brief description of the overall tone (e.g., "Professional yet warm", "Urgent and action-oriented")
+5. **Engagement Prediction**: 0-100 score predicting how likely readers are to engage positively
+6. **Emotional Triggers**: List specific words/phrases that evoke strong emotions
+7. **Improvements**: Suggest 2-4 specific improvements to enhance emotional engagement:
+   - Identify the section (subject, preview, opening, body, CTA, closing)
+   - Note the current tone
+   - Suggest a better tone
+   - Show the original text
+   - Provide an improved version
+   - Explain why this change helps
+8. **Summary**: A brief 2-3 sentence summary of the emotional impact and key recommendations
+
+Focus on actionable insights that will help the email connect better with recipients and drive desired actions.`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: sentimentAnalysisSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  return {
+    overallSentiment: result.overallSentiment || 'Neutral',
+    sentimentScore: result.sentimentScore || 0,
+    emotionBreakdown: result.emotionBreakdown || [],
+    toneDescription: result.toneDescription || 'Unable to determine tone',
+    engagementPrediction: result.engagementPrediction || 50,
+    emotionalTriggers: result.emotionalTriggers || [],
+    improvements: result.improvements || [],
+    summary: result.summary || 'Analysis complete.'
+  };
+};

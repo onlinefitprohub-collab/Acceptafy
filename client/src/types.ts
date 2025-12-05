@@ -249,3 +249,29 @@ export interface SpamCheckResult {
   riskSummary: string;
   inboxProbability: number;
 }
+
+export interface EmotionBreakdown {
+  emotion: string;
+  percentage: number;
+  description: string;
+}
+
+export interface ToneImprovement {
+  section: string;
+  currentTone: string;
+  suggestedTone: string;
+  originalText: string;
+  improvedText: string;
+  reason: string;
+}
+
+export interface SentimentAnalysisResult {
+  overallSentiment: 'Positive' | 'Neutral' | 'Negative' | 'Mixed';
+  sentimentScore: number;
+  emotionBreakdown: EmotionBreakdown[];
+  toneDescription: string;
+  engagementPrediction: number;
+  emotionalTriggers: string[];
+  improvements: ToneImprovement[];
+  summary: string;
+}
