@@ -10,6 +10,7 @@ import { ReplyAbilityCard } from './ReplyAbilityCard';
 import { PlainTextAnalysisCard } from './PlainTextAnalysisCard';
 import { AccessibilityCard } from './AccessibilityCard';
 import { EmailClientPreview } from './EmailClientPreview';
+import { InboxPlacementSimulator } from './InboxPlacementSimulator';
 import { SubjectIcon, PreviewIcon, BodyIcon, CtaIcon, ChecklistIcon, SpamIcon, MonitorIcon } from './icons/CategoryIcons';
 
 interface ResultsTabsProps {
@@ -85,6 +86,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({
             case 'risks':
                 return (
                      <div className="space-y-8 animate-fade-in">
+                        {result.inboxPlacementPrediction && <InboxPlacementSimulator prediction={result.inboxPlacementPrediction} />}
                         <SpamAnalysisCard spamTriggers={result.spamAnalysis} onSuggestionClick={onSuggestionClick} onQuickFix={onQuickFix} />
                         {result.linkAnalysis && result.linkAnalysis.length > 0 && <LinkAnalysisCard linkFindings={result.linkAnalysis} />}
                         <StructuralAnalysisCard structuralFindings={result.structuralAnalysis} onFullRewrite={onFullRewrite} />
