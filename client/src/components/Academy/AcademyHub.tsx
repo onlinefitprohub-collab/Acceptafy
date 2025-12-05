@@ -17,9 +17,12 @@ import { EcommerceBlueprint } from './EcommerceBlueprint';
 import { SenderReputation } from './SenderReputation';
 import { AdvancedAutomation } from './AdvancedAutomation';
 import { ReEngagementBlueprint } from './ReEngagementBlueprint';
+import { PersonalizedLearningPath } from './PersonalizedLearningPath';
+import { HistoryItem } from '../../types';
 
 interface AcademyHubProps {
   onClose: () => void;
+  history?: HistoryItem[];
 }
 
 type ActiveTab = 'modules' | 'glossary';
@@ -35,7 +38,7 @@ const AcademyModuleSection: React.FC<{ title: string; subtitle: string; children
     </div>
 );
 
-export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose }) => {
+export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] }) => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('modules');
     const [selectedModule, setSelectedModule] = useState<SelectedModule>(null);
     const mainContentRef = useRef<HTMLDivElement>(null);
@@ -68,6 +71,11 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose }) => {
                     <div className="animate-fade-in space-y-8">
                          <h3 className="text-2xl font-bold text-white mb-2">Welcome to the Academy</h3>
                         <p className="text-gray-400 max-w-3xl">A curated learning path to help you master every aspect of email marketing. Start with the foundations, master the craft, and then learn the strategies that drive growth.</p>
+                        
+                        <PersonalizedLearningPath 
+                            history={history}
+                            onSelectModule={(moduleKey) => setSelectedModule(moduleKey as SelectedModule)}
+                        />
                         
                         <AcademyModuleSection
                             title="Module 1: Maximize Your Deliverability"

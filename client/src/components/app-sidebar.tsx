@@ -19,6 +19,7 @@ import {
   Calendar,
   BadgeCheck,
   Heart,
+  LayoutDashboard,
   type LucideIcon
 } from 'lucide-react';
 
@@ -52,7 +53,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
@@ -105,6 +106,25 @@ export function AppSidebar({
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  isActive={activeView === 'dashboard'}
+                  onClick={() => {
+                    setActiveView('dashboard');
+                    setToolsSubView(null);
+                    setDeliverabilitySubView(null);
+                  }}
+                  className="group"
+                  data-testid="nav-dashboard"
+                >
+                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'dashboard' ? 'bg-gradient-to-br from-indigo-500 to-purple-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                    <LayoutDashboard className="w-4 h-4" />
+                  </div>
+                  <span>Dashboard</span>
+                  <Sparkles className={`w-3 h-3 ml-auto transition-opacity ${activeView === 'dashboard' ? 'opacity-100 text-yellow-400' : 'opacity-0'}`} />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   isActive={activeView === 'grader'}

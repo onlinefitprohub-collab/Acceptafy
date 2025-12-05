@@ -14,6 +14,10 @@ import { ErrorMessage } from './components/ErrorMessage';
 import { AcademyHub } from './components/Academy/AcademyHub';
 import { AppSidebar } from './components/app-sidebar';
 import { ThemeToggle } from './components/ThemeToggle';
+import { Dashboard } from './components/Dashboard';
+import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
+import { CelebrationModal, useCelebration } from './components/CelebrationModal';
+import { PriorityIssues } from './components/PriorityIssues';
 import { GamificationProvider, useGamification } from './hooks/use-gamification';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -72,41 +76,21 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 const EXAMPLE_EMAIL = {
-  subject: "URGENT: Don't Miss Out! MASSIVE Sale - Act NOW Before It's Gone!!!",
-  previewText: "You won't believe these deals! Buy now and save BIG. Limited time offer expires soon...",
-  body: `Dear Valued Customer,
-
-CONGRATULATIONS! You've been specially selected for an EXCLUSIVE offer!
-
-Are you ready to SAVE BIG? For a LIMITED TIME ONLY, we're offering an UNBELIEVABLE deal that you simply CANNOT miss!
-
-ACT NOW and get 70% OFF everything in our store!
-
-This is a ONCE IN A LIFETIME opportunity! Don't let this slip away - supplies are EXTREMELY limited and this offer EXPIRES SOON!
-
-Why wait? BUY NOW and join thousands of satisfied customers who have already taken advantage of this AMAZING deal!
-
-Click here immediately: www.example-store.com/buy-now
-
-But HURRY! This FREE offer won't last! You must act NOW before it's too late!
-
-To your success,
-The Sales Team
-
-P.S. - Don't forget, this offer is 100% GUARANTEED or your money back! No risk, just pure savings! CLICK NOW!
-
----
-To unsubscribe, click here. This is a promotional message.`
+  subject: "",
+  previewText: "",
+  body: ``
 };
 
 function AppContent() {
   const { toast } = useToast();
   const { recordGrade, recordRewrite, streak, level, xp, bestScore } = useGamification();
+  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { celebrations, celebrate, CelebrationRenderer } = useCelebration();
   const [variations, setVariations] = useState<EmailVariation[]>([{ 
     subject: EXAMPLE_EMAIL.subject, 
     previewText: EXAMPLE_EMAIL.previewText 
@@ -116,10 +100,11 @@ function AppContent() {
   const [result, setResult] = useState<GradingResult | null>(null);
   const [spamTriggers, setSpamTriggers] = useState<SpamTrigger[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [activeView, setActiveView] = useState<ActiveView>('grader');
+  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [toolsSubView, setToolsSubView] = useState<ToolsSubView>(null);
   const [deliverabilitySubView, setDeliverabilitySubView] = useState<DeliverabilitySubView>(null);
   const [showAcademy, setShowAcademy] = useState(false);
+  const [prevLevel, setPrevLevel] = useState(level);
   const [dnsRecords, setDnsRecords] = useState<DnsRecords | null>(null);
   const [isGeneratingDns, setIsGeneratingDns] = useState(false);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
@@ -147,6 +132,25 @@ function AppContent() {
     setHistory(getHistory());
   }, []);
 
+  useEffect(() => {
+    if (level > prevLevel && prevLevel > 0) {
+      celebrate('level_up', { level });
+    }
+    setPrevLevel(level);
+  }, [level, prevLevel, celebrate]);
+
+  const handleDashboardNavigate = (view: 'grader' | 'history' | 'tools' | 'deliverability', subView?: string) => {
+    setActiveView(view);
+    if (view === 'tools' && subView) {
+      setToolsSubView(subView as ToolsSubView);
+    } else if (view === 'deliverability' && subView) {
+      setDeliverabilitySubView(subView as DeliverabilitySubView);
+    } else {
+      setToolsSubView(null);
+      setDeliverabilitySubView(null);
+    }
+  };
+
   const handleGrade = async () => {
     if (!body.trim() && !variations.some(v => v.subject.trim())) return;
     
@@ -169,7 +173,14 @@ function AppContent() {
         setSpamTriggers(data.spamAnalysis || []);
         const newHistory = saveAnalysis({ body, variations }, data);
         setHistory(newHistory);
-        recordGrade(data.inboxPlacementScore?.score || 0);
+        const score = data.inboxPlacementScore?.score || 0;
+        recordGrade(score);
+        
+        if (score >= 90) {
+          setTimeout(() => {
+            celebrate('perfect_score', { score });
+          }, 500);
+        }
       } else {
         console.error('Grading failed');
       }
@@ -1334,6 +1345,28 @@ function AppContent() {
             gradeData={result.overallGrade}
           />
 
+          <PriorityIssues 
+            result={result}
+            onApplyFix={(issue) => {
+              if (issue.originalText && issue.replacement) {
+                const newBody = body.replace(new RegExp(issue.originalText, 'gi'), issue.replacement);
+                setBody(newBody);
+                toast({
+                  title: 'Fix Applied',
+                  description: `Replaced "${issue.originalText}" with "${issue.replacement}"`,
+                });
+              }
+            }}
+            onRequestRewrite={(category) => {
+              setActiveView('tools');
+              setToolsSubView('rewrite');
+              toast({
+                title: 'AI Rewrite Ready',
+                description: `Use the rewrite tool to improve your ${category.toLowerCase()}`,
+              });
+            }}
+          />
+
           <ResultsTabs
             result={result}
             body={body}
@@ -1393,6 +1426,7 @@ function AppContent() {
               <SidebarTrigger data-testid="button-sidebar-toggle" />
               <div className="h-6 w-px bg-border" />
               <h2 className="font-semibold text-foreground">
+                {activeView === 'dashboard' && 'Dashboard'}
                 {activeView === 'grader' && 'Email Grader'}
                 {activeView === 'history' && 'History'}
                 {activeView === 'tools' && 'AI Tools'}
@@ -1416,6 +1450,13 @@ function AppContent() {
 
           <main className="flex-1 overflow-y-auto p-6">
             <div className="max-w-5xl mx-auto">
+              {activeView === 'dashboard' && (
+                <Dashboard 
+                  history={history}
+                  onNavigate={handleDashboardNavigate}
+                  onOpenAcademy={() => setShowAcademy(true)}
+                />
+              )}
               {activeView === 'grader' && renderGraderView()}
               {activeView === 'history' && renderHistoryView()}
               {activeView === 'tools' && renderToolsView()}
@@ -1427,10 +1468,18 @@ function AppContent() {
 
       {showAcademy && (
         <div className="fixed inset-0 z-50 bg-background">
-          <AcademyHub onClose={() => setShowAcademy(false)} />
+          <AcademyHub onClose={() => setShowAcademy(false)} history={history} />
         </div>
       )}
 
+      {showOnboarding && (
+        <OnboardingTour 
+          onComplete={completeOnboarding}
+          onSkip={completeOnboarding}
+        />
+      )}
+
+      <CelebrationRenderer />
       <Toaster />
     </SidebarProvider>
   );
