@@ -3,24 +3,60 @@ import { checkDomainHealth } from '../services/geminiService';
 import type { DomainHealth } from '../types';
 import { GoodStatusIcon, WarningStatusIcon, BadStatusIcon, InfoIcon } from './icons/CategoryIcons';
 
-const formatReport = (report: string | undefined): { introText: string; sections: { label: string; content: string }[] } => {
-    if (!report || typeof report !== 'string') {
+const sectionHeaders = [
+    { key: 'SPF', label: 'SPF (Sender Policy Framework)' },
+    { key: 'DKIM', label: 'DKIM (DomainKeys Identified Mail)' },
+    { key: 'DMARC', label: 'DMARC (Domain-based Message Authentication)' },
+    { key: 'Reverse DNS', label: 'Reverse DNS (rDNS)' },
+    { key: 'Blacklist Status', label: 'Blacklist Status' },
+    { key: 'Mail Server Configuration', label: 'Mail Server Configuration' },
+    { key: 'Content & Engagement', label: 'Content & Engagement' }
+];
+
+const formatTextWithSections = (text: string | undefined): { introText: string; sections: { label: string; content: string }[] } => {
+    if (!text || typeof text !== 'string') {
         return { introText: '', sections: [] };
     }
 
-    const sectionHeaders = [
-        { key: 'SPF', label: 'SPF (Sender Policy Framework)' },
-        { key: 'DKIM', label: 'DKIM (DomainKeys Identified Mail)' },
-        { key: 'DMARC', label: 'DMARC (Domain-based Message Authentication)' },
-        { key: 'Reverse DNS', label: 'Reverse DNS (rDNS)' },
-        { key: 'Blacklist Status', label: 'Blacklist Status' },
-        { key: 'Mail Server Configuration', label: 'Mail Server Configuration' },
-        { key: 'Content & Engagement', label: 'Content & Engagement' }
-    ];
-
     const sections: { label: string; content: string }[] = [];
     let introText = '';
-    let workingText = report;
+    let workingText = text;
+
+    const numberedPattern = /\d+\.\s*\*\*([^*]+)\*\*:?\s*/g;
+    const hasNumberedFormat = numberedPattern.test(workingText);
+    
+    if (hasNumberedFormat) {
+        workingText = text;
+        const matches: { index: number; label: string; fullMatch: string }[] = [];
+        const regex = /\d+\.\s*\*\*([^*]+)\*\*:?\s*/g;
+        let match;
+        
+        while ((match = regex.exec(workingText)) !== null) {
+            matches.push({
+                index: match.index,
+                label: match[1].trim(),
+                fullMatch: match[0]
+            });
+        }
+
+        if (matches.length > 0 && matches[0].index > 0) {
+            introText = workingText.substring(0, matches[0].index).trim();
+        }
+
+        for (let i = 0; i < matches.length; i++) {
+            const startPos = matches[i].index + matches[i].fullMatch.length;
+            const endPos = i + 1 < matches.length ? matches[i + 1].index : workingText.length;
+            const content = workingText.substring(startPos, endPos).trim();
+            
+            if (content) {
+                sections.push({ label: matches[i].label, content });
+            }
+        }
+
+        if (sections.length > 0) {
+            return { introText, sections };
+        }
+    }
 
     const firstMatch = workingText.match(/(?:SPF|DKIM|DMARC|Reverse DNS|Blacklist Status|Mail Server|Content &)/i);
     if (firstMatch && firstMatch.index && firstMatch.index > 0) {
@@ -55,7 +91,7 @@ const formatReport = (report: string | undefined): { introText: string; sections
     }
 
     if (sections.length === 0) {
-        return { introText: report, sections: [] };
+        return { introText: text, sections: [] };
     }
 
     return { introText, sections };
@@ -95,7 +131,8 @@ export const DomainHealthChecker: React.FC = () => {
         }
     };
 
-    const formattedReport = result ? formatReport(result.report) : { introText: '', sections: [] };
+    const formattedReport = result ? formatTextWithSections(result.report) : { introText: '', sections: [] };
+    const formattedRecommendation = result ? formatTextWithSections(result.recommendation) : { introText: '', sections: [] };
 
     return (
         <div className="space-y-4" data-testid="domain-health-checker">
@@ -138,7 +175,7 @@ export const DomainHealthChecker: React.FC = () => {
                     
                     {formattedReport.sections.length > 0 && (
                         <div className="mt-4 space-y-4">
-                            {formattedReport.sections.map((section, index) => (
+                            {formattedReport.sections.map((section: { label: string; content: string }, index: number) => (
                                 <div key={index} className="border-l-2 border-white/20 pl-3">
                                     <h5 className="font-semibold text-gray-200 text-sm mb-1">{section.label}</h5>
                                     <p className="text-gray-400 text-sm leading-relaxed">{section.content}</p>
@@ -147,14 +184,30 @@ export const DomainHealthChecker: React.FC = () => {
                         </div>
                     )}
                     
-                    {formattedReport.sections.length === 0 && (
+                    {formattedReport.sections.length === 0 && result.report && (
                         <p className="text-gray-300 mt-2 text-sm">{result.report}</p>
                     )}
                     
                     {result.recommendation && (
                          <div className="mt-4 pt-4 border-t border-white/10">
-                            <h5 className="font-semibold text-gray-200">Recommendation</h5>
-                            <p className="text-gray-300 text-sm mt-1">{result.recommendation}</p>
+                            <h5 className="font-semibold text-gray-200 mb-3">Recommendations</h5>
+                            
+                            {formattedRecommendation.introText && (
+                                <p className="text-gray-300 text-sm mb-3">{formattedRecommendation.introText}</p>
+                            )}
+                            
+                            {formattedRecommendation.sections.length > 0 ? (
+                                <div className="space-y-3">
+                                    {formattedRecommendation.sections.map((section: { label: string; content: string }, index: number) => (
+                                        <div key={index} className="border-l-2 border-green-500/30 pl-3">
+                                            <h6 className="font-medium text-green-300 text-sm mb-1">{section.label}</h6>
+                                            <p className="text-gray-400 text-sm leading-relaxed">{section.content}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-300 text-sm">{result.recommendation}</p>
+                            )}
                         </div>
                     )}
                 </div>
