@@ -54,10 +54,42 @@ import type {
 
 type ActiveView = 'grader' | 'history' | 'academy';
 
+// Example promotional email that demonstrates common marketing mistakes
+const EXAMPLE_EMAIL = {
+  subject: "🔥 URGENT: Don't Miss Out! MASSIVE Sale - Act NOW Before It's Gone!!!",
+  previewText: "You won't believe these deals! Buy now and save BIG. Limited time offer expires soon...",
+  body: `Dear Valued Customer,
+
+CONGRATULATIONS! You've been specially selected for an EXCLUSIVE offer!
+
+Are you ready to SAVE BIG? For a LIMITED TIME ONLY, we're offering an UNBELIEVABLE deal that you simply CANNOT miss!
+
+💰 ACT NOW and get 70% OFF everything in our store! 💰
+
+This is a ONCE IN A LIFETIME opportunity! Don't let this slip away - supplies are EXTREMELY limited and this offer EXPIRES SOON!
+
+Why wait? BUY NOW and join thousands of satisfied customers who have already taken advantage of this AMAZING deal!
+
+Click here immediately: www.example-store.com/buy-now
+
+But HURRY! This FREE offer won't last! You must act NOW before it's too late!
+
+To your success,
+The Sales Team
+
+P.S. - Don't forget, this offer is 100% GUARANTEED or your money back! No risk, just pure savings! CLICK NOW!
+
+---
+To unsubscribe, click here. This is a promotional message.`
+};
+
 function App() {
   const { toast } = useToast();
-  const [variations, setVariations] = useState<EmailVariation[]>([{ subject: '', previewText: '' }]);
-  const [body, setBody] = useState('');
+  const [variations, setVariations] = useState<EmailVariation[]>([{ 
+    subject: EXAMPLE_EMAIL.subject, 
+    previewText: EXAMPLE_EMAIL.previewText 
+  }]);
+  const [body, setBody] = useState(EXAMPLE_EMAIL.body);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<GradingResult | null>(null);
   const [spamTriggers, setSpamTriggers] = useState<SpamTrigger[]>([]);
