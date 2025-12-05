@@ -447,14 +447,30 @@ export const generateDnsRecords = async (domain: string): Promise<DnsRecords> =>
 };
 
 export const checkDomainHealth = async (domain: string): Promise<DomainHealth> => {
-  const prompt = `Simulate a domain health check for: ${domain}
+  const prompt = `Simulate a comprehensive domain health check for email deliverability for: ${domain}
 
-Analyze and provide:
-1. Status: Clean, Warning, or Blacklisted
-2. Detailed report about the domain's email sending reputation
-3. Recommendations for improving deliverability
+Analyze the domain's email sending reputation and provide a detailed report covering these specific areas:
 
-Return as JSON with keys: status, report, recommendation.`;
+1. SPF (Sender Policy Framework): Analyze the SPF record configuration, whether it uses -all or ~all, and if it properly lists all sending sources.
+
+2. DKIM (DomainKeys Identified Mail): Evaluate if DKIM is properly configured, key rotation practices, and signing consistency.
+
+3. DMARC (Domain-based Message Authentication, Reporting & Conformance): Check the DMARC policy (none/quarantine/reject), reporting configuration, and alignment settings.
+
+4. Reverse DNS (rDNS): Assess if sending IPs have proper reverse DNS configured.
+
+5. Blacklist Status: Check against major blacklists like Spamhaus, SURBL, MXToolbox.
+
+6. Mail Server Configuration: Evaluate TLS encryption, open relay status, and server security.
+
+7. Content & Engagement: Note any content quality or engagement metrics that could affect deliverability.
+
+Format the report with each section labeled clearly (e.g., "SPF (Sender Policy Framework): ...").
+
+Return as JSON with:
+- status: "Clean", "Warning", or "Blacklisted"
+- report: The detailed analysis covering all 7 areas above, with each section clearly labeled
+- recommendation: Specific actionable steps to improve deliverability`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
