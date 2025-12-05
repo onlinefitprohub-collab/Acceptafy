@@ -1,65 +1,62 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { LegalIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const LegalCompliance: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Legal Compliance" subtitle="Master the rules of CAN-SPAM and GDPR to protect your business and reputation." />
-        
-        <SectionWrapper title="CAN-SPAM Act (United States)" subtitle="The Basics of US Email Law">
-            <p>The CAN-SPAM Act sets rules for commercial email in the United States. Violations can result in penalties up to $46,517 per email.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Don't use false or misleading header information</strong></li>
-                <li><strong>Don't use deceptive subject lines</strong></li>
-                <li><strong>Identify the message as an ad</strong> (if applicable)</li>
-                <li><strong>Include your physical postal address</strong></li>
-                <li><strong>Tell recipients how to opt out</strong></li>
-                <li><strong>Honor opt-out requests within 10 business days</strong></li>
-            </ul>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="GDPR (European Union)" subtitle="Stricter Standards for Privacy">
-            <p>GDPR applies if you have any subscribers in the EU. It's more stringent than CAN-SPAM and focuses on consent and data rights.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Explicit Consent:</strong> You must have clear, affirmative consent to email</li>
-                <li><strong>Purpose Limitation:</strong> Only use data for stated purposes</li>
-                <li><strong>Right to Access:</strong> Subscribers can request their data</li>
-                <li><strong>Right to Erasure:</strong> The "right to be forgotten"</li>
-                <li><strong>Data Portability:</strong> Subscribers can take their data elsewhere</li>
-            </ul>
-        </SectionWrapper>
+export const LegalCompliance: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+             <ModuleHeader
+                onBack={onBack}
+                title="Legal & Compliance"
+                subtitle="Understand the fundamental rules of email marketing to protect your business and respect your subscribers. (Disclaimer: This is for informational purposes and is not legal advice.)"
+            />
+            
+            <SectionWrapper
+                title="CAN-SPAM Act"
+                subtitle="Core Requirements for Commercial Email in the U.S."
+            >
+                <p>The CAN-SPAM Act sets the rules for commercial email in the United States. Violations can lead to significant financial penalties.</p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Accurate Header Information:</strong> Your "From," "To," "Reply-To," and routing information must be accurate and identify the person or business who initiated the message.</li>
+                    <li><strong className="text-gray-200">Non-Deceptive Subject Lines:</strong> The subject line must accurately reflect the content of the message.</li>
+                    <li><strong className="text-gray-200">Identify the Message as an Ad:</strong> You must disclose clearly and conspicuously that your message is an advertisement.</li>
+                    <li><strong className="text-gray-200">Include a Physical Address:</strong> Your message must include your valid physical postal address.</li>
+                    <li><strong className="text-gray-200">Provide a Clear Opt-Out:</strong> You must provide a clear and conspicuous explanation of how the recipient can opt out of getting email from you in the future. Opt-out requests must be honored promptly (within 10 business days).</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Best Practices for Compliance" subtitle="Staying Safe">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Use double opt-in:</strong> Confirms intent and protects against spam complaints</li>
-                <li><strong>Keep consent records:</strong> Document when and how people subscribed</li>
-                <li><strong>Make unsubscribing easy:</strong> One-click if possible</li>
-                <li><strong>Segment by region:</strong> Apply GDPR rules to EU subscribers</li>
-                <li><strong>Regular list cleaning:</strong> Remove bounces and unengaged subscribers</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="GDPR: Consent and Data Rights"
+                subtitle="Key Principles for Engaging with EU Citizens"
+            >
+                <p>The General Data Protection Regulation (GDPR) is a comprehensive data privacy law in the European Union. If you have subscribers in the EU, you must comply with its stricter requirements, which are centered on user consent and data rights.</p>
+                 <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Explicit & Unambiguous Consent:</strong> You must obtain clear, affirmative consent before sending marketing emails. Pre-checked boxes or consent hidden in terms and conditions are not valid.</li>
+                    <li><strong className="text-gray-200">Proof of Consent:</strong> You must be able to prove when and how each individual gave you their consent.</li>
+                    <li><strong className="text-gray-200">The Right to Erasure:</strong> Individuals have the right to request that all of their personal data be deleted from your systems, and you must comply.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="CASL (Canada)" subtitle="Canadian Anti-Spam Legislation">
-            <p>CASL is one of the strictest email laws in the world. If you email Canadians, you need:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Express or implied consent before sending</li>
-                <li>Clear identification of who is sending the email</li>
-                <li>A valid mailing address and contact information</li>
-                <li>A working unsubscribe mechanism</li>
-            </ul>
-        </SectionWrapper>
+            <InfoBox icon={<LegalIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">The Best Practice Approach</h4>
+                    <p className="text-purple-200 text-sm">To ensure compliance globally, it's best to follow the strictest regulations. Always get explicit consent (a double opt-in is a great method), make your unsubscribe process simple and immediate, and be transparent in all your communications.</p>
+                </div>
+            </InfoBox>
 
-        <InfoBox icon={<LegalIcon />}>
-            <p className="text-purple-200 text-sm">When in doubt, apply the strictest standard (usually GDPR) to all your subscribers. It's easier to maintain one high standard than different rules for different regions.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="Which regulation requires explicit, affirmative consent before sending marketing emails?"
-            options={[
-                { text: "CAN-SPAM (US)", isCorrect: false },
-                { text: "GDPR (EU)", isCorrect: true },
-                { text: "Both require explicit consent", isCorrect: false }
-            ]}
-            explanation="GDPR requires explicit, affirmative consent (opt-in) before sending marketing emails. CAN-SPAM technically allows an opt-out model where you can email until someone unsubscribes. However, best practice is to always use opt-in regardless of region."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="Under CAN-SPAM (U.S. Law), what piece of information must you include in every commercial email?"
+                options={[
+                    { text: "Your company's phone number.", isCorrect: false },
+                    { text: "A link to your full privacy policy.", isCorrect: false },
+                    { text: "Your valid physical postal address.", isCorrect: true },
+                    { text: "Your business registration ID.", isCorrect: false },
+                ]}
+                explanation="Correct! Including a valid physical postal address is a key requirement of the CAN-SPAM Act to ensure transparency and proper identification of the sender."
+            />
+        </div>
+    );
+};
