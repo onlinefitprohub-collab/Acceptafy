@@ -94,6 +94,7 @@ export const SUBSCRIPTION_LIMITS = {
     teamSeats: 1,
     apiAccess: false,
     advancedSpamAnalysis: false,
+    whitelabelReports: false,
   },
   pro: {
     gradesPerMonth: 600,
@@ -105,6 +106,7 @@ export const SUBSCRIPTION_LIMITS = {
     teamSeats: 2,
     apiAccess: false,
     advancedSpamAnalysis: true,
+    whitelabelReports: false,
   },
   scale: {
     gradesPerMonth: 2500,
@@ -116,6 +118,7 @@ export const SUBSCRIPTION_LIMITS = {
     teamSeats: 10,
     apiAccess: true,
     advancedSpamAnalysis: true,
+    whitelabelReports: true,
   },
 } as const;
 

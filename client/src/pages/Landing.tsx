@@ -180,10 +180,10 @@ export default function Landing() {
       features: [
         `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
         `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
-        "Advanced spam analysis",
+        "Advanced spam analysis (ISP-specific)",
         "Subject line A/B testing",
         `${SUBSCRIPTION_LIMITS.pro.teamSeats} team seats`,
-        "Priority support",
+        `${SUBSCRIPTION_LIMITS.pro.brandDomains} brand domains`,
       ],
       cta: "Start 14-Day Trial",
       popular: true,
@@ -199,8 +199,8 @@ export default function Landing() {
         `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
         `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats`,
         "API access",
-        "White-label reports",
-        "Dedicated support",
+        "White-label PDF reports",
+        `${SUBSCRIPTION_LIMITS.scale.brandDomains} brand domains`,
       ],
       cta: "Start 14-Day Trial",
       popular: false,
@@ -269,15 +269,15 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8" asChild data-testid="button-start-free">
-                  <a href="/api/login">
-                    Grade Your First Email Free
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg" asChild data-testid="button-start-free">
+                  <a href="/api/login" className="flex items-center gap-2">
+                    Get Started Free
+                    <ArrowRight className="w-5 h-5" />
                   </a>
                 </Button>
-                <Button size="lg" variant="outline" className="text-lg" asChild data-testid="button-see-demo">
-                  <a href="#how-it-works">
-                    <Play className="w-4 h-4 mr-2" />
+                <Button size="lg" variant="outline" asChild data-testid="button-see-demo">
+                  <a href="#how-it-works" className="flex items-center gap-2">
+                    <Play className="w-4 h-4" />
                     See How It Works
                   </a>
                 </Button>

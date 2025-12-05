@@ -72,10 +72,10 @@ export default function Pricing() {
       features: [
         `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
         `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
-        "Advanced spam analysis",
+        "Advanced spam analysis (ISP-specific)",
         "Subject line A/B testing",
         `${SUBSCRIPTION_LIMITS.pro.teamSeats} team seats`,
-        "Priority support",
+        `${SUBSCRIPTION_LIMITS.pro.brandDomains} brand domains`,
       ],
     },
     {
@@ -89,8 +89,8 @@ export default function Pricing() {
         `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
         `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats`,
         "API access",
-        "White-label reports",
-        "Dedicated support",
+        "White-label PDF reports",
+        `${SUBSCRIPTION_LIMITS.scale.brandDomains} brand domains`,
       ],
     },
   ];
