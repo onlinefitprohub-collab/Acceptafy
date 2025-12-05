@@ -1044,6 +1044,199 @@ Also provide:
   };
 };
 
+// Advanced Spam Analysis for Pro tier - includes ISP-specific patterns, link analysis, and reputation scoring
+export interface AdvancedSpamCheckResult extends SpamCheckResult {
+  ispAnalysis: {
+    gmail: { score: number; issues: string[]; recommendations: string[] };
+    outlook: { score: number; issues: string[]; recommendations: string[] };
+    yahoo: { score: number; issues: string[]; recommendations: string[] };
+  };
+  linkAnalysis: {
+    totalLinks: number;
+    suspiciousLinks: string[];
+    shortenedLinks: string[];
+    recommendations: string[];
+  };
+  authenticationImpact: {
+    spfRequired: boolean;
+    dkimRequired: boolean;
+    dmarcRequired: boolean;
+    recommendations: string[];
+  };
+  industryRisks: {
+    industry: string;
+    specificTriggers: string[];
+    complianceNotes: string[];
+  };
+  competitiveInsight: string;
+}
+
+const advancedSpamCheckSchema = {
+  type: Type.OBJECT,
+  properties: {
+    triggers: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          phrase: { type: Type.STRING },
+          reason: { type: Type.STRING },
+          alternatives: { type: Type.ARRAY, items: { type: Type.STRING } },
+          bestReplacement: { type: Type.STRING },
+          severity: { type: Type.STRING },
+          rephraseExamples: { type: Type.ARRAY, items: { type: Type.STRING } }
+        }
+      }
+    },
+    overallRisk: { type: Type.STRING },
+    riskSummary: { type: Type.STRING },
+    inboxProbability: { type: Type.NUMBER },
+    ispAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        gmail: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        },
+        outlook: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        },
+        yahoo: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+            recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+          }
+        }
+      }
+    },
+    linkAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        totalLinks: { type: Type.NUMBER },
+        suspiciousLinks: { type: Type.ARRAY, items: { type: Type.STRING } },
+        shortenedLinks: { type: Type.ARRAY, items: { type: Type.STRING } },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    authenticationImpact: {
+      type: Type.OBJECT,
+      properties: {
+        spfRequired: { type: Type.BOOLEAN },
+        dkimRequired: { type: Type.BOOLEAN },
+        dmarcRequired: { type: Type.BOOLEAN },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    industryRisks: {
+      type: Type.OBJECT,
+      properties: {
+        industry: { type: Type.STRING },
+        specificTriggers: { type: Type.ARRAY, items: { type: Type.STRING } },
+        complianceNotes: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    competitiveInsight: { type: Type.STRING }
+  }
+};
+
+export const checkSpamTriggersAdvanced = async (text: string, subject?: string, previewText?: string): Promise<AdvancedSpamCheckResult> => {
+  const fullContent = [
+    subject ? `Subject: ${subject}` : '',
+    previewText ? `Preview: ${previewText}` : '',
+    `Body:\n${text}`
+  ].filter(Boolean).join('\n\n');
+
+  const prompt = `You are an expert email deliverability consultant. Perform a comprehensive advanced spam analysis on this email content.
+
+${fullContent}
+
+Provide a DETAILED analysis including:
+
+## 1. SPAM TRIGGERS (same as basic)
+Identify ALL spam trigger words/phrases with severity, alternatives, and rephrase examples.
+
+## 2. ISP-SPECIFIC ANALYSIS
+Analyze how this email would perform with each major ISP:
+- **Gmail**: Score 0-100, specific issues with Gmail's filters (promotions tab, spam), recommendations
+- **Outlook/Microsoft**: Score 0-100, specific issues with Microsoft's filters (Focused inbox, spam), recommendations  
+- **Yahoo/AOL**: Score 0-100, specific issues with Verizon Media filters, recommendations
+
+## 3. LINK ANALYSIS
+- Count all links in the email
+- Identify suspicious links (unusual domains, redirects)
+- Flag shortened URLs (bit.ly, tinyurl, etc.)
+- Provide recommendations for link best practices
+
+## 4. AUTHENTICATION IMPACT
+Based on email content, assess:
+- Would SPF authentication significantly help deliverability?
+- Would DKIM signing be critical for this email type?
+- Is DMARC policy important for this sender type?
+- Specific recommendations for authentication setup
+
+## 5. INDUSTRY-SPECIFIC RISKS
+- Detect the likely industry (ecommerce, SaaS, finance, health, etc.)
+- Identify industry-specific spam triggers and compliance issues
+- Note relevant regulations (CAN-SPAM, GDPR, CCPA considerations)
+
+## 6. COMPETITIVE INSIGHT
+Provide a 1-2 sentence insight on how this email compares to industry best practices and what top performers do differently.
+
+Provide overall risk assessment and inbox probability (0-100).`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: advancedSpamCheckSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  
+  return {
+    triggers: result.triggers || [],
+    overallRisk: result.overallRisk || 'Low',
+    riskSummary: result.riskSummary || 'No significant spam triggers detected.',
+    inboxProbability: result.inboxProbability || 85,
+    ispAnalysis: result.ispAnalysis || {
+      gmail: { score: 85, issues: [], recommendations: [] },
+      outlook: { score: 85, issues: [], recommendations: [] },
+      yahoo: { score: 85, issues: [], recommendations: [] }
+    },
+    linkAnalysis: result.linkAnalysis || {
+      totalLinks: 0,
+      suspiciousLinks: [],
+      shortenedLinks: [],
+      recommendations: []
+    },
+    authenticationImpact: result.authenticationImpact || {
+      spfRequired: true,
+      dkimRequired: true,
+      dmarcRequired: false,
+      recommendations: []
+    },
+    industryRisks: result.industryRisks || {
+      industry: 'General',
+      specificTriggers: [],
+      complianceNotes: []
+    },
+    competitiveInsight: result.competitiveInsight || 'Email follows standard best practices.'
+  };
+};
+
 interface SentimentAnalysisResult {
   overallSentiment: 'Positive' | 'Neutral' | 'Negative' | 'Mixed';
   sentimentScore: number;

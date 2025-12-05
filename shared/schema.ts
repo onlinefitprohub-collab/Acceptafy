@@ -85,14 +85,15 @@ export type InsertUserGamification = typeof userGamification.$inferInsert;
 // Subscription tier limits - designed to prevent abuse while providing value
 export const SUBSCRIPTION_LIMITS = {
   starter: {
-    gradesPerMonth: 50,
-    rewritesPerMonth: 25,
+    gradesPerMonth: 3,
+    rewritesPerMonth: 3,
     followupsPerMonth: 20,
     deliverabilityChecksPerMonth: 10,
     historyLimit: 30,
     brandDomains: 1,
     teamSeats: 1,
     apiAccess: false,
+    advancedSpamAnalysis: false,
   },
   pro: {
     gradesPerMonth: 600,
@@ -103,6 +104,7 @@ export const SUBSCRIPTION_LIMITS = {
     brandDomains: 5,
     teamSeats: 2,
     apiAccess: false,
+    advancedSpamAnalysis: true,
   },
   scale: {
     gradesPerMonth: 2500,
@@ -113,6 +115,7 @@ export const SUBSCRIPTION_LIMITS = {
     brandDomains: 25,
     teamSeats: 10,
     apiAccess: true,
+    advancedSpamAnalysis: true,
   },
 } as const;
 

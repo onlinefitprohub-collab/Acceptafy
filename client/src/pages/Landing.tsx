@@ -627,10 +627,7 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="mt-8 text-center space-y-2">
-            <p className="text-sm text-muted-foreground" data-testid="text-overage-pricing">
-              Need more? Add extra grades anytime: <span className="font-medium text-foreground">$5 per 100 grades</span>
-            </p>
+          <div className="mt-8 text-center">
             <p className="text-sm text-muted-foreground">
               Enterprise needs? <a href="mailto:hello@acceptafy.com" className="text-foreground underline" data-testid="link-enterprise-contact">Contact us</a> for custom plans.
             </p>

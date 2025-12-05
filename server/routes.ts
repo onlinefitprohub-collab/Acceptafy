@@ -19,8 +19,10 @@ import {
   generateEmailPreviews,
   generateWarmupPlan,
   checkSpamTriggers,
+  checkSpamTriggersAdvanced,
   analyzeSentiment
 } from "./gemini";
+import { SUBSCRIPTION_LIMITS } from "@shared/schema";
 import { 
   generateVariationsRequestSchema,
   generateToneRewriteRequestSchema,
@@ -545,14 +547,31 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/spam/check', async (req, res) => {
+  app.post('/api/spam/check', optionalAuth, async (req: any, res) => {
     try {
       const { text, subject, previewText } = req.body;
       if (!text || typeof text !== 'string') {
         return res.status(400).json({ error: 'Email text is required' });
       }
-      const result = await checkSpamTriggers(text, subject, previewText);
-      res.json(result);
+      
+      // Check if user has advanced spam analysis access (Pro or Scale tier)
+      let useAdvanced = false;
+      if (req.user) {
+        const userId = req.user.claims.sub;
+        const user = await storage.getUser(userId);
+        if (user) {
+          const tier = normalizeTier(user.subscriptionTier);
+          useAdvanced = SUBSCRIPTION_LIMITS[tier].advancedSpamAnalysis;
+        }
+      }
+      
+      if (useAdvanced) {
+        const result = await checkSpamTriggersAdvanced(text, subject, previewText);
+        res.json({ ...result, isAdvanced: true });
+      } else {
+        const result = await checkSpamTriggers(text, subject, previewText);
+        res.json({ ...result, isAdvanced: false });
+      }
     } catch (error) {
       console.error('Spam check error:', error);
       res.status(500).json({ error: 'Failed to check for spam triggers' });

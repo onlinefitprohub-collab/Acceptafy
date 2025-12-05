@@ -132,7 +132,7 @@ export default function Pricing() {
     },
     {
       q: "What happens if I hit my limit?",
-      a: "You'll get a warning at 80% usage. At 100%, you can either upgrade your plan or purchase additional grade packs ($5 per 100 grades)."
+      a: "You'll get a warning at 80% usage. At 100%, you can upgrade to a higher tier for more capacity, or wait until your next billing cycle when limits reset."
     },
     {
       q: "Is there a free trial for paid plans?",
@@ -260,10 +260,7 @@ export default function Pricing() {
           </div>
         )}
 
-        <div className="mt-8 text-center space-y-2">
-          <p className="text-sm text-muted-foreground" data-testid="text-overage-info">
-            Need more? Add extra grades anytime: <span className="font-medium text-foreground">$5 per 100 grades</span>
-          </p>
+        <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
             Enterprise needs? <a href="mailto:hello@acceptafy.com" className="text-foreground underline" data-testid="link-enterprise">Contact us</a> for custom plans.
           </p>
