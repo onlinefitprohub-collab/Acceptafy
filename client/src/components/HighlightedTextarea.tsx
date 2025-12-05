@@ -88,21 +88,20 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         handleScroll();
     }, [value]);
 
-    const sharedClasses = `${className} whitespace-pre-wrap`;
-
     return (
-        <div className="relative">
+        <div className={`relative ${className}`}>
             <div
                 ref={backdropRef}
                 aria-hidden="true"
-                className={`${sharedClasses} overflow-hidden pointer-events-none absolute top-0 left-0 text-transparent select-none`}
+                className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none text-transparent select-none whitespace-pre-wrap p-4"
+                style={{ lineHeight: 'inherit' }}
                 dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             />
             <textarea
                 ref={textareaRef}
                 value={value}
                 onScroll={handleScroll}
-                className={`${sharedClasses} bg-transparent caret-white relative z-10 block resize-none overflow-auto`}
+                className="w-full h-full bg-transparent caret-white relative z-10 block resize-none overflow-auto p-4 text-gray-300 whitespace-pre-wrap"
                 data-testid="textarea-highlighted"
                 {...props}
             />

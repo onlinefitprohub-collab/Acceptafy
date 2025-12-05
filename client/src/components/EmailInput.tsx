@@ -135,7 +135,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
                         value={variation.subject}
                         onChange={(e) => handleVariationChange(index, 'subject', e.target.value)}
                         placeholder="e.g., Big News! Our Summer Sale is Here!"
-                        className={`w-full p-3 pr-10 bg-gray-900/50 border rounded-lg text-gray-300 focus:outline-none transition-all duration-300 input-inset-shadow ${isSubjectOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
+                        className={`w-full bg-gray-900 border rounded-lg focus:outline-none transition-all duration-300 input-inset-shadow ${isSubjectOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
                         disabled={isLoading}
                         spamTriggers={spamTriggers}
                       />
@@ -162,7 +162,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
                         value={variation.previewText}
                         onChange={(e) => handleVariationChange(index, 'previewText', e.target.value)}
                         placeholder="e.g., Don't miss out on guaranteed savings..."
-                        className={`w-full p-3 pr-10 bg-gray-900/50 border rounded-lg text-gray-300 focus:outline-none transition-all duration-300 input-inset-shadow ${isPreviewOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
+                        className={`w-full bg-gray-900 border rounded-lg focus:outline-none transition-all duration-300 input-inset-shadow ${isPreviewOverLimit ? 'border-red-500 ring-2 ring-red-500/50 animate-pulse-red-border' : 'border-white/20 focus:border-purple-500 input-glow-focus'}`}
                         disabled={isLoading}
                         spamTriggers={spamTriggers}
                       />
@@ -202,7 +202,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           spamTriggers={spamTriggers}
           disabled={isLoading}
           placeholder="Hi [Name]..."
-          className="w-full h-64 p-4 bg-gray-900/50 border border-white/20 rounded-lg text-gray-300 focus:outline-none transition-all duration-300 font-sans input-inset-shadow focus:border-purple-500 input-glow-focus"
+          className="w-full h-64 bg-gray-900 border border-white/20 rounded-lg focus:outline-none transition-all duration-300 font-sans input-inset-shadow focus:border-purple-500 input-glow-focus"
         />
       </div>
       <div className="flex justify-end">
