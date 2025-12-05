@@ -101,11 +101,11 @@ export const SentimentAnalyzer: React.FC = () => {
   const overallSentiment = result?.overallSentiment || 'Neutral';
   const sentimentScore = typeof result?.sentimentScore === 'number' ? result.sentimentScore : 0;
   const normalizedScore = (sentimentScore + 100) / 2;
-  const emotionBreakdown = result?.emotionBreakdown || [];
+  const emotionBreakdown = Array.isArray(result?.emotionBreakdown) ? result.emotionBreakdown : [];
   const toneDescription = result?.toneDescription || '';
   const engagementPrediction = typeof result?.engagementPrediction === 'number' ? result.engagementPrediction : 50;
-  const emotionalTriggers = result?.emotionalTriggers || [];
-  const improvements = result?.improvements || [];
+  const emotionalTriggers = Array.isArray(result?.emotionalTriggers) ? result.emotionalTriggers : [];
+  const improvements = Array.isArray(result?.improvements) ? result.improvements : [];
   const summary = result?.summary || '';
 
   return (

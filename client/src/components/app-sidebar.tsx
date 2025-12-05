@@ -18,6 +18,7 @@ import {
   Users,
   Calendar,
   BadgeCheck,
+  Heart,
   type LucideIcon
 } from 'lucide-react';
 
@@ -52,7 +53,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 interface AppSidebarProps {
@@ -211,6 +212,22 @@ export function AppSidebar({
                         >
                           <ShieldAlert className="w-3 h-3" />
                           <span>Spam Checker</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'sentiment'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('sentiment');
+                          }}
+                          data-testid="nav-tools-sentiment"
+                        >
+                          <Heart className="w-3 h-3" />
+                          <span>Sentiment Analysis</span>
+                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full">
+                            NEW
+                          </span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

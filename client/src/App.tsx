@@ -48,11 +48,12 @@ import { BimiGenerator } from './components/BimiGenerator';
 import { WarmupPlanner } from './components/WarmupPlanner';
 import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { SpamChecker } from './components/SpamChecker';
+import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, Heart } from 'lucide-react';
 import type { 
   GradingResult, 
   HistoryItem, 
@@ -72,7 +73,7 @@ import type {
 } from './types';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1125,6 +1126,10 @@ function AppContent() {
         <SpamChecker />
       )}
 
+      {toolsSubView === 'sentiment' && (
+        <SentimentAnalyzer />
+      )}
+
       {!toolsSubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
@@ -1190,6 +1195,20 @@ function AppContent() {
               <div>
                 <h3 className="font-semibold text-foreground">Spam Checker</h3>
                 <p className="text-sm text-muted-foreground">Scan for spam trigger words</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('sentiment')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500">
+                <Heart className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Sentiment Analysis</h3>
+                  <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Analyze emotional tone & improve engagement</p>
               </div>
             </CardContent>
           </Card>
