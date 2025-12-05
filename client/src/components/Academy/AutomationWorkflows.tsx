@@ -1,57 +1,57 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { AutomationIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const AutomationWorkflows: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Automation Fundamentals" subtitle="Build powerful welcome and nurture sequences that convert subscribers 24/7." />
-        
-        <SectionWrapper title="The Power of Automation" subtitle="Work Smarter, Not Harder">
-            <p>Email automation is like having a tireless sales team working 24/7. Once set up, automated sequences nurture leads, welcome new subscribers, and recover abandoned carts—all without manual intervention.</p>
-            <p className="mt-2">The best part? Automated emails typically see 70% higher open rates and 152% higher click-through rates than standard bulk emails.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="The Welcome Sequence" subtitle="First Impressions Count">
-            <p>Your welcome sequence is the most important automation you'll build. Here's a proven 5-email framework:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Email 1 (Immediate):</strong> Deliver the promised value, set expectations</li>
-                <li><strong>Email 2 (Day 1):</strong> Share your story, build connection</li>
-                <li><strong>Email 3 (Day 3):</strong> Provide valuable content, establish authority</li>
-                <li><strong>Email 4 (Day 5):</strong> Social proof, testimonials, case studies</li>
-                <li><strong>Email 5 (Day 7):</strong> Soft pitch, invitation to take next step</li>
-            </ul>
-        </SectionWrapper>
+export const AutomationWorkflows: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="Automation & Workflows"
+                subtitle="Learn to build automated email sequences that engage your audience, nurture leads, and drive action without manual effort."
+            />
+            
+            <SectionWrapper
+                title="The Welcome Series"
+                subtitle="Making a Powerful First Impression"
+            >
+                <p>A welcome series is an automated sequence of emails sent to new subscribers. This is your best opportunity to engage them, as open rates are highest when a user first signs up. A strong welcome series sets the tone for your entire relationship.</p>
+                <p><strong className="text-gray-200">A Common 3-Part Welcome Series:</strong></p>
+                <ul className="list-decimal list-inside space-y-1 mt-2">
+                    <li><strong>Email 1 (Sent Immediately):</strong> Welcome the subscriber, deliver the lead magnet or resource they signed up for, and set expectations for what's to come.</li>
+                    <li><strong>Email 2 (Sent 1-2 Days Later):</strong> Introduce your brand story, share a valuable resource, or address a common pain point to build trust.</li>
+                    <li><strong>Email 3 (Sent 3-5 Days Later):</strong> Introduce your core product or service with a low-friction call to action, like watching a demo or reading a case study.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Trigger-Based Automations" subtitle="Right Message, Right Time">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Page Visit Triggers:</strong> Send relevant content when they view key pages</li>
-                <li><strong>Inactivity Triggers:</strong> Re-engage subscribers who've gone quiet</li>
-                <li><strong>Purchase Triggers:</strong> Post-purchase follow-ups, cross-sells, reviews</li>
-                <li><strong>Date Triggers:</strong> Birthdays, anniversaries, renewal reminders</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="Nurture Campaigns"
+                subtitle="Guiding Prospects Toward a Decision"
+            >
+                <p>A nurture sequence is designed to build a relationship with a prospect over time, providing value and gently guiding them towards a conversion. These are often triggered by a specific action, like downloading a whitepaper or visiting a pricing page.</p>
+                 <p><strong className="text-gray-200">Example Nurture Flow:</strong> A user downloads an e-book about "Improving Team Productivity." This triggers a 5-email sequence that sends them related blog posts, a case study of a company that improved productivity, an invitation to a webinar on the topic, and finally, an offer for a free trial of your productivity software.</p>
+            </SectionWrapper>
 
-        <SectionWrapper title="Nurture Sequences" subtitle="Building Trust Over Time">
-            <p>Nurture sequences educate and build trust with prospects who aren't ready to buy. The key principles:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Lead with value, not sales pitches</li>
-                <li>Mix content types: articles, videos, case studies</li>
-                <li>Include engagement triggers (clicks, replies) to identify hot leads</li>
-                <li>Gradually increase commitment asks over time</li>
-            </ul>
-        </SectionWrapper>
+            <InfoBox icon={<AutomationIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Automate Your Best Content</h4>
+                    <p className="text-purple-200 text-sm">Use our <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to instantly write the copy for your welcome series or nurture campaigns based on your initial email's content and goals.</p>
+                </div>
+            </InfoBox>
 
-        <InfoBox icon={<AutomationIcon />}>
-            <p className="text-purple-200 text-sm">Start with one automation—your welcome sequence. Perfect it before adding more complexity. A great welcome sequence alone can transform your email ROI.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="What is the primary purpose of a welcome email sequence?"
-            options={[
-                { text: "To immediately sell products to new subscribers", isCorrect: false },
-                { text: "To deliver value, set expectations, and build trust before pitching", isCorrect: true },
-                { text: "To gather as much data about the subscriber as possible", isCorrect: false }
-            ]}
-            explanation="The welcome sequence's primary job is to deliver on your sign-up promise, set expectations for future emails, and begin building trust. Selling too early in the relationship typically backfires—earn the right to pitch first."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="What is the primary goal of a Welcome Series?"
+                options={[
+                    { text: "To sell a high-ticket item immediately.", isCorrect: false },
+                    { text: "To make a great first impression and guide new subscribers.", isCorrect: true },
+                    { text: "To test how many emails a user will tolerate before unsubscribing.", isCorrect: false },
+                    { text: "To ask for customer referrals.", isCorrect: false },
+                ]}
+                explanation="Correct! The Welcome Series has the highest engagement rates of any automated campaign, making it the perfect time to build trust, set expectations, and introduce new subscribers to your brand."
+            />
+        </div>
+    );
+};
