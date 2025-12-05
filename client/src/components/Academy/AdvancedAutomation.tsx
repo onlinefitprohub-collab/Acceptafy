@@ -1,67 +1,64 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { AutomationIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const AdvancedAutomation: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Advanced Automation & Dynamic Content" subtitle="Use behavioral triggers and dynamic content to create 1:1 email experiences at scale." />
-        
-        <SectionWrapper title="Beyond Basic Automation" subtitle="The Evolution of Email Personalization">
-            <p>Basic automation sends the same email to everyone who triggers it. Advanced automation creates unique experiences based on who the subscriber is and what they've done.</p>
-            <p className="mt-2">The goal is to make every subscriber feel like the email was written just for them—at scale.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Behavioral Triggers" subtitle="Acting on Real-Time Actions">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Page View Triggers:</strong> Email about products/content they viewed</li>
-                <li><strong>Video Watch Triggers:</strong> Follow up based on how much they watched</li>
-                <li><strong>Scroll Depth:</strong> Target based on content engagement level</li>
-                <li><strong>Form Field Abandonment:</strong> Re-engage when they start but don't finish</li>
-                <li><strong>Feature Usage:</strong> Trigger based on product behavior (SaaS)</li>
-            </ul>
-        </SectionWrapper>
+export const AdvancedAutomation: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="Advanced Automation & Dynamic Content"
+                subtitle="Go beyond basic sequences. Learn to use behavioral triggers and dynamic content to create 1:1 email experiences at scale."
+            />
+            
+            <SectionWrapper
+                title="Behavioral Triggers: Emails That React to Your Users"
+                subtitle="Sending the Right Message at the Perfect Moment"
+            >
+                <p>Behavioral triggers allow you to launch automated email campaigns based on specific actions a user takes (or doesn't take) on your website or in your app. This makes your communication incredibly timely and relevant.</p>
+                <p><strong className="text-gray-200">Powerful Examples of Behavioral Triggers:</strong></p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Cart Abandonment:</strong> The most famous example. A user adds an item to their cart but doesn't complete the purchase.</li>
+                    <li><strong className="text-gray-200">Page Visit Trigger:</strong> A user visits your pricing page multiple times in a week but doesn't sign up. Trigger an email from a "sales consultant" offering to answer any questions.</li>
+                    <li><strong className="text-gray-200">In-App Behavior:</strong> A user has used Feature X but hasn't tried the related Feature Y. Trigger an email explaining the benefits of Feature Y and how to use it.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Dynamic Content Blocks" subtitle="One Email, Many Versions">
-            <p>Dynamic content shows different content to different subscribers within the same email:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Product Recommendations:</strong> Based on browsing/purchase history</li>
-                <li><strong>Location-Based Content:</strong> Local events, weather, store locations</li>
-                <li><strong>Persona-Based Messaging:</strong> Different value props for different segments</li>
-                <li><strong>Countdown Timers:</strong> Personalized deadlines for each recipient</li>
-                <li><strong>Loyalty Status:</strong> Different content for VIPs vs. new customers</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="Dynamic Content: The 1:1 Email at Scale"
+                subtitle="Making Each Email Unique to the Recipient"
+            >
+                <p>Dynamic content allows you to change specific parts of your email content based on the data you have about each subscriber. Instead of creating dozens of separate emails for each segment, you create one email with dynamic blocks.</p>
+                <p><strong className="text-gray-200">How It Works in Practice:</strong></p>
+                <p>Imagine an e-commerce store sending a weekly newsletter. Using dynamic content, they can show:</p>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                    <li>A block of "Recommended Products" based on the recipient's past purchase history.</li>
+                    <li>A special banner for users who are part of their VIP loyalty program.</li>
+                    <li>Different hero images based on the recipient's geographic location (e.g., showing winter coats to users in Canada and swimsuits to users in Australia).</li>
+                </ul>
+                 <p>This ensures that even a mass broadcast email feels highly personalized and relevant to each individual, dramatically boosting engagement and conversion rates.</p>
+            </SectionWrapper>
+            
+            <InfoBox icon={<AutomationIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Start with a Goal</h4>
+                    <p className="text-purple-200 text-sm">Advanced automation can seem complex. The best way to start is to identify one key action you want more users to take, and then build a simple, triggered email campaign around encouraging that single action.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="Conditional Logic in Flows" subtitle="If-Then Automation Branching">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Engagement Splits:</strong> Different paths for openers vs. non-openers</li>
-                <li><strong>Purchase Splits:</strong> Buyers get different follow-ups than browsers</li>
-                <li><strong>Score-Based Routing:</strong> Hot leads to sales, cold leads to nurture</li>
-                <li><strong>Time-Based Logic:</strong> Different messages for different time zones</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Predictive Personalization" subtitle="Using AI and Machine Learning">
-            <p>The frontier of email automation uses AI to predict and personalize:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Send Time Optimization:</strong> AI picks the best time for each subscriber</li>
-                <li><strong>Content Optimization:</strong> Automatically select best-performing variants</li>
-                <li><strong>Churn Prediction:</strong> Identify at-risk subscribers before they leave</li>
-                <li><strong>Lifetime Value Prediction:</strong> Identify high-potential customers early</li>
-            </ul>
-        </SectionWrapper>
-
-        <InfoBox icon={<AutomationIcon />}>
-            <p className="text-purple-200 text-sm">Start with one advanced feature—like dynamic product recommendations—and measure the impact before adding more complexity. Each layer should prove its value.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="What is the main advantage of dynamic content blocks?"
-            options={[
-                { text: "They make emails load faster", isCorrect: false },
-                { text: "They allow one email to display different content to different subscribers", isCorrect: true },
-                { text: "They reduce the need for A/B testing", isCorrect: false }
-            ]}
-            explanation="Dynamic content blocks allow you to create one email template that displays different content to different subscribers based on their attributes or behavior. This creates personalized experiences at scale without having to build separate campaigns for each segment."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="A user has visited your pricing page three times but hasn't signed up. What is this an example of?"
+                options={[
+                    { text: "A standard welcome email trigger.", isCorrect: false },
+                    { text: "Dynamic content.", isCorrect: false },
+                    { text: "A behavioral trigger.", isCorrect: true },
+                    { text: "List segmentation.", isCorrect: false },
+                ]}
+                explanation="Correct! This is a classic behavioral trigger. The user's specific action (visiting the pricing page) triggers a targeted, automated response designed to address their high-intent behavior."
+            />
+        </div>
+    );
+};
