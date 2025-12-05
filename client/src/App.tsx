@@ -1163,7 +1163,7 @@ function AppContent() {
     <>
       {selectedHistoryItem && (
         <HistoryViewBanner
-          date={new Date(selectedHistoryItem.date)}
+          date={selectedHistoryItem.date}
           onClose={() => setSelectedHistoryItem(null)}
         />
       )}
@@ -1229,7 +1229,7 @@ function AppContent() {
 
   return (
     <SidebarProvider style={sidebarStyle as React.CSSProperties}>
-      <div className="flex h-screen w-full dark">
+      <div className="flex h-screen w-full">
         <AppSidebar 
           activeView={activeView}
           setActiveView={setActiveView}
