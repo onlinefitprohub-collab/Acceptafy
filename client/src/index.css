@@ -476,3 +476,12 @@
   border-style: solid;
   border-color: #1e293b transparent transparent transparent;
 }
+
+/* Hide scrollbar for highlight backdrop */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

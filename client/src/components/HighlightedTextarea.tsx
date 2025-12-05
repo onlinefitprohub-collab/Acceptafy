@@ -89,12 +89,16 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
     }, [value]);
 
     return (
-        <div className={`relative ${className}`}>
+        <div className={`relative ${className}`} style={{ overflow: 'hidden' }}>
             <div
                 ref={backdropRef}
                 aria-hidden="true"
-                className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden pointer-events-none text-transparent select-none whitespace-pre-wrap p-4"
-                style={{ lineHeight: 'inherit' }}
+                className="absolute top-0 left-0 right-0 bottom-0 overflow-auto pointer-events-none text-transparent select-none whitespace-pre-wrap p-4 scrollbar-hide"
+                style={{ 
+                    lineHeight: 'inherit',
+                    msOverflowStyle: 'none',
+                    scrollbarWidth: 'none'
+                }}
                 dangerouslySetInnerHTML={{ __html: highlightedHtml }}
             />
             <textarea
