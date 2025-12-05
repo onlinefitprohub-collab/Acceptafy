@@ -1,74 +1,74 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { BlueprintIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const EcommerceBlueprint: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="The E-commerce Blueprint" subtitle="Master the 'money-making' automations: abandoned carts, post-purchase, and win-back campaigns." />
-        
-        <SectionWrapper title="The E-commerce Email Stack" subtitle="Essential Automations for Revenue">
-            <p>E-commerce businesses can generate 20-30% of total revenue from email alone. These five automations form the foundation of a profitable email program:</p>
-            <ol className="list-decimal list-inside space-y-2 mt-2">
-                <li>Abandoned Cart Recovery</li>
-                <li>Welcome Series</li>
-                <li>Post-Purchase Sequence</li>
-                <li>Browse Abandonment</li>
-                <li>Win-Back Campaign</li>
-            </ol>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Abandoned Cart Recovery" subtitle="The Highest-ROI Automation">
-            <p>Abandoned cart emails recover 5-15% of lost sales. The key is timing and sequencing:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Email 1 (1 hour):</strong> Simple reminder with cart contents</li>
-                <li><strong>Email 2 (24 hours):</strong> Address objections, add social proof</li>
-                <li><strong>Email 3 (48-72 hours):</strong> Create urgency, consider incentive</li>
-            </ul>
-            <p className="mt-2 text-yellow-400">Pro tip: Don't train customers to wait for discounts. Only offer incentives on the final email, and not to repeat abandoners.</p>
-        </SectionWrapper>
+export const EcommerceBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="The E-commerce Blueprint"
+                subtitle="Master the three most profitable automated email sequences that every e-commerce business needs to drive revenue on autopilot."
+            />
+            
+            <SectionWrapper
+                title="Automation #1: The Abandoned Cart Sequence"
+                subtitle="Recovering Lost Sales"
+            >
+                <p>Nearly 70% of online shopping carts are abandoned. An automated email sequence is your most powerful tool to bring these high-intent customers back to complete their purchase.</p>
+                <p><strong className="text-gray-200">A Simple 3-Part Abandoned Cart Flow:</strong></p>
+                 <ul className="list-decimal list-inside space-y-1 mt-2">
+                    <li><strong>Email 1 (Sent after 1-2 hours):</strong> A gentle reminder. "Did you forget something?" Show them the item they left behind and provide a clear link back to their cart.</li>
+                    <li><strong>Email 2 (Sent after 24 hours):</strong> Address common concerns. Use social proof like testimonials or answer frequently asked questions about shipping or returns.</li>
+                    <li><strong>Email 3 (Sent after 48-72 hours):</strong> Create urgency with an incentive. A small discount (e.g., 10% off) or free shipping can be the final push needed to convert.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Post-Purchase Sequence" subtitle="Turn Buyers into Repeat Customers">
-            <p>The post-purchase period is when customers are most engaged. Use it wisely:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Order Confirmation:</strong> Set expectations, build excitement</li>
-                <li><strong>Shipping Notification:</strong> Keep them informed</li>
-                <li><strong>Delivery Follow-Up (3 days later):</strong> Check in, offer support</li>
-                <li><strong>Review Request (7-14 days):</strong> Social proof for future buyers</li>
-                <li><strong>Cross-Sell (21 days):</strong> Complementary products</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="Automation #2: The Post-Purchase Follow-Up"
+                subtitle="Turning Buyers Into Repeat Customers"
+            >
+                <p>The moment after a purchase is when a customer is most engaged with your brand. Use this opportunity to build a relationship, not just send a receipt.</p>
+                <p><strong className="text-gray-200">Post-Purchase Ideas:</strong></p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong>Education:</strong> Send an email showing them how to get the most out of their new product with tips or a video tutorial.</li>
+                    <li><strong>Cross-Sell:</strong> A week later, suggest a related product that complements their original purchase.</li>
+                    <li><strong>Request a Review:</strong> After they've had time to use the product, ask for a review to build social proof for future customers.</li>
+                </ul>
+            </SectionWrapper>
+            
+            <SectionWrapper
+                title="Automation #3: The Customer Win-Back Campaign"
+                subtitle="Re-engaging Lapsed Customers"
+            >
+                <p>It's far cheaper to retain an existing customer than to acquire a new one. A win-back campaign automatically targets customers who haven't purchased in a while to encourage their return.</p>
+                <p><strong className="text-gray-200">Example Win-Back Flow (for customers inactive for 90 days):</strong></p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                     <li><strong>Email 1: The "We Miss You" Email.</strong> A friendly check-in, perhaps highlighting what's new since their last visit.</li>
+                     <li><strong>Email 2: The Exclusive Offer.</strong> A compelling, time-sensitive discount that's better than what you offer the general public, making them feel valued.</li>
+                </ul>
+            </SectionWrapper>
+            
+            <InfoBox icon={<BlueprintIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Craft the Perfect Automation Email</h4>
+                    <p className="text-purple-200 text-sm">When writing the copy for these critical automations, use the <strong className="font-semibold">Email Grader</strong> to ensure every message is optimized for high deliverability and conversion.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="Browse Abandonment" subtitle="Capture Interest Before the Cart">
-            <p>Not everyone adds to cart. Browse abandonment targets people who viewed products but didn't add them:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Trigger after 2+ product views without add-to-cart</li>
-                <li>Showcase the viewed products</li>
-                <li>Include similar products they might like</li>
-                <li>Keep it subtle—one email is often enough</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Win-Back Campaigns" subtitle="Re-engage Lapsed Customers">
-            <p>It's 5-7x more expensive to acquire a new customer than to retain one. Win-back campaigns target customers who haven't purchased in 60-90+ days:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Acknowledge the absence: "We miss you"</li>
-                <li>Remind them why they bought originally</li>
-                <li>Offer an exclusive "come back" incentive</li>
-                <li>Create urgency with a time-limited offer</li>
-            </ul>
-        </SectionWrapper>
-
-        <InfoBox icon={<BlueprintIcon />}>
-            <p className="text-purple-200 text-sm">Start with abandoned cart recovery—it has the highest ROI and clearest intent signal. Perfect this automation before moving to others.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="When should you send the first abandoned cart email?"
-            options={[
-                { text: "Immediately (within minutes)", isCorrect: false },
-                { text: "About 1 hour after abandonment", isCorrect: true },
-                { text: "24 hours after abandonment", isCorrect: false }
-            ]}
-            explanation="The first abandoned cart email should go out about 1 hour after abandonment. This gives the customer time to potentially return on their own, but catches them while the purchase intent is still fresh. Too fast feels pushy; too slow and they've moved on."
-        />
-    </div>
-);
+             <KnowledgeCheck
+                question="Which automated campaign is typically the most profitable for an e-commerce store?"
+                options={[
+                    { text: "The monthly newsletter.", isCorrect: false },
+                    { text: "The abandoned cart sequence.", isCorrect: true },
+                    { text: "The blog update notification.", isCorrect: false },
+                    { text: "The 'Happy Birthday' email.", isCorrect: false },
+                ]}
+                explanation="Correct! Abandoned cart emails target customers who have already shown high purchase intent, making them the lowest-hanging fruit and the most profitable automation to set up."
+            />
+        </div>
+    );
+};
