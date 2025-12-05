@@ -2,12 +2,6 @@ import { useState } from 'react';
 import { CheckIcon, DnsIcon, InfoIcon, CopyIcon } from './icons/CategoryIcons';
 import type { DnsRecords } from '../types';
 
-interface DeliverabilityChecklistProps {
-    onGenerateDns: (domain: string) => void;
-    isGeneratingDns: boolean;
-    dnsRecords: DnsRecords | null;
-}
-
 const ChecklistItem: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="flex items-start gap-3">
         <div className="w-5 h-5 mt-1 flex-shrink-0 bg-green-500/20 text-green-300 rounded-full flex items-center justify-center">
@@ -53,8 +47,29 @@ const RecordDisplay: React.FC<{ label: string, value: string }> = ({ label, valu
     );
 };
 
-export const DeliverabilityChecklist: React.FC<DeliverabilityChecklistProps> = ({ onGenerateDns, isGeneratingDns, dnsRecords }) => {
+export const DeliverabilityChecklist: React.FC = () => {
     const [domain, setDomain] = useState('');
+    const [isGeneratingDns, setIsGeneratingDns] = useState(false);
+    const [dnsRecords, setDnsRecords] = useState<DnsRecords | null>(null);
+
+    const onGenerateDns = async (domainName: string) => {
+        setIsGeneratingDns(true);
+        try {
+            const response = await fetch('/api/dns/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domain: domainName })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setDnsRecords(data);
+            }
+        } catch (error) {
+            console.error('Failed to generate DNS records:', error);
+        } finally {
+            setIsGeneratingDns(false);
+        }
+    };
 
     const handleGenerateClick = () => {
         if (domain.trim()) {

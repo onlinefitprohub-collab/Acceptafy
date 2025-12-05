@@ -41,6 +41,11 @@ import {
 } from './components/icons/CategoryIcons';
 import { InboxPlacementSimulator } from './components/InboxPlacementSimulator';
 import { ResultsTabs } from './components/ResultsTabs';
+import { DeliverabilityChecklist } from './components/DeliverabilityChecklist';
+import { DomainHealthChecker } from './components/DomainHealthChecker';
+import { ListQualityChecker } from './components/ListQualityChecker';
+import { BimiGenerator } from './components/BimiGenerator';
+import { WarmupPlanner } from './components/WarmupPlanner';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,8 +69,9 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'grader' | 'history' | 'academy' | 'tools';
+type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "URGENT: Don't Miss Out! MASSIVE Sale - Act NOW Before It's Gone!!!",
@@ -109,6 +115,7 @@ function AppContent() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>('grader');
   const [toolsSubView, setToolsSubView] = useState<ToolsSubView>(null);
+  const [deliverabilitySubView, setDeliverabilitySubView] = useState<DeliverabilitySubView>(null);
   const [showAcademy, setShowAcademy] = useState(false);
   const [dnsRecords, setDnsRecords] = useState<DnsRecords | null>(null);
   const [isGeneratingDns, setIsGeneratingDns] = useState(false);
@@ -1159,6 +1166,95 @@ function AppContent() {
     </div>
   );
 
+  const renderDeliverabilityView = () => (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Deliverability Tools</h2>
+        <p className="text-muted-foreground">Ensure your emails land in the inbox, not spam</p>
+      </div>
+
+      {deliverabilitySubView === 'dns' && (
+        <DeliverabilityChecklist />
+      )}
+
+      {deliverabilitySubView === 'domain-health' && (
+        <DomainHealthChecker />
+      )}
+
+      {deliverabilitySubView === 'list-quality' && (
+        <ListQualityChecker />
+      )}
+
+      {deliverabilitySubView === 'bimi' && (
+        <BimiGenerator />
+      )}
+
+      {deliverabilitySubView === 'warmup' && (
+        <WarmupPlanner />
+      )}
+
+      {!deliverabilitySubView && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('dns')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">DNS Records</h3>
+                <p className="text-sm text-muted-foreground">Generate SPF, DKIM, DMARC</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('domain-health')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Domain Health</h3>
+                <p className="text-sm text-muted-foreground">Check domain reputation</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('list-quality')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-500">
+                <Star className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">List Quality</h3>
+                <p className="text-sm text-muted-foreground">Analyze email list health</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('bimi')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <Trophy className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">BIMI Generator</h3>
+                <p className="text-sm text-muted-foreground">Add your logo to emails</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer md:col-span-2" onClick={() => setDeliverabilitySubView('warmup')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-orange-500">
+                <Flame className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Warmup Planner</h3>
+                <p className="text-sm text-muted-foreground">AI-generated 30-day warmup schedule for new domains</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+
   const renderGraderView = () => (
     <>
       {selectedHistoryItem && (
@@ -1236,6 +1332,8 @@ function AppContent() {
           onOpenAcademy={() => setShowAcademy(true)}
           toolsSubView={toolsSubView}
           setToolsSubView={setToolsSubView}
+          deliverabilitySubView={deliverabilitySubView}
+          setDeliverabilitySubView={setDeliverabilitySubView}
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
@@ -1247,6 +1345,7 @@ function AppContent() {
                 {activeView === 'grader' && 'Email Grader'}
                 {activeView === 'history' && 'History'}
                 {activeView === 'tools' && 'AI Tools'}
+                {activeView === 'deliverability' && 'Deliverability Tools'}
               </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -1269,6 +1368,7 @@ function AppContent() {
               {activeView === 'grader' && renderGraderView()}
               {activeView === 'history' && renderHistoryView()}
               {activeView === 'tools' && renderToolsView()}
+              {activeView === 'deliverability' && renderDeliverabilityView()}
             </div>
           </main>
         </SidebarInset>

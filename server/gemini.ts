@@ -777,6 +777,124 @@ Rewrite the entire email (subject, preview, and body) to match the ${tone} tone 
   return JSON.parse(res.text || '{}');
 };
 
+export interface WarmupDay {
+  day: number;
+  phase: 'Foundation' | 'Growth' | 'Scale' | 'Optimization';
+  emailVolume: number;
+  targetOpenRate: number;
+  targetReplyRate: number;
+  actions: string[];
+  tips: string[];
+  milestone?: string;
+}
+
+export interface WarmupPlan {
+  domain: string;
+  totalDays: number;
+  overview: string;
+  phases: {
+    name: string;
+    days: string;
+    goal: string;
+    volumeRange: string;
+  }[];
+  schedule: WarmupDay[];
+  bestPractices: string[];
+  warningSignals: string[];
+}
+
+export const generateWarmupPlan = async (domain: string): Promise<WarmupPlan> => {
+  const prompt = `Generate a comprehensive 30-day email warm-up plan for the domain: ${domain}
+
+Create a detailed schedule that helps build sender reputation with inbox providers like Gmail, Outlook, and Yahoo.
+
+The plan should include:
+1. An overview explaining the importance of the warm-up process
+2. Four phases: Foundation (Days 1-7), Growth (Days 8-14), Scale (Days 15-21), Optimization (Days 22-30)
+3. A daily schedule with:
+   - Email volume targets (starting very low, gradually increasing)
+   - Target open rates and reply rates
+   - Specific actions to take each day
+   - Tips for success
+   - Milestone markers for key days (Day 1, 7, 14, 21, 30)
+4. Best practices for the warm-up period
+5. Warning signals to watch for
+
+Make the schedule realistic and follow industry best practices for email deliverability.
+
+Return as JSON with this structure:
+{
+  "domain": "${domain}",
+  "totalDays": 30,
+  "overview": "Brief explanation of why warming up is important",
+  "phases": [
+    { "name": "Foundation", "days": "Days 1-7", "goal": "Build initial trust", "volumeRange": "10-50 emails/day" }
+  ],
+  "schedule": [
+    {
+      "day": 1,
+      "phase": "Foundation",
+      "emailVolume": 10,
+      "targetOpenRate": 50,
+      "targetReplyRate": 10,
+      "actions": ["Send to your most engaged subscribers", "Focus on high-quality content"],
+      "tips": ["Monitor bounce rates closely"],
+      "milestone": "Day 1 - Launch"
+    }
+  ],
+  "bestPractices": ["Always use double opt-in", "Keep bounce rate under 2%"],
+  "warningSignals": ["Sudden drop in open rates", "Increase in spam complaints"]
+}`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          domain: { type: Type.STRING },
+          totalDays: { type: Type.NUMBER },
+          overview: { type: Type.STRING },
+          phases: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                days: { type: Type.STRING },
+                goal: { type: Type.STRING },
+                volumeRange: { type: Type.STRING }
+              }
+            }
+          },
+          schedule: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                day: { type: Type.NUMBER },
+                phase: { type: Type.STRING },
+                emailVolume: { type: Type.NUMBER },
+                targetOpenRate: { type: Type.NUMBER },
+                targetReplyRate: { type: Type.NUMBER },
+                actions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                tips: { type: Type.ARRAY, items: { type: Type.STRING } },
+                milestone: { type: Type.STRING }
+              }
+            }
+          },
+          bestPractices: { type: Type.ARRAY, items: { type: Type.STRING } },
+          warningSignals: { type: Type.ARRAY, items: { type: Type.STRING } }
+        }
+      }
+    }
+  });
+
+  return JSON.parse(res.text || '{}');
+};
+
 export const generateEmailPreviews = async (
   subject: string,
   preview: string,

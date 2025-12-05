@@ -12,6 +12,11 @@ import {
   ChevronDown,
   Sparkles,
   Shield,
+  ShieldCheck,
+  Globe,
+  Users,
+  Calendar,
+  BadgeCheck,
   type LucideIcon
 } from 'lucide-react';
 
@@ -45,8 +50,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'grader' | 'history' | 'academy' | 'tools';
+type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -54,6 +60,8 @@ interface AppSidebarProps {
   onOpenAcademy: () => void;
   toolsSubView: ToolsSubView;
   setToolsSubView: (view: ToolsSubView) => void;
+  deliverabilitySubView: DeliverabilitySubView;
+  setDeliverabilitySubView: (view: DeliverabilitySubView) => void;
 }
 
 export function AppSidebar({ 
@@ -61,9 +69,12 @@ export function AppSidebar({
   setActiveView, 
   onOpenAcademy,
   toolsSubView,
-  setToolsSubView
+  setToolsSubView,
+  deliverabilitySubView,
+  setDeliverabilitySubView
 }: AppSidebarProps) {
   const [toolsOpen, setToolsOpen] = useState(true);
+  const [deliverabilityOpen, setDeliverabilityOpen] = useState(true);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
   
   const xpProgress = (xp / nextLevelXp) * 100;
@@ -180,12 +191,104 @@ export function AppSidebar({
                 </SidebarMenuItem>
               </Collapsible>
 
+              <Collapsible open={deliverabilityOpen} onOpenChange={setDeliverabilityOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className="group" data-testid="nav-deliverability">
+                      <div className={`p-1.5 rounded-lg transition-all ${activeView === 'deliverability' ? 'bg-gradient-to-br from-green-500 to-teal-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <span>Deliverability</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-200 ${deliverabilityOpen ? 'rotate-180' : ''}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'warmup'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('warmup');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-warmup"
+                        >
+                          <Calendar className="w-3 h-3" />
+                          <span>Warm-up Planner</span>
+                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-full">
+                            NEW
+                          </span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'dns'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('dns');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-dns"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>DNS Records</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'domain-health'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('domain-health');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-domain"
+                        >
+                          <Shield className="w-3 h-3" />
+                          <span>Domain Health</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'list-quality'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('list-quality');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-list"
+                        >
+                          <Users className="w-3 h-3" />
+                          <span>List Quality</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'bimi'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('bimi');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-bimi"
+                        >
+                          <BadgeCheck className="w-3 h-3" />
+                          <span>BIMI Builder</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   isActive={activeView === 'history'}
                   onClick={() => {
                     setActiveView('history');
                     setToolsSubView(null);
+                    setDeliverabilitySubView(null);
                   }}
                   className="group"
                   data-testid="nav-history"

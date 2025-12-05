@@ -216,3 +216,29 @@ export interface EmailPreview {
   };
   truncationWarnings: string[];
 }
+
+export interface WarmupDay {
+  day: number;
+  phase: 'Foundation' | 'Growth' | 'Scale' | 'Optimization';
+  emailVolume: number;
+  targetOpenRate: number;
+  targetReplyRate: number;
+  actions: string[];
+  tips: string[];
+  milestone?: string;
+}
+
+export interface WarmupPlan {
+  domain: string;
+  totalDays: number;
+  overview: string;
+  phases: {
+    name: string;
+    days: string;
+    goal: string;
+    volumeRange: string;
+  }[];
+  schedule: WarmupDay[];
+  bestPractices: string[];
+  warningSignals: string[];
+}

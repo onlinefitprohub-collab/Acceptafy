@@ -13,7 +13,8 @@ import {
   generateSubjectVariations,
   generateOptimizationRoadmap,
   rewriteWithTone,
-  generateEmailPreviews
+  generateEmailPreviews,
+  generateWarmupPlan
 } from "./gemini";
 import { 
   generateVariationsRequestSchema,
@@ -190,6 +191,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Email preview error:', error);
       res.status(500).json({ error: 'Failed to generate email previews' });
+    }
+  });
+
+  app.post('/api/warmup/generate', async (req, res) => {
+    try {
+      const { domain } = req.body;
+      if (!domain || typeof domain !== 'string') {
+        return res.status(400).json({ error: 'Domain is required' });
+      }
+      const result = await generateWarmupPlan(domain);
+      res.json(result);
+    } catch (error) {
+      console.error('Warmup plan generation error:', error);
+      res.status(500).json({ error: 'Failed to generate warmup plan' });
     }
   });
 
