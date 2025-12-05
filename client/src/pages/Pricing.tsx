@@ -74,8 +74,7 @@ export default function Pricing() {
         `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
         "Advanced spam analysis (ISP-specific)",
         "Subject line A/B testing",
-        "Priority email support",
-        `${SUBSCRIPTION_LIMITS.pro.historyLimit.toLocaleString()} analysis history`,
+        `${SUBSCRIPTION_LIMITS.pro.historyLimit.toLocaleString()} saved analyses`,
       ],
     },
     {
@@ -87,10 +86,9 @@ export default function Pricing() {
       features: [
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
         `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
-        "API access",
+        "Advanced spam analysis (ISP-specific)",
         "White-label PDF reports",
-        "Bulk email analysis",
-        `${SUBSCRIPTION_LIMITS.scale.historyLimit.toLocaleString()} analysis history`,
+        `${SUBSCRIPTION_LIMITS.scale.historyLimit.toLocaleString()} saved analyses`,
       ],
     },
   ];
