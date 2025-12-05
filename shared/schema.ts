@@ -119,8 +119,8 @@ export const SUBSCRIPTION_LIMITS = {
 // Pricing information
 export const PRICING = {
   starter: { monthly: 0, name: 'Starter', tagline: 'Perfect for trying things out' },
-  pro: { monthly: 29, name: 'Pro', tagline: 'For growing email marketers' },
-  scale: { monthly: 89, name: 'Scale', tagline: 'For teams & agencies' },
+  pro: { monthly: 59, name: 'Pro', tagline: 'For growing email marketers' },
+  scale: { monthly: 149, name: 'Scale', tagline: 'For teams & agencies' },
 } as const;
 
 // Overage pricing (per pack)

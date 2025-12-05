@@ -175,10 +175,6 @@ export default function Pricing() {
 
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <Badge variant="outline" className="mb-4" data-testid="badge-guarantee">
-            <Clock className="w-3 h-3 mr-1" />
-            14-Day Money-Back Guarantee
-          </Badge>
           <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-heading">Simple Pricing, No Surprises</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-description">
             Start free, upgrade when you need more. All plans include core grading and spam detection.

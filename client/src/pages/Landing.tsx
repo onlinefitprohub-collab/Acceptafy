@@ -237,13 +237,8 @@ export default function Landing() {
         <div className="container mx-auto px-4 relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <Badge className="mb-4 bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-foreground border-purple-500/30">
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI-Powered Email Optimization
-              </Badge>
-              
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                Ship Emails That
+                Send Emails That
                 <span className="block bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                   Actually Get Opened
                 </span>
@@ -366,7 +361,7 @@ export default function Landing() {
       <section id="how-it-works" className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Grade, Improve, Ship—In Minutes</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">Grade, Improve, Send—In Minutes</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Three simple steps to emails that get more opens, clicks, and replies.
             </p>
@@ -425,13 +420,13 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {[
               { icon: Target, title: "Email Grading", description: "Detailed scores for subject, preview, body, and CTAs" },
-              { icon: ShieldCheck, title: "Spam Detection", description: "Catch trigger words and risky phrases before you send" },
-              { icon: Zap, title: "AI Rewrites", description: "Transform weak copy into high-converting emails instantly" },
-              { icon: BarChart3, title: "Deliverability Tools", description: "DNS checkers, warmup plans, and domain health monitoring" },
-              { icon: Users, title: "Team Collaboration", description: "Share templates and maintain brand consistency" },
-              { icon: TrendingUp, title: "A/B Testing", description: "Generate subject line variations and predict winners" },
+              { icon: ShieldCheck, title: "SPF/DKIM/DMARC Setup", description: "Generate and validate DNS records for email authentication" },
+              { icon: Zap, title: "Auto-Improve", description: "1-click AI rewrites that fix issues and boost engagement" },
+              { icon: BarChart3, title: "Domain Health Checks", description: "Monitor sender reputation and fix deliverability issues" },
+              { icon: AlertCircle, title: "Spam Detection", description: "Catch trigger words and risky phrases before you send" },
+              { icon: TrendingUp, title: "BIMI Support", description: "Set up brand logos in email clients for better recognition" },
               { icon: GraduationCap, title: "Email Academy", description: "Learn best practices with our educational resources" },
-              { icon: Award, title: "Gamification", description: "Track your progress, earn XP, and level up your skills" },
+              { icon: Users, title: "Team Collaboration", description: "Share templates and maintain brand consistency" },
             ].map((item, index) => {
               const Icon = item.icon;
               return (
@@ -450,13 +445,47 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-br from-purple-500/5 to-pink-500/5 border-purple-500/20" data-testid="card-roi">
+              <CardContent className="p-8">
+                <div className="text-center mb-8">
+                  <Badge variant="outline" className="mb-4" data-testid="badge-roi">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    Return on Investment
+                  </Badge>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">The Math Makes Sense</h2>
+                  <p className="text-muted-foreground">A single successful email campaign pays for months of Acceptafy</p>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-6 text-center">
+                  <div data-testid="roi-stat-1">
+                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">$2,400+</p>
+                    <p className="text-sm text-muted-foreground mt-1">Avg. value of 1% open rate increase<br/>(10k list × $24 avg. subscriber value)</p>
+                  </div>
+                  <div data-testid="roi-stat-2">
+                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">18%</p>
+                    <p className="text-sm text-muted-foreground mt-1">Avg. open rate improvement<br/>reported by our users</p>
+                  </div>
+                  <div data-testid="roi-stat-3">
+                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">40x</p>
+                    <p className="text-sm text-muted-foreground mt-1">Potential ROI on Pro plan<br/>($59/mo vs. $2,400+ value created)</p>
+                  </div>
+                </div>
+
+                <p className="text-center text-sm text-muted-foreground mt-6">
+                  Plus: Avoid spam folders, protect sender reputation, and save 3+ hours per week on email copy.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
       <section id="pricing" className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <Badge variant="outline" className="mb-4">
-              <Clock className="w-3 h-3 mr-1" />
-              14-Day Money-Back Guarantee
-            </Badge>
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Simple Pricing, No Surprises</h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Start free, upgrade when you need more. All plans include core grading and spam detection.

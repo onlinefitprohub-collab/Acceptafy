@@ -1353,6 +1353,81 @@ function AppContent() {
             gradeData={result.overallGrade}
           />
 
+          <div className="flex justify-center">
+            <Button
+              onClick={() => {
+                setRewriteGoal('general');
+                handleRewrite();
+              }}
+              disabled={isRewriting || !body.trim()}
+              size="lg"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8 py-6 shadow-lg"
+              data-testid="button-auto-improve"
+            >
+              {isRewriting ? (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                  Improving...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-5 h-5 mr-2" />
+                  Auto-Improve Email
+                </>
+              )}
+            </Button>
+          </div>
+
+          {rewrittenEmail && (
+            <Card className="border-2 border-purple-500/50 bg-gradient-to-br from-purple-500/5 to-pink-500/5" data-testid="card-auto-improve-result">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">AI-Improved Version</CardTitle>
+                      <CardDescription>Ready to apply to your email</CardDescription>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="bg-card/50 rounded-lg p-4 border border-border">
+                    <span className="text-sm font-semibold text-primary">Subject</span>
+                    <p className="text-foreground mt-1">{rewrittenEmail.subject}</p>
+                  </div>
+                  <div className="bg-card/50 rounded-lg p-4 border border-border">
+                    <span className="text-sm font-semibold text-primary">Preview Text</span>
+                    <p className="text-muted-foreground mt-1">{rewrittenEmail.previewText}</p>
+                  </div>
+                  <div className="bg-card/50 rounded-lg p-4 border border-border">
+                    <span className="text-sm font-semibold text-primary">Body</span>
+                    <p className="text-muted-foreground mt-1 whitespace-pre-line max-h-60 overflow-y-auto">{rewrittenEmail.body}</p>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={handleAcceptRewrite}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    data-testid="button-accept-auto-improve"
+                  >
+                    Apply Improvements
+                  </Button>
+                  <Button
+                    onClick={() => setRewrittenEmail(null)}
+                    variant="secondary"
+                    data-testid="button-discard-auto-improve"
+                  >
+                    Discard
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <PriorityIssues 
             result={result}
             onApplyFix={(issue) => {
