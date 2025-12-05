@@ -19,7 +19,12 @@ import {
   Play,
   AlertCircle,
   Clock,
-  Award
+  Award,
+  Inbox,
+  MessageSquare,
+  FileText,
+  History,
+  ListChecks
 } from "lucide-react";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
@@ -414,33 +419,109 @@ export default function Landing() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Everything You Need to Write Better Emails</h2>
+            <Badge variant="outline" className="mb-4">
+              <Inbox className="w-3 h-3 mr-1" />
+              Complete Email Toolkit
+            </Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-4">Everything You Need to Land in the Inbox & Make More Money</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              From copy optimization to technical deliverability—we've got every angle covered so your emails actually reach your subscribers.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {[
-              { icon: Target, title: "Email Grading", description: "Detailed scores for subject, preview, body, and CTAs" },
-              { icon: ShieldCheck, title: "SPF/DKIM/DMARC Setup", description: "Generate and validate DNS records for email authentication" },
-              { icon: Zap, title: "Auto-Improve", description: "1-click AI rewrites that fix issues and boost engagement" },
-              { icon: BarChart3, title: "Domain Health Checks", description: "Monitor sender reputation and fix deliverability issues" },
-              { icon: AlertCircle, title: "Spam Detection", description: "Catch trigger words and risky phrases before you send" },
-              { icon: TrendingUp, title: "BIMI Support", description: "Set up brand logos in email clients for better recognition" },
-              { icon: GraduationCap, title: "Email Academy", description: "Learn best practices with our educational resources" },
-              { icon: Users, title: "Team Collaboration", description: "Share templates and maintain brand consistency" },
-            ].map((item, index) => {
-              const Icon = item.icon;
-              return (
-                <Card key={index} className="hover-elevate" data-testid={`feature-${index}`}>
-                  <CardContent className="p-5">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 flex items-center justify-center mb-3">
-                      <Icon className="w-5 h-5 text-foreground" />
-                    </div>
-                    <h3 className="font-semibold mb-1">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
+          <div className="space-y-12 max-w-6xl mx-auto">
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <Inbox className="w-4 h-4 text-green-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Inbox Delivery</h3>
+                <span className="text-sm text-muted-foreground">— Make sure your emails actually arrive</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: ShieldCheck, title: "SPF/DKIM/DMARC Generator", description: "Generate perfect DNS records in seconds—no technical expertise needed" },
+                  { icon: BarChart3, title: "Domain Health Monitor", description: "Track sender reputation, blacklist status, and fix issues before they hurt you" },
+                  { icon: AlertCircle, title: "Spam Trigger Detection", description: "Catch 200+ spam trigger words and risky phrases that get you filtered" },
+                  { icon: TrendingUp, title: "BIMI Record Setup", description: "Display your brand logo in email clients for instant recognition and trust" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-green-500/10" data-testid={`feature-inbox-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-green-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Revenue Optimization</h3>
+                <span className="text-sm text-muted-foreground">— Write emails that convert</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: Target, title: "Email Grading Engine", description: "Get detailed scores across 8 dimensions: subject, preview, body, CTAs, personalization & more" },
+                  { icon: Zap, title: "1-Click Auto-Improve", description: "Instantly rewrite your email with AI that fixes every issue we detected" },
+                  { icon: MessageSquare, title: "Follow-Up Generator", description: "Create perfectly-timed follow-up sequences that boost reply rates" },
+                  { icon: FileText, title: "Email Sequence Builder", description: "Plan multi-email campaigns with AI-suggested timing and content flow" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-purple-500/10" data-testid={`feature-revenue-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Workflow & Learning</h3>
+                <span className="text-sm text-muted-foreground">— Work smarter, not harder</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: History, title: "Analysis History", description: "Access all your past grades and rewrites—learn from what works" },
+                  { icon: GraduationCap, title: "Email Academy", description: "Master deliverability and copywriting with our expert-curated lessons" },
+                  { icon: Users, title: "Team Collaboration", description: "Share templates, maintain brand voice, and keep everyone aligned" },
+                  { icon: ListChecks, title: "Email List Analyzer", description: "Check list quality, catch invalid addresses, and protect your sender score" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-blue-500/10" data-testid={`feature-workflow-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </section>
