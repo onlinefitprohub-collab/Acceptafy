@@ -8,45 +8,46 @@ const formatReport = (report: string | undefined): { introText: string; sections
         return { introText: '', sections: [] };
     }
 
-    const sectionPatterns = [
-        { pattern: /SPF\s*\([^)]+\):/gi, label: 'SPF (Sender Policy Framework)' },
-        { pattern: /DKIM\s*\([^)]+\):/gi, label: 'DKIM (DomainKeys Identified Mail)' },
-        { pattern: /DMARC\s*\([^)]+\):/gi, label: 'DMARC (Domain-based Message Authentication)' },
-        { pattern: /Reverse DNS\s*\([^)]*\):/gi, label: 'Reverse DNS (rDNS)' },
-        { pattern: /Blacklist Status:/gi, label: 'Blacklist Status' },
-        { pattern: /Mail Server Configuration:/gi, label: 'Mail Server Configuration' },
-        { pattern: /Content & Engagement:/gi, label: 'Content & Engagement' },
+    const sectionHeaders = [
+        { key: 'SPF', label: 'SPF (Sender Policy Framework)' },
+        { key: 'DKIM', label: 'DKIM (DomainKeys Identified Mail)' },
+        { key: 'DMARC', label: 'DMARC (Domain-based Message Authentication)' },
+        { key: 'Reverse DNS', label: 'Reverse DNS (rDNS)' },
+        { key: 'Blacklist Status', label: 'Blacklist Status' },
+        { key: 'Mail Server Configuration', label: 'Mail Server Configuration' },
+        { key: 'Content & Engagement', label: 'Content & Engagement' }
     ];
 
-    let sections: { label: string; content: string }[] = [];
-    let remainingText = report;
+    const sections: { label: string; content: string }[] = [];
     let introText = '';
+    let workingText = report;
 
-    const firstSectionMatch = remainingText.match(/(?:SPF|DKIM|DMARC|Reverse DNS|Blacklist Status|Mail Server|Content &)/i);
-    if (firstSectionMatch && firstSectionMatch.index && firstSectionMatch.index > 0) {
-        introText = remainingText.substring(0, firstSectionMatch.index).trim();
-        remainingText = remainingText.substring(firstSectionMatch.index);
+    const firstMatch = workingText.match(/(?:SPF|DKIM|DMARC|Reverse DNS|Blacklist Status|Mail Server|Content &)/i);
+    if (firstMatch && firstMatch.index && firstMatch.index > 0) {
+        introText = workingText.substring(0, firstMatch.index).trim();
     }
 
-    for (const { pattern, label } of sectionPatterns) {
-        const match = remainingText.match(pattern);
-        if (match) {
-            const startIndex = remainingText.indexOf(match[0]);
-            const afterHeader = startIndex + match[0].length;
+    for (const { key, label } of sectionHeaders) {
+        const regex = new RegExp(`${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:\\([^)]*\\))?\\s*:`, 'i');
+        const match = workingText.match(regex);
+        
+        if (match && match.index !== undefined) {
+            const startPos = match.index + match[0].length;
+            let endPos = workingText.length;
             
-            let endIndex = remainingText.length;
-            for (const { pattern: nextPattern } of sectionPatterns) {
-                if (nextPattern === pattern) continue;
-                const nextMatch = remainingText.substring(afterHeader).match(nextPattern);
+            for (const { key: nextKey } of sectionHeaders) {
+                if (nextKey === key) continue;
+                const nextRegex = new RegExp(`${nextKey.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?:\\([^)]*\\))?\\s*:`, 'i');
+                const nextMatch = workingText.substring(startPos).match(nextRegex);
                 if (nextMatch && nextMatch.index !== undefined) {
-                    const possibleEnd = afterHeader + nextMatch.index;
-                    if (possibleEnd < endIndex && possibleEnd > afterHeader) {
-                        endIndex = possibleEnd;
+                    const possibleEnd = startPos + nextMatch.index;
+                    if (possibleEnd < endPos) {
+                        endPos = possibleEnd;
                     }
                 }
             }
             
-            const content = remainingText.substring(afterHeader, endIndex).trim();
+            const content = workingText.substring(startPos, endPos).trim();
             if (content) {
                 sections.push({ label, content });
             }
@@ -81,7 +82,7 @@ export const DomainHealthChecker: React.FC = () => {
         }
     };
 
-    const getStatusStyles = (status: DomainHealth['status']) => {
+    const getStatusStyles = (status: DomainHealth['status'] | undefined) => {
         switch (status) {
             case 'Clean':
                 return { icon: <GoodStatusIcon />, text: 'text-green-300', bg: 'bg-green-500/10', border: 'border-green-500/50' };
@@ -89,6 +90,8 @@ export const DomainHealthChecker: React.FC = () => {
                 return { icon: <WarningStatusIcon />, text: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' };
             case 'Blacklisted':
                 return { icon: <BadStatusIcon />, text: 'text-red-300', bg: 'bg-red-500/10', border: 'border-red-500/50' };
+            default:
+                return { icon: <InfoIcon className="w-6 h-6 text-gray-400" />, text: 'text-gray-300', bg: 'bg-gray-500/10', border: 'border-gray-500/50' };
         }
     };
 
