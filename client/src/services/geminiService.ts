@@ -1,4 +1,4 @@
-import type { DomainHealth, ListQualityAnalysis, BimiRecord } from '../types';
+import type { DomainHealth, ListQualityAnalysis, BimiRecord, GlossaryTerm } from '../types';
 
 export async function checkDomainHealth(domain: string): Promise<DomainHealth> {
     const response = await fetch('/api/domain/health', {
@@ -37,6 +37,20 @@ export async function generateBimiRecord(domain: string): Promise<BimiRecord> {
     
     if (!response.ok) {
         throw new Error('Failed to generate BIMI record');
+    }
+    
+    return response.json();
+}
+
+export async function explainTerm(term: string): Promise<GlossaryTerm> {
+    const response = await fetch('/api/glossary/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ term })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to explain term');
     }
     
     return response.json();
