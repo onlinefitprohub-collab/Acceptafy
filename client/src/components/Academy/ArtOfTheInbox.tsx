@@ -1,42 +1,74 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck } from './ModuleComponents';
+import { SpamIcon, SubjectShowdownIcon, CtaIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const ArtOfTheInbox: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Anatomy of a Great Email" subtitle="Master the core components of an email that gets opened and read." />
-        <SectionWrapper title="Winning the Open" subtitle="Subject Lines & Preview Text">
-            <p>Your subject line and preview text work together to capture attention in a crowded inbox. Clarity often beats cleverness—the reader should immediately understand the value of opening your email.</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Keep subject lines under 50 characters for mobile</li>
-                <li>Use preview text to expand on the subject, not repeat it</li>
-                <li>Create curiosity without being misleading</li>
-                <li>Personalization can boost open rates significantly</li>
-            </ul>
-        </SectionWrapper>
-        <SectionWrapper title="The Body: Building Trust" subtitle="Writing Copy That Connects">
-            <p>The body of your email should deliver on the promise made in your subject line. Start with the most important information and use short paragraphs.</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Lead with value—what's in it for the reader?</li>
-                <li>Use "you" more than "we" or "I"</li>
-                <li>Break up text with subheadings and bullet points</li>
-                <li>Keep sentences short and scannable</li>
-            </ul>
-        </SectionWrapper>
-        <SectionWrapper title="Driving the Action" subtitle="The Call to Action (CTA)">
-            <p>Focus on the value the user gets, not just the action. "Get Your Free Guide" is better than "Download." Your CTA should be the natural next step after reading your email.</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Use action verbs that imply benefit</li>
-                <li>Make your button or link visually prominent</li>
-                <li>Limit to one primary CTA per email</li>
-                <li>Create urgency when appropriate (but don't fake it)</li>
-            </ul>
-        </SectionWrapper>
-        <KnowledgeCheck
-            question="When writing a Call to Action, what is the most effective approach?"
-            options={[
-                { text: "Focus on the action (e.g., 'Click Here', 'Download')", isCorrect: false },
-                { text: "Focus on the value/benefit (e.g., 'Get Your Free Guide')", isCorrect: true }
-            ]}
-            explanation="Exactly! People are motivated by what they'll gain. Benefit-focused CTAs consistently outperform action-only CTAs because they remind the reader why they should take action."
-        />
-    </div>
-);
+interface ModuleProps {
+    onBack: () => void;
+}
+
+export const ArtOfTheInbox: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="Anatomy of a Great Email"
+                subtitle="Master the core components of an email that gets opened, read, and acted upon, from avoiding spam filters to crafting the perfect call to action."
+            />
+            
+            <SectionWrapper
+                title="Understanding Modern Spam Filters"
+                subtitle="It's More Than Just Keywords"
+            >
+                <p>Modern spam filters look at a wide range of signals, not just specific "spammy" words. They assess your overall sender reputation and engagement history to decide where your email should land.</p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Image-to-Text Ratio:</strong> Emails that are mostly one large image with very little text are a classic spammer tactic. Aim for a healthy balance of text and supporting images.</li>
+                    <li><strong className="text-gray-200">Link Reputation:</strong> Using public URL shorteners (like bit.ly) can be seen as suspicious because they hide the final destination. Always use full, descriptive links from your own domain.</li>
+                    <li><strong className="text-gray-200">Deceptive Practices:</strong> Faking a reply or forward by adding "Re:" or "Fwd:" to your subject line is a violation of trust and a major red flag for filters, as is excessive capitalization or punctuation.</li>
+                </ul>
+                <InfoBox icon={<SpamIcon />}>
+                    <p className="text-purple-200 text-sm">Our main tool's <strong className="font-semibold">Spam and Formatting Analysis</strong> automatically checks for these and many other signals, helping you optimize your email before sending.</p>
+                </InfoBox>
+            </SectionWrapper>
+
+            <SectionWrapper
+                title="Winning the Open"
+                subtitle="Crafting Effective Subject Lines & Preview Text"
+            >
+                <p>Your subject line and preview text work together as a one-two punch to capture attention in a crowded inbox. Their sole job is to earn the open.</p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Clarity Over Cleverness:</strong> A clear, benefit-driven subject line almost always outperforms a witty but vague one. "Your Weekly Performance Report" is better than "A Symphony of Data Awaits."</li>
+                    <li><strong className="text-gray-200">Create a Curiosity Gap:</strong> Hint at the value inside without giving everything away. "The one mistake most marketers make..." creates a powerful desire to learn the answer.</li>
+                    <li><strong className="text-gray-200">Use Urgency Sparingly:</strong> A touch of genuine urgency ("24 hours left for 20% off") can be effective. Artificial or excessive urgency ("ACT NOW OR LOSE OUT FOREVER") is a spam trigger.</li>
+                </ul>
+                 <InfoBox icon={<SubjectShowdownIcon />}>
+                    <p className="text-purple-200 text-sm">Use the <strong className="font-semibold">Subject Line Showdown</strong> to simulate an A/B test and see which of your ideas is most likely to win the open.</p>
+                </InfoBox>
+            </SectionWrapper>
+            
+            <SectionWrapper
+                title="Driving the Action"
+                subtitle="Crafting a Clear Call to Action (CTA)"
+            >
+                <p>The Call to Action is the single, focused outcome you want from your email. A vague or weak CTA can cause an otherwise great email to fail.</p>
+                <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li><strong className="text-gray-200">Focus on Value, Not Action:</strong> Instead of a generic action like "Download," focus on the value the user gets: "Get Your Free Cheatsheet." People care about the benefit to them.</li>
+                    <li><strong className="text-gray-200">One Email, One Goal:</strong> Don't confuse readers by asking them to do three different things. A single, clear CTA is dramatically more effective than multiple competing requests.</li>
+                    <li><strong className="text-gray-200">Reduce Friction:</strong> Make the next step sound easy and low-commitment. "Start Your 5-Minute Tour" feels much more approachable than "Request a Comprehensive Enterprise Consultation."</li>
+                </ul>
+                 <InfoBox icon={<CtaIcon />}>
+                    <p className="text-purple-200 text-sm">The <strong className="font-semibold">Call to Action</strong> grade in our analysis evaluates the clarity, strength, and focus of your CTA.</p>
+                </InfoBox>
+            </SectionWrapper>
+
+            <KnowledgeCheck
+                question="When writing a Call to Action, what is the most effective approach?"
+                options={[
+                    { text: "Focus on the action the user needs to take (e.g., 'Click Here').", isCorrect: false },
+                    { text: "Make it sound as corporate and professional as possible.", isCorrect: false },
+                    { text: "Focus on the value or benefit the user will receive (e.g., 'Get Your Free Guide').", isCorrect: true },
+                    { text: "Include multiple CTAs to give users more options.", isCorrect: false },
+                ]}
+                explanation="Exactly! People are motivated by what they'll gain. Focusing your CTA on the value makes it much more compelling and user-centric."
+            />
+        </div>
+    );
+};
