@@ -1,68 +1,78 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { MonitorIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const SenderReputation: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="Sender Reputation Management" subtitle="Learn how inbox providers 'score' you and how to stay in their good graces." />
-        
-        <SectionWrapper title="What is Sender Reputation?" subtitle="Your Email Credit Score">
-            <p>Sender reputation is a score that inbox providers (Gmail, Outlook, Yahoo) assign to your sending domain and IP address. It determines whether your emails land in the inbox, promotions tab, or spam folder.</p>
-            <p className="mt-2">Like a credit score, sender reputation is built over time through consistent positive behavior and can be damaged quickly by poor practices.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Factors That Affect Reputation" subtitle="What Inbox Providers Measure">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Bounce Rate:</strong> High bounces signal poor list quality</li>
-                <li><strong>Spam Complaints:</strong> The most damaging factor</li>
-                <li><strong>Engagement:</strong> Opens, clicks, replies improve reputation</li>
-                <li><strong>Spam Trap Hits:</strong> Sending to known spam traps is very harmful</li>
-                <li><strong>Unsubscribe Rate:</strong> High rates suggest unwanted email</li>
-                <li><strong>Sending Volume:</strong> Sudden spikes look suspicious</li>
-            </ul>
-        </SectionWrapper>
+export const SenderReputation: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="Sender Reputation Management"
+                subtitle="Learn about the most critical, invisible factor in deliverability: the 'credit score' that inbox providers assign to you."
+            />
+            
+            <SectionWrapper
+                title="What is Sender Reputation?"
+                subtitle="Your Emailing 'Credit Score'"
+            >
+                <p>Sender reputation is a score that an Internet Service Provider (ISP) like Gmail, Outlook, or Yahoo assigns to your sending domain. This score determines whether they trust you enough to deliver your emails to the primary inbox, the promotions tab, or the spam folder.</p>
+                <p>A high reputation score means your emails are wanted and trusted. A low score means you look like a spammer, and your emails will be heavily filtered or blocked entirely.</p>
+                <p><strong className="text-gray-200">There are two main types of reputation:</strong></p>
+                <ul className="list-disc list-inside space-y-1 mt-2">
+                    <li><strong className="text-gray-200">IP Reputation:</strong> Tied to the specific mail server (IP address) sending the email. This is mostly managed by your Email Service Provider (ESP).</li>
+                    <li><strong className="text-gray-200">Domain Reputation:</strong> Tied to your sending domain (e.g., yourcompany.com). This is YOUR reputation, and it follows you even if you switch ESPs. It is the more important factor for long-term success.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="Monitoring Your Reputation" subtitle="Tools and Metrics to Track">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Google Postmaster Tools:</strong> Essential for Gmail reputation data</li>
-                <li><strong>Microsoft SNDS:</strong> Sender reputation for Outlook/Hotmail</li>
-                <li><strong>Sender Score (Validity):</strong> Third-party reputation scoring</li>
-                <li><strong>Blacklist Monitors:</strong> Check if you're on any blacklists</li>
-                <li><strong>Your own metrics:</strong> Track bounces, complaints, engagement trends</li>
-            </ul>
-        </SectionWrapper>
+            <SectionWrapper
+                title="How Your Reputation is Calculated"
+                subtitle="Positive vs. Negative Signals"
+            >
+                <p>ISPs are constantly watching how recipients interact with your emails. They use these interactions as signals to adjust your reputation score up or down.</p>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+                    <div className="bg-green-500/10 p-4 rounded-lg border border-green-500/20">
+                        <h4 className="font-bold text-green-300">Positive Signals (Increase Your Score)</h4>
+                        <ul className="list-disc list-inside space-y-1 mt-2 text-sm text-gray-300">
+                            <li>High open rates</li>
+                            <li>High click-through rates</li>
+                            <li>Recipients replying to your emails</li>
+                            <li>Marking your email as "Not Spam"</li>
+                            <li>Moving your email from Promotions to Primary</li>
+                        </ul>
+                    </div>
+                     <div className="bg-red-500/10 p-4 rounded-lg border border-red-500/20">
+                        <h4 className="font-bold text-red-300">Negative Signals (Decrease Your Score)</h4>
+                        <ul className="list-disc list-inside space-y-1 mt-2 text-sm text-gray-300">
+                            <li>High hard bounce rates (invalid addresses)</li>
+                            <li>Recipients marking your email as spam</li>
+                            <li>High unsubscribe rates</li>
+                            <li>Recipients deleting your email without opening</li>
+                            <li>Sending to known spam traps</li>
+                        </ul>
+                    </div>
+                </div>
+            </SectionWrapper>
+            
+            <InfoBox icon={<MonitorIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">How to Monitor Your Reputation</h4>
+                    <p className="text-purple-200 text-sm">A great free tool for this is <strong className="font-semibold">Google Postmaster Tools</strong>. Setting it up gives you direct insight into how Gmail views your domain's reputation, including data on spam complaint rates, IP reputation, and more.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="IP Warming" subtitle="Building Reputation on New Infrastructure">
-            <p>When you get a new IP address or domain, it has no reputation. You need to "warm it up" gradually:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>Start small:</strong> Send to your most engaged subscribers first</li>
-                <li><strong>Increase gradually:</strong> Double volume every few days</li>
-                <li><strong>Monitor closely:</strong> Watch for bounce and complaint spikes</li>
-                <li><strong>Be patient:</strong> Full warming takes 2-6 weeks</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Recovering from Reputation Damage" subtitle="When Things Go Wrong">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Identify the cause:</strong> Bad list? Poor content? Technical issue?</li>
-                <li><strong>Pause non-essential sends:</strong> Stop the bleeding</li>
-                <li><strong>Clean your list aggressively:</strong> Remove unengaged subscribers</li>
-                <li><strong>Improve engagement:</strong> Only email your best subscribers</li>
-                <li><strong>Rebuild slowly:</strong> Gradually increase volume as metrics improve</li>
-            </ul>
-        </SectionWrapper>
-
-        <InfoBox icon={<MonitorIcon />}>
-            <p className="text-purple-200 text-sm">Prevention is easier than cure. Maintain good list hygiene and engagement practices to avoid reputation problems in the first place.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="Which factor is most damaging to sender reputation?"
-            options={[
-                { text: "High unsubscribe rates", isCorrect: false },
-                { text: "Spam complaints", isCorrect: true },
-                { text: "Low open rates", isCorrect: false }
-            ]}
-            explanation="Spam complaints are the most damaging factor. Each complaint signals to the inbox provider that you're sending unwanted email. Even a complaint rate above 0.1% can cause deliverability issues. This is why having a visible, easy unsubscribe option is crucial—better they unsubscribe than mark as spam."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="Which of the following recipient actions is the STRONGEST positive signal to an ISP?"
+                options={[
+                    { text: "Opening the email.", isCorrect: false },
+                    { text: "Clicking a link in the email.", isCorrect: false },
+                    { text: "Replying to the email.", isCorrect: true },
+                    { text: "Not unsubscribing from the email.", isCorrect: false },
+                ]}
+                explanation="Correct! A reply is a powerful signal that a genuine, two-way conversation is happening. ISPs view this as a very strong indicator that your emails are highly desired, which provides a significant boost to your sender reputation."
+            />
+        </div>
+    );
+};
