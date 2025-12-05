@@ -1,0 +1,264 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { CloseIcon, AcademyIcon, ChecklistIcon, BodyIcon, CtaIcon, TeardownIcon, UserGroupIcon, AutomationIcon, AnalyticsIcon, LegalIcon, BranchingIcon, BlueprintIcon, MonitorIcon } from '../icons/CategoryIcons';
+import { DeliverabilityFoundations } from './DeliverabilityFoundations';
+import { ArtOfTheInbox } from './ArtOfTheInbox';
+import { AdvancedStrategy } from './AdvancedStrategy';
+import { RealWorldTeardowns } from './RealWorldTeardowns';
+import { Glossary } from './Glossary';
+import { ListSegmentation } from './ListSegmentation';
+import { AutomationWorkflows } from './AutomationWorkflows';
+import { AnalyticsKPIs } from './AnalyticsKPIs';
+import { LegalCompliance } from './LegalCompliance';
+import { ScenarioSimulator } from './ScenarioSimulator';
+import { ModuleCard } from './ModuleComponents';
+import { ColdOutreachBlueprint } from './ColdOutreachBlueprint';
+import { NewsletterBlueprint } from './NewsletterBlueprint';
+import { EcommerceBlueprint } from './EcommerceBlueprint';
+import { SenderReputation } from './SenderReputation';
+import { AdvancedAutomation } from './AdvancedAutomation';
+import { ReEngagementBlueprint } from './ReEngagementBlueprint';
+
+interface AcademyHubProps {
+  onClose: () => void;
+}
+
+type ActiveTab = 'modules' | 'glossary';
+type SelectedModule = 'foundations' | 'art' | 'strategy' | 'teardowns' | 'segmentation' | 'automation' | 'analytics' | 'legal' | 'simulator' | 'cold' | 'newsletter' | 'ecommerce' | 'senderReputation' | 'advancedAutomation' | 'reEngagement' | null;
+
+const AcademyModuleSection: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
+    <div>
+        <h3 className="text-xl font-bold text-purple-300">{title}</h3>
+        <p className="text-sm text-gray-400 mb-4">{subtitle}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {children}
+        </div>
+    </div>
+);
+
+export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose }) => {
+    const [activeTab, setActiveTab] = useState<ActiveTab>('modules');
+    const [selectedModule, setSelectedModule] = useState<SelectedModule>(null);
+    const mainContentRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (mainContentRef.current) {
+            mainContentRef.current.scrollTop = 0;
+        }
+    }, [selectedModule, activeTab]);
+
+    const renderModuleContent = () => {
+        switch (selectedModule) {
+            case 'foundations':
+                return <DeliverabilityFoundations onBack={() => setSelectedModule(null)} />;
+            case 'art':
+                return <ArtOfTheInbox onBack={() => setSelectedModule(null)} />;
+            case 'strategy':
+                return <AdvancedStrategy onBack={() => setSelectedModule(null)} />;
+            case 'teardowns':
+                return <RealWorldTeardowns onBack={() => setSelectedModule(null)} />;
+            case 'segmentation':
+                return <ListSegmentation onBack={() => setSelectedModule(null)} />;
+            case 'automation':
+                return <AutomationWorkflows onBack={() => setSelectedModule(null)} />;
+            case 'analytics':
+                return <AnalyticsKPIs onBack={() => setSelectedModule(null)} />;
+            case 'legal':
+                return <LegalCompliance onBack={() => setSelectedModule(null)} />;
+            case 'simulator':
+                return <ScenarioSimulator onBack={() => setSelectedModule(null)} />;
+            case 'cold':
+                return <ColdOutreachBlueprint onBack={() => setSelectedModule(null)} />;
+            case 'newsletter':
+                return <NewsletterBlueprint onBack={() => setSelectedModule(null)} />;
+            case 'ecommerce':
+                return <EcommerceBlueprint onBack={() => setSelectedModule(null)} />;
+            case 'senderReputation':
+                return <SenderReputation onBack={() => setSelectedModule(null)} />;
+            case 'advancedAutomation':
+                return <AdvancedAutomation onBack={() => setSelectedModule(null)} />;
+            case 'reEngagement':
+                return <ReEngagementBlueprint onBack={() => setSelectedModule(null)} />;
+            default:
+                return (
+                    <div className="animate-fade-in space-y-8">
+                         <h3 className="text-2xl font-bold text-white mb-2">Welcome to the Academy</h3>
+                        <p className="text-gray-400 max-w-3xl">A curated learning path to help you master every aspect of email marketing. Start with the foundations, master the craft, and then learn the strategies that drive growth.</p>
+                        
+                        <AcademyModuleSection
+                            title="Module 1: Maximize Your Deliverability"
+                            subtitle="Build an unshakeable technical foundation to ensure your emails land in the inbox, not the spam folder."
+                        >
+                             <ModuleCard
+                                icon={<ChecklistIcon />}
+                                title="Unlock the Inbox: Master Authentication"
+                                description="Learn SPF, DKIM, & DMARC—the 'digital passports' that prove your emails are legit."
+                                onClick={() => setSelectedModule('foundations')}
+                            />
+                             <ModuleCard
+                                icon={<LegalIcon />}
+                                title="Send with Confidence: Navigate Compliance"
+                                description="Master the rules of CAN-SPAM and GDPR to protect your business and your reputation."
+                                onClick={() => setSelectedModule('legal')}
+                            />
+                             <ModuleCard
+                                icon={<UserGroupIcon />}
+                                title="Target Like a Pro: Master Your List"
+                                description="Discover the power of a clean, segmented list for radically better engagement."
+                                onClick={() => setSelectedModule('segmentation')}
+                            />
+                            <ModuleCard
+                                icon={<MonitorIcon />}
+                                title="Sender Reputation Management"
+                                description="Learn how inbox providers 'score' you and how to stay in their good graces for maximum inbox placement."
+                                onClick={() => setSelectedModule('senderReputation')}
+                            />
+                        </AcademyModuleSection>
+
+                        <AcademyModuleSection
+                            title="Module 2: Craft Emails That Convert"
+                            subtitle="Learn the copywriting and psychological principles behind emails that get opened, read, and acted upon."
+                        >
+                            <ModuleCard 
+                                icon={<BodyIcon />}
+                                title="Write Emails That Get Opened & Read"
+                                description="Master subject lines, body copy, and the art of avoiding spam filters."
+                                onClick={() => setSelectedModule('art')}
+                            />
+                            <ModuleCard
+                                icon={<CtaIcon />}
+                                title="Double Your Clicks: Advanced Copywriting"
+                                description="Unlock the secrets to powerful personalization, A/B testing, and effective follow-ups."
+                                onClick={() => setSelectedModule('strategy')}
+                            />
+                             <ModuleCard
+                                icon={<TeardownIcon />}
+                                title="Learn from the Best: Interactive Case Studies"
+                                description="Analyze real emails and test your knowledge before seeing the expert breakdown."
+                                onClick={() => setSelectedModule('teardowns')}
+                            />
+                        </AcademyModuleSection>
+
+                        <AcademyModuleSection
+                            title="Module 3: Automate & Scale Your Growth"
+                            subtitle="Put your email marketing on autopilot and use data to make smarter decisions that drive real results."
+                        >
+                           <ModuleCard
+                                icon={<AutomationIcon />}
+                                title="Put Growth on Autopilot: Master Automation"
+                                description="Build powerful welcome and nurture sequences that convert subscribers 24/7."
+                                onClick={() => setSelectedModule('automation')}
+                            />
+                            <ModuleCard
+                                icon={<AnalyticsIcon />}
+                                title="Decode Your Data: Turn Analytics into Action"
+                                description="Learn which metrics actually matter and how to use them to fuel your growth."
+                                onClick={() => setSelectedModule('analytics')}
+                            />
+                             <ModuleCard
+                                icon={<AutomationIcon />}
+                                title="Advanced Automation & Dynamic Content"
+                                description="Use behavioral triggers and dynamic content to create 1:1 email experiences at scale."
+                                onClick={() => setSelectedModule('advancedAutomation')}
+                            />
+                        </AcademyModuleSection>
+                        
+                        <AcademyModuleSection
+                            title="Module 4: Campaign Strategy Blueprints"
+                            subtitle="Go from writing single emails to building effective, multi-step campaigns that achieve specific business goals."
+                        >
+                           <ModuleCard
+                                icon={<BlueprintIcon />}
+                                title="The Cold Outreach Blueprint"
+                                description="Learn how to structure a 5-email sequence for prospecting and personalization at scale."
+                                onClick={() => setSelectedModule('cold')}
+                            />
+                            <ModuleCard
+                                icon={<BlueprintIcon />}
+                                title="The Newsletter Engagement Blueprint"
+                                description="Discover how to plan content, maintain consistency, and keep your audience engaged long-term."
+                                onClick={() => setSelectedModule('newsletter')}
+                            />
+                             <ModuleCard
+                                icon={<BlueprintIcon />}
+                                title="The E-commerce Blueprint"
+                                description="Master the 'money-making' automations: abandoned carts, post-purchase, and win-back campaigns."
+                                onClick={() => setSelectedModule('ecommerce')}
+                            />
+                             <ModuleCard
+                                icon={<BlueprintIcon />}
+                                title="The Re-engagement (Win-Back) Blueprint"
+                                description="Create campaigns to win back inactive subscribers and safely clean your list to protect deliverability."
+                                onClick={() => setSelectedModule('reEngagement')}
+                            />
+                        </AcademyModuleSection>
+
+                        <AcademyModuleSection
+                            title="Module 5: Practical Application"
+                            subtitle="Test your knowledge in real-world situations and see the impact of your decisions."
+                        >
+                            <ModuleCard
+                                icon={<BranchingIcon />}
+                                title="Scenario Simulator: Test Your Skills"
+                                description="Apply your knowledge in interactive, real-world email marketing challenges and get instant feedback on your decisions."
+                                onClick={() => setSelectedModule('simulator')}
+                             />
+                        </AcademyModuleSection>
+                    </div>
+                );
+        }
+    };
+
+    return (
+        <div 
+            className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+            onClick={onClose}
+        >
+            <div 
+                className="w-full max-w-5xl h-[90vh] max-h-[800px] bg-slate-900/95 dark-bg border border-white/10 rounded-2xl shadow-2xl flex flex-col"
+                onClick={e => e.stopPropagation()}
+            >
+                <header className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-center gap-3">
+                        <span className="text-purple-400"><AcademyIcon /></span>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">Inbox Authority Academy</h2>
+                    </div>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 text-gray-400 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+                        aria-label="Close Academy"
+                    >
+                        <CloseIcon className="w-6 h-6" />
+                    </button>
+                </header>
+                
+                <div className="p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-4 border border-white/10 p-1 rounded-lg bg-white/5 w-full sm:w-auto">
+                        <TabButton 
+                            label="Learning Modules" 
+                            isActive={activeTab === 'modules'} 
+                            onClick={() => setActiveTab('modules')} 
+                        />
+                        <TabButton 
+                            label="AI-Powered Glossary" 
+                            isActive={activeTab === 'glossary'} 
+                            onClick={() => setActiveTab('glossary')} 
+                        />
+                    </div>
+                </div>
+
+                <main ref={mainContentRef} className="flex-grow p-4 sm:p-6 overflow-y-auto">
+                    {activeTab === 'modules' ? renderModuleContent() : <Glossary />}
+                </main>
+            </div>
+        </div>
+    );
+};
+
+const TabButton: React.FC<{ label: string, isActive: boolean, onClick: () => void }> = ({ label, isActive, onClick }) => (
+    <button
+        onClick={onClick}
+        className={`w-full text-center px-4 py-2 text-sm sm:text-base font-semibold rounded-md transition-colors ${isActive ? 'bg-purple-600 text-white shadow-md' : 'text-gray-300 hover:bg-white/10'}`}
+    >
+        {label}
+    </button>
+);
