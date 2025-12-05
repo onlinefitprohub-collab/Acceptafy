@@ -111,7 +111,7 @@ export const HighlightedInput: React.FC<HighlightedInputProps> = ({
                 ref={inputRef}
                 value={value}
                 onScroll={handleScroll}
-                className="w-full bg-transparent caret-white relative z-10 block text-gray-300"
+                className="w-full bg-transparent caret-foreground relative z-10 block text-foreground"
                 style={sharedStyles}
                 data-testid="input-highlighted"
                 {...props}

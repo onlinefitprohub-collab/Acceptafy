@@ -10,8 +10,21 @@ import {
   Flame,
   Star,
   ChevronDown,
-  Sparkles
+  Sparkles,
+  Shield,
+  type LucideIcon
 } from 'lucide-react';
+
+const iconMap: Record<string, LucideIcon> = {
+  target: Target,
+  star: Star,
+  trophy: Trophy,
+  shield: Shield,
+  sparkles: Sparkles,
+  flame: Flame,
+  zap: Zap,
+  mail: Mail,
+};
 import {
   Sidebar,
   SidebarContent,
@@ -57,8 +70,8 @@ export function AppSidebar({
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
 
   return (
-    <Sidebar className="border-r border-white/5">
-      <SidebarHeader className="p-4 border-b border-white/5">
+    <Sidebar className="border-r border-sidebar-border">
+      <SidebarHeader className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
             <div className="w-full h-full rounded-[10px] bg-sidebar flex items-center justify-center">
@@ -66,7 +79,7 @@ export function AppSidebar({
             </div>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Acceptafy</h1>
+            <h1 className="text-lg font-bold text-sidebar-foreground">Acceptafy</h1>
             <p className="text-xs text-muted-foreground">Email Mastery</p>
           </div>
         </div>
@@ -89,7 +102,7 @@ export function AppSidebar({
                   className="group"
                   data-testid="nav-grader"
                 >
-                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'grader' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'grader' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
                     <Mail className="w-4 h-4" />
                   </div>
                   <span>Email Grader</span>
@@ -101,7 +114,7 @@ export function AppSidebar({
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton className="group" data-testid="nav-tools">
-                      <div className={`p-1.5 rounded-lg transition-all ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                      <div className={`p-1.5 rounded-lg transition-all ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
                         <Wand2 className="w-4 h-4" />
                       </div>
                       <span>AI Tools</span>
@@ -177,7 +190,7 @@ export function AppSidebar({
                   className="group"
                   data-testid="nav-history"
                 >
-                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'history' ? 'bg-gradient-to-br from-green-500 to-emerald-500' : 'bg-white/5 group-hover:bg-white/10'}`}>
+                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'history' ? 'bg-gradient-to-br from-green-500 to-emerald-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
                     <History className="w-4 h-4" />
                   </div>
                   <span>History</span>
@@ -190,7 +203,7 @@ export function AppSidebar({
                   className="group"
                   data-testid="nav-academy"
                 >
-                  <div className="p-1.5 rounded-lg transition-all bg-white/5 group-hover:bg-white/10">
+                  <div className="p-1.5 rounded-lg transition-all bg-sidebar-accent group-hover:bg-sidebar-accent/80">
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <span>Academy</span>
@@ -213,22 +226,25 @@ export function AppSidebar({
                 <div className="px-2 py-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Trophy className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm font-medium text-white">{unlockedAchievements}/{achievements.length} Badges</span>
+                    <span className="text-sm font-medium text-sidebar-foreground">{unlockedAchievements}/{achievements.length} Badges</span>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {achievements.slice(0, 4).map((achievement, i) => (
-                      <div 
-                        key={i}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
-                          achievement.unlocked 
-                            ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white' 
-                            : 'bg-white/5 text-muted-foreground'
-                        }`}
-                        title={achievement.title}
-                      >
-                        {achievement.icon}
-                      </div>
-                    ))}
+                    {achievements.slice(0, 4).map((achievement, i) => {
+                      const IconComponent = iconMap[achievement.icon] || Target;
+                      return (
+                        <div 
+                          key={i}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            achievement.unlocked 
+                              ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white' 
+                              : 'bg-sidebar-accent text-muted-foreground'
+                          }`}
+                          title={achievement.title}
+                        >
+                          <IconComponent className="w-4 h-4" />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </SidebarMenuItem>
@@ -237,7 +253,7 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-white/5">
+      <SidebarFooter className="p-3 border-t border-sidebar-border">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -245,7 +261,7 @@ export function AppSidebar({
                 {level}
               </div>
               <div>
-                <p className="text-xs font-medium text-white">Level {level}</p>
+                <p className="text-xs font-medium text-sidebar-foreground">Level {level}</p>
                 <p className="text-[10px] text-muted-foreground">{xp}/{nextLevelXp} XP</p>
               </div>
             </div>
@@ -257,7 +273,7 @@ export function AppSidebar({
             </div>
           </div>
           <div className="space-y-1">
-            <Progress value={xpProgress} className="h-1.5 bg-white/10" />
+            <Progress value={xpProgress} className="h-1.5 bg-sidebar-accent" />
             <p className="text-[10px] text-muted-foreground text-center">
               {nextLevelXp - xp} XP to next level
             </p>

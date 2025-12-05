@@ -189,11 +189,9 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
                 onInput={handleInput}
                 onPaste={handlePaste}
                 onKeyDown={handleKeyDown}
-                className="w-full h-full overflow-auto outline-none"
+                className="w-full h-full overflow-auto outline-none text-foreground"
                 style={{
                     padding: '16px',
-                    color: '#d1d5db',
-                    caretColor: 'white',
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
@@ -206,7 +204,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             />
             {!value && placeholder && (
                 <div 
-                    className="absolute top-0 left-0 pointer-events-none text-gray-500"
+                    className="absolute top-0 left-0 pointer-events-none text-muted-foreground"
                     style={{ padding: '16px' }}
                 >
                     {placeholder}
