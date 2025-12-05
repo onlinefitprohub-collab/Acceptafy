@@ -36,7 +36,7 @@ const caseStudies: CaseStudy[] = [
                 { text: "The detailed list of all product features.", isCorrect: false },
                 { text: "The very formal and corporate tone.", isCorrect: false },
             ],
-            explanation: "Correct! The '2-minute video' is a perfect CTA for a welcome email. It respects the user's time and provides immediate value without asking for a purchase or a lengthy commitment, which is key to building trust."
+            explanation: "The '2-minute video' is a perfect CTA for a welcome email. It respects the user's time and provides immediate value without asking for a purchase or a lengthy commitment, which is key to building trust."
         }
     },
     {

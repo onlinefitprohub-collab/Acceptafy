@@ -56,7 +56,7 @@ export const DeliverabilityFoundations: React.FC<ModuleProps> = ({ onBack }) => 
                     { text: "DMARC", isCorrect: false },
                     { text: "DNS", isCorrect: false },
                 ]}
-                explanation="Correct! DKIM adds a digital signature to ensure your email content hasn't been altered, protecting its integrity from sender to receiver."
+                explanation="DKIM adds a digital signature to ensure your email content hasn't been altered, protecting its integrity from sender to receiver."
             />
         </div>
     );

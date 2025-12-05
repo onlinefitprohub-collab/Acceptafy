@@ -52,7 +52,7 @@ const scenarios: Scenario[] = [
             {
                 text: "Rewrite the Call to Action (CTA) to be more specific and value-driven (e.g., change 'Learn More' to 'Get Your 5-Step Checklist').",
                 outcome: 'Success',
-                explanation: "Correct! A high open rate and low CTR is a classic sign of a weak or unclear CTA. Making the value explicit and the action clear directly addresses the bottleneck between reading and clicking.",
+                explanation: "A high open rate and low CTR is a classic sign of a weak or unclear CTA. Making the value explicit and the action clear directly addresses the bottleneck between reading and clicking.",
             },
             {
                 text: "Make the subject line even more exciting to get more opens.",

@@ -57,7 +57,7 @@ export const AdvancedAutomation: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "A behavioral trigger.", isCorrect: true },
                     { text: "List segmentation.", isCorrect: false },
                 ]}
-                explanation="Correct! This is a classic behavioral trigger. The user's specific action (visiting the pricing page) triggers a targeted, automated response designed to address their high-intent behavior."
+                explanation="This is a classic behavioral trigger. The user's specific action (visiting the pricing page) triggers a targeted, automated response designed to address their high-intent behavior."
             />
         </div>
     );

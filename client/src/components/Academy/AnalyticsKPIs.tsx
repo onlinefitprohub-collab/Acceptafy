@@ -54,7 +54,7 @@ export const AnalyticsKPIs: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "Bounce Rate", isCorrect: false },
                     { text: "Open Rate", isCorrect: true },
                 ]}
-                explanation="You got it! A high Open Rate means your subject line and preview text successfully intrigued the recipient enough to open the email and see what's inside."
+                explanation="A high Open Rate means your subject line and preview text successfully intrigued the recipient enough to open the email and see what's inside."
             />
         </div>
     );

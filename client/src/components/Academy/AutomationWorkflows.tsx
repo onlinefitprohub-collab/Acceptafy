@@ -50,7 +50,7 @@ export const AutomationWorkflows: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "To test how many emails a user will tolerate before unsubscribing.", isCorrect: false },
                     { text: "To ask for customer referrals.", isCorrect: false },
                 ]}
-                explanation="Correct! The Welcome Series has the highest engagement rates of any automated campaign, making it the perfect time to build trust, set expectations, and introduce new subscribers to your brand."
+                explanation="The Welcome Series has the highest engagement rates of any automated campaign, making it the perfect time to build trust, set expectations, and introduce new subscribers to your brand."
             />
         </div>
     );

@@ -55,7 +55,7 @@ export const ListSegmentation: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "It is a legal requirement under CAN-SPAM.", isCorrect: false },
                     { text: "It automatically removes subscribers who don't open emails.", isCorrect: false },
                 ]}
-                explanation="That's right! Segmentation lets you tailor your message to smaller, specific groups, making your emails feel more personal and dramatically increasing engagement."
+                explanation="Segmentation lets you tailor your message to smaller, specific groups, making your emails feel more personal and dramatically increasing engagement."
             />
         </div>
     );

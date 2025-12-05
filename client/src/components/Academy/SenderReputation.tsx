@@ -71,7 +71,7 @@ export const SenderReputation: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "Replying to the email.", isCorrect: true },
                     { text: "Not unsubscribing from the email.", isCorrect: false },
                 ]}
-                explanation="Correct! A reply is a powerful signal that a genuine, two-way conversation is happening. ISPs view this as a very strong indicator that your emails are highly desired, which provides a significant boost to your sender reputation."
+                explanation="A reply is a powerful signal that a genuine, two-way conversation is happening. ISPs view this as a very strong indicator that your emails are highly desired, which provides a significant boost to your sender reputation."
             />
         </div>
     );

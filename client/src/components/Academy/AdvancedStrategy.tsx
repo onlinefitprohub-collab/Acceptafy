@@ -67,7 +67,7 @@ export const AdvancedStrategy: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "Only change one variable at a time.", isCorrect: true },
                     { text: "Only test with a very small number of subscribers.", isCorrect: false },
                 ]}
-                explanation="Correct! By only changing one variable (like the subject line OR the call-to-action), you can be certain that any change in performance is due to that specific element."
+                explanation="By only changing one variable (like the subject line OR the call-to-action), you can be certain that any change in performance is due to that specific element."
             />
         </div>
     );

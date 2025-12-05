@@ -61,7 +61,7 @@ export const NewsletterBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "Consistently delivering value and maintaining a regular schedule.", isCorrect: true },
                     { text: "Including as many links as possible in each issue.", isCorrect: false },
                 ]}
-                explanation="You got it! Consistency in both your sending schedule and the value you provide is what builds trust and turns casual subscribers into a true, engaged community."
+                explanation="Consistency in both your sending schedule and the value you provide is what builds trust and turns casual subscribers into a true, engaged community."
             />
         </div>
     );

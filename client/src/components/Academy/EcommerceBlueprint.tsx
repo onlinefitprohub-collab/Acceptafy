@@ -67,7 +67,7 @@ export const EcommerceBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "The blog update notification.", isCorrect: false },
                     { text: "The 'Happy Birthday' email.", isCorrect: false },
                 ]}
-                explanation="Correct! Abandoned cart emails target customers who have already shown high purchase intent, making them the lowest-hanging fruit and the most profitable automation to set up."
+                explanation="Abandoned cart emails target customers who have already shown high purchase intent, making them the lowest-hanging fruit and the most profitable automation to set up."
             />
         </div>
     );

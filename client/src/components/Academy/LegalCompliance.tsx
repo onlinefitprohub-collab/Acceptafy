@@ -55,7 +55,7 @@ export const LegalCompliance: React.FC<ModuleProps> = ({ onBack }) => {
                     { text: "Your valid physical postal address.", isCorrect: true },
                     { text: "Your business registration ID.", isCorrect: false },
                 ]}
-                explanation="Correct! Including a valid physical postal address is a key requirement of the CAN-SPAM Act to ensure transparency and proper identification of the sender."
+                explanation="Including a valid physical postal address is a key requirement of the CAN-SPAM Act to ensure transparency and proper identification of the sender."
             />
         </div>
     );
