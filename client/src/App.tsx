@@ -116,6 +116,8 @@ function App() {
   const [isGeneratingTone, setIsGeneratingTone] = useState(false);
   const [selectedTone, setSelectedTone] = useState<ToneProfile>('professional');
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
+  const [generatedPs, setGeneratedPs] = useState<string | null>(null);
+  const [isGeneratingPs, setIsGeneratingPs] = useState(false);
 
   useEffect(() => {
     setHistory(getHistory());
@@ -286,6 +288,43 @@ function App() {
     })));
     
     setSpamTriggers(prev => prev.filter(t => t.word.toLowerCase() !== word.toLowerCase()));
+  };
+
+  const handleSuggestionClick = (triggerWord: string, suggestion: string) => {
+    handleQuickFix(triggerWord, suggestion);
+  };
+
+  const handleFullRewrite = (originalText: string, newText: string) => {
+    setBody(prev => prev.replace(originalText, newText));
+  };
+
+  const handleGeneratePs = async () => {
+    if (!body.trim()) return;
+    
+    setIsGeneratingPs(true);
+    try {
+      const response = await fetch('/api/generate-ps', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailBody: body })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setGeneratedPs(data.ps);
+      }
+    } catch (error) {
+      console.error('Error generating P.S.:', error);
+    } finally {
+      setIsGeneratingPs(false);
+    }
+  };
+
+  const handleAppendPs = () => {
+    if (generatedPs) {
+      setBody(prev => prev + '\n\n' + generatedPs);
+      setGeneratedPs(null);
+    }
   };
 
   const handleAcceptRewrite = () => {
@@ -641,77 +680,17 @@ function App() {
                   gradeData={result.overallGrade}
                 />
 
-                <div className="grid md:grid-cols-2 gap-4">
-                  {renderSectionGrade('Subject Line', <SubjectIcon className="w-5 h-5 text-purple-400" />, result.subjectLine)}
-                  {renderSectionGrade('Preview Text', <PreviewIcon className="w-5 h-5 text-purple-400" />, result.previewText)}
-                  {renderSectionGrade('Body Copy', <BodyIcon className="w-5 h-5 text-purple-400" />, result.bodyCopy)}
-                  {renderSectionGrade('Call to Action', <CtaIcon className="w-5 h-5 text-purple-400" />, result.callToAction)}
-                </div>
-
-                {result.spamAnalysis?.length > 0 && (
-                  <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <SpamIcon className="w-5 h-5 text-red-400" />
-                      <h3 className="font-bold text-white">Spam Trigger Analysis</h3>
-                    </div>
-                    <div className="space-y-3">
-                      {result.spamAnalysis.map((trigger, i) => (
-                        <div key={i} className={`p-4 rounded-lg border ${getSeverityColor(trigger.severity)}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold">"{trigger.word}"</span>
-                            <span className="text-xs uppercase">{trigger.severity}</span>
-                          </div>
-                          <p className="text-sm opacity-90 mb-2">{trigger.reason}</p>
-                          {trigger.suggestions?.length > 0 && (
-                            <div className="text-xs mb-2">
-                              <span className="opacity-70">Alternatives: </span>
-                              {trigger.suggestions.join(', ')}
-                            </div>
-                          )}
-                          {trigger.suggestion && (
-                            <button
-                              onClick={() => handleQuickFix(trigger.word, trigger.suggestion)}
-                              className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
-                              data-testid={`button-quickfix-${i}`}
-                            >
-                              Quick Fix: Replace with "{trigger.suggestion}"
-                            </button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {result.subjectLineAnalysis?.length > 0 && (
-                  <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-                    <div className="flex items-center gap-2 mb-4">
-                      <SubjectShowdownIcon className="w-5 h-5 text-purple-400" />
-                      <h3 className="font-bold text-white">Subject Line Showdown</h3>
-                    </div>
-                    <div className="space-y-3">
-                      {result.subjectLineAnalysis.map((variation, i) => (
-                        <div 
-                          key={i} 
-                          className={`p-4 rounded-lg border ${variation.isWinner ? 'bg-green-500/20 border-green-500' : 'bg-white/5 border-white/10'}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold text-white">{variation.subject}</span>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-lg font-bold ${variation.predictionScore >= 80 ? 'text-green-400' : variation.predictionScore >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                                {variation.predictionScore}%
-                              </span>
-                              {variation.isWinner && (
-                                <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full">Winner</span>
-                              )}
-                            </div>
-                          </div>
-                          <p className="text-sm text-gray-400">{variation.rationale}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <ResultsTabs
+                  result={result}
+                  body={body}
+                  onSuggestionClick={handleSuggestionClick}
+                  onFullRewrite={handleFullRewrite}
+                  onQuickFix={handleQuickFix}
+                  onGeneratePs={handleGeneratePs}
+                  isGeneratingPs={isGeneratingPs}
+                  generatedPs={generatedPs}
+                  onAppendPs={handleAppendPs}
+                />
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-white/5 p-4 rounded-lg border border-white/10">
