@@ -35,6 +35,12 @@ const generateRoadmapRequestSchema = z.object({
   body: z.string().default(''),
 });
 
+function normalizeTier(tier: string | null | undefined): 'starter' | 'pro' | 'scale' {
+  if (!tier || tier === 'free') return 'starter';
+  if (tier === 'pro' || tier === 'scale') return tier;
+  return 'starter';
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -68,10 +74,12 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       
+      const tier = normalizeTier(user?.subscriptionTier);
+      
       if (!user?.stripeSubscriptionId) {
         return res.json({ 
           subscription: null, 
-          tier: user?.subscriptionTier || 'free',
+          tier,
           status: user?.subscriptionStatus || 'free'
         });
       }
@@ -79,7 +87,7 @@ export async function registerRoutes(
       const subscription = await storage.getSubscription(user.stripeSubscriptionId);
       res.json({ 
         subscription, 
-        tier: user.subscriptionTier,
+        tier,
         status: user.subscriptionStatus 
       });
     } catch (error) {
@@ -98,7 +106,7 @@ export async function registerRoutes(
         counter = await storage.createOrResetUsageCounter(userId);
       }
 
-      const tier = (user?.subscriptionTier || 'starter') as 'starter' | 'pro' | 'scale';
+      const tier = normalizeTier(user?.subscriptionTier);
       const { SUBSCRIPTION_LIMITS } = await import("@shared/schema");
       const limits = SUBSCRIPTION_LIMITS[tier];
 
