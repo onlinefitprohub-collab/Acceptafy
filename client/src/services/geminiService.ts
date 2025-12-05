@@ -14,11 +14,11 @@ export async function checkDomainHealth(domain: string): Promise<DomainHealth> {
     return response.json();
 }
 
-export async function analyzeListQuality(emails: string[]): Promise<ListQualityAnalysis> {
+export async function analyzeEmailList(sample: string): Promise<ListQualityAnalysis> {
     const response = await fetch('/api/list/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails })
+        body: JSON.stringify({ sample })
     });
     
     if (!response.ok) {

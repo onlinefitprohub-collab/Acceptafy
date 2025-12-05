@@ -1,122 +1,77 @@
 import { useState } from 'react';
-import { ListHealthIcon, AlertIcon } from './icons/CategoryIcons';
+import { analyzeEmailList } from '../services/geminiService';
 import type { ListQualityAnalysis } from '../types';
 
-export const ListQualityChecker: React.FC = () => {
-    const [emailList, setEmailList] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [result, setResult] = useState<ListQualityAnalysis | null>(null);
-    const [error, setError] = useState<string | null>(null);
+const StatCard: React.FC<{ label: string, value: string, good?: boolean }> = ({ label, value, good }) => (
+    <div className="bg-gray-900/50 p-3 rounded-lg text-center">
+        <p className="text-xs text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className={`text-xl font-bold ${good ? 'text-green-400' : 'text-yellow-400'}`}>{value}</p>
+    </div>
+);
 
-    const analyzeList = async () => {
-        if (!emailList.trim()) return;
-        
+export const ListQualityChecker: React.FC = () => {
+    const [listSample, setListSample] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [result, setResult] = useState<ListQualityAnalysis | null>(null);
+
+    const handleAnalyze = async () => {
+        if (!listSample.trim()) return;
         setIsLoading(true);
         setError(null);
-        
+        setResult(null);
         try {
-            const response = await fetch('/api/list/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sample: emailList.trim() })
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                setResult(data);
-            } else {
-                setError('Failed to analyze email list. Please try again.');
-            }
+            const analysis = await analyzeEmailList(listSample.trim());
+            setResult(analysis);
         } catch (err) {
-            setError('Network error. Please check your connection.');
+            setError('An error occurred while analyzing the list. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
-
-    const getPercentageColor = (value: number, threshold: number) => {
-        if (value <= threshold) return 'text-green-400';
-        if (value <= threshold * 2) return 'text-yellow-400';
-        return 'text-red-400';
-    };
-
+    
     return (
-        <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-            <div className="flex items-center gap-3 mb-4">
-                <ListHealthIcon className="w-6 h-6 text-purple-400" />
-                <h3 className="text-lg font-bold text-white">List Quality Analyzer</h3>
-            </div>
+        <div className="space-y-4" data-testid="list-quality-checker">
+            <h3 className="text-xl font-bold text-white">List Quality Analyzer</h3>
+            <p className="text-sm text-gray-400">Paste a sample of your email list (one address per line, up to 100) to check for common quality issues that can harm deliverability.</p>
             
-            <p className="text-sm text-gray-400 mb-4">
-                Paste a sample of your email list (one email per line) to analyze its quality.
-            </p>
-
-            <textarea
-                value={emailList}
-                onChange={(e) => setEmailList(e.target.value)}
-                placeholder="john@example.com&#10;jane@company.com&#10;info@business.org"
-                className="w-full h-32 bg-gray-900/50 border border-gray-600 rounded-lg p-3 text-white placeholder-gray-500 input-glow-focus outline-none resize-none mb-4"
-                data-testid="textarea-email-list"
-            />
-
-            <button
-                onClick={analyzeList}
-                disabled={isLoading || !emailList.trim()}
-                className="w-full py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-semibold text-white transition-colors mb-4"
-                data-testid="button-analyze-list"
-            >
-                {isLoading ? 'Analyzing...' : 'Analyze List'}
-            </button>
-
-            {error && (
-                <div className="p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-300 text-sm mb-4">
-                    {error}
-                </div>
-            )}
-
-            {result && (
-                <div className="animate-fade-in space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-gray-900/50 p-4 rounded-lg text-center">
-                            <div className={`text-2xl font-bold ${getPercentageColor(result.roleBasedAccountPercentage, 5)}`}>
-                                {result.roleBasedAccountPercentage.toFixed(1)}%
-                            </div>
-                            <div className="text-xs text-gray-400 mt-1">Role-Based Accounts</div>
-                        </div>
-                        <div className="bg-gray-900/50 p-4 rounded-lg text-center">
-                            <div className={`text-2xl font-bold ${getPercentageColor(result.freeMailProviderPercentage, 30)}`}>
-                                {result.freeMailProviderPercentage.toFixed(1)}%
-                            </div>
-                            <div className="text-xs text-gray-400 mt-1">Free Mail Providers</div>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <div className={`flex-1 p-3 rounded-lg text-center ${result.disposableDomainIndicators ? 'bg-red-500/20 border border-red-500' : 'bg-green-500/20 border border-green-500'}`}>
-                            <div className={`text-sm font-semibold ${result.disposableDomainIndicators ? 'text-red-300' : 'text-green-300'}`}>
-                                {result.disposableDomainIndicators ? 'Disposable Domains Detected' : 'No Disposable Domains'}
-                            </div>
-                        </div>
-                        <div className={`flex-1 p-3 rounded-lg text-center ${result.spamTrapIndicators ? 'bg-red-500/20 border border-red-500' : 'bg-green-500/20 border border-green-500'}`}>
-                            <div className={`text-sm font-semibold ${result.spamTrapIndicators ? 'text-red-300' : 'text-green-300'}`}>
-                                {result.spamTrapIndicators ? 'Spam Trap Risk' : 'No Spam Trap Indicators'}
-                            </div>
-                        </div>
-                    </div>
-
-                    {(result.disposableDomainIndicators || result.spamTrapIndicators) && (
-                        <div className="p-3 bg-yellow-500/20 border border-yellow-500 rounded-lg flex items-start gap-2">
-                            <AlertIcon className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-yellow-300">
-                                Your list may contain risky addresses. Consider cleaning it before sending.
-                            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <textarea
+                    value={listSample}
+                    onChange={(e) => setListSample(e.target.value)}
+                    placeholder="test@example.com&#10;info@company.com&#10;user@gmail.com"
+                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 h-48 resize-none font-mono"
+                    disabled={isLoading}
+                    rows={10}
+                    data-testid="textarea-email-list"
+                />
+                <div className="flex flex-col">
+                    <button
+                        onClick={handleAnalyze}
+                        disabled={!listSample.trim() || isLoading}
+                        className="w-full px-5 py-2.5 mb-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                        data-testid="button-analyze-list"
+                    >
+                        {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                        Analyze List Sample
+                    </button>
+                    {result && !isLoading && (
+                        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+                            <StatCard label="Role-Based" value={`${result.roleBasedAccountPercentage}%`} />
+                            <StatCard label="Free Provider" value={`${result.freeMailProviderPercentage}%`} />
+                            <StatCard label="Disposable" value={result.disposableDomainIndicators ? 'Yes' : 'No'} good={!result.disposableDomainIndicators} />
+                            <StatCard label="Spam Traps" value={result.spamTrapIndicators ? 'Yes' : 'No'} good={!result.spamTrapIndicators} />
                         </div>
                     )}
+                </div>
+            </div>
+            
+            {error && <p className="text-red-400 text-sm" data-testid="text-list-error">{error}</p>}
 
-                    <div className="p-4 bg-gray-900/50 rounded-lg">
-                        <h4 className="font-semibold text-gray-200 mb-2">Analysis Summary</h4>
-                        <p className="text-sm text-gray-400">{result.summaryReport}</p>
-                    </div>
+            {result && (
+                <div className="mt-4 p-4 rounded-lg border border-purple-500/50 bg-purple-500/10 animate-fade-in" data-testid="list-quality-result">
+                    <h4 className="font-bold text-purple-300">AI Summary Report</h4>
+                    <p className="text-gray-300 text-sm mt-2">{result.summaryReport}</p>
                 </div>
             )}
         </div>
