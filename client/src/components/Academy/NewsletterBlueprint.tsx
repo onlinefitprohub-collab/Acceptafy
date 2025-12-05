@@ -1,68 +1,68 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { BlueprintIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const NewsletterBlueprint: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="The Newsletter Engagement Blueprint" subtitle="Discover how to plan content, maintain consistency, and keep your audience engaged long-term." />
-        
-        <SectionWrapper title="The Newsletter Mindset" subtitle="Building a Media Company">
-            <p>The most successful newsletters don't feel like marketing—they feel like a publication subscribers look forward to. You're not just sending emails; you're building a media brand.</p>
-            <p className="mt-2">Consistency, value, and voice are the three pillars of newsletter success. Master these, and your list becomes an invaluable asset.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Finding Your Format" subtitle="Structures That Work">
-            <p>Choose a format that you can sustain and that resonates with your audience:</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li><strong>The Curator:</strong> Handpicked links with your commentary</li>
-                <li><strong>The Teacher:</strong> One deep lesson or tutorial per issue</li>
-                <li><strong>The Analyst:</strong> Industry news and your expert take</li>
-                <li><strong>The Storyteller:</strong> Personal stories with business lessons</li>
-                <li><strong>The Hybrid:</strong> Mix of the above with consistent sections</li>
-            </ul>
-        </SectionWrapper>
+export const NewsletterBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="The Newsletter Engagement Blueprint"
+                subtitle="Learn how to create a newsletter that people actually look forward to reading, turning subscribers into a loyal community."
+            />
+            
+            <SectionWrapper
+                title="The 3 Pillars of a Must-Read Newsletter"
+                subtitle="Consistency, Value, and Personality"
+            >
+                <p>A great newsletter isn't just a random collection of links; it's a product in itself. The most successful newsletters are built on three core pillars that work together to build trust and anticipation.</p>
+                 <ul className="list-disc list-inside space-y-2 mt-2">
+                    <li>
+                        <strong className="text-gray-200">Consistency is Your Promise:</strong> Whether you send daily, weekly, or monthly, stick to your schedule. Consistency builds anticipation and turns your newsletter into a reliable habit for your readers. Missing sends breaks that trust.
+                    </li>
+                    <li>
+                        <strong className="text-gray-200">Value is Your Product:</strong> Every issue must provide tangible value to the reader. This can be through education (teaching them something), curation (saving them time by finding the best content), or entertainment (making them smile). A newsletter that only promotes will quickly be ignored.
+                    </li>
+                    <li>
+                        <strong className="text-gray-200">Personality is Your Brand:</strong> In a crowded inbox, personality is what makes you stand out. Develop a unique voice and tone. Are you the witty expert, the helpful friend, the insightful analyst? This consistent personality is what builds a loyal community.
+                    </li>
+                </ul>
+            </SectionWrapper>
+            
+            <SectionWrapper
+                title="Content Strategy & Format"
+                subtitle="Planning for Long-Term Success"
+            >
+                <p>Avoid the stress of figuring out what to write each week by creating a simple content strategy and a reusable format.</p>
+                <p><strong className="text-gray-200">Example Weekly Newsletter Format:</strong></p>
+                 <ul className="list-decimal list-inside space-y-1 mt-2">
+                    <li><strong>A Personal Introduction:</strong> A short, engaging story or thought from you to build a personal connection.</li>
+                    <li><strong>One Main Insight:</strong> The core value of the newsletter. A deep dive into one topic, a key lesson, or a detailed tip.</li>
+                    <li><strong>Three Curated Links:</strong> Links to the best articles, tools, or resources you found that week. This saves your audience time.</li>
+                    <li><strong>One Call to Action:</strong> A single, clear CTA, whether it's asking a question to encourage replies, or linking to your latest product.</li>
+                </ul>
+            </SectionWrapper>
 
-        <SectionWrapper title="The Content Calendar" subtitle="Planning for Consistency">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Choose a realistic frequency:</strong> Weekly is ideal for most, bi-weekly is minimum</li>
-                <li><strong>Pick a consistent day and time:</strong> Train readers when to expect you</li>
-                <li><strong>Batch create content:</strong> Write 2-4 issues at once when inspired</li>
-                <li><strong>Build a content backlog:</strong> Always have 2+ issues ready</li>
-                <li><strong>Create repeatable templates:</strong> Reduce decision fatigue</li>
-            </ul>
-        </SectionWrapper>
+            <InfoBox icon={<BlueprintIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Optimize Every Send</h4>
+                    <p className="text-purple-200 text-sm">Before you send each newsletter issue, paste the copy into the <strong className="font-semibold">Email Grader</strong>. It will help you catch any spam triggers, improve clarity, and ensure your CTA is as strong as possible.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="Engagement Tactics" subtitle="Keep Readers Coming Back">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Ask questions:</strong> Invite replies and create dialogue</li>
-                <li><strong>Feature subscribers:</strong> Share their wins, questions, or feedback</li>
-                <li><strong>Create running segments:</strong> Recurring sections readers look forward to</li>
-                <li><strong>Add personality:</strong> Let your unique voice shine through</li>
-                <li><strong>Include exclusive content:</strong> Give readers what they can't get elsewhere</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Growing Your Newsletter" subtitle="Sustainable List Building">
-            <ul className="list-disc list-inside space-y-2">
-                <li><strong>Create a compelling landing page:</strong> Explain the value proposition clearly</li>
-                <li><strong>Offer a lead magnet:</strong> Give something valuable for signing up</li>
-                <li><strong>Leverage social proof:</strong> Show subscriber count, testimonials</li>
-                <li><strong>Cross-promote:</strong> Guest posts, podcast appearances, collaborations</li>
-                <li><strong>Encourage forwards:</strong> Ask readers to share with friends</li>
-            </ul>
-        </SectionWrapper>
-
-        <InfoBox icon={<BlueprintIcon />}>
-            <p className="text-purple-200 text-sm">The best newsletter strategy is one you'll actually stick to. A consistent bi-weekly newsletter beats an inconsistent daily one every time.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="What is the most important factor for long-term newsletter success?"
-            options={[
-                { text: "Having the most sophisticated email design", isCorrect: false },
-                { text: "Consistency in publishing schedule and quality", isCorrect: true },
-                { text: "Sending as frequently as possible", isCorrect: false }
-            ]}
-            explanation="Consistency is king in newsletters. Subscribers develop habits around when they expect to hear from you. A consistent, quality newsletter builds trust and anticipation that keeps readers engaged long-term."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="What is the most important element for building a loyal newsletter audience over time?"
+                options={[
+                    { text: "Having the most beautiful design.", isCorrect: false },
+                    { text: "Sending emails every single day.", isCorrect: false },
+                    { text: "Consistently delivering value and maintaining a regular schedule.", isCorrect: true },
+                    { text: "Including as many links as possible in each issue.", isCorrect: false },
+                ]}
+                explanation="You got it! Consistency in both your sending schedule and the value you provide is what builds trust and turns casual subscribers into a true, engaged community."
+            />
+        </div>
+    );
+};
