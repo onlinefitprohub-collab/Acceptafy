@@ -98,7 +98,7 @@ export async function registerRoutes(
         counter = await storage.createOrResetUsageCounter(userId);
       }
 
-      const tier = (user?.subscriptionTier || 'free') as 'free' | 'pro' | 'business';
+      const tier = (user?.subscriptionTier || 'starter') as 'starter' | 'pro' | 'scale';
       const { SUBSCRIPTION_LIMITS } = await import("@shared/schema");
       const limits = SUBSCRIPTION_LIMITS[tier];
 

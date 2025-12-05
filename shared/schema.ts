@@ -82,29 +82,45 @@ export const userGamification = pgTable("user_gamification", {
 export type UserGamification = typeof userGamification.$inferSelect;
 export type InsertUserGamification = typeof userGamification.$inferInsert;
 
-// Subscription tier limits
+// Subscription tier limits - designed to prevent abuse while providing value
 export const SUBSCRIPTION_LIMITS = {
-  free: {
-    gradesPerMonth: 5,
-    rewritesPerMonth: 3,
-    followupsPerMonth: 2,
-    deliverabilityChecksPerMonth: 2,
-    historyLimit: 10,
+  starter: {
+    gradesPerMonth: 50,
+    rewritesPerMonth: 25,
+    followupsPerMonth: 20,
+    deliverabilityChecksPerMonth: 10,
+    historyLimit: 30,
+    brandDomains: 1,
+    teamSeats: 1,
+    apiAccess: false,
   },
   pro: {
-    gradesPerMonth: 100,
-    rewritesPerMonth: 50,
-    followupsPerMonth: 30,
-    deliverabilityChecksPerMonth: 20,
-    historyLimit: 500,
+    gradesPerMonth: 400,
+    rewritesPerMonth: 200,
+    followupsPerMonth: 120,
+    deliverabilityChecksPerMonth: 80,
+    historyLimit: 2000,
+    brandDomains: 3,
+    teamSeats: 1,
+    apiAccess: false,
   },
-  business: {
-    gradesPerMonth: -1,
-    rewritesPerMonth: -1,
-    followupsPerMonth: -1,
-    deliverabilityChecksPerMonth: -1,
-    historyLimit: -1,
+  scale: {
+    gradesPerMonth: 1500,
+    rewritesPerMonth: 800,
+    followupsPerMonth: 500,
+    deliverabilityChecksPerMonth: 300,
+    historyLimit: 10000,
+    brandDomains: 10,
+    teamSeats: 5,
+    apiAccess: true,
   },
+} as const;
+
+// Pricing information
+export const PRICING = {
+  starter: { monthly: 0, name: 'Starter', tagline: 'Try before you commit' },
+  pro: { monthly: 39, name: 'Pro', tagline: 'For serious email marketers' },
+  scale: { monthly: 119, name: 'Scale', tagline: 'For teams and agencies' },
 } as const;
 
 export type SubscriptionTier = keyof typeof SUBSCRIPTION_LIMITS;

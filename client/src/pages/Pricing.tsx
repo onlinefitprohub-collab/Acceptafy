@@ -2,10 +2,10 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Zap, Building2 } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
-import { SUBSCRIPTION_LIMITS } from "@shared/schema";
+import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
 interface Price {
   id: string;
@@ -23,15 +23,9 @@ interface Product {
 }
 
 const PLAN_ICONS = {
-  free: Mail,
+  starter: Mail,
   pro: Sparkles,
-  business: Building2,
-};
-
-const PLAN_GRADIENTS = {
-  free: "from-slate-500 to-slate-600",
-  pro: "from-purple-500 to-pink-500",
-  business: "from-blue-500 to-cyan-500",
+  scale: Users,
 };
 
 export default function Pricing() {
@@ -55,51 +49,56 @@ export default function Pricing() {
 
   const plans = [
     {
-      key: "free",
-      name: "Free",
-      description: "Perfect for trying out Acceptafy",
-      price: 0,
+      key: "starter",
+      name: PRICING.starter.name,
+      description: PRICING.starter.tagline,
+      price: PRICING.starter.monthly,
       priceId: null,
       features: [
-        `${SUBSCRIPTION_LIMITS.free.gradesPerMonth} email grades per month`,
-        `${SUBSCRIPTION_LIMITS.free.rewritesPerMonth} AI rewrites per month`,
-        `${SUBSCRIPTION_LIMITS.free.deliverabilityChecksPerMonth} deliverability checks`,
+        `${SUBSCRIPTION_LIMITS.starter.gradesPerMonth} email grades/month`,
+        `${SUBSCRIPTION_LIMITS.starter.rewritesPerMonth} AI rewrites/month`,
+        `${SUBSCRIPTION_LIMITS.starter.followupsPerMonth} follow-up generations`,
+        `${SUBSCRIPTION_LIMITS.starter.deliverabilityChecksPerMonth} deliverability checks`,
         "Basic spam analysis",
         "Email Academy access",
+        `${SUBSCRIPTION_LIMITS.starter.historyLimit} days history`,
       ],
     },
     {
       key: "pro",
-      name: "Pro",
-      description: "For serious email marketers",
-      price: 29,
+      name: PRICING.pro.name,
+      description: PRICING.pro.tagline,
+      price: PRICING.pro.monthly,
       priceId: null,
       popular: true,
       features: [
-        `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades per month`,
-        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites per month`,
+        `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
+        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites/month`,
+        `${SUBSCRIPTION_LIMITS.pro.followupsPerMonth} follow-up generations`,
         `${SUBSCRIPTION_LIMITS.pro.deliverabilityChecksPerMonth} deliverability checks`,
         "Advanced spam analysis",
         "Subject line A/B testing",
+        `${SUBSCRIPTION_LIMITS.pro.brandDomains} brand domains`,
         "Priority support",
-        "Full history access",
+        "Template library",
       ],
     },
     {
-      key: "business",
-      name: "Business",
-      description: "For teams and agencies",
-      price: 99,
+      key: "scale",
+      name: PRICING.scale.name,
+      description: PRICING.scale.tagline,
+      price: PRICING.scale.monthly,
       priceId: null,
       features: [
-        "Unlimited email grades",
-        "Unlimited AI rewrites",
-        "Unlimited deliverability checks",
-        "Team collaboration",
+        `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
+        `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites/month`,
+        `${SUBSCRIPTION_LIMITS.scale.followupsPerMonth} follow-up generations`,
+        `${SUBSCRIPTION_LIMITS.scale.deliverabilityChecksPerMonth} deliverability checks`,
+        `${SUBSCRIPTION_LIMITS.scale.teamSeats} team seats included`,
+        `${SUBSCRIPTION_LIMITS.scale.brandDomains} brand domains`,
         "API access",
-        "Custom integrations",
-        "Dedicated support",
         "White-label reports",
+        "Dedicated support",
       ],
     },
   ];
@@ -124,7 +123,7 @@ export default function Pricing() {
       return;
     }
     
-    if (planKey === "free") {
+    if (planKey === "starter") {
       window.location.href = "/";
       return;
     }
@@ -165,9 +164,9 @@ export default function Pricing() {
 
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that's right for you. All plans include access to our core email optimization features.
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Choose the plan that fits your email volume. All plans include core grading and deliverability tools.
           </p>
         </div>
 
@@ -176,16 +175,17 @@ export default function Pricing() {
             <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
           </div>
         ) : (
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {enrichedPlans.map((plan) => {
               const Icon = PLAN_ICONS[plan.key as keyof typeof PLAN_ICONS] || Mail;
-              const gradient = PLAN_GRADIENTS[plan.key as keyof typeof PLAN_GRADIENTS] || "from-slate-500 to-slate-600";
-              const isCurrentPlan = user?.subscriptionTier === plan.key;
+              const isCurrentPlan = user?.subscriptionTier === plan.key || 
+                (user?.subscriptionTier === 'free' && plan.key === 'starter') ||
+                (!user?.subscriptionTier && plan.key === 'starter');
 
               return (
                 <Card 
                   key={plan.key} 
-                  className={`relative flex flex-col ${plan.popular ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''}`}
+                  className={`relative flex flex-col ${plan.popular ? 'border-purple-500 shadow-lg' : ''}`}
                   data-testid={`pricing-card-${plan.key}`}
                 >
                   {plan.popular && (
@@ -197,10 +197,10 @@ export default function Pricing() {
                   )}
                   
                   <CardHeader className="text-center pb-4">
-                    <div className={`w-12 h-12 mx-auto rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center mb-3`}>
-                      <Icon className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 mx-auto rounded-lg bg-muted flex items-center justify-center mb-3">
+                      <Icon className="w-5 h-5 text-foreground" />
                     </div>
-                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardTitle className="text-xl">{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                   </CardHeader>
                   
@@ -212,10 +212,10 @@ export default function Pricing() {
                       )}
                     </div>
                     
-                    <ul className="space-y-3">
+                    <ul className="space-y-2">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                           <span className="text-sm">{feature}</span>
                         </li>
                       ))}
@@ -234,7 +234,7 @@ export default function Pricing() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrentPlan ? (
                         "Current Plan"
-                      ) : plan.key === "free" ? (
+                      ) : plan.key === "starter" ? (
                         "Get Started"
                       ) : (
                         "Subscribe"
@@ -247,11 +247,14 @@ export default function Pricing() {
           </div>
         )}
 
-        <div className="mt-16 text-center">
-          <p className="text-muted-foreground mb-4">
-            All plans include a 14-day money-back guarantee. No questions asked.
+        <div className="mt-12 text-center space-y-4">
+          <p className="text-muted-foreground">
+            Need higher limits? <a href="mailto:support@acceptafy.com" className="text-foreground underline">Contact us</a> for custom enterprise plans.
           </p>
-          <Button variant="link" asChild data-testid="link-back-home">
+          <p className="text-sm text-muted-foreground">
+            14-day money-back guarantee on all paid plans.
+          </p>
+          <Button variant="ghost" asChild data-testid="link-back-home">
             <a href="/">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home

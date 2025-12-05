@@ -8,7 +8,6 @@ import {
   User, 
   CreditCard, 
   BarChart3, 
-  Settings, 
   LogOut, 
   Crown, 
   Zap,
@@ -23,7 +22,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
 interface UsageData {
   usage: {
@@ -44,17 +43,22 @@ interface UsageData {
   tier: string;
 }
 
+interface SubscriptionData {
+  subscription: unknown | null;
+  tier: string;
+  status: string;
+}
+
 export default function Account() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const [location] = useLocation();
 
   const { data: usageData, isLoading: usageLoading } = useQuery<UsageData>({
     queryKey: ["/api/usage"],
     enabled: !!user,
   });
 
-  const { data: subscriptionData } = useQuery({
+  const { data: subscriptionData } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription"],
     enabled: !!user,
   });
@@ -102,6 +106,9 @@ export default function Account() {
     return null;
   }
 
+  const currentTier = user.subscriptionTier === 'free' ? 'starter' : (user.subscriptionTier || 'starter');
+  const tierInfo = PRICING[currentTier as keyof typeof PRICING] || PRICING.starter;
+
   const usageItems = usageData ? [
     {
       label: "Email Grades",
@@ -130,12 +137,12 @@ export default function Account() {
   ] : [];
 
   const tierColors = {
-    free: "bg-slate-500",
+    starter: "bg-slate-500",
     pro: "bg-gradient-to-r from-purple-500 to-pink-500",
-    business: "bg-gradient-to-r from-blue-500 to-cyan-500",
+    scale: "bg-gradient-to-r from-blue-500 to-cyan-500",
   };
 
-  const tierBadgeColor = tierColors[user.subscriptionTier as keyof typeof tierColors] || tierColors.free;
+  const tierBadgeColor = tierColors[currentTier as keyof typeof tierColors] || tierColors.starter;
 
   return (
     <div className="min-h-screen bg-background">
@@ -196,7 +203,7 @@ export default function Account() {
                   <p className="text-sm text-muted-foreground">{user.email}</p>
                   <Badge className={`mt-2 ${tierBadgeColor} text-white border-0`}>
                     <Crown className="w-3 h-3 mr-1" />
-                    {(user.subscriptionTier || "free").charAt(0).toUpperCase() + (user.subscriptionTier || "free").slice(1)} Plan
+                    {tierInfo.name} Plan
                   </Badge>
                 </div>
               </div>
@@ -243,7 +250,7 @@ export default function Account() {
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    You're on the Free plan. Upgrade to unlock more features and higher limits.
+                    You're on the {tierInfo.name} plan. Upgrade to unlock more features and higher limits.
                   </p>
                   <Button asChild className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" data-testid="button-upgrade">
                     <a href="/pricing">
@@ -277,8 +284,7 @@ export default function Account() {
                 <div className="space-y-4">
                   {usageItems.map((item, index) => {
                     const Icon = item.icon;
-                    const isUnlimited = item.limit === -1;
-                    const percentage = isUnlimited ? 0 : (item.current / item.limit) * 100;
+                    const percentage = (item.current / item.limit) * 100;
                     const isNearLimit = percentage > 80;
 
                     return (
@@ -289,15 +295,13 @@ export default function Account() {
                             <span className="text-sm font-medium">{item.label}</span>
                           </div>
                           <span className={`text-sm ${isNearLimit ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
-                            {item.current} / {isUnlimited ? "∞" : item.limit}
+                            {item.current} / {item.limit}
                           </span>
                         </div>
-                        {!isUnlimited && (
-                          <Progress 
-                            value={percentage} 
-                            className={`h-2 ${isNearLimit ? '[&>div]:bg-orange-500' : ''}`}
-                          />
-                        )}
+                        <Progress 
+                          value={Math.min(percentage, 100)} 
+                          className={`h-2 ${isNearLimit ? '[&>div]:bg-orange-500' : ''}`}
+                        />
                       </div>
                     );
                   })}
@@ -307,7 +311,7 @@ export default function Account() {
           </Card>
         </div>
 
-        {user.subscriptionTier === "free" && (
+        {currentTier === "starter" && (
           <Card className="mt-6 border-purple-500/30 bg-gradient-to-br from-purple-500/5 to-pink-500/5" data-testid="card-upgrade-prompt">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -316,9 +320,9 @@ export default function Account() {
                     <Crown className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">Unlock Your Full Potential</h3>
+                    <h3 className="font-semibold text-lg">Need More Email Grades?</h3>
                     <p className="text-sm text-muted-foreground">
-                      Upgrade to Pro for 100 email grades, 50 rewrites, and advanced features.
+                      Upgrade to Pro for {SUBSCRIPTION_LIMITS.pro.gradesPerMonth} grades, {SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} rewrites, and priority support.
                     </p>
                   </div>
                 </div>
