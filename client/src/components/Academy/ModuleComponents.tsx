@@ -55,6 +55,8 @@ export const KnowledgeCheck: React.FC<{ question: string; options: { text: strin
         setAnswered(true);
     };
 
+    const isCorrectAnswer = selected !== null && options[selected]?.isCorrect;
+
     return (
         <div className="bg-white/5 p-4 sm:p-6 rounded-lg border-2 border-dashed border-white/10">
             <h4 className="text-lg font-bold text-purple-300 mb-3">Check Your Understanding</h4>
@@ -82,9 +84,11 @@ export const KnowledgeCheck: React.FC<{ question: string; options: { text: strin
                 })}
             </div>
             {answered && (
-                <div className="p-3 bg-gray-900/50 rounded-md text-sm text-gray-300 animate-fade-in">
-                    <p className="font-bold text-gray-200">The Correct Answer:</p>
-                    <p>{explanation}</p>
+                <div className={`p-3 rounded-md text-sm animate-fade-in ${isCorrectAnswer ? 'bg-green-900/30 border border-green-500/30' : 'bg-red-900/30 border border-red-500/30'}`}>
+                    <p className={`font-bold mb-1 ${isCorrectAnswer ? 'text-green-300' : 'text-red-300'}`}>
+                        {isCorrectAnswer ? "That's correct!" : "Not quite right."}
+                    </p>
+                    <p className="text-gray-300">{explanation}</p>
                 </div>
             )}
         </div>
