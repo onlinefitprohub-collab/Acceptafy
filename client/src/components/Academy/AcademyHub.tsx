@@ -130,7 +130,7 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose }) => {
                 <header className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <span className="text-purple-400"><AcademyIcon /></span>
-                        <h2 className="text-xl sm:text-2xl font-bold text-white">Inbox Authority Academy</h2>
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">Acceptafy Academy</h2>
                     </div>
                     <button 
                         onClick={onClose} 

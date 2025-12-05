@@ -61,7 +61,7 @@ export const KnowledgeCheck: React.FC<{ question: string; options: { text: strin
             <p className="font-semibold text-gray-200 mb-4">{question}</p>
             <div className="space-y-2 mb-4">
                 {options.map((option, index) => {
-                    let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
+                    let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60 text-gray-200';
                     if (answered) {
                         if (option.isCorrect) buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
                         else if (selected === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';

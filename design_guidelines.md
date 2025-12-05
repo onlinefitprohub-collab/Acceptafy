@@ -1,4 +1,4 @@
-# Inbox Authority - Design Guidelines (User-Specified System)
+# Acceptafy - Design Guidelines (User-Specified System)
 
 ## Design Approach
 **System: Pre-Defined Custom Design System**

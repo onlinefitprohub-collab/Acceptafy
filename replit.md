@@ -1,8 +1,8 @@
-# Inbox Authority
+# Acceptafy
 
 ## Overview
 
-Inbox Authority is a React + TypeScript email marketing analysis and education platform. The application helps users optimize their email campaigns through AI-powered grading, provides deliverability tools, tracks sender reputation, and offers comprehensive educational resources. Built with Vite, Express, and the Google Gemini AI API, it combines real-time email analysis with educational content to help users master email marketing best practices.
+Acceptafy is a React + TypeScript email marketing analysis and education platform. The application helps users optimize their email campaigns through AI-powered grading, provides deliverability tools, tracks sender reputation, and offers comprehensive educational resources. Built with Vite, Express, and the Google Gemini AI API, it combines real-time email analysis with educational content to help users master email marketing best practices.
 
 ## User Preferences
 

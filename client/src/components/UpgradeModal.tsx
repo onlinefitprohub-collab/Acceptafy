@@ -33,7 +33,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose }) => {
       >
         <header className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 flex-shrink-0">
           <h2 id="upgrade-modal-title" className="text-lg sm:text-xl font-bold text-white">
-            Upgrade to Inbox Authority Pro
+            Upgrade to Acceptafy Pro
           </h2>
           <button
             onClick={onClose}

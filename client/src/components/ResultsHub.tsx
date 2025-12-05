@@ -110,7 +110,7 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
                 <span className="text-4xl sm:text-5xl font-bold tracking-tighter" data-testid="text-inbox-score">{animatedScore}<span className="text-2xl sm:text-3xl">%</span></span>
             </div>
           </div>
-          <h2 className="text-base sm:text-xl font-bold mt-2 text-white">Inbox Authority Score</h2>
+          <h2 className="text-base sm:text-xl font-bold mt-2 text-white">Acceptafy Score</h2>
         </div>
         
         {/* Summary Text */}

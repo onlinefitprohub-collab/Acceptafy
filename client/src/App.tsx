@@ -575,7 +575,7 @@ function App() {
             <div className="w-10 h-10 sm:w-12 sm:h-12">
               <Logo />
             </div>
-            <h1 className="text-xl sm:text-3xl font-bold text-white">Inbox Authority</h1>
+            <h1 className="text-xl sm:text-3xl font-bold text-white">Acceptafy</h1>
           </div>
           <button
             onClick={() => setShowAcademy(true)}
@@ -1214,7 +1214,7 @@ function App() {
       </main>
 
       <footer className="text-center py-8 text-gray-500 text-sm border-t border-white/10 mt-8">
-        <p>&copy; {new Date().getFullYear()} Inbox Authority. All rights reserved.</p>
+        <p>&copy; {new Date().getFullYear()} Acceptafy. All rights reserved.</p>
       </footer>
     </div>
   );

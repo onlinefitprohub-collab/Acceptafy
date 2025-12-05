@@ -42,7 +42,7 @@ export const AnalyticsKPIs: React.FC<ModuleProps> = ({ onBack }) => {
             <InfoBox icon={<AnalyticsIcon />}>
                 <div>
                     <h4 className="font-bold text-white">Connect Analysis to Analytics</h4>
-                    <p className="text-purple-200 text-sm">Use Inbox Authority's analysis to directly influence your KPIs. A better <strong className="font-semibold">Inbox Placement Score</strong> leads to a higher Open Rate. A better <strong className="font-semibold">Call to Action</strong> grade leads to a higher CTR and Conversion Rate.</p>
+                    <p className="text-purple-200 text-sm">Use Acceptafy's analysis to directly influence your KPIs. A better <strong className="font-semibold">Inbox Placement Score</strong> leads to a higher Open Rate. A better <strong className="font-semibold">Call to Action</strong> grade leads to a higher CTR and Conversion Rate.</p>
                 </div>
             </InfoBox>
 
