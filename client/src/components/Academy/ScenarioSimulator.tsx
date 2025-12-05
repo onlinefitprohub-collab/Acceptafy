@@ -1,224 +1,489 @@
 import { useState } from 'react';
 import { ModuleHeader } from './ModuleComponents';
-import { CheckIcon, CloseIcon, PlayIcon } from '../icons/CategoryIcons';
+import { CheckIcon, CloseIcon, BranchingIcon } from '../icons/CategoryIcons';
+
+interface ModuleProps {
+    onBack: () => void;
+}
+
+interface ScenarioOption {
+    text: string;
+    outcome: 'Success' | 'Ineffective' | 'Negative' | 'Catastrophic';
+    explanation: string;
+}
 
 interface Scenario {
-    id: string;
     title: string;
     description: string;
-    situation: string;
-    options: {
-        text: string;
-        outcome: string;
-        isOptimal: boolean;
-        points: number;
-    }[];
+    options: ScenarioOption[];
 }
 
 const scenarios: Scenario[] = [
     {
-        id: 'bounce-spike',
-        title: "Sudden Bounce Rate Spike",
-        description: "Test your deliverability troubleshooting skills",
-        situation: "You notice your bounce rate has jumped from 2% to 15% after your latest campaign. Your opens and clicks are also down significantly. What's your first move?",
+        title: "Diagnosing a Sudden Drop in Open Rates",
+        description: "You've sent a weekly newsletter for six months with consistent 35% open rates. Suddenly, over the last three weeks, your open rate has plummeted to 15%. Your content hasn't changed. What is the most likely cause and your first step to fix it?",
         options: [
             {
-                text: "Immediately pause all email sends and investigate",
-                outcome: "Smart choice! Continuing to send while experiencing delivery issues can damage your sender reputation further. You discover a batch of bad emails was accidentally imported.",
-                isOptimal: true,
-                points: 100
+                text: "Launch a re-engagement campaign for inactive subscribers and then remove those who don't engage.",
+                outcome: 'Success',
+                explanation: "This is the best first step. Over time, unengaged subscribers hurt your sender reputation. Cleaning your list boosts overall engagement rates, signaling to ISPs that your emails are wanted, which drastically improves inbox placement.",
             },
             {
-                text: "Send another campaign to see if it was a one-time issue",
-                outcome: "Risky move. Sending more emails during a delivery crisis compounds the problem. Your sender score drops further and recovery takes weeks longer.",
-                isOptimal: false,
-                points: 20
+                text: "Redesign the email template to be more modern and add more eye-catching images.",
+                outcome: 'Ineffective',
+                explanation: "While design is important, a sudden drop like this is almost always a deliverability issue, not a design problem. This action doesn't address the root cause and could even worsen your image-to-text ratio, further hurting inbox placement.",
             },
             {
-                text: "Switch to a new email service provider immediately",
-                outcome: "Hasty decision. The problem was in your list, not your ESP. Now you've wasted time and money on migration while the real issue persists.",
-                isOptimal: false,
-                points: 30
+                text: "Send more emails to the same list to try and boost the numbers.",
+                outcome: 'Negative',
+                explanation: "This will make the problem worse. Increasing frequency to a disengaged list will accelerate unsubscribes and spam complaints, further damaging your sender reputation and driving open rates even lower.",
+            },
+            {
+                text: "Buy a new, larger email list to get fresh leads and improve the overall percentage.",
+                outcome: 'Catastrophic',
+                explanation: "This is the worst possible action. Purchased lists are full of invalid addresses, spam traps, and unconsenting recipients. Using one will destroy your sender reputation, get your domain blacklisted, and violate anti-spam laws.",
+            },
+        ]
+    },
+    {
+        title: "Good Opens, No Clicks",
+        description: "Your latest product announcement email had an amazing 45% open rate, but the click-through rate is a dismal 0.5%. People are reading, but not acting. What's the most effective change to make for your next send?",
+        options: [
+            {
+                text: "Rewrite the Call to Action (CTA) to be more specific and value-driven (e.g., change 'Learn More' to 'Get Your 5-Step Checklist').",
+                outcome: 'Success',
+                explanation: "Correct! A high open rate and low CTR is a classic sign of a weak or unclear CTA. Making the value explicit and the action clear directly addresses the bottleneck between reading and clicking.",
+            },
+            {
+                text: "Make the subject line even more exciting to get more opens.",
+                outcome: 'Ineffective',
+                explanation: "This doesn't solve the problem. The open rate is already great, which means the subject line is working. The issue lies within the email's content or CTA, which this change doesn't address.",
+            },
+            {
+                text: "Add three more links to different parts of your website to give people more options to click.",
+                outcome: 'Negative',
+                explanation: "This is known as the 'paradox of choice'. Giving too many options often leads to none being chosen. A single, focused CTA is almost always more effective than multiple competing links.",
+            },
+            {
+                text: "Shorten the email body to just one sentence and a link to get people to the website faster.",
+                outcome: 'Catastrophic',
+                explanation: "While conciseness is good, removing all context and value proposition from the email body gives people no reason to click. You need to build interest and explain the benefit before asking for the click.",
             }
         ]
     },
     {
-        id: 'low-engagement',
-        title: "List Re-engagement Challenge",
-        description: "Revive a cold email list effectively",
-        situation: "You've inherited an email list of 50,000 subscribers, but open rates are at 8% and click rates below 0.5%. The list hasn't been emailed in 6 months. What's your strategy?",
+        title: "The Unsubscribe Spike",
+        description: "You just launched a new daily deals campaign to your entire newsletter list. While sales are up slightly, your unsubscribe rate has jumped from 0.2% to 2.5%, and you've received several spam complaints. What's the best course of action?",
         options: [
             {
-                text: "Send a re-permission campaign, then remove non-responders",
-                outcome: "Excellent! You're respecting subscriber consent while protecting deliverability. You end up with 12,000 engaged subscribers who actually want to hear from you.",
-                isOptimal: true,
-                points: 100
+                text: "Stop the daily campaign to the full list. Create an opt-in segment specifically for 'Daily Deals' and only send it to those who explicitly subscribe.",
+                outcome: 'Success',
+                explanation: "Perfect. The spike in unsubscribes and complaints is a clear signal of a mismatch between audience expectation and content. Segmenting your list and respecting user preferences is the best way to maintain list health.",
             },
             {
-                text: "Start with your best promotional offer to maximize opens",
-                outcome: "Not ideal. Sending promotions to a cold list often triggers spam complaints. Your sender reputation takes a hit and future campaigns suffer.",
-                isOptimal: false,
-                points: 40
+                text: "Keep sending the campaign but add a line that says 'Sorry for the frequent emails'.",
+                outcome: 'Ineffective',
+                explanation: "Apologizing doesn't fix the core problem. Users who don't want daily emails will still unsubscribe or mark you as spam. You need to change the targeting, not just acknowledge the issue.",
             },
             {
-                text: "Gradually email small segments to warm up the list",
-                outcome: "Reasonable approach, but without re-permission you're still emailing people who may not want to hear from you. Better than blasting everyone, but not optimal.",
-                isOptimal: false,
-                points: 60
+                text: "Make the 'Unsubscribe' link much smaller and harder to find to reduce the rate.",
+                outcome: 'Negative',
+                explanation: "This is a terrible practice that violates trust and anti-spam laws like CAN-SPAM. Forcing users to stay subscribed will only lead to more spam complaints, which are far more damaging to your reputation than unsubscribes.",
+            },
+            {
+                text: "Ignore the unsubscribes, as long as sales are increasing it's a net positive.",
+                outcome: 'Catastrophic',
+                explanation: "This is short-term thinking. A high unsubscribe and spam complaint rate will destroy your sender reputation, leading to all your future emails (even to engaged users) landing in the spam folder, killing your sales in the long run.",
             }
         ]
     },
     {
-        id: 'subject-test',
-        title: "A/B Test Design",
-        description: "Design an effective subject line test",
-        situation: "You want to A/B test subject lines for an important product launch. Your list has 20,000 subscribers. How do you structure the test?",
+        title: "The Critical First Impression",
+        description: "You need to send a cold email to a potential high-value client. You know their name, company, and job title. Which subject line is most likely to get opened and not immediately deleted or marked as spam?",
         options: [
             {
-                text: "Test with 10% of the list, then send the winner to the remaining 90%",
-                outcome: "Perfect strategy! Testing on 2,000 subscribers gives you statistical significance while maximizing the impact of your winning subject line on the majority of your list.",
-                isOptimal: true,
-                points: 100
+                text: "Question about [Their Company]'s productivity workflow",
+                outcome: 'Success',
+                explanation: "Excellent choice. This subject line is personalized, relevant to their professional role, and creates a curiosity gap without being overly salesy or demanding. It feels like a genuine, one-to-one inquiry.",
             },
             {
-                text: "Split the entire list 50/50 between two subject lines",
-                outcome: "Not optimal. You'll learn which subject line won, but you've already sent to everyone. You can't apply the learning to this campaign, only future ones.",
-                isOptimal: false,
-                points: 50
+                text: "Intro from [Your Name]",
+                outcome: 'Ineffective',
+                explanation: "While not terrible, it's generic and provides no value to the recipient. They don't know who you are, so an introduction isn't compelling. It's easily ignored in a busy inbox.",
             },
             {
-                text: "Test 5 different subject lines with 20% of the list each",
-                outcome: "Too many variables. With 4,000 subscribers per variation, you might not reach statistical significance, and you can't send a winner to the remaining list.",
-                isOptimal: false,
-                points: 30
+                text: "Revolutionary solution for [Their Company]",
+                outcome: 'Negative',
+                explanation: "This sounds like marketing hype and immediately puts the recipient on the defensive. Words like 'revolutionary' are often filtered and come across as spammy, especially in a cold email.",
+            },
+            {
+                text: "Re: Our meeting",
+                outcome: 'Catastrophic',
+                explanation: "This is deceptive. Faking a reply chain is a black-hat tactic that violates trust and will get you marked as spam instantly. It's a quick way to burn a bridge and damage your domain's reputation.",
             }
         ]
-    }
+    },
+    {
+        title: "Investigating an Open Rate Nosedive",
+        description: "Your weekly newsletter's open rate suddenly dropped from 35% to 15%. Your content and subject lines are similar to past successful campaigns. What's your first technical diagnostic step?",
+        options: [
+            {
+                text: "Check your domain's blacklist status using an online tool (like MXToolbox).",
+                outcome: 'Success',
+                explanation: "This is the correct first technical step. A sudden, sharp drop often points to a deliverability issue, and being blacklisted is a common cause. Identifying this allows you to address the root of the problem directly.",
+            },
+            {
+                text: "Rewrite all your subject lines to be more exciting and add emojis.",
+                outcome: 'Ineffective',
+                explanation: "While subject lines are important, the prompt states they are similar to past successful ones. This suggests a technical issue, not a content one. This action ignores the most likely cause of a sudden drop.",
+            },
+            {
+                text: "Send a survey to your list asking why they aren't opening emails.",
+                outcome: 'Negative',
+                explanation: "This is ineffective because the core problem is that a large portion of your audience isn't even seeing the emails. The survey itself would suffer from the same low open rate, yielding no useful data.",
+            },
+            {
+                text: "Switch to a new Email Service Provider (ESP) immediately.",
+                outcome: 'Catastrophic',
+                explanation: "This is a drastic and premature step. Your domain reputation follows you across ESPs. Switching without diagnosing the problem means you'll likely face the same issue on the new platform, but without a sending history.",
+            },
+        ],
+    },
+    {
+        title: "Launching a Product to an Old List",
+        description: "You're launching a new product. You have a list of 50,000 subscribers, but you haven't emailed them in over a year. What is the safest and most effective way to announce the launch?",
+        options: [
+            {
+                text: "Warm up the list by first sending to a small segment of the most recent subscribers and gradually increasing the volume.",
+                outcome: 'Success',
+                explanation: "This is the professional standard for handling a cold list. It minimizes the risk of a high bounce and spam complaint rate, gradually rebuilding your sender reputation with ISPs before the main launch.",
+            },
+            {
+                text: "Email the entire list of 50,000 at once to maximize reach.",
+                outcome: 'Catastrophic',
+                explanation: "Sending to a year-old, un-warmed list is guaranteed to result in a massive number of hard bounces and spam complaints. This will destroy your sender reputation and likely get your domain blacklisted.",
+            },
+            {
+                text: "Use a very aggressive, urgent subject line to make sure you get their attention.",
+                outcome: 'Negative',
+                explanation: "This will only increase the likelihood of your email being marked as spam by both filters and recipients who don't remember subscribing, further damaging your reputation.",
+            },
+            {
+                text: "Don't email them. Just run social media ads targeting them instead.",
+                outcome: 'Ineffective',
+                explanation: "While social media ads can be part of the strategy, abandoning the email list entirely is a waste of a valuable asset. The correct approach is to re-engage the list safely, not discard it.",
+            },
+        ],
+    },
+    {
+        title: "Escaping the Gmail Promotions Tab",
+        description: "Your well-designed newsletter consistently lands in Gmail's Promotions tab, not the Primary inbox. What change is most likely to improve its placement?",
+        options: [
+            {
+                text: "Simplify the email's HTML, reduce the number of images to one or two, and remove promotional language from the footer.",
+                outcome: 'Success',
+                explanation: "Correct. Gmail's algorithm often classifies emails with complex HTML layouts, multiple images, and promo-heavy footers as commercial. Simplifying the email to look more like a personal message increases its chance of landing in the Primary tab.",
+            },
+            {
+                text: "Add 'Please move this to your Primary tab!' at the top of every email.",
+                outcome: 'Ineffective',
+                explanation: "While a small fraction of users might do this, it doesn't address the root cause of why the algorithm is filtering your email. It's a plea, not a solution, and can look unprofessional.",
+            },
+            {
+                text: "Replace all links with plain text URLs that users have to copy and paste.",
+                outcome: 'Negative',
+                explanation: "This creates a terrible user experience and will crater your click-through rates. While it might affect filtering, the negative impact on user engagement makes this a poor strategy.",
+            },
+            {
+                text: "Send the email as a single, large image.",
+                outcome: 'Catastrophic',
+                explanation: "This is a classic spammer tactic and one of the biggest red flags for any email filter, including Gmail's. It will almost certainly hurt your deliverability and may land you in the spam folder, not just Promotions.",
+            },
+        ],
+    },
+    {
+        title: "Handling a Hard Bounce Spike",
+        description: "You just imported a list of leads from a trade show and sent your first email. The campaign report shows a 15% hard bounce rate. What is the IMMEDIATE, critical action you must take?",
+        options: [
+            {
+                text: "Immediately and automatically remove all addresses that hard-bounced from your mailing list.",
+                outcome: 'Success',
+                explanation: "This is the only correct answer. A high hard bounce rate is a toxic signal to ISPs. Continuing to send to invalid addresses will quickly destroy your sender reputation. Most ESPs will even force this action to protect their own IPs.",
+            },
+            {
+                text: "Re-try sending the campaign to the bounced addresses tomorrow in case it was a temporary issue.",
+                outcome: 'Catastrophic',
+                explanation: "A hard bounce is a permanent failure (e.g., the address doesn't exist). Re-sending will only confirm to ISPs that you are ignoring deliverability best practices, severely damaging your reputation.",
+            },
+            {
+                text: "Do nothing and send your next scheduled campaign to the full list as planned.",
+                outcome: 'Catastrophic',
+                explanation: "Ignoring a 15% bounce rate is negligent. Your next campaign will also have a high bounce rate, compounding the damage to your sender reputation and leading to blacklisting.",
+            },
+            {
+                text: "Manually email each bounced address from your personal Gmail to see if they reply.",
+                outcome: 'Ineffective',
+                explanation: "This is impractical at scale and doesn't solve the core problem. A hard bounce means the server has already rejected the address as non-existent. The addresses must be removed, not investigated one by one.",
+            },
+        ],
+    },
+    {
+        title: "A/B Testing a Call to Action",
+        description: "You want to improve your click-through rate. Your current CTA button says 'Learn More'. What is the best Version B to test against it for a clear, actionable result?",
+        options: [
+            {
+                text: "A button with more specific, value-driven text, like 'Download the Free Guide'.",
+                outcome: 'Success',
+                explanation: "This is a perfect A/B test. It isolates a single variable (the copy) and tests a specific hypothesis (that a value-driven CTA performs better than a generic one). The results will be clear and directly applicable.",
+            },
+            {
+                text: "A button that is a different color (e.g., red instead of blue) AND has different text ('See It in Action').",
+                outcome: 'Negative',
+                explanation: "This is a common mistake. By changing two variables at once (color and text), you won't know which one was responsible for the change in performance. An effective A/B test isolates a single variable.",
+            },
+            {
+                text: "A button that is much larger and flashes.",
+                outcome: 'Ineffective',
+                explanation: "While this might get attention, it's generally considered poor UX and can appear spammy. It doesn't test the effectiveness of the message, which is the more important long-term learning.",
+            },
+            {
+                text: "Removing the button and using a simple text link instead.",
+                outcome: 'Ineffective',
+                explanation: "This is a test of format, not message. While it could be a valid test, testing a more specific value proposition (as in the correct answer) is a more powerful first step to improving CTA performance.",
+            },
+        ],
+    },
+    {
+        title: "The 'Everything is Urgent' Problem",
+        description: "Your marketing team insists on using words like 'Urgent,' 'Final Notice,' and '24-Hours Left!' in almost every email to create urgency. What's the best argument against this strategy?",
+        options: [
+            {
+                text: "Explain that overuse of false urgency trains your audience to ignore you and damages long-term sender reputation with ISPs.",
+                outcome: 'Success',
+                explanation: "This is the core strategic argument. It addresses both audience fatigue (they'll stop believing you) and the technical deliverability impact (ISPs will start filtering you), which are the two primary negative consequences.",
+            },
+            {
+                text: "A/B test an 'urgent' subject line against a 'benefit-driven' one to prove with data which one performs better over time.",
+                outcome: 'Ineffective',
+                explanation: "While using data is a great idea, this is a method, not the core argument itself. The fundamental reason the strategy is flawed is the damage to trust and reputation. Present that argument first, then suggest an A/B test to support it.",
+            },
+            {
+                text: "Suggest using even more exclamation points and capital letters to make the urgency really stand out.",
+                outcome: 'Catastrophic',
+                explanation: "This would amplify the problem, making the emails look even more like spam. It's a direct path to the junk folder and a damaged sender reputation.",
+            },
+            {
+                text: "Refuse to send the emails because you don't like the tone.",
+                outcome: 'Negative',
+                explanation: "While your instincts are right, a subjective argument based on personal preference is less effective than a strategic one based on long-term engagement and deliverability. You need to explain *why* it's a bad idea for the business.",
+            },
+        ],
+    },
+    {
+        title: "The Designer's Dilemma",
+        description: "Your designer created a beautiful, visually stunning email for the new product launch. However, it's almost entirely a single, large image with very little actual text. What is the primary risk of sending this email?",
+        options: [
+            {
+                text: "The email has a high probability of being flagged as spam and will be unreadable for users with images turned off.",
+                outcome: 'Success',
+                explanation: "This is the correct answer. Image-only emails are a classic spammer tactic and are heavily penalized by spam filters. They also fail accessibility standards, as they are unreadable to screen readers and users who block images by default.",
+            },
+            {
+                text: "The email will load slowly on mobile devices, but it's worth it for the visual impact.",
+                outcome: 'Ineffective',
+                explanation: "While slow loading is a concern, it's secondary to the critical deliverability and accessibility issues. The visual impact is meaningless if the email lands in the spam folder or can't be read.",
+            },
+            {
+                text: "The email might be too visually impressive and could intimidate potential customers.",
+                outcome: 'Negative',
+                explanation: "This is highly unlikely. The core problem isn't the quality of the design, but the technical implementation (image-only) and its direct, negative impact on deliverability.",
+            },
+            {
+                text: "Send the email as is. A great design is more important than a few technical rules.",
+                outcome: 'Catastrophic',
+                explanation: "This prioritizes aesthetics over function and will lead to a failed campaign. Ignoring fundamental deliverability rules will ensure a large portion of your audience never even sees the beautiful design.",
+            },
+        ]
+    },
+    {
+        title: "The `noreply@` Address",
+        description: "Your company sends all marketing emails from a 'noreply@yourcompany.com' address. A colleague suggests changing it to 'hello@yourcompany.com'. What is the best reason to support this change?",
+        options: [
+            {
+                text: "A 'noreply' address discourages replies, which are a strong positive engagement signal for spam filters. A real address appears more trustworthy and improves deliverability.",
+                outcome: 'Success',
+                explanation: "Correct. Replies are one of the strongest signals to ISPs that your emails are wanted. Using a 'noreply' address actively suppresses this signal and tells ISPs you're broadcasting, not communicating, which can hurt your inbox placement.",
+            },
+            {
+                text: "A 'hello@' address looks friendlier in the inbox, which is nice but has no technical impact.",
+                outcome: 'Ineffective',
+                explanation: "While it does look friendlier, the primary benefit is technical and strategic. The impact on sender reputation from encouraging replies is far more significant than the aesthetic improvement.",
+            },
+            {
+                text: "It doesn't matter, because no one ever replies to marketing emails anyway.",
+                outcome: 'Negative',
+                explanation: "This is a common but incorrect assumption. Encouraging replies (e.g., by asking a question) is a key strategy for improving deliverability. Even a few replies can positively impact your sender reputation.",
+            },
+            {
+                text: "A 'noreply' address is required by the CAN-SPAM Act for all marketing emails.",
+                outcome: 'Catastrophic',
+                explanation: "This is false. The CAN-SPAM Act requires a valid 'Reply-To' address and that you honor opt-out requests, but it does not mandate a 'noreply' address. In fact, using one goes against the spirit of the law, which is to ensure communication is transparent.",
+            },
+        ]
+    },
+    {
+        title: "The Plain Text vs. HTML Decision",
+        description: "You are preparing a 5-email cold outreach sequence to high-level executives in the finance industry. What is the most effective format for these emails?",
+        options: [
+            {
+                text: "A simple, plain-text style email with no images or complex formatting.",
+                outcome: 'Success',
+                explanation: "This is the best approach for this scenario. Plain-text emails feel more personal and one-to-one, mimicking a standard business communication. They have excellent deliverability and are less likely to be filtered as marketing by corporate email servers.",
+            },
+            {
+                text: "A beautifully designed HTML email with your company's branding and high-resolution images.",
+                outcome: 'Negative',
+                explanation: "For cold outreach to executives, a heavily designed email immediately signals 'marketing blast'. It feels impersonal and is more likely to be ignored or filtered. This format is better for newsletters to an existing, opted-in audience.",
+            },
+            {
+                text: "A text-only email but written entirely in capital letters to grab their attention.",
+                outcome: 'Catastrophic',
+                explanation: "This is a major spam trigger and is perceived as shouting. It's unprofessional and will get your email deleted and your domain flagged as spam almost immediately.",
+            },
+            {
+                text: "An email with a video that auto-plays when they open it.",
+                outcome: 'Ineffective',
+                explanation: "Auto-playing video is not supported by most email clients, is often blocked, and can be intrusive. It's a poor user experience that doesn't align with the professional context of cold outreach.",
+            },
+        ]
+    },
 ];
 
-export const ScenarioSimulator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-    const [currentScenario, setCurrentScenario] = useState<number>(0);
-    const [selectedOption, setSelectedOption] = useState<number | null>(null);
-    const [totalScore, setTotalScore] = useState(0);
-    const [completedScenarios, setCompletedScenarios] = useState<Set<string>>(new Set());
 
-    const scenario = scenarios[currentScenario];
-    const isAnswered = selectedOption !== null;
-    const isCompleted = completedScenarios.has(scenario.id);
-
-    const handleSelect = (index: number) => {
-        if (isAnswered) return;
-        setSelectedOption(index);
-        setTotalScore(prev => prev + scenario.options[index].points);
-        setCompletedScenarios(prev => new Set([...prev, scenario.id]));
+const OutcomeDisplay: React.FC<{ outcome: ScenarioOption['outcome'], explanation: string }> = ({ outcome, explanation }) => {
+    const styles = {
+        Success: { icon: <CheckIcon className="w-4 h-4" />, bgColor: 'bg-green-500/20', borderColor: 'border-green-500/50', textColor: 'text-green-300', iconBg: 'bg-green-500 text-green-900' },
+        Ineffective: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50', textColor: 'text-yellow-300', iconBg: 'bg-yellow-500 text-yellow-900' },
+        Negative: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-orange-500/20', borderColor: 'border-orange-500/50', textColor: 'text-orange-300', iconBg: 'bg-orange-500 text-orange-900' },
+        Catastrophic: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50', textColor: 'text-red-300', iconBg: 'bg-red-500 text-red-900' }
     };
-
-    const nextScenario = () => {
-        if (currentScenario < scenarios.length - 1) {
-            setCurrentScenario(prev => prev + 1);
-            setSelectedOption(null);
-        }
-    };
-
-    const resetSimulator = () => {
-        setCurrentScenario(0);
-        setSelectedOption(null);
-        setTotalScore(0);
-        setCompletedScenarios(new Set());
-    };
-
+    const currentStyle = styles[outcome];
     return (
-        <div className="space-y-8 animate-fade-in">
-            <ModuleHeader onBack={onBack} title="Scenario Simulator" subtitle="Apply your knowledge in interactive, real-world email marketing challenges." />
-            
-            <div className="flex items-center justify-between bg-white/5 p-4 rounded-lg">
-                <div>
-                    <span className="text-sm text-gray-400">Scenario {currentScenario + 1} of {scenarios.length}</span>
-                    <div className="text-lg font-bold text-white">{scenario.title}</div>
-                </div>
-                <div className="text-right">
-                    <span className="text-sm text-gray-400">Total Score</span>
-                    <div className="text-2xl font-bold text-purple-400">{totalScore}</div>
-                </div>
+        <div className={`p-4 rounded-lg mt-3 ${currentStyle.bgColor} border ${currentStyle.borderColor} animate-fade-in`}>
+            <div className="flex items-center gap-3">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${currentStyle.iconBg}`}>{currentStyle.icon}</div>
+                <h4 className={`text-lg font-bold ${currentStyle.textColor}`}>Outcome: {outcome}</h4>
             </div>
+            <p className="text-gray-300 text-sm mt-2 ml-9">{explanation}</p>
+        </div>
+    );
+};
 
-            <div className="bg-white/5 p-6 rounded-lg border border-white/10">
-                <div className="flex items-center gap-2 mb-4">
-                    <PlayIcon className="w-5 h-5 text-purple-400" />
-                    <span className="font-semibold text-purple-300">{scenario.description}</span>
-                </div>
-                <p className="text-gray-300 leading-relaxed">{scenario.situation}</p>
-            </div>
+export const ScenarioSimulator: React.FC<ModuleProps> = ({ onBack }) => {
+    const [activeScenarioIndex, setActiveScenarioIndex] = useState<number | null>(null);
+    const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const [answered, setAnswered] = useState(false);
 
-            <div className="space-y-3">
-                <h4 className="font-semibold text-gray-200">Choose your response:</h4>
-                {scenario.options.map((option, index) => {
-                    let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
-                    if (isAnswered) {
-                        if (option.isOptimal) buttonClass = 'bg-green-500/20 border-green-500';
-                        else if (selectedOption === index) buttonClass = 'bg-yellow-500/20 border-yellow-500';
-                        else buttonClass = 'bg-gray-900/30 border-gray-700';
-                    }
-                    return (
-                        <button
-                            key={index}
-                            onClick={() => handleSelect(index)}
-                            disabled={isAnswered}
-                            className={`w-full text-left p-4 rounded-lg border transition-all duration-300 ${buttonClass}`}
+    const handleSelectScenario = (index: number) => {
+        setActiveScenarioIndex(index);
+        setSelectedOption(null);
+        setAnswered(false);
+    };
+    
+    const handleBackToScenarios = () => {
+        setActiveScenarioIndex(null);
+    };
+
+    const handleSelectOption = (index: number) => {
+        if (answered) return;
+        setSelectedOption(index);
+        setAnswered(true);
+    };
+    
+    const handleResetScenario = () => {
+        setSelectedOption(null);
+        setAnswered(false);
+    };
+
+    if (activeScenarioIndex === null) {
+        return (
+             <div className="space-y-6 animate-fade-in">
+                <ModuleHeader
+                    onBack={onBack}
+                    title="Scenario Simulator"
+                    subtitle="Apply your knowledge in real-world situations. Choose a scenario below to test your decision-making skills."
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {scenarios.map((scenario, index) => (
+                        <button 
+                            key={index} 
+                            onClick={() => handleSelectScenario(index)}
+                            className="bg-white/5 p-5 rounded-lg border border-white/10 text-left h-full flex flex-col group hover:bg-white/10 hover:border-purple-500/50 transition-all duration-300"
                         >
-                            <div className="flex items-start gap-3">
-                                <span className="font-mono text-purple-400 flex-shrink-0">[{index + 1}]</span>
-                                <span className="text-gray-300">{option.text}</span>
+                            <div className="text-purple-400 mb-3"><BranchingIcon /></div>
+                            <h4 className="font-bold text-lg text-white mb-2 group-hover:text-purple-300 transition-colors">{scenario.title}</h4>
+                            <p className="text-sm text-gray-400 flex-grow">{scenario.description.substring(0, 100)}...</p>
+                             <div className="mt-4 text-sm font-semibold text-purple-400 group-hover:text-purple-200 transition-colors">
+                                Start Scenario &rarr;
                             </div>
                         </button>
-                    );
-                })}
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    
+    const activeScenario = scenarios[activeScenarioIndex];
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <ModuleHeader
+                onBack={handleBackToScenarios}
+                title="Scenario Simulator"
+                subtitle="Read the scenario and choose the best course of action."
+            />
+
+            <div className="bg-white/5 p-4 sm:p-6 rounded-lg border border-white/10">
+                <h3 className="text-xl font-bold text-purple-300">{activeScenario.title}</h3>
+                <p className="text-gray-300 mt-2 text-sm leading-relaxed">{activeScenario.description}</p>
             </div>
 
-            {isAnswered && (
-                <div className="animate-fade-in space-y-4">
-                    <div className={`p-4 rounded-lg border ${
-                        scenario.options[selectedOption!].isOptimal 
-                            ? 'bg-green-500/20 border-green-500' 
-                            : 'bg-yellow-500/20 border-yellow-500'
-                    }`}>
-                        <div className="flex items-center gap-2 mb-2">
-                            {scenario.options[selectedOption!].isOptimal ? (
-                                <CheckIcon className="w-5 h-5 text-green-400" />
-                            ) : (
-                                <CloseIcon className="w-5 h-5 text-yellow-400" />
-                            )}
-                            <span className="font-bold">
-                                {scenario.options[selectedOption!].isOptimal ? 'Optimal Choice!' : 'Not Quite Optimal'}
-                            </span>
-                            <span className="ml-auto text-sm">+{scenario.options[selectedOption!].points} points</span>
-                        </div>
-                        <p className="text-sm">{scenario.options[selectedOption!].outcome}</p>
-                    </div>
-
-                    {currentScenario < scenarios.length - 1 ? (
-                        <button
-                            onClick={nextScenario}
-                            className="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold text-white transition-colors"
-                        >
-                            Next Scenario →
-                        </button>
-                    ) : (
-                        <div className="text-center space-y-4">
-                            <div className="bg-purple-900/30 border border-purple-500/50 rounded-lg p-6">
-                                <h4 className="text-xl font-bold text-white mb-2">Simulation Complete!</h4>
-                                <p className="text-gray-300 mb-4">
-                                    You scored <span className="text-purple-400 font-bold">{totalScore}</span> out of {scenarios.length * 100} possible points.
-                                </p>
+            <div>
+                <h4 className="font-bold text-gray-200 mb-3">Choose your strategy:</h4>
+                <div className="space-y-3">
+                    {activeScenario.options.map((option, index) => {
+                        let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
+                        if (answered) {
+                            if (option.outcome === 'Success') buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
+                            else if (selectedOption === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';
+                            else buttonClass = 'bg-gray-900/30 border-gray-700 text-gray-500 opacity-60';
+                        }
+                        return(
+                            <div key={index}>
                                 <button
-                                    onClick={resetSimulator}
-                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 rounded-lg font-semibold text-white transition-colors"
+                                    onClick={() => handleSelectOption(index)}
+                                    disabled={answered}
+                                    className={`w-full text-left p-4 rounded-lg border transition-all duration-300 flex items-start gap-4 ${buttonClass}`}
                                 >
-                                    Try Again
+                                    <span className="font-mono text-lg text-purple-400 mt-px">[{index + 1}]</span>
+                                    <span className="flex-1 text-sm">{option.text}</span>
                                 </button>
+                                {selectedOption === index && (
+                                    <OutcomeDisplay outcome={option.outcome} explanation={option.explanation} />
+                                )}
                             </div>
-                        </div>
-                    )}
+                        );
+                    })}
+                </div>
+            </div>
+
+            {answered && (
+                <div className="text-center mt-6">
+                    <button 
+                        onClick={handleResetScenario}
+                        className="px-6 py-2 text-sm font-semibold bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                        Try Again
+                    </button>
                 </div>
             )}
         </div>
