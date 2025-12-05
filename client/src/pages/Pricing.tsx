@@ -87,6 +87,7 @@ export default function Pricing() {
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
         `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
         "Advanced spam analysis (ISP-specific)",
+        "Subject line A/B testing",
         "White-label PDF reports",
         `${SUBSCRIPTION_LIMITS.scale.historyLimit.toLocaleString()} saved analyses`,
       ],
