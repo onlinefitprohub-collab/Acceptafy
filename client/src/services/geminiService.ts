@@ -1,4 +1,33 @@
-import type { DomainHealth, ListQualityAnalysis, BimiRecord, GlossaryTerm } from '../types';
+import type { DomainHealth, ListQualityAnalysis, BimiRecord, GlossaryTerm, SentenceGrade } from '../types';
+
+export async function rewriteSentence(sentence: string): Promise<string> {
+    const response = await fetch('/api/sentence/rewrite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sentence })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to rewrite sentence');
+    }
+    
+    const data = await response.json();
+    return data.rewritten;
+}
+
+export async function gradeSentence(sentence: string): Promise<SentenceGrade> {
+    const response = await fetch('/api/sentence/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sentence })
+    });
+    
+    if (!response.ok) {
+        throw new Error('Failed to grade sentence');
+    }
+    
+    return response.json();
+}
 
 export async function checkDomainHealth(domain: string): Promise<DomainHealth> {
     const response = await fetch('/api/domain/health', {
