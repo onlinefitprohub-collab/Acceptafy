@@ -242,3 +242,10 @@ export interface WarmupPlan {
   bestPractices: string[];
   warningSignals: string[];
 }
+
+export interface SpamCheckResult {
+  triggers: SpamTrigger[];
+  overallRisk: 'Low' | 'Medium' | 'High';
+  riskSummary: string;
+  inboxProbability: number;
+}

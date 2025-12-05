@@ -14,7 +14,8 @@ import {
   generateOptimizationRoadmap,
   rewriteWithTone,
   generateEmailPreviews,
-  generateWarmupPlan
+  generateWarmupPlan,
+  checkSpamTriggers
 } from "./gemini";
 import { 
   generateVariationsRequestSchema,
@@ -205,6 +206,20 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Warmup plan generation error:', error);
       res.status(500).json({ error: 'Failed to generate warmup plan' });
+    }
+  });
+
+  app.post('/api/spam/check', async (req, res) => {
+    try {
+      const { text, subject, previewText } = req.body;
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: 'Email text is required' });
+      }
+      const result = await checkSpamTriggers(text, subject, previewText);
+      res.json(result);
+    } catch (error) {
+      console.error('Spam check error:', error);
+      res.status(500).json({ error: 'Failed to check for spam triggers' });
     }
   });
 

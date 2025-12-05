@@ -47,11 +47,12 @@ import { ListQualityChecker } from './components/ListQualityChecker';
 import { BimiGenerator } from './components/BimiGenerator';
 import { WarmupPlanner } from './components/WarmupPlanner';
 import { EmailPreviewTool } from './components/EmailPreviewTool';
+import { SpamChecker } from './components/SpamChecker';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert } from 'lucide-react';
 import type { 
   GradingResult, 
   HistoryItem, 
@@ -71,7 +72,7 @@ import type {
 } from './types';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1120,6 +1121,10 @@ function AppContent() {
         <EmailPreviewTool />
       )}
 
+      {toolsSubView === 'spam' && (
+        <SpamChecker />
+      )}
+
       {!toolsSubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
@@ -1166,7 +1171,7 @@ function AppContent() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer md:col-span-2" onClick={() => setToolsSubView('preview')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('preview')}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
                 <Mail className="w-6 h-6 text-white" />
@@ -1174,6 +1179,17 @@ function AppContent() {
               <div>
                 <h3 className="font-semibold text-foreground">Email Preview</h3>
                 <p className="text-sm text-muted-foreground">See how emails look in Gmail, Outlook & Apple Mail</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('spam')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-500">
+                <ShieldAlert className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Spam Checker</h3>
+                <p className="text-sm text-muted-foreground">Scan for spam trigger words</p>
               </div>
             </CardContent>
           </Card>

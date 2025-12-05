@@ -940,3 +940,90 @@ export const generateEmailPreviews = async (
     truncationWarnings
   };
 };
+
+interface SpamCheckResult {
+  triggers: {
+    word: string;
+    reason: string;
+    suggestions: string[];
+    suggestion: string;
+    severity: 'High' | 'Medium' | 'Low';
+    rephraseExamples: string[];
+  }[];
+  overallRisk: 'Low' | 'Medium' | 'High';
+  riskSummary: string;
+  inboxProbability: number;
+}
+
+const spamCheckSchema = {
+  type: Type.OBJECT,
+  properties: {
+    triggers: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          word: { type: Type.STRING },
+          reason: { type: Type.STRING },
+          suggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+          suggestion: { type: Type.STRING },
+          severity: { type: Type.STRING },
+          rephraseExamples: { type: Type.ARRAY, items: { type: Type.STRING } }
+        }
+      }
+    },
+    overallRisk: { type: Type.STRING },
+    riskSummary: { type: Type.STRING },
+    inboxProbability: { type: Type.NUMBER }
+  }
+};
+
+export const checkSpamTriggers = async (text: string, subject?: string, previewText?: string): Promise<SpamCheckResult> => {
+  const fullContent = [
+    subject ? `Subject: ${subject}` : '',
+    previewText ? `Preview: ${previewText}` : '',
+    `Body:\n${text}`
+  ].filter(Boolean).join('\n\n');
+
+  const prompt = `Analyze this email content for spam trigger words and phrases that could cause it to land in spam or promotions folders.
+
+${fullContent}
+
+Identify ALL potential spam triggers including:
+1. Sales/marketing language ("buy now", "limited time", "act fast", etc.)
+2. Money-related terms ("free", "discount", "$$$", "cheap", etc.)
+3. Urgency/scarcity phrases ("hurry", "expires", "don't miss", etc.)
+4. Excessive punctuation patterns (!!!, ???, ALL CAPS)
+5. Suspicious phrases ("click here", "no obligation", "guaranteed", etc.)
+6. Over-promising language ("100%", "amazing results", "miracle", etc.)
+
+For each trigger found:
+- Identify the exact word/phrase
+- Explain why it triggers spam filters
+- Provide 3-5 safer alternative words
+- Give the single best replacement
+- Rate severity: High (likely spam folder), Medium (promotions risk), Low (slight concern)
+- Provide 1-2 examples of how to rephrase the sentence
+
+Also provide:
+- overallRisk: Low (0-2 triggers), Medium (3-5 triggers), High (6+ or any high severity)
+- riskSummary: A brief explanation of the overall spam risk
+- inboxProbability: 0-100 score estimating chance of reaching primary inbox`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: spamCheckSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  return {
+    triggers: result.triggers || [],
+    overallRisk: result.overallRisk || 'Low',
+    riskSummary: result.riskSummary || 'No significant spam triggers detected.',
+    inboxProbability: result.inboxProbability || 85
+  };
+};

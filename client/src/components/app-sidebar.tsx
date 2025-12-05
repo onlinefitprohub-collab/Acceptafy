@@ -13,6 +13,7 @@ import {
   Sparkles,
   Shield,
   ShieldCheck,
+  ShieldAlert,
   Globe,
   Users,
   Calendar,
@@ -51,7 +52,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
 
 interface AppSidebarProps {
@@ -197,6 +198,19 @@ export function AppSidebar({
                         >
                           <Globe className="w-3 h-3" />
                           <span>Email Preview</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'spam'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('spam');
+                          }}
+                          data-testid="nav-tools-spam"
+                        >
+                          <ShieldAlert className="w-3 h-3" />
+                          <span>Spam Checker</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
