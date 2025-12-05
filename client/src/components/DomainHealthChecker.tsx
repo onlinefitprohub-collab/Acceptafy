@@ -3,6 +3,59 @@ import { checkDomainHealth } from '../services/geminiService';
 import type { DomainHealth } from '../types';
 import { GoodStatusIcon, WarningStatusIcon, BadStatusIcon, InfoIcon } from './icons/CategoryIcons';
 
+const formatReport = (report: string) => {
+    const sectionPatterns = [
+        { pattern: /SPF\s*\([^)]+\):/gi, label: 'SPF (Sender Policy Framework)' },
+        { pattern: /DKIM\s*\([^)]+\):/gi, label: 'DKIM (DomainKeys Identified Mail)' },
+        { pattern: /DMARC\s*\([^)]+\):/gi, label: 'DMARC (Domain-based Message Authentication)' },
+        { pattern: /Reverse DNS\s*\([^)]*\):/gi, label: 'Reverse DNS (rDNS)' },
+        { pattern: /Blacklist Status:/gi, label: 'Blacklist Status' },
+        { pattern: /Mail Server Configuration:/gi, label: 'Mail Server Configuration' },
+        { pattern: /Content & Engagement:/gi, label: 'Content & Engagement' },
+    ];
+
+    let sections: { label: string; content: string }[] = [];
+    let remainingText = report;
+    let introText = '';
+
+    const firstSectionMatch = remainingText.match(/(?:SPF|DKIM|DMARC|Reverse DNS|Blacklist Status|Mail Server|Content &)/i);
+    if (firstSectionMatch && firstSectionMatch.index && firstSectionMatch.index > 0) {
+        introText = remainingText.substring(0, firstSectionMatch.index).trim();
+        remainingText = remainingText.substring(firstSectionMatch.index);
+    }
+
+    for (const { pattern, label } of sectionPatterns) {
+        const match = remainingText.match(pattern);
+        if (match) {
+            const startIndex = remainingText.indexOf(match[0]);
+            const afterHeader = startIndex + match[0].length;
+            
+            let endIndex = remainingText.length;
+            for (const { pattern: nextPattern } of sectionPatterns) {
+                if (nextPattern === pattern) continue;
+                const nextMatch = remainingText.substring(afterHeader).match(nextPattern);
+                if (nextMatch && nextMatch.index !== undefined) {
+                    const possibleEnd = afterHeader + nextMatch.index;
+                    if (possibleEnd < endIndex && possibleEnd > afterHeader) {
+                        endIndex = possibleEnd;
+                    }
+                }
+            }
+            
+            const content = remainingText.substring(afterHeader, endIndex).trim();
+            if (content) {
+                sections.push({ label, content });
+            }
+        }
+    }
+
+    if (sections.length === 0) {
+        return { introText: report, sections: [] };
+    }
+
+    return { introText, sections };
+};
+
 export const DomainHealthChecker: React.FC = () => {
     const [domain, setDomain] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +88,8 @@ export const DomainHealthChecker: React.FC = () => {
         }
     };
 
+    const formattedReport = result ? formatReport(result.report) : null;
+
     return (
         <div className="space-y-4" data-testid="domain-health-checker">
             <h3 className="text-xl font-bold text-white">Domain Health Scan</h3>
@@ -63,17 +118,36 @@ export const DomainHealthChecker: React.FC = () => {
             
             {error && <p className="text-red-400 text-sm" data-testid="text-domain-error">{error}</p>}
 
-            {result && (
+            {result && formattedReport && (
                 <div className={`mt-4 p-4 rounded-lg border ${getStatusStyles(result.status).bg} ${getStatusStyles(result.status).border} animate-fade-in`} data-testid="domain-health-result">
                     <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">{getStatusStyles(result.status).icon}</div>
                         <h4 className={`text-lg font-bold ${getStatusStyles(result.status).text}`}>{result.status}</h4>
                     </div>
-                    <p className="text-gray-300 mt-2">{result.report}</p>
+                    
+                    {formattedReport.introText && (
+                        <p className="text-gray-300 mt-3 text-sm">{formattedReport.introText}</p>
+                    )}
+                    
+                    {formattedReport.sections.length > 0 && (
+                        <div className="mt-4 space-y-4">
+                            {formattedReport.sections.map((section, index) => (
+                                <div key={index} className="border-l-2 border-white/20 pl-3">
+                                    <h5 className="font-semibold text-gray-200 text-sm mb-1">{section.label}</h5>
+                                    <p className="text-gray-400 text-sm leading-relaxed">{section.content}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    
+                    {formattedReport.sections.length === 0 && (
+                        <p className="text-gray-300 mt-2 text-sm">{result.report}</p>
+                    )}
+                    
                     {result.recommendation && (
-                         <div className="mt-3 pt-3 border-t border-white/10">
-                            <h5 className="font-semibold text-gray-200">Recommendation:</h5>
-                            <p className="text-gray-300 text-sm">{result.recommendation}</p>
+                         <div className="mt-4 pt-4 border-t border-white/10">
+                            <h5 className="font-semibold text-gray-200">Recommendation</h5>
+                            <p className="text-gray-300 text-sm mt-1">{result.recommendation}</p>
                         </div>
                     )}
                 </div>
