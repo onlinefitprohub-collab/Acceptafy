@@ -1,79 +1,65 @@
-import { ModuleHeader, SectionWrapper, KnowledgeCheck, InfoBox } from './ModuleComponents';
 import { BlueprintIcon } from '../icons/CategoryIcons';
+import { ModuleHeader, SectionWrapper, InfoBox, KnowledgeCheck } from './ModuleComponents';
 
-export const ColdOutreachBlueprint: React.FC<{ onBack: () => void }> = ({ onBack }) => (
-    <div className="space-y-8 animate-fade-in">
-        <ModuleHeader onBack={onBack} title="The Cold Outreach Blueprint" subtitle="Learn how to structure a 5-email sequence for prospecting and personalization at scale." />
-        
-        <SectionWrapper title="The Psychology of Cold Email" subtitle="Why Most Cold Emails Fail">
-            <p>Most cold emails fail because they're all about the sender. Successful cold outreach is about the recipient—their problems, their goals, their world.</p>
-            <p className="mt-2">The goal of your first cold email isn't to make a sale. It's to start a conversation. Every element should be designed to earn a reply.</p>
-        </SectionWrapper>
+interface ModuleProps {
+    onBack: () => void;
+}
 
-        <SectionWrapper title="Email 1: The Pattern Interrupt" subtitle="Sent immediately after identifying prospect">
-            <p>Purpose: Break through the noise with genuine relevance.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Lead with specific research about them</li>
-                <li>Connect your offering to their current situation</li>
-                <li>End with a low-friction question, not a request</li>
-                <li>Keep it under 100 words</li>
-            </ul>
-            <div className="mt-3 p-3 bg-gray-900/50 rounded text-sm">
-                <p className="italic">"Hi [Name], saw your recent post about [specific topic]. We helped [similar company] solve that exact challenge—reduced their [metric] by 40%. Worth a quick chat?"</p>
-            </div>
-        </SectionWrapper>
+export const ColdOutreachBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <ModuleHeader
+                onBack={onBack}
+                title="The Cold Outreach Blueprint"
+                subtitle="Master the art of cold emailing with a structured, multi-touch sequence that builds rapport and gets replies without being spammy."
+            />
+            
+            <SectionWrapper
+                title="The 5-Email Sequence Framework"
+                subtitle="A Proven Structure for Persistence and Value"
+            >
+                <p>A single cold email is rarely enough. A strategic sequence respects the recipient's time while giving you multiple opportunities to connect. The key is to offer new value in every single email.</p>
+                <ol className="list-decimal list-inside space-y-3 mt-2">
+                    <li>
+                        <strong className="text-gray-200">Email 1: The Personalized Hook (Day 1)</strong>
+                        <p className="text-sm pl-4">Your first email must prove you've done your research. Reference a recent company achievement, a LinkedIn post, or a shared connection. The goal is to establish relevance and ask a simple, low-friction question.</p>
+                    </li>
+                    <li>
+                        <strong className="text-gray-200">Email 2: The Quick Follow-Up (Day 3)</strong>
+                        <p className="text-sm pl-4">A brief, polite bump. Reply to your original email to keep the context. Offer a short, valuable resource like a relevant article or a one-sentence tip related to their industry.</p>
+                    </li>
+                    <li>
+                        <strong className="text-gray-200">Email 3: The Value-Add (Day 7)</strong>
+                        <p className="text-sm pl-4">This email provides a significant piece of value with no strings attached. Share a mini-case study, a helpful tool, or an insightful statistic that addresses a common pain point for their role.</p>
+                    </li>
+                     <li>
+                        <strong className="text-gray-200">Email 4: The Social Proof (Day 14)</strong>
+                        <p className="text-sm pl-4">Gently introduce your solution by sharing a result you achieved for a similar company. A one-sentence testimonial or a powerful statistic works well here. "We helped [Similar Company] achieve [Result X]..."</p>
+                    </li>
+                     <li>
+                        <strong className="text-gray-200">Email 5: The Break-Up (Day 21)</strong>
+                        <p className="text-sm pl-4">A polite, professional closing. Let them know you'll stop following up to respect their inbox. This often generates a response from prospects who were interested but busy.</p>
+                    </li>
+                </ol>
+            </SectionWrapper>
 
-        <SectionWrapper title="Email 2: The Value Add" subtitle="3-4 days after Email 1">
-            <p>Purpose: Provide value without asking for anything in return.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Share a relevant resource, insight, or idea</li>
-                <li>Reference your first email briefly</li>
-                <li>Ask if this resonates with their challenges</li>
-            </ul>
-        </SectionWrapper>
+            <InfoBox icon={<BlueprintIcon />}>
+                <div>
+                    <h4 className="font-bold text-white">Generate Your Sequence Instantly</h4>
+                    <p className="text-purple-200 text-sm">Use our AI-powered <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to create a customized version of this blueprint tailored to your specific product and goals.</p>
+                </div>
+            </InfoBox>
 
-        <SectionWrapper title="Email 3: Social Proof" subtitle="5-6 days after Email 2">
-            <p>Purpose: Build credibility through results.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Share a mini case study relevant to their industry</li>
-                <li>Focus on outcomes, not features</li>
-                <li>Make the connection to their situation explicit</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Email 4: Different Angle" subtitle="7-8 days after Email 3">
-            <p>Purpose: Try a fresh approach.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Acknowledge you've reached out before</li>
-                <li>Present a different benefit or use case</li>
-                <li>Ask if there's someone else who might be better to speak with</li>
-            </ul>
-        </SectionWrapper>
-
-        <SectionWrapper title="Email 5: The Breakup" subtitle="10-14 days after Email 4">
-            <p>Purpose: Create closure and sometimes trigger responses.</p>
-            <ul className="list-disc list-inside space-y-2 mt-2">
-                <li>Be respectful and professional</li>
-                <li>State you won't email again (and mean it)</li>
-                <li>Leave the door open for future contact</li>
-            </ul>
-            <div className="mt-3 p-3 bg-gray-900/50 rounded text-sm">
-                <p className="italic">"Hi [Name], I'll assume the timing isn't right and won't fill your inbox further. If things change, you know where to find me. Best of luck with [their initiative]."</p>
-            </div>
-        </SectionWrapper>
-
-        <InfoBox icon={<BlueprintIcon />}>
-            <p className="text-purple-200 text-sm">The "breakup email" often gets the highest response rate. People respond to scarcity and closure. Just make sure you actually stop emailing if they don't reply.</p>
-        </InfoBox>
-
-        <KnowledgeCheck
-            question="What should be the primary goal of your first cold email?"
-            options={[
-                { text: "Book a meeting or demo call", isCorrect: false },
-                { text: "Start a conversation and earn a reply", isCorrect: true },
-                { text: "Explain all the features of your product", isCorrect: false }
-            ]}
-            explanation="The first cold email should aim to start a conversation, not close a deal. Asking for too much too soon (like a meeting) creates friction. A simple reply opens the door to further dialogue and eventual opportunities."
-        />
-    </div>
-);
+            <KnowledgeCheck
+                question="What is the primary goal of the first email in a cold outreach sequence?"
+                options={[
+                    { text: "To close the deal as quickly as possible.", isCorrect: false },
+                    { text: "To establish relevance and prove you've done your research.", isCorrect: true },
+                    { text: "To list all of your product's features.", isCorrect: false },
+                    { text: "To ask for a 30-minute demo immediately.", isCorrect: false },
+                ]}
+                explanation="Exactly! The first email isn't about selling; it's about earning the right to have a conversation. Showing you've done your homework is the fastest way to stand out and get a positive response."
+            />
+        </div>
+    );
+};
