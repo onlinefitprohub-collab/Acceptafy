@@ -145,7 +145,7 @@ function ROICalculator() {
         </div>
         <div className="p-4 bg-card rounded-xl border border-border flex flex-col justify-between min-h-[110px] shadow-sm">
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Formula</p>
-          <p className="font-mono text-base font-semibold text-foreground">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
+          <p className="text-lg font-bold text-foreground">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
           <p className="text-xs text-muted-foreground">list × improvement × value</p>
         </div>
         <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/20 rounded-xl border-2 border-green-500/30 flex flex-col justify-between min-h-[110px] shadow-lg ring-2 ring-green-500/10">
