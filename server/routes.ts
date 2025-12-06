@@ -385,6 +385,29 @@ export async function registerRoutes(
     }
   });
 
+  app.delete('/api/history/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      await storage.deleteEmailAnalysis(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete history item error:", error);
+      res.status(500).json({ message: "Failed to delete history item" });
+    }
+  });
+
+  app.delete('/api/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.clearAllEmailAnalyses(userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Clear history error:", error);
+      res.status(500).json({ message: "Failed to clear history" });
+    }
+  });
+
   app.get('/api/gamification', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

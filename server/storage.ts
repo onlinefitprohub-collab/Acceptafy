@@ -46,6 +46,7 @@ export interface IStorage {
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
   getEmailAnalysis(id: string, userId: string): Promise<EmailAnalysis | undefined>;
   deleteEmailAnalysis(id: string, userId: string): Promise<boolean>;
+  clearAllEmailAnalyses(userId: string): Promise<boolean>;
   
   getUserGamification(userId: string): Promise<UserGamification | undefined>;
   upsertUserGamification(data: InsertUserGamification): Promise<UserGamification>;
@@ -247,6 +248,13 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(emailAnalyses)
       .where(and(eq(emailAnalyses.id, id), eq(emailAnalyses.userId, userId)));
+    return true;
+  }
+
+  async clearAllEmailAnalyses(userId: string): Promise<boolean> {
+    await db
+      .delete(emailAnalyses)
+      .where(eq(emailAnalyses.userId, userId));
     return true;
   }
 

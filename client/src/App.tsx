@@ -66,7 +66,15 @@ import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { SenderScoreEstimator } from './components/SenderScoreEstimator';
-import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
+import { 
+  getHistory, 
+  saveAnalysis, 
+  deleteHistoryItem, 
+  clearHistory,
+  fetchHistoryFromApi,
+  deleteHistoryItemFromApi,
+  clearHistoryFromApi
+} from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -213,8 +221,16 @@ function AppContent() {
   const [isGeneratingPs, setIsGeneratingPs] = useState(false);
 
   useEffect(() => {
-    setHistory(getHistory());
-  }, []);
+    const loadHistory = async () => {
+      if (user) {
+        const apiHistory = await fetchHistoryFromApi();
+        setHistory(apiHistory);
+      } else {
+        setHistory(getHistory());
+      }
+    };
+    loadHistory();
+  }, [user]);
 
   useEffect(() => {
     if (level > prevLevel && prevLevel > 0) {
@@ -255,8 +271,13 @@ function AppContent() {
         const data = await response.json();
         setResult(data);
         setSpamTriggers(data.spamAnalysis || []);
-        const newHistory = saveAnalysis({ body, variations }, data);
-        setHistory(newHistory);
+        if (user) {
+          const apiHistory = await fetchHistoryFromApi();
+          setHistory(apiHistory);
+        } else {
+          const newHistory = saveAnalysis({ body, variations }, data);
+          setHistory(newHistory);
+        }
         const score = data.inboxPlacementScore?.score || 0;
         const grade = data.overallGrade?.grade || 'C';
         recordGrade(score, grade);
@@ -383,14 +404,25 @@ function AppContent() {
     setToolsSubView(null);
   };
 
-  const handleDeleteHistory = (id: string) => {
-    const newHistory = deleteHistoryItem(id);
-    setHistory(newHistory);
+  const handleDeleteHistory = async (id: string) => {
+    if (user) {
+      await deleteHistoryItemFromApi(id);
+      const apiHistory = await fetchHistoryFromApi();
+      setHistory(apiHistory);
+    } else {
+      const newHistory = deleteHistoryItem(id);
+      setHistory(newHistory);
+    }
   };
 
-  const handleClearHistory = () => {
-    const newHistory = clearHistory();
-    setHistory(newHistory);
+  const handleClearHistory = async () => {
+    if (user) {
+      await clearHistoryFromApi();
+      setHistory([]);
+    } else {
+      const newHistory = clearHistory();
+      setHistory(newHistory);
+    }
   };
 
   const copyToClipboard = async (text: string, id: string) => {
