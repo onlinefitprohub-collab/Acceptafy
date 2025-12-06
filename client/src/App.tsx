@@ -1516,15 +1516,15 @@ function AppContent() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm">Email Grades</span>
-                <span className="font-medium">{limits.gradesPerMonth >= 1000 ? 'Unlimited' : `${limits.gradesPerMonth}/mo`}</span>
+                <span className="font-medium">{limits.gradesPerMonth.toLocaleString()}/mo</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm">AI Rewrites</span>
-                <span className="font-medium">{limits.rewritesPerMonth >= 1000 ? 'Unlimited' : `${limits.rewritesPerMonth}/mo`}</span>
+                <span className="font-medium">{limits.rewritesPerMonth.toLocaleString()}/mo</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                 <span className="text-sm">Follow-ups</span>
-                <span className="font-medium">{limits.followupsPerMonth >= 500 ? 'Unlimited' : `${limits.followupsPerMonth}/mo`}</span>
+                <span className="font-medium">{limits.followupsPerMonth.toLocaleString()}/mo</span>
               </div>
               {userTier !== 'scale' && (
                 <Button 
