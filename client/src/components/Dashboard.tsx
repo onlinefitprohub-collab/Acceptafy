@@ -70,7 +70,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
               variant="ghost" 
               size="sm" 
               onClick={onReplayTutorial}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-muted-foreground"
               data-testid="button-replay-tutorial"
             >
               <PlayCircle className="w-4 h-4 mr-1.5" />
