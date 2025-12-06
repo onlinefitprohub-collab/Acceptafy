@@ -283,7 +283,14 @@ Return the result as a single JSON object.`;
     });
 
     const jsonString = result.text?.trim() || '{}';
-    return JSON.parse(jsonString) as RewrittenEmail;
+    const parsed = JSON.parse(jsonString) as RewrittenEmail;
+    
+    // Convert literal \n sequences to actual newlines
+    return {
+      subject: parsed.subject?.replace(/\\n/g, '\n') || '',
+      previewText: parsed.previewText?.replace(/\\n/g, '\n') || '',
+      body: parsed.body?.replace(/\\n/g, '\n') || '',
+    };
 
   } catch (error) {
     console.error("Error calling AI rewrite service:", error);
@@ -344,7 +351,13 @@ export const generateFollowUpEmail = async (
         });
 
         const jsonString = result.text?.trim() || '{}';
-        return JSON.parse(jsonString) as FollowUpEmail;
+        const parsed = JSON.parse(jsonString) as FollowUpEmail;
+        
+        // Convert literal \n sequences to actual newlines
+        return {
+            subject: parsed.subject?.replace(/\\n/g, '\n') || '',
+            body: parsed.body?.replace(/\\n/g, '\n') || '',
+        };
 
     } catch (error) {
         console.error("Error calling AI follow-up generation service:", error);
@@ -404,7 +417,12 @@ export const generateFollowUpSequence = async (
         const jsonString = response.text?.trim() || '[]';
         const parsedResult = JSON.parse(jsonString);
         if (Array.isArray(parsedResult) && parsedResult.length > 0) {
-            return parsedResult as FollowUpSequenceEmail[];
+            // Convert literal \n sequences to actual newlines in each email
+            return parsedResult.map((email: FollowUpSequenceEmail) => ({
+                ...email,
+                subject: email.subject?.replace(/\\n/g, '\n') || '',
+                body: email.body?.replace(/\\n/g, '\n') || '',
+            })) as FollowUpSequenceEmail[];
         } else {
             throw new Error("AI did not return a valid email sequence.");
         }
@@ -792,7 +810,15 @@ Rewrite the entire email (subject, preview, and body) to match the ${tone} tone 
       }
     }
   });
-  return JSON.parse(res.text || '{}');
+  const parsed = JSON.parse(res.text || '{}');
+  
+  // Convert literal \n sequences to actual newlines
+  return {
+    subject: parsed.subject?.replace(/\\n/g, '\n') || '',
+    previewText: parsed.previewText?.replace(/\\n/g, '\n') || '',
+    body: parsed.body?.replace(/\\n/g, '\n') || '',
+    toneNotes: parsed.toneNotes || '',
+  };
 };
 
 export interface WarmupDay {
