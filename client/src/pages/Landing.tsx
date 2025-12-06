@@ -669,9 +669,14 @@ export default function Landing() {
               </div>
               <span className="font-semibold">Acceptafy</span>
             </a>
-            <p className="text-sm text-muted-foreground" data-testid="text-footer-tagline">
-              Email optimization for marketers who care about results
-            </p>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <a href="/terms" className="hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms of Service</a>
+              <a href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy Policy</a>
+              <a href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a>
+            </div>
+          </div>
+          <div className="mt-4 text-center text-xs text-muted-foreground" data-testid="text-footer-address">
+            <p>Acceptafy - Whiterock Place, Brighton, BN42 4AG, United Kingdom</p>
           </div>
         </div>
       </footer>

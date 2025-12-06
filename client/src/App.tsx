@@ -26,9 +26,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { CookieConsent } from './components/CookieConsent';
 import Landing from './pages/Landing';
 import Pricing from './pages/Pricing';
 import Account from './pages/Account';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Contact from './pages/Contact';
 import { 
   SidebarProvider, 
   SidebarTrigger,
@@ -1703,9 +1707,13 @@ function App() {
         <Switch>
           <Route path="/pricing" component={Pricing} />
           <Route path="/account" component={Account} />
+          <Route path="/terms" component={TermsOfService} />
+          <Route path="/privacy" component={PrivacyPolicy} />
+          <Route path="/contact" component={Contact} />
           <Route path="/" component={AuthenticatedApp} />
           <Route component={AuthenticatedApp} />
         </Switch>
+        <CookieConsent />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

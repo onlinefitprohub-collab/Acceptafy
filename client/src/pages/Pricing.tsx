@@ -326,6 +326,27 @@ export default function Pricing() {
           </Button>
         </div>
       </main>
+
+      <footer className="border-t py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <a href="/" className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-semibold">Acceptafy</span>
+            </a>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <a href="/terms" className="hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms of Service</a>
+              <a href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy Policy</a>
+              <a href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a>
+            </div>
+          </div>
+          <div className="mt-4 text-center text-xs text-muted-foreground" data-testid="text-footer-address">
+            <p>Acceptafy - Whiterock Place, Brighton, BN42 4AG, United Kingdom</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
