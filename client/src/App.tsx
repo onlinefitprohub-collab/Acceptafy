@@ -1944,11 +1944,11 @@ function AppContent() {
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+          <header className="flex items-center justify-between h-14 px-4 border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
             <div className="flex items-center gap-3">
-              <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <div className="h-6 w-px bg-border" />
-              <h2 className="font-semibold text-foreground">
+              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-all duration-200" />
+              <div className="h-6 w-px bg-border/50" />
+              <h2 className="font-semibold text-foreground tracking-tight">
                 {activeView === 'dashboard' && 'Dashboard'}
                 {activeView === 'grader' && 'Email Grader'}
                 {activeView === 'history' && 'History'}
@@ -1957,14 +1957,14 @@ function AppContent() {
                 {activeView === 'account' && 'Account Settings'}
               </h2>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted">
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 shadow-sm">
                 <Trophy className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-medium">Best: {bestScore}</span>
+                <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Best: {bestScore}</span>
               </div>
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-500/20 border border-orange-500/30">
-                <Flame className={`w-4 h-4 ${streak > 0 ? 'text-orange-500 fire-animate' : 'text-muted-foreground'}`} />
-                <span className={`text-sm font-bold ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${streak > 0 ? 'bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 shadow-sm shadow-orange-500/10' : 'bg-muted/50 border border-border/50'}`}>
+                <Flame className={`w-4 h-4 transition-all duration-300 ${streak > 0 ? 'text-orange-500 fire-animate' : 'text-muted-foreground/50'}`} />
+                <span className={`text-sm font-bold transition-all duration-300 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50'}`}>
                   {streak} day streak
                 </span>
               </div>

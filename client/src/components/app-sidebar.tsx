@@ -22,6 +22,7 @@ import {
   LayoutDashboard,
   Gauge,
   Settings,
+  ChevronRight,
   type LucideIcon
 } from 'lucide-react';
 
@@ -86,28 +87,28 @@ export function AppSidebar({
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
 
   return (
-    <Sidebar className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4 border-b border-sidebar-border">
+    <Sidebar className="border-r border-sidebar-border bg-sidebar/80 backdrop-blur-sm">
+      <SidebarHeader className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 p-[2px] shadow-lg shadow-purple-500/20">
             <div className="w-full h-full rounded-[10px] bg-sidebar flex items-center justify-center">
               <Logo />
             </div>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">Acceptafy</h1>
-            <p className="text-xs text-muted-foreground">Email Mastery</p>
+            <h1 className="text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Acceptafy</h1>
+            <p className="text-xs text-muted-foreground">Email Mastery Suite</p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70 px-2">
-            Main
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
+            Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   isActive={activeView === 'dashboard'}
@@ -116,14 +117,14 @@ export function AppSidebar({
                     setToolsSubView(null);
                     setDeliverabilitySubView(null);
                   }}
-                  className="group"
+                  className={`group transition-all duration-200 ${activeView === 'dashboard' ? 'bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/20' : ''}`}
                   data-testid="nav-dashboard"
                 >
-                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'dashboard' ? 'bg-gradient-to-br from-indigo-500 to-purple-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                  <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'dashboard' ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md shadow-purple-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                     <LayoutDashboard className="w-4 h-4" />
                   </div>
-                  <span>Dashboard</span>
-                  <Sparkles className={`w-3 h-3 ml-auto transition-opacity ${activeView === 'dashboard' ? 'opacity-100 text-yellow-400' : 'opacity-0'}`} />
+                  <span className="font-medium">Dashboard</span>
+                  <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'dashboard' ? 'opacity-100 text-purple-400' : 'opacity-0 -translate-x-2'}`} />
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -134,26 +135,26 @@ export function AppSidebar({
                     setActiveView('grader');
                     setToolsSubView(null);
                   }}
-                  className="group"
+                  className={`group transition-all duration-200 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/20' : ''}`}
                   data-testid="nav-grader"
                 >
-                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'grader' ? 'bg-gradient-to-br from-purple-500 to-pink-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                  <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'grader' ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-md shadow-pink-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                     <Mail className="w-4 h-4" />
                   </div>
-                  <span>Email Grader</span>
-                  <Sparkles className={`w-3 h-3 ml-auto transition-opacity ${activeView === 'grader' ? 'opacity-100 text-yellow-400' : 'opacity-0'}`} />
+                  <span className="font-medium">Email Grader</span>
+                  <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'grader' ? 'opacity-100 text-pink-400' : 'opacity-0 -translate-x-2'}`} />
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="group" data-testid="nav-tools">
-                      <div className={`p-1.5 rounded-lg transition-all ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'tools' ? 'bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/20' : ''}`} data-testid="nav-tools">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                         <Wand2 className="w-4 h-4" />
                       </div>
-                      <span>AI Tools</span>
-                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-200 ${toolsOpen ? 'rotate-180' : ''}`} />
+                      <span className="font-medium">AI Tools</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${toolsOpen ? 'rotate-180' : ''}`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -263,12 +264,12 @@ export function AppSidebar({
               <Collapsible open={deliverabilityOpen} onOpenChange={setDeliverabilityOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className="group" data-testid="nav-deliverability">
-                      <div className={`p-1.5 rounded-lg transition-all ${activeView === 'deliverability' ? 'bg-gradient-to-br from-green-500 to-teal-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'deliverability' ? 'bg-gradient-to-r from-green-500/15 to-teal-500/15 border border-green-500/20' : ''}`} data-testid="nav-deliverability">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'deliverability' ? 'bg-gradient-to-br from-green-500 to-teal-500 shadow-md shadow-green-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                         <ShieldCheck className="w-4 h-4" />
                       </div>
-                      <span>Deliverability</span>
-                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-200 ${deliverabilityOpen ? 'rotate-180' : ''}`} />
+                      <span className="font-medium">Deliverability</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${deliverabilityOpen ? 'rotate-180' : ''}`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -376,29 +377,30 @@ export function AppSidebar({
                     setToolsSubView(null);
                     setDeliverabilitySubView(null);
                   }}
-                  className="group"
+                  className={`group transition-all duration-200 ${activeView === 'history' ? 'bg-gradient-to-r from-emerald-500/15 to-green-500/15 border border-emerald-500/20' : ''}`}
                   data-testid="nav-history"
                 >
-                  <div className={`p-1.5 rounded-lg transition-all ${activeView === 'history' ? 'bg-gradient-to-br from-green-500 to-emerald-500' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                  <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'history' ? 'bg-gradient-to-br from-emerald-500 to-green-500 shadow-md shadow-emerald-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                     <History className="w-4 h-4" />
                   </div>
-                  <span>History</span>
+                  <span className="font-medium">History</span>
+                  <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'history' ? 'opacity-100 text-emerald-400' : 'opacity-0 -translate-x-2'}`} />
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={onOpenAcademy}
-                  className="group justify-between"
+                  className="group transition-all duration-200 justify-between"
                   data-testid="nav-academy"
                 >
                   <span className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg transition-all bg-sidebar-accent group-hover:bg-sidebar-accent/80">
+                    <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
                       <GraduationCap className="w-4 h-4" />
                     </div>
-                    <span>Academy</span>
+                    <span className="font-medium">Academy</span>
                   </span>
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full">
+                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full shadow-sm shadow-orange-500/30">
                     NEW
                   </span>
                 </SidebarMenuButton>
@@ -408,27 +410,29 @@ export function AppSidebar({
         </SidebarGroup>
 
         <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-xs uppercase tracking-wider text-muted-foreground/70 px-2">
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
             Achievements
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <div className="px-2 py-2 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Trophy className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm font-medium text-sidebar-foreground">{unlockedAchievements}/{achievements.length} Badges</span>
+                <div className="px-3 py-3 rounded-xl bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-pink-500/10 border border-yellow-500/20 shadow-inner">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 shadow-md shadow-yellow-500/30">
+                      <Trophy className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm font-semibold text-sidebar-foreground">{unlockedAchievements}/{achievements.length} Badges</span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-1.5">
                     {achievements.slice(0, 4).map((achievement, i) => {
                       const IconComponent = iconMap[achievement.icon] || Target;
                       return (
                         <div 
                           key={i}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
                             achievement.unlocked 
-                              ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white' 
-                              : 'bg-sidebar-accent text-muted-foreground'
+                              ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-md shadow-orange-500/30 scale-100' 
+                              : 'bg-sidebar-accent/60 text-muted-foreground/50 scale-95'
                           }`}
                           title={achievement.title}
                         >
@@ -444,32 +448,32 @@ export function AppSidebar({
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3 border-t border-sidebar-border">
+      <SidebarFooter className="p-3 border-t border-sidebar-border/50">
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-purple-500/30">
                 {level}
               </div>
               <div>
-                <p className="text-xs font-medium text-sidebar-foreground">Level {level}</p>
+                <p className="text-xs font-semibold text-sidebar-foreground">Level {level}</p>
                 <p className="text-[10px] text-muted-foreground">{xp}/{nextLevelXp} XP</p>
               </div>
             </div>
-            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-orange-500/20 border border-orange-500/30">
-              <Flame className={`w-3 h-3 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
-              <span className={`text-xs font-bold ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+            <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-300 ${streak > 0 ? 'bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 shadow-sm shadow-orange-500/20' : 'bg-sidebar-accent/50 border border-sidebar-border/50'}`}>
+              <Flame className={`w-3.5 h-3.5 transition-all duration-300 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50'}`} />
+              <span className={`text-xs font-bold transition-all duration-300 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50'}`}>
                 {streak}
               </span>
             </div>
           </div>
-          <div className="space-y-1">
-            <Progress value={xpProgress} className="h-1.5 bg-sidebar-accent" />
-            <p className="text-[10px] text-muted-foreground text-center">
+          <div className="space-y-1.5">
+            <Progress value={xpProgress} className="h-2 bg-sidebar-accent/50" />
+            <p className="text-[10px] text-muted-foreground/70 text-center">
               {nextLevelXp - xp} XP to next level
             </p>
           </div>
-          <SidebarMenu>
+          <SidebarMenu className="space-y-1">
             <SidebarMenuItem>
               <SidebarMenuButton 
                 isActive={activeView === 'account'}
@@ -478,13 +482,14 @@ export function AppSidebar({
                   setToolsSubView(null);
                   setDeliverabilitySubView(null);
                 }}
-                className="group"
+                className={`group transition-all duration-200 ${activeView === 'account' ? 'bg-gradient-to-r from-slate-500/15 to-slate-600/15 border border-slate-500/20' : ''}`}
                 data-testid="nav-account"
               >
-                <div className={`p-1.5 rounded-lg transition-all ${activeView === 'account' ? 'bg-gradient-to-br from-slate-500 to-slate-600' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'account' ? 'bg-gradient-to-br from-slate-500 to-slate-600 shadow-md shadow-slate-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                   <Settings className="w-4 h-4" />
                 </div>
-                <span>Account Settings</span>
+                <span className="font-medium">Account Settings</span>
+                <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'account' ? 'opacity-100 text-slate-400' : 'opacity-0 -translate-x-2'}`} />
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

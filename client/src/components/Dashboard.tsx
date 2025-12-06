@@ -87,20 +87,21 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden" data-testid="stats-level">
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
+        <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-level">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg" />
+          <div className="absolute -inset-px bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Level</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-level">{level}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow duration-300">
                 <Star className="w-6 h-6 text-white" />
               </div>
             </div>
             <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-sm gap-2">
                 <span className="text-muted-foreground">XP Progress</span>
                 <span className="font-medium">{xp}/{nextLevelXp}</span>
               </div>
@@ -109,15 +110,16 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="stats-best-score">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10" />
+        <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-best-score">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg" />
+          <div className="absolute -inset-px bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Best Score</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-best-score">{bestScore}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -127,15 +129,16 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="stats-emails-graded">
-          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10" />
+        <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-emails-graded">
+          <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg" />
+          <div className="absolute -inset-px bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Emails Graded</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-total-grades">{totalGrades}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow duration-300">
                 <Mail className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -145,15 +148,16 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           </CardContent>
         </Card>
 
-        <Card className="relative overflow-hidden" data-testid="stats-achievements">
-          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10" />
+        <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-achievements">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-lg" />
+          <div className="absolute -inset-px bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Achievements</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-achievements">{unlockedAchievements}/{achievements.length}</p>
               </div>
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:shadow-yellow-500/50 transition-shadow duration-300">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -174,39 +178,45 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
             <CardContent className="grid gap-3 sm:grid-cols-3">
               <Button 
                 onClick={() => onNavigate('grader')}
-                className="h-auto py-4 flex flex-col gap-2 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="h-auto py-5 flex flex-col gap-2.5 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-300"
                 data-testid="quick-action-grade"
               >
-                <Mail className="w-6 h-6" />
-                <span>Grade Email</span>
+                <div className="p-2 rounded-lg bg-white/20">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <span className="font-semibold">Grade Email</span>
               </Button>
               <Button 
                 onClick={() => onNavigate('tools', 'rewrite')}
                 variant="secondary"
-                className="h-auto py-4 flex flex-col gap-2"
+                className="h-auto py-5 flex flex-col gap-2.5 hover:shadow-md transition-all duration-300"
                 data-testid="quick-action-rewrite"
               >
-                <Zap className="w-6 h-6" />
-                <span>AI Rewrite</span>
+                <div className="p-2 rounded-lg bg-blue-500/20">
+                  <Zap className="w-5 h-5 text-blue-500" />
+                </div>
+                <span className="font-semibold">AI Rewrite</span>
               </Button>
               <Button 
                 onClick={() => onNavigate('deliverability', 'domain-health')}
                 variant="secondary"
-                className="h-auto py-4 flex flex-col gap-2"
+                className="h-auto py-5 flex flex-col gap-2.5 hover:shadow-md transition-all duration-300"
                 data-testid="quick-action-deliverability"
               >
-                <ShieldCheck className="w-6 h-6" />
-                <span>Check Deliverability</span>
+                <div className="p-2 rounded-lg bg-green-500/20">
+                  <ShieldCheck className="w-5 h-5 text-green-500" />
+                </div>
+                <span className="font-semibold">Check Deliverability</span>
               </Button>
             </CardContent>
           </Card>
 
           {hasImprovementOpportunity && (
-            <Card className="border-yellow-500/30 bg-yellow-500/5">
+            <Card className="border-yellow-500/30 bg-gradient-to-r from-yellow-500/5 to-orange-500/5 overflow-visible">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="p-2 rounded-lg bg-yellow-500/20">
-                    <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 shadow-lg shadow-yellow-500/30">
+                    <AlertTriangle className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-foreground mb-1">Improvement Opportunity</h3>
@@ -217,7 +227,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                     <Button 
                       onClick={() => onNavigate('tools', 'rewrite')} 
                       size="sm"
-                      className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                      className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black shadow-md shadow-yellow-500/25"
                     >
                       Improve with AI
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -298,12 +308,14 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
             <CardContent className="space-y-3">
               {totalGrades === 0 && (
                 <div 
-                  className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 cursor-pointer hover-elevate"
+                  className="group p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 cursor-pointer hover-elevate transition-all duration-300"
                   onClick={() => onNavigate('grader')}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <CheckCircle2 className="w-5 h-5 text-purple-500" />
-                    <span className="font-medium">Get Started</span>
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-md shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow duration-300">
+                      <CheckCircle2 className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-semibold">Get Started</span>
                   </div>
                   <p className="text-sm text-muted-foreground">Grade your first email to unlock AI insights</p>
                 </div>
@@ -311,36 +323,42 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
               
               {totalGrades > 0 && bestScore < 80 && (
                 <div 
-                  className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 cursor-pointer hover-elevate"
+                  className="group p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 cursor-pointer hover-elevate transition-all duration-300"
                   onClick={() => onNavigate('tools', 'rewrite')}
                 >
                   <div className="flex items-center gap-3 mb-2">
-                    <Zap className="w-5 h-5 text-blue-500" />
-                    <span className="font-medium">Boost Your Score</span>
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300">
+                      <Zap className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-semibold">Boost Your Score</span>
                   </div>
                   <p className="text-sm text-muted-foreground">Use AI Rewrite to improve email performance</p>
                 </div>
               )}
               
               <div 
-                className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 cursor-pointer hover-elevate"
+                className="group p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 cursor-pointer hover-elevate transition-all duration-300"
                 onClick={() => onNavigate('deliverability', 'dns')}
               >
                 <div className="flex items-center gap-3 mb-2">
-                  <ShieldCheck className="w-5 h-5 text-green-500" />
-                  <span className="font-medium">Setup Authentication</span>
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 shadow-md shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow duration-300">
+                    <ShieldCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-semibold">Setup Authentication</span>
                 </div>
                 <p className="text-sm text-muted-foreground">Configure SPF, DKIM, DMARC for better delivery</p>
               </div>
               
               <div 
-                className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 cursor-pointer hover-elevate"
+                className="group p-4 rounded-xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 cursor-pointer hover-elevate transition-all duration-300"
                 onClick={onOpenAcademy}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <GraduationCap className="w-5 h-5 text-yellow-500" />
-                  <span className="font-medium">Learn Email Mastery</span>
-                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px]">+20 XP</Badge>
+                <div className="flex items-center gap-3 mb-2 flex-wrap">
+                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 shadow-md shadow-yellow-500/30 group-hover:shadow-yellow-500/50 transition-shadow duration-300">
+                    <GraduationCap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="font-semibold">Learn Email Mastery</span>
+                  <Badge className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px] shadow-sm shadow-orange-500/30">+20 XP</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">Access courses to become an email pro</p>
               </div>
@@ -356,20 +374,22 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                 const nextAchievement = achievements.find(a => !a.unlocked);
                 if (!nextAchievement) {
                   return (
-                    <div className="text-center py-4">
-                      <Trophy className="w-12 h-12 mx-auto text-yellow-500 mb-2" />
-                      <p className="font-medium">All achievements unlocked!</p>
+                    <div className="text-center py-6">
+                      <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mb-3 shadow-lg shadow-yellow-500/30">
+                        <Trophy className="w-8 h-8 text-white" />
+                      </div>
+                      <p className="font-semibold text-lg">All achievements unlocked!</p>
                       <p className="text-sm text-muted-foreground">You're an email master!</p>
                     </div>
                   );
                 }
                 return (
-                  <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
-                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/50">
+                    <div className="w-12 h-12 rounded-xl bg-muted/80 flex items-center justify-center border border-border/50">
                       <Target className="w-6 h-6 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="font-medium">{nextAchievement.title}</p>
+                      <p className="font-semibold">{nextAchievement.title}</p>
                       <p className="text-sm text-muted-foreground">{nextAchievement.description}</p>
                     </div>
                   </div>
