@@ -70,6 +70,8 @@ import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './ser
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, Heart, Download, FileText } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
@@ -779,7 +781,37 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">Subject Line</label>
+                <Input
+                  value={variations[0]?.subject || ''}
+                  onChange={(e) => {
+                    const newVariations = [...variations];
+                    if (newVariations[0]) {
+                      newVariations[0].subject = e.target.value;
+                      setVariations(newVariations);
+                    }
+                  }}
+                  placeholder="Enter your email subject line..."
+                  className="bg-muted/50"
+                  data-testid="input-rewrite-subject"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground mb-2 block">Email Body</label>
+                <Textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Paste your email content here to rewrite..."
+                  className="h-40 bg-muted/50 resize-none"
+                  data-testid="textarea-rewrite-body"
+                />
+              </div>
+            </div>
+            
             <div className="flex flex-wrap gap-2">
+              <span className="text-sm text-muted-foreground self-center mr-2">Optimize for:</span>
               {['general', 'urgency', 'clarity', 'concise'].map((goal) => (
                 <Button
                   key={goal}
