@@ -21,6 +21,7 @@ import {
   Heart,
   LayoutDashboard,
   Gauge,
+  Settings,
   type LucideIcon
 } from 'lucide-react';
 
@@ -54,7 +55,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
@@ -468,6 +469,25 @@ export function AppSidebar({
               {nextLevelXp - xp} XP to next level
             </p>
           </div>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                isActive={activeView === 'account'}
+                onClick={() => {
+                  setActiveView('account');
+                  setToolsSubView(null);
+                  setDeliverabilitySubView(null);
+                }}
+                className="group"
+                data-testid="nav-account"
+              >
+                <div className={`p-1.5 rounded-lg transition-all ${activeView === 'account' ? 'bg-gradient-to-br from-slate-500 to-slate-600' : 'bg-sidebar-accent group-hover:bg-sidebar-accent/80'}`}>
+                  <Settings className="w-4 h-4" />
+                </div>
+                <span>Account Settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </div>
       </SidebarFooter>
     </Sidebar>

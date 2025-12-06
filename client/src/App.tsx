@@ -92,7 +92,7 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
@@ -1450,6 +1450,148 @@ function AppContent() {
     </div>
   );
 
+  const AccountView = () => {
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const limits = SUBSCRIPTION_LIMITS[userTier];
+    
+    const handleLogout = async () => {
+      setIsLoggingOut(true);
+      try {
+        const response = await fetch('/api/logout', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (response.ok) {
+          window.location.reload();
+        }
+      } catch (error) {
+        toast({ title: 'Error', description: 'Failed to log out', variant: 'destructive' });
+      } finally {
+        setIsLoggingOut(false);
+      }
+    };
+
+    return (
+      <div className="animate-fade-in space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
+          <p className="text-muted-foreground">Manage your profile, subscription, and security</p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card data-testid="card-profile">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5" />
+                Profile
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold">
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">{user?.email}</p>
+                  <Badge className={`mt-1 ${userTier === 'scale' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : userTier === 'pro' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-muted'} text-white border-0`}>
+                    <Star className="w-3 h-3 mr-1" />
+                    {userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan
+                  </Badge>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Account type: {user?.passwordHash ? 'Email & Password' : 'Replit OAuth'}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card data-testid="card-subscription">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5" />
+                Subscription
+              </CardTitle>
+              <CardDescription>Your current plan and usage limits</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">Email Grades</span>
+                <span className="font-medium">{limits.gradesPerMonth >= 1000 ? 'Unlimited' : `${limits.gradesPerMonth}/mo`}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">AI Rewrites</span>
+                <span className="font-medium">{limits.rewritesPerMonth >= 1000 ? 'Unlimited' : `${limits.rewritesPerMonth}/mo`}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                <span className="text-sm">Follow-ups</span>
+                <span className="font-medium">{limits.followupsPerMonth >= 500 ? 'Unlimited' : `${limits.followupsPerMonth}/mo`}</span>
+              </div>
+              {userTier !== 'scale' && (
+                <Button 
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
+                  onClick={() => window.location.href = '/pricing'}
+                  data-testid="button-upgrade"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Upgrade Plan
+                </Button>
+              )}
+              {userTier !== 'starter' && (
+                <Button 
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/billing-portal', {
+                        method: 'POST',
+                        credentials: 'include',
+                      });
+                      if (response.ok) {
+                        const { url } = await response.json();
+                        window.location.href = url;
+                      }
+                    } catch (error) {
+                      toast({ title: 'Error', description: 'Failed to open billing portal', variant: 'destructive' });
+                    }
+                  }}
+                  data-testid="button-manage-billing"
+                >
+                  Manage Billing
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card data-testid="card-security">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5" />
+              Security
+            </CardTitle>
+            <CardDescription>Manage your account security</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Sign Out</p>
+                <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                data-testid="button-logout"
+              >
+                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderGraderView = () => (
     <>
       {selectedHistoryItem && (
@@ -1652,6 +1794,7 @@ function AppContent() {
                 {activeView === 'history' && 'History'}
                 {activeView === 'tools' && 'AI Tools'}
                 {activeView === 'deliverability' && 'Deliverability Tools'}
+                {activeView === 'account' && 'Account Settings'}
               </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -1683,6 +1826,7 @@ function AppContent() {
               {activeView === 'history' && renderHistoryView()}
               {activeView === 'tools' && renderToolsView()}
               {activeView === 'deliverability' && renderDeliverabilityView()}
+              {activeView === 'account' && <AccountView />}
             </div>
           </main>
         </SidebarInset>
