@@ -136,8 +136,8 @@ export const DomainHealthChecker: React.FC = () => {
 
     return (
         <div className="space-y-4" data-testid="domain-health-checker">
-            <h3 className="text-xl font-bold text-white">Domain Health Scan</h3>
-            <p className="text-sm text-gray-400">Enter your sending domain (e.g., yourcompany.com) to simulate a check against major DNS blacklists and assess its reputation.</p>
+            <h3 className="text-xl font-bold text-foreground">Domain Health Scan</h3>
+            <p className="text-sm text-muted-foreground">Enter your sending domain (e.g., yourcompany.com) to simulate a check against major DNS blacklists and assess its reputation.</p>
             
             <div className="flex flex-col sm:flex-row items-center gap-3">
                 <input
@@ -145,7 +145,7 @@ export const DomainHealthChecker: React.FC = () => {
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     placeholder="yourdomain.com"
-                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    className="bg-background border border-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 placeholder:text-muted-foreground"
                     disabled={isLoading}
                     data-testid="input-domain-health"
                 />
@@ -214,9 +214,9 @@ export const DomainHealthChecker: React.FC = () => {
             )}
 
             {!result && !isLoading && (
-                 <div className="mt-4 p-4 rounded-lg border border-sky-500/50 bg-sky-500/10 text-sky-200 flex items-start gap-3" data-testid="domain-health-info">
-                    <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm">Why is this important? Being on a blacklist is one of the fastest ways to have all your emails land in the spam folder. Regular checks are crucial for maintaining a healthy sender reputation.</p>
+                 <div className="mt-4 p-4 rounded-lg border border-sky-600/50 bg-sky-100 dark:bg-sky-500/10 flex items-start gap-3" data-testid="domain-health-info">
+                    <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5 text-sky-600 dark:text-sky-400" />
+                    <p className="text-sm text-sky-800 dark:text-sky-200">Why is this important? Being on a blacklist is one of the fastest ways to have all your emails land in the spam folder. Regular checks are crucial for maintaining a healthy sender reputation.</p>
                  </div>
             )}
 
