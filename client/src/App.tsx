@@ -1446,44 +1446,42 @@ function AppContent() {
               scoreData={result.inboxPlacementScore} 
               gradeData={result.overallGrade}
             />
-            <Button
-              onClick={() => handleExportPdf(result)}
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              data-testid="button-export-pdf"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Export Report
-              {hasWhitelabelReports && (
-                <Badge variant="secondary" className="ml-2 text-xs">White-label</Badge>
-              )}
-            </Button>
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              onClick={() => {
-                setRewriteGoal('general');
-                handleRewrite();
-              }}
-              disabled={isRewriting || !body.trim()}
-              size="lg"
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8 py-6 shadow-lg"
-              data-testid="button-auto-improve"
-            >
-              {isRewriting ? (
-                <>
-                  <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                  Improving...
-                </>
-              ) : (
-                <>
-                  <Zap className="w-5 h-5 mr-2" />
-                  Auto-Improve Email
-                </>
-              )}
-            </Button>
+            <div className="flex flex-col gap-2 shrink-0">
+              <Button
+                onClick={() => {
+                  setRewriteGoal('general');
+                  handleRewrite();
+                }}
+                disabled={isRewriting || !body.trim()}
+                size="sm"
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-md"
+                data-testid="button-auto-improve"
+              >
+                {isRewriting ? (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                    Improving...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Auto-Improve
+                  </>
+                )}
+              </Button>
+              <Button
+                onClick={() => handleExportPdf(result)}
+                variant="outline"
+                size="sm"
+                data-testid="button-export-pdf"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Export Report
+                {hasWhitelabelReports && (
+                  <Badge variant="secondary" className="ml-2 text-xs">White-label</Badge>
+                )}
+              </Button>
+            </div>
           </div>
 
           {rewrittenEmail && (
