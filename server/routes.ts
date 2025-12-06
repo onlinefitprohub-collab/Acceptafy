@@ -20,14 +20,16 @@ import {
   generateWarmupPlan,
   checkSpamTriggers,
   checkSpamTriggersAdvanced,
-  analyzeSentiment
+  analyzeSentiment,
+  estimateSenderScore
 } from "./gemini";
 import { SUBSCRIPTION_LIMITS } from "@shared/schema";
 import { 
   generateVariationsRequestSchema,
   generateToneRewriteRequestSchema,
   generatePreviewRequestSchema,
-  gradingResultSchema
+  gradingResultSchema,
+  senderScoreInputSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -589,6 +591,24 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Sentiment analysis error:', error);
       res.status(500).json({ error: 'Failed to analyze sentiment' });
+    }
+  });
+
+  app.post('/api/sender-score/estimate', async (req, res) => {
+    try {
+      const parseResult = senderScoreInputSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          error: 'Invalid input', 
+          details: parseResult.error.flatten().fieldErrors 
+        });
+      }
+      
+      const result = await estimateSenderScore(parseResult.data);
+      res.json(result);
+    } catch (error) {
+      console.error('Sender score estimation error:', error);
+      res.status(500).json({ error: 'Failed to estimate sender score' });
     }
   });
 

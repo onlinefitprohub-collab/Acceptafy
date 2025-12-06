@@ -61,6 +61,7 @@ import { WarmupPlanner } from './components/WarmupPlanner';
 import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
+import { SenderScoreEstimator } from './components/SenderScoreEstimator';
 import { getHistory, saveAnalysis, deleteHistoryItem, clearHistory } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,7 +88,7 @@ import type {
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
-type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -1332,6 +1333,10 @@ function AppContent() {
         <WarmupPlanner />
       )}
 
+      {deliverabilitySubView === 'sender-score' && (
+        <SenderScoreEstimator />
+      )}
+
       {!deliverabilitySubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('dns')}>
@@ -1378,14 +1383,28 @@ function AppContent() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer md:col-span-2" onClick={() => setDeliverabilitySubView('warmup')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('warmup')}>
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-orange-500">
                 <Flame className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Warmup Planner</h3>
-                <p className="text-sm text-muted-foreground">AI-generated 30-day warmup schedule for new domains</p>
+                <p className="text-sm text-muted-foreground">30-day warmup schedule</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('sender-score')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500">
+                <ShieldAlert className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Sender Score Estimator</h3>
+                  <Badge className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Analyze your authentication, list hygiene, and sending practices to estimate sender reputation</p>
               </div>
             </CardContent>
           </Card>

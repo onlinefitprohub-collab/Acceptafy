@@ -20,6 +20,7 @@ import {
   BadgeCheck,
   Heart,
   LayoutDashboard,
+  Gauge,
   type LucideIcon
 } from 'lucide-react';
 
@@ -55,7 +56,7 @@ import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
-type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -345,6 +346,20 @@ export function AppSidebar({
                         >
                           <BadgeCheck className="w-3 h-3" />
                           <span>BIMI Builder</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'sender-score'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('sender-score');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-sender-score"
+                        >
+                          <Gauge className="w-3 h-3" />
+                          <span>Sender Score</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

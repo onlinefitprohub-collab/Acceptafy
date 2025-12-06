@@ -13,7 +13,9 @@ import type {
   SubjectVariation, 
   OptimizationItem, 
   ToneRewrite, 
-  EmailPreview 
+  EmailPreview,
+  SenderScoreInput,
+  SenderScoreResult
 } from "@shared/schema";
 
 // This is using Replit's AI Integrations service, which provides Gemini-compatible API access without requiring your own Gemini API key.
@@ -1345,5 +1347,126 @@ Focus on actionable insights that will help the email connect better with recipi
     emotionalTriggers: result.emotionalTriggers || [],
     improvements: result.improvements || [],
     summary: result.summary || 'Analysis complete.'
+  };
+};
+
+// Sender Score Estimator
+const senderScoreSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallScore: { type: Type.NUMBER },
+    grade: { type: Type.STRING },
+    categories: {
+      type: Type.OBJECT,
+      properties: {
+        authentication: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          }
+        },
+        listHygiene: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          }
+        },
+        engagement: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          }
+        },
+        infrastructure: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          }
+        },
+        bestPractices: {
+          type: Type.OBJECT,
+          properties: {
+            score: { type: Type.NUMBER },
+            feedback: { type: Type.STRING }
+          }
+        }
+      }
+    },
+    topIssues: { type: Type.ARRAY, items: { type: Type.STRING } },
+    recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+    comparisonToIndustry: { type: Type.STRING }
+  }
+};
+
+export const estimateSenderScore = async (input: SenderScoreInput): Promise<SenderScoreResult> => {
+  const prompt = `Analyze this email sender's practices and estimate their sender reputation score.
+
+Domain: ${input.domain}
+
+AUTHENTICATION:
+- SPF configured: ${input.hasSpf ? 'Yes' : 'No'}
+- DKIM configured: ${input.hasDkim ? 'Yes' : 'No'}
+- DMARC configured: ${input.hasDmarc ? 'Yes' : 'No'}
+
+LIST & ENGAGEMENT:
+- List size: ${input.listSize.toLocaleString()} subscribers
+- Average open rate: ${input.avgOpenRate}%
+- Average bounce rate: ${input.avgBounceRate}%
+- Average complaint rate: ${input.avgComplaintRate}%
+- List age: ${input.listAgeMonths} months
+
+INFRASTRUCTURE & PRACTICES:
+- Sending frequency: ${input.sendingFrequency}
+- Uses double opt-in: ${input.usesDoubleOptIn ? 'Yes' : 'No'}
+- Has unsubscribe link: ${input.hasUnsubscribeLink ? 'Yes' : 'No'}
+- Sends from dedicated IP: ${input.sendsFromDedicatedIp ? 'Yes' : 'No'}
+
+Provide a comprehensive sender reputation analysis:
+
+1. **Overall Score** (0-100): Based on all factors, estimate their sender score
+2. **Grade**: A+, A, B+, B, C+, C, D, or F
+3. **Category Scores** (0-100 each with specific feedback):
+   - Authentication: SPF, DKIM, DMARC setup
+   - List Hygiene: Bounce rates, complaint rates, list maintenance
+   - Engagement: Open rates compared to industry benchmarks
+   - Infrastructure: Dedicated IP, sending patterns
+   - Best Practices: Double opt-in, unsubscribe compliance
+4. **Top Issues**: List the 3-5 most critical issues hurting their reputation
+5. **Recommendations**: Provide 4-6 actionable steps to improve their score
+6. **Industry Comparison**: How they compare to average email senders
+
+Industry benchmarks:
+- Average open rate: 20-25%
+- Good bounce rate: <2%
+- Acceptable complaint rate: <0.1%
+- All three auth protocols (SPF, DKIM, DMARC) should be configured`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: senderScoreSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  return {
+    overallScore: result.overallScore || 50,
+    grade: result.grade || 'C',
+    categories: result.categories || {
+      authentication: { score: 0, feedback: 'Unable to analyze' },
+      listHygiene: { score: 0, feedback: 'Unable to analyze' },
+      engagement: { score: 0, feedback: 'Unable to analyze' },
+      infrastructure: { score: 0, feedback: 'Unable to analyze' },
+      bestPractices: { score: 0, feedback: 'Unable to analyze' }
+    },
+    topIssues: result.topIssues || [],
+    recommendations: result.recommendations || [],
+    comparisonToIndustry: result.comparisonToIndustry || 'Unable to compare'
   };
 };

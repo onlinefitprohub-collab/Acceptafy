@@ -381,3 +381,37 @@ export const generatePreviewRequestSchema = z.object({
   previewText: z.string(),
   senderName: z.string().optional(),
 });
+
+// Sender Score Estimator schemas
+export const senderScoreInputSchema = z.object({
+  domain: z.string().min(1, "Domain is required"),
+  hasSpf: z.boolean(),
+  hasDkim: z.boolean(),
+  hasDmarc: z.boolean(),
+  listSize: z.number().min(0),
+  avgOpenRate: z.number().min(0).max(100),
+  avgBounceRate: z.number().min(0).max(100),
+  avgComplaintRate: z.number().min(0).max(100),
+  sendingFrequency: z.enum(["daily", "weekly", "biweekly", "monthly", "irregular"]),
+  listAgeMonths: z.number().min(0),
+  usesDoubleOptIn: z.boolean(),
+  hasUnsubscribeLink: z.boolean(),
+  sendsFromDedicatedIp: z.boolean(),
+});
+
+export type SenderScoreInput = z.infer<typeof senderScoreInputSchema>;
+
+export interface SenderScoreResult {
+  overallScore: number;
+  grade: string;
+  categories: {
+    authentication: { score: number; feedback: string };
+    listHygiene: { score: number; feedback: string };
+    engagement: { score: number; feedback: string };
+    infrastructure: { score: number; feedback: string };
+    bestPractices: { score: number; feedback: string };
+  };
+  topIssues: string[];
+  recommendations: string[];
+  comparisonToIndustry: string;
+}
