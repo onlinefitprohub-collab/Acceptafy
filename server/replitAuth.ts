@@ -118,7 +118,14 @@ export async function setupAuth(app: Express) {
 
   app.get("/api/logout", (req, res) => {
     req.logout(() => {
-      req.session?.destroy(() => {
+      req.session?.destroy((err) => {
+        // Clear the session cookie explicitly
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: true,
+        });
+        
         const redirectUri = `https://${req.hostname}`;
         res.redirect(
           client.buildEndSessionUrl(config, {
