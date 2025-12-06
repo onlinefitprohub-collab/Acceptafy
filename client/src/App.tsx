@@ -1628,21 +1628,9 @@ function AppContent() {
     const limits = SUBSCRIPTION_LIMITS[userTier];
     const isPasswordUser = !!user?.passwordHash;
     
-    const handleLogout = async () => {
+    const handleLogout = () => {
       setIsLoggingOut(true);
-      try {
-        const response = await fetch('/api/logout', {
-          method: 'POST',
-          credentials: 'include',
-        });
-        if (response.ok) {
-          window.location.reload();
-        }
-      } catch (error) {
-        toast({ title: 'Error', description: 'Failed to log out', variant: 'destructive' });
-      } finally {
-        setIsLoggingOut(false);
-      }
+      window.location.href = '/api/logout';
     };
 
     const handleChangePassword = async () => {
