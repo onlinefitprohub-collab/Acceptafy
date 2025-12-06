@@ -141,6 +141,7 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
   const { toast } = useToast();
   const [state, setState] = useState<GamificationState>(getInitialState);
   const shownAchievementsRef = useRef<Set<string>>(new Set());
+  const pendingToastsRef = useRef<Array<{ title: string; description: string }>>([]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -153,6 +154,16 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (pendingToastsRef.current.length > 0) {
+      const toasts = [...pendingToastsRef.current];
+      pendingToastsRef.current = [];
+      toasts.forEach(t => {
+        toast(t);
+      });
+    }
+  });
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -169,6 +180,10 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
 
   const nextLevelXp = state.level * XP_PER_LEVEL;
 
+  const queueToast = useCallback((title: string, description: string) => {
+    pendingToastsRef.current.push({ title, description });
+  }, []);
+
   const addXp = useCallback((amount: number, reason: string) => {
     setState(prev => {
       let newXp = prev.xp + amount;
@@ -178,20 +193,14 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
       if (newXp >= levelThreshold) {
         newXp = newXp - levelThreshold;
         newLevel = prev.level + 1;
-        toast({
-          title: `Level Up! You're now Level ${newLevel}`,
-          description: 'Keep going to unlock more achievements!',
-        });
+        queueToast(`Level Up! You're now Level ${newLevel}`, 'Keep going to unlock more achievements!');
       } else {
-        toast({
-          title: `+${amount} XP`,
-          description: reason,
-        });
+        queueToast(`+${amount} XP`, reason);
       }
 
       return { ...prev, xp: newXp, level: newLevel };
     });
-  }, [toast]);
+  }, [queueToast]);
 
   const updateStreak = useCallback(() => {
     const today = new Date().toDateString();
@@ -212,118 +221,111 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
     });
   }, []);
 
-  const unlockAchievement = useCallback((id: string) => {
-    if (shownAchievementsRef.current.has(id)) {
-      return;
-    }
+  const checkAndUnlockAchievements = useCallback((currentState: GamificationState) => {
+    const achievementsToUnlock: string[] = [];
     
-    shownAchievementsRef.current.add(id);
-    
-    setState(prev => {
-      const achievement = prev.achievements.find(a => a.id === id);
-      if (achievement?.unlocked) return prev;
+    if (currentState.totalGrades >= 1 && !shownAchievementsRef.current.has('first_grade')) achievementsToUnlock.push('first_grade');
+    if (currentState.totalGrades >= 10 && !shownAchievementsRef.current.has('prolific')) achievementsToUnlock.push('prolific');
+    if (currentState.totalGrades >= 25 && !shownAchievementsRef.current.has('veteran')) achievementsToUnlock.push('veteran');
+    if (currentState.totalGrades >= 50 && !shownAchievementsRef.current.has('expert')) achievementsToUnlock.push('expert');
+    if (currentState.totalRewrites >= 5 && !shownAchievementsRef.current.has('rewrite_master')) achievementsToUnlock.push('rewrite_master');
+    if (currentState.totalRewrites >= 15 && !shownAchievementsRef.current.has('rewrite_pro')) achievementsToUnlock.push('rewrite_pro');
+    if (currentState.totalFollowups >= 1 && !shownAchievementsRef.current.has('followup_first')) achievementsToUnlock.push('followup_first');
+    if (currentState.totalFollowups >= 10 && !shownAchievementsRef.current.has('followup_pro')) achievementsToUnlock.push('followup_pro');
+    if (currentState.totalDeliverabilityChecks >= 1 && !shownAchievementsRef.current.has('deliverability_check')) achievementsToUnlock.push('deliverability_check');
+    if (currentState.totalDeliverabilityChecks >= 10 && !shownAchievementsRef.current.has('deliverability_pro')) achievementsToUnlock.push('deliverability_pro');
+    if (currentState.streak >= 3 && !shownAchievementsRef.current.has('streak_3')) achievementsToUnlock.push('streak_3');
+    if (currentState.streak >= 7 && !shownAchievementsRef.current.has('streak_7')) achievementsToUnlock.push('streak_7');
+    if (currentState.streak >= 14 && !shownAchievementsRef.current.has('streak_14')) achievementsToUnlock.push('streak_14');
+    if (currentState.streak >= 30 && !shownAchievementsRef.current.has('streak_30')) achievementsToUnlock.push('streak_30');
+    if (currentState.aPlusCount >= 3 && !shownAchievementsRef.current.has('triple_a')) achievementsToUnlock.push('triple_a');
+    if (currentState.level >= 5 && !shownAchievementsRef.current.has('level_5')) achievementsToUnlock.push('level_5');
+    if (currentState.level >= 10 && !shownAchievementsRef.current.has('level_10')) achievementsToUnlock.push('level_10');
+    if (currentState.perfectScoreCount >= 1 && !shownAchievementsRef.current.has('perfect_score')) achievementsToUnlock.push('perfect_score');
+    if (currentState.aPlusCount >= 1 && !shownAchievementsRef.current.has('a_plus')) achievementsToUnlock.push('a_plus');
 
-      const newAchievements = prev.achievements.map(a => 
-        a.id === id ? { ...a, unlocked: true, unlockedAt: new Date() } : a
-      );
-
-      const unlockedAchievement = newAchievements.find(a => a.id === id);
-      if (unlockedAchievement) {
-        toast({
-          title: `Achievement Unlocked: ${unlockedAchievement.title}`,
-          description: unlockedAchievement.description,
+    if (achievementsToUnlock.length > 0) {
+      achievementsToUnlock.forEach(id => shownAchievementsRef.current.add(id));
+      
+      setState(prev => {
+        const newAchievements = prev.achievements.map(a => 
+          achievementsToUnlock.includes(a.id) ? { ...a, unlocked: true, unlockedAt: new Date() } : a
+        );
+        
+        achievementsToUnlock.forEach(id => {
+          const achievement = newAchievements.find(a => a.id === id);
+          if (achievement) {
+            queueToast(`Achievement Unlocked: ${achievement.title}`, achievement.description);
+          }
         });
-      }
-
-      return { ...prev, achievements: newAchievements };
-    });
-  }, [toast]);
+        
+        return { ...prev, achievements: newAchievements };
+      });
+    }
+  }, [queueToast]);
 
   const checkAchievements = useCallback(() => {
-    setState(prev => {
-      if (prev.totalGrades >= 1) unlockAchievement('first_grade');
-      if (prev.totalGrades >= 10) unlockAchievement('prolific');
-      if (prev.totalGrades >= 25) unlockAchievement('veteran');
-      if (prev.totalGrades >= 50) unlockAchievement('expert');
-      if (prev.totalRewrites >= 5) unlockAchievement('rewrite_master');
-      if (prev.totalRewrites >= 15) unlockAchievement('rewrite_pro');
-      if (prev.totalFollowups >= 1) unlockAchievement('followup_first');
-      if (prev.totalFollowups >= 10) unlockAchievement('followup_pro');
-      if (prev.totalDeliverabilityChecks >= 1) unlockAchievement('deliverability_check');
-      if (prev.totalDeliverabilityChecks >= 10) unlockAchievement('deliverability_pro');
-      if (prev.streak >= 3) unlockAchievement('streak_3');
-      if (prev.streak >= 7) unlockAchievement('streak_7');
-      if (prev.streak >= 14) unlockAchievement('streak_14');
-      if (prev.streak >= 30) unlockAchievement('streak_30');
-      if (prev.aPlusCount >= 3) unlockAchievement('triple_a');
-      if (prev.level >= 5) unlockAchievement('level_5');
-      if (prev.level >= 10) unlockAchievement('level_10');
-      
-      return prev;
-    });
-  }, [unlockAchievement]);
+    checkAndUnlockAchievements(state);
+  }, [state, checkAndUnlockAchievements]);
 
   const recordGrade = useCallback((score: number, grade: string) => {
     updateStreak();
     setState(prev => {
       const isAPlusGrade = grade.toUpperCase() === 'A+';
-      return {
+      const newState = {
         ...prev,
         totalGrades: prev.totalGrades + 1,
         bestScore: Math.max(prev.bestScore, score),
         perfectScoreCount: score >= 90 ? prev.perfectScoreCount + 1 : prev.perfectScoreCount,
         aPlusCount: isAPlusGrade ? prev.aPlusCount + 1 : prev.aPlusCount,
       };
+      
+      setTimeout(() => checkAndUnlockAchievements(newState), 50);
+      
+      return newState;
     });
     addXp(25, 'Email graded!');
     
     if (score >= 90) {
-      unlockAchievement('perfect_score');
       addXp(10, 'Bonus: Perfect score!');
     }
-    
-    if (grade.toUpperCase() === 'A+') {
-      unlockAchievement('a_plus');
-    }
-    
-    setTimeout(checkAchievements, 100);
-  }, [addXp, updateStreak, unlockAchievement, checkAchievements]);
+  }, [addXp, updateStreak, checkAndUnlockAchievements]);
 
   const recordRewrite = useCallback(() => {
     updateStreak();
-    setState(prev => ({
-      ...prev,
-      totalRewrites: prev.totalRewrites + 1,
-    }));
+    setState(prev => {
+      const newState = { ...prev, totalRewrites: prev.totalRewrites + 1 };
+      setTimeout(() => checkAndUnlockAchievements(newState), 50);
+      return newState;
+    });
     addXp(15, 'AI rewrite used!');
-    setTimeout(checkAchievements, 100);
-  }, [addXp, updateStreak, checkAchievements]);
+  }, [addXp, updateStreak, checkAndUnlockAchievements]);
 
   const recordFollowup = useCallback(() => {
     updateStreak();
-    setState(prev => ({
-      ...prev,
-      totalFollowups: prev.totalFollowups + 1,
-    }));
+    setState(prev => {
+      const newState = { ...prev, totalFollowups: prev.totalFollowups + 1 };
+      setTimeout(() => checkAndUnlockAchievements(newState), 50);
+      return newState;
+    });
     addXp(15, 'Follow-up generated!');
-    setTimeout(checkAchievements, 100);
-  }, [addXp, updateStreak, checkAchievements]);
+  }, [addXp, updateStreak, checkAndUnlockAchievements]);
 
   const recordDeliverabilityCheck = useCallback(() => {
     updateStreak();
-    setState(prev => ({
-      ...prev,
-      totalDeliverabilityChecks: prev.totalDeliverabilityChecks + 1,
-    }));
+    setState(prev => {
+      const newState = { ...prev, totalDeliverabilityChecks: prev.totalDeliverabilityChecks + 1 };
+      setTimeout(() => checkAndUnlockAchievements(newState), 50);
+      return newState;
+    });
     addXp(10, 'Deliverability check completed!');
-    setTimeout(checkAchievements, 100);
-  }, [addXp, updateStreak, checkAchievements]);
+  }, [addXp, updateStreak, checkAndUnlockAchievements]);
 
   const recordAcademyProgress = useCallback(() => {
     updateStreak();
     addXp(20, 'Academy progress!');
-    setTimeout(checkAchievements, 100);
-  }, [addXp, updateStreak, checkAchievements]);
+    setTimeout(() => checkAndUnlockAchievements(state), 50);
+  }, [addXp, updateStreak, checkAndUnlockAchievements, state]);
 
   const value: GamificationContextType = {
     ...state,
