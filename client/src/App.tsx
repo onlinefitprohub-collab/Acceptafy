@@ -66,6 +66,7 @@ import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { SenderScoreEstimator } from './components/SenderScoreEstimator';
+import { EmailTemplates } from './components/EmailTemplates';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -80,7 +81,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -101,7 +102,7 @@ import type {
 } from './types';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1288,6 +1289,18 @@ function AppContent() {
         <SentimentAnalyzer />
       )}
 
+      {toolsSubView === 'templates' && (
+        <EmailTemplates
+          currentSubject={variations[0]?.subject || ''}
+          currentPreviewText={variations[0]?.previewText || ''}
+          currentBody={body}
+          onLoadTemplate={(subject, previewText, bodyContent) => {
+            setVariations([{ subject, previewText }]);
+            setBody(bodyContent);
+          }}
+        />
+      )}
+
       {!toolsSubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
@@ -1367,6 +1380,20 @@ function AppContent() {
                   <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">Analyze emotional tone & improve engagement</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('templates')} data-testid="card-tools-templates">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+                <FileText className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Email Templates</h3>
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Save and reuse your best emails</p>
               </div>
             </CardContent>
           </Card>

@@ -23,6 +23,7 @@ import {
   Gauge,
   Settings,
   ChevronRight,
+  FileText,
   type LucideIcon
 } from 'lucide-react';
 
@@ -57,7 +58,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 interface AppSidebarProps {
@@ -248,6 +249,19 @@ export function AppSidebar({
                         >
                           <Heart className="w-3 h-3" />
                           <span>Sentiment</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'templates'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('templates');
+                          }}
+                          data-testid="nav-tools-templates"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>Templates</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
