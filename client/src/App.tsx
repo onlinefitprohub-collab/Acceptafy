@@ -104,7 +104,7 @@ function AppContent() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { recordGrade, recordRewrite, streak, level, xp, bestScore } = useGamification();
-  const { showOnboarding, completeOnboarding } = useOnboarding();
+  const { showOnboarding, completeOnboarding, resetOnboarding } = useOnboarding();
   const { celebrations, celebrate, CelebrationRenderer } = useCelebration();
   
   // Check if user has white-label report access (Scale tier)
@@ -1646,6 +1646,7 @@ function AppContent() {
                   history={history}
                   onNavigate={handleDashboardNavigate}
                   onOpenAcademy={() => setShowAcademy(true)}
+                  onReplayTutorial={resetOnboarding}
                 />
               )}
               {activeView === 'grader' && renderGraderView()}

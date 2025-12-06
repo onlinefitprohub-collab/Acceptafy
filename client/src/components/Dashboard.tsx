@@ -17,7 +17,8 @@ import {
   Trophy,
   Flame,
   Star,
-  Clock
+  Clock,
+  PlayCircle
 } from 'lucide-react';
 import { useGamification } from '@/hooks/use-gamification';
 import type { HistoryItem } from '../types';
@@ -26,9 +27,10 @@ interface DashboardProps {
   history: HistoryItem[];
   onNavigate: (view: 'grader' | 'history' | 'tools' | 'deliverability', subView?: string) => void;
   onOpenAcademy: () => void;
+  onReplayTutorial?: () => void;
 }
 
-export function Dashboard({ history, onNavigate, onOpenAcademy }: DashboardProps) {
+export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial }: DashboardProps) {
   const { xp, level, streak, nextLevelXp, achievements, totalGrades, bestScore } = useGamification();
   
   const xpProgress = (xp / nextLevelXp) * 100;
@@ -57,17 +59,31 @@ export function Dashboard({ history, onNavigate, onOpenAcademy }: DashboardProps
 
   return (
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
           <p className="text-muted-foreground">Here's your email marketing overview</p>
         </div>
-        {streak > 0 && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
-            <Flame className="w-5 h-5 text-orange-500 fire-animate" />
-            <span className="font-bold text-orange-500">{streak} day streak!</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {onReplayTutorial && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onReplayTutorial}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="button-replay-tutorial"
+            >
+              <PlayCircle className="w-4 h-4 mr-1.5" />
+              Replay Tutorial
+            </Button>
+          )}
+          {streak > 0 && (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+              <Flame className="w-5 h-5 text-orange-500 fire-animate" />
+              <span className="font-bold text-orange-500">{streak} day streak!</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
