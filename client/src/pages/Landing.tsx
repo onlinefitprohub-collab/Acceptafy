@@ -776,6 +776,67 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <Badge variant="outline" className="mb-4">
+              <Award className="w-3 h-3 mr-1" />
+              Success Stories
+            </Badge>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">More Happy Customers</h2>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              See how email marketers across industries are improving their results with Acceptafy.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                quote: "Our bounce rates dropped by 40% after implementing the deliverability recommendations. The DNS setup wizard alone is worth the subscription.",
+                author: "David Park",
+                role: "Technical Lead",
+                company: "MailFlow Agency",
+                metric: "-40% bounces"
+              },
+              {
+                quote: "I was skeptical at first, but after seeing my click rates nearly double in two months, I'm a believer. The competitor analysis feature is gold.",
+                author: "Rachel Thompson",
+                role: "Growth Marketer",
+                company: "ScaleUp.io",
+                metric: "1.9x clicks"
+              },
+              {
+                quote: "As a solo founder, I don't have time to learn email marketing deeply. Acceptafy's grades and auto-rewrites let me send professional emails fast.",
+                author: "James Liu",
+                role: "Indie Maker",
+                company: "BuildFast",
+                metric: "30min saved/email"
+              }
+            ].map((testimonial, index) => (
+              <Card key={index} className="hover-elevate" data-testid={`card-testimonial-extra-${index}`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-1 mb-4" data-testid={`stars-testimonial-extra-${index}`}>
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4" data-testid={`text-testimonial-extra-quote-${index}`}>"{testimonial.quote}"</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-sm" data-testid={`text-testimonial-extra-author-${index}`}>{testimonial.author}</p>
+                      <p className="text-xs text-muted-foreground" data-testid={`text-testimonial-extra-role-${index}`}>{testimonial.role}, {testimonial.company}</p>
+                    </div>
+                    <Badge className="bg-green-500/10 text-green-600 border-green-500/30" data-testid={`badge-testimonial-extra-metric-${index}`}>
+                      {testimonial.metric}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-16" data-testid="section-final-cta">
         <div className="container mx-auto px-4">
           <Card className="max-w-3xl mx-auto bg-gradient-to-br from-purple-500/5 to-pink-500/5 border-purple-500/20" data-testid="card-final-cta">
@@ -812,9 +873,6 @@ export default function Landing() {
               <a href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy Policy</a>
               <a href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a>
             </div>
-          </div>
-          <div className="mt-4 text-center text-xs text-muted-foreground" data-testid="text-footer-address">
-            <p>Acceptafy - Whiterock Place, Brighton, BN42 4AG, United Kingdom</p>
           </div>
         </div>
       </footer>
