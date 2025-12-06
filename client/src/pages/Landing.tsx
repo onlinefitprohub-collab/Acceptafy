@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
 import { LoginDialog } from "@/components/LoginDialog";
 import { 
   Mail, 
@@ -29,7 +30,8 @@ import {
   Upload,
   FolderOpen,
   DollarSign,
-  Info
+  Info,
+  Calculator
 } from "lucide-react";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
@@ -63,6 +65,98 @@ const TESTIMONIALS = [
     metric: "5hrs saved/week"
   }
 ];
+
+function ROICalculator() {
+  const [listSize, setListSize] = useState(10000);
+  const [subscriberValue, setSubscriberValue] = useState(25);
+  const [openRateImprovement, setOpenRateImprovement] = useState(5);
+
+  const potentialValue = Math.round(listSize * (openRateImprovement / 100) * subscriberValue);
+  const monthlyROI = potentialValue > 0 ? Math.round(potentialValue / 59) : 0;
+
+  return (
+    <div className="space-y-6" data-testid="roi-calculator">
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            Email List Size
+          </label>
+          <Input
+            type="number"
+            value={listSize}
+            onChange={(e) => setListSize(Math.max(0, parseInt(e.target.value) || 0))}
+            className="text-center"
+            data-testid="input-list-size"
+          />
+          <p className="text-xs text-muted-foreground text-center">Total subscribers</p>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
+            Subscriber Value
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <Input
+              type="number"
+              value={subscriberValue}
+              onChange={(e) => setSubscriberValue(Math.max(0, parseInt(e.target.value) || 0))}
+              className="text-center pl-7"
+              data-testid="input-subscriber-value"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground text-center">Avg. lifetime value per subscriber</p>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-muted-foreground" />
+            Expected Improvement
+          </label>
+          <div className="relative">
+            <Input
+              type="number"
+              value={openRateImprovement}
+              onChange={(e) => setOpenRateImprovement(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+              className="text-center pr-7"
+              data-testid="input-improvement"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+          </div>
+          <p className="text-xs text-muted-foreground text-center">Open rate improvement goal</p>
+        </div>
+      </div>
+
+      <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg p-6 text-center">
+        <p className="text-sm text-muted-foreground mb-2">Your Potential Monthly Value</p>
+        <p className="text-5xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-roi-result">
+          ${potentialValue.toLocaleString()}
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          That's <span className="font-bold text-green-600">{monthlyROI}x</span> the cost of the Pro plan ($59/mo)
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4 text-center text-sm">
+        <div className="p-3 bg-muted/50 rounded-lg">
+          <p className="text-muted-foreground">Subscribers reached</p>
+          <p className="font-bold text-lg">{Math.round(listSize * (openRateImprovement / 100)).toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">additional opens</p>
+        </div>
+        <div className="p-3 bg-muted/50 rounded-lg">
+          <p className="text-muted-foreground">Formula</p>
+          <p className="font-mono text-xs">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
+          <p className="text-xs text-muted-foreground">list × improvement × value</p>
+        </div>
+        <div className="p-3 bg-muted/50 rounded-lg">
+          <p className="text-muted-foreground">Annual potential</p>
+          <p className="font-bold text-lg text-green-600">${(potentialValue * 12).toLocaleString()}</p>
+          <p className="text-xs text-muted-foreground">if maintained monthly</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
   const [count, setCount] = useState(0);
@@ -592,77 +686,17 @@ export default function Landing() {
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <Badge variant="outline" className="mb-4" data-testid="badge-roi">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    Return on Investment
+                    <Calculator className="w-3 h-3 mr-1" />
+                    ROI Calculator
                   </Badge>
-                  <h2 className="text-2xl md:text-3xl font-bold mb-2">The Math Makes Sense</h2>
-                  <p className="text-muted-foreground">A single successful email campaign pays for months of Acceptafy</p>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">Calculate Your Potential ROI</h2>
+                  <p className="text-muted-foreground">Enter your numbers to see what better email deliverability could mean for your business</p>
                 </div>
                 
-                <div className="grid md:grid-cols-3 gap-6 text-center">
-                  <div data-testid="roi-stat-1">
-                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3">
-                      <DollarSign className="w-6 h-6 text-green-600" />
-                    </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">$2,400+</p>
-                    <p className="text-sm text-muted-foreground mt-1">Potential value of 1% open rate increase<br/>(10k list × $24 avg. subscriber value)</p>
-                  </div>
-                  <div data-testid="roi-stat-2">
-                    <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
-                      <TrendingUp className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">18%</p>
-                    <p className="text-sm text-muted-foreground mt-1">Avg. open rate improvement<br/>reported by our users</p>
-                  </div>
-                  <div data-testid="roi-stat-3">
-                    <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mx-auto mb-3">
-                      <Target className="w-6 h-6 text-pink-600" />
-                    </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">40x</p>
-                    <p className="text-sm text-muted-foreground mt-1">Potential ROI on Pro plan<br/>($59/mo vs. $2,400+ value created)</p>
-                  </div>
-                </div>
-
-                <div className="mt-8 p-4 bg-muted/50 rounded-lg" data-testid="revenue-benefits">
-                  <h4 className="font-semibold text-center mb-4">Feature-Driven Revenue Impact</h4>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-center text-sm">
-                    <div className="p-3 bg-background rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
-                        <FolderOpen className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <p className="font-semibold text-sm">Saved Templates</p>
-                      <p className="text-green-600 font-medium text-xs mt-1">+15% campaign consistency</p>
-                      <p className="text-muted-foreground text-xs mt-1">Reuse proven emails to reduce campaign setup time by 50%</p>
-                    </div>
-                    <div className="p-3 bg-background rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
-                        <Upload className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <p className="font-semibold text-sm">.EML Import</p>
-                      <p className="text-green-600 font-medium text-xs mt-1">5min saved per email</p>
-                      <p className="text-muted-foreground text-xs mt-1">Skip manual copy-paste and analyze emails directly from your inbox</p>
-                    </div>
-                    <div className="p-3 bg-background rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center mx-auto mb-2">
-                        <Users className="w-5 h-5 text-violet-600" />
-                      </div>
-                      <p className="font-semibold text-sm">Competitor Analysis</p>
-                      <p className="text-green-600 font-medium text-xs mt-1">$500+ per insight applied</p>
-                      <p className="text-muted-foreground text-xs mt-1">Extract winning subject lines and CTAs that drove competitor conversions</p>
-                    </div>
-                    <div className="p-3 bg-background rounded-lg">
-                      <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-2">
-                        <Inbox className="w-5 h-5 text-green-600" />
-                      </div>
-                      <p className="font-semibold text-sm">Inbox Placement</p>
-                      <p className="text-green-600 font-medium text-xs mt-1">$1,200 saved per avoided spam hit</p>
-                      <p className="text-muted-foreground text-xs mt-1">Each email blocked by spam costs you ~12% of potential revenue from that send</p>
-                    </div>
-                  </div>
-                </div>
+                <ROICalculator />
 
                 <p className="text-center text-xs text-muted-foreground mt-6" data-testid="disclaimer-roi">
-                  <span className="font-medium">*Disclaimer:</span> ROI projections and improvement percentages are estimates. Actual results vary based on list size, industry, and email strategy. Past performance does not guarantee future results.
+                  <span className="font-medium">*Disclaimer:</span> ROI projections are estimates based on your inputs. Actual results vary based on industry, email strategy, and list quality. Past performance does not guarantee future results.
                 </p>
               </CardContent>
             </Card>
