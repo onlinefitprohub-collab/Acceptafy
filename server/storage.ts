@@ -22,6 +22,8 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUserWithPassword(email: string, passwordHash: string, role?: string, subscriptionTier?: string): Promise<User>;
+  updateUser(userId: string, updates: Partial<User>): Promise<User>;
+  deleteUser(userId: string): Promise<boolean>;
   updateUserStripeInfo(userId: string, stripeInfo: {
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
@@ -89,6 +91,23 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  async updateUser(userId: string, updates: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(userId: string): Promise<boolean> {
+    await db.delete(usageCounters).where(eq(usageCounters.userId, userId));
+    await db.delete(emailAnalyses).where(eq(emailAnalyses.userId, userId));
+    await db.delete(userGamification).where(eq(userGamification.userId, userId));
+    const result = await db.delete(users).where(eq(users.id, userId));
+    return true;
   }
 
   async updateUserStripeInfo(userId: string, stripeInfo: {

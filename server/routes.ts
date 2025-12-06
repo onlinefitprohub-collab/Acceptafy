@@ -143,6 +143,76 @@ export async function registerRoutes(
     }
   });
 
+  // Change password (for email/password users only)
+  app.post('/api/change-password', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || !user.passwordHash) {
+        return res.status(400).json({ message: "Password change not available for OAuth accounts" });
+      }
+
+      const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ message: "Current password is incorrect" });
+      }
+
+      const newHash = await bcrypt.hash(newPassword, 10);
+      await storage.updateUser(userId, { passwordHash: newHash });
+
+      res.json({ success: true, message: "Password changed successfully" });
+    } catch (error) {
+      console.error("Change password error:", error);
+      res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Delete account
+  app.delete('/api/delete-account', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Cancel Stripe subscription if exists
+      if (user.stripeSubscriptionId) {
+        try {
+          const stripe = await getUncachableStripeClient();
+          await stripe.subscriptions.cancel(user.stripeSubscriptionId);
+        } catch (stripeError) {
+          console.error("Error canceling subscription:", stripeError);
+        }
+      }
+
+      // Delete the user
+      await storage.deleteUser(userId);
+
+      // Logout the session
+      req.logout((err: any) => {
+        if (err) {
+          console.error("Logout error during account deletion:", err);
+        }
+        res.json({ success: true, message: "Account deleted successfully" });
+      });
+    } catch (error) {
+      console.error("Delete account error:", error);
+      res.status(500).json({ message: "Failed to delete account" });
+    }
+  });
+
   app.get('/api/stripe/publishable-key', async (req, res) => {
     try {
       const publishableKey = await getStripePublishableKey();

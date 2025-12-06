@@ -1452,7 +1452,15 @@ function AppContent() {
 
   const AccountView = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteConfirmText, setDeleteConfirmText] = useState('');
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
     const limits = SUBSCRIPTION_LIMITS[userTier];
+    const isPasswordUser = !!user?.passwordHash;
     
     const handleLogout = async () => {
       setIsLoggingOut(true);
@@ -1468,6 +1476,65 @@ function AppContent() {
         toast({ title: 'Error', description: 'Failed to log out', variant: 'destructive' });
       } finally {
         setIsLoggingOut(false);
+      }
+    };
+
+    const handleChangePassword = async () => {
+      if (newPassword !== confirmPassword) {
+        toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
+        return;
+      }
+      if (newPassword.length < 8) {
+        toast({ title: 'Error', description: 'Password must be at least 8 characters', variant: 'destructive' });
+        return;
+      }
+      setIsChangingPassword(true);
+      try {
+        const response = await fetch('/api/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ currentPassword, newPassword }),
+        });
+        if (response.ok) {
+          toast({ title: 'Success', description: 'Password changed successfully' });
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+        } else {
+          const data = await response.json();
+          toast({ title: 'Error', description: data.message || 'Failed to change password', variant: 'destructive' });
+        }
+      } catch (error) {
+        toast({ title: 'Error', description: 'Failed to change password', variant: 'destructive' });
+      } finally {
+        setIsChangingPassword(false);
+      }
+    };
+
+    const handleDeleteAccount = async () => {
+      if (deleteConfirmText !== 'DELETE') {
+        toast({ title: 'Error', description: 'Please type DELETE to confirm', variant: 'destructive' });
+        return;
+      }
+      setIsDeleting(true);
+      try {
+        const response = await fetch('/api/delete-account', {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+        if (response.ok) {
+          toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted' });
+          window.location.href = '/';
+        } else {
+          const data = await response.json();
+          toast({ title: 'Error', description: data.message || 'Failed to delete account', variant: 'destructive' });
+        }
+      } catch (error) {
+        toast({ title: 'Error', description: 'Failed to delete account', variant: 'destructive' });
+      } finally {
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
       }
     };
 
@@ -1571,8 +1638,47 @@ function AppContent() {
             </CardTitle>
             <CardDescription>Manage your account security</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+          <CardContent className="space-y-6">
+            {isPasswordUser && (
+              <div className="space-y-4 pb-4 border-b border-border">
+                <div>
+                  <p className="font-medium">Change Password</p>
+                  <p className="text-sm text-muted-foreground">Update your account password</p>
+                </div>
+                <div className="space-y-3">
+                  <Input
+                    type="password"
+                    placeholder="Current password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    data-testid="input-current-password"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="New password (min 8 characters)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    data-testid="input-new-password"
+                  />
+                  <Input
+                    type="password"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    data-testid="input-confirm-password"
+                  />
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                    data-testid="button-change-password"
+                  >
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pb-4 border-b border-border">
               <div>
                 <p className="font-medium">Sign Out</p>
                 <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
@@ -1585,6 +1691,60 @@ function AppContent() {
               >
                 {isLoggingOut ? 'Signing out...' : 'Sign Out'}
               </Button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-destructive">Delete Account</p>
+                  <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+                </div>
+                <Button 
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  data-testid="button-delete-account"
+                >
+                  Delete Account
+                </Button>
+              </div>
+              
+              {showDeleteConfirm && (
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
+                  <p className="text-sm font-medium text-destructive">This action cannot be undone!</p>
+                  <p className="text-sm text-muted-foreground">
+                    All your data including analysis history, subscription, and account settings will be permanently deleted.
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm">Type <strong>DELETE</strong> to confirm:</p>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="Type DELETE"
+                      data-testid="input-delete-confirm"
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                        data-testid="button-confirm-delete"
+                      >
+                        {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setDeleteConfirmText('');
+                        }}
+                        data-testid="button-cancel-delete"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
