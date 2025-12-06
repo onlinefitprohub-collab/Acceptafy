@@ -256,7 +256,8 @@ function AppContent() {
         const newHistory = saveAnalysis({ body, variations }, data);
         setHistory(newHistory);
         const score = data.inboxPlacementScore?.score || 0;
-        recordGrade(score);
+        const grade = data.overallGrade?.grade || 'C';
+        recordGrade(score, grade);
         
         if (score >= 90) {
           setTimeout(() => {
