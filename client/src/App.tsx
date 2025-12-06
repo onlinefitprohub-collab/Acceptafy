@@ -1978,8 +1978,9 @@ function AppContent() {
             <div className="flex sm:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
               <Button
                 size="sm"
+                variant={activeView === 'grader' ? 'default' : 'outline'}
                 onClick={() => { setActiveView('grader'); setToolsSubView(null); }}
-                className={`flex-shrink-0 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-muted'}`}
+                className={`flex-shrink-0 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-grader"
               >
                 <Mail className="w-4 h-4 mr-1.5" />
@@ -1987,9 +1988,9 @@ function AppContent() {
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={activeView === 'tools' && toolsSubView === 'rewrite' ? 'default' : 'outline'}
                 onClick={() => { setActiveView('tools'); setToolsSubView('rewrite'); }}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 ${activeView === 'tools' && toolsSubView === 'rewrite' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-rewrite"
               >
                 <Zap className="w-4 h-4 mr-1.5" />
@@ -1997,9 +1998,9 @@ function AppContent() {
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={activeView === 'deliverability' ? 'default' : 'outline'}
                 onClick={() => { setActiveView('deliverability'); setDeliverabilitySubView('domain-health'); }}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 ${activeView === 'deliverability' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-deliverability"
               >
                 <ShieldCheck className="w-4 h-4 mr-1.5" />
