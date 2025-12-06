@@ -89,12 +89,12 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-5 h-full flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Level</p>
+                <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Level</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-level">{level}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow duration-300 flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow duration-300 flex-shrink-0 self-start">
                 <Star className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -108,12 +108,12 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-5 h-full flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Best Score</p>
+                <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Best Score</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-best-score">{bestScore}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300 flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300 flex-shrink-0 self-start">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -127,17 +127,17 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-5 h-full flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Emails Graded</p>
+                <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Graded</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-total-grades">{totalGrades}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow duration-300 flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow duration-300 flex-shrink-0 self-start">
                 <Mail className="w-6 h-6 text-white" />
               </div>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Average score: {averageScore || '--'}
+              Avg score: {averageScore || '--'}
             </p>
           </CardContent>
         </Card>
@@ -146,13 +146,13 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
           <CardContent className="relative p-5 h-full flex flex-col justify-between">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Achievements</p>
+                <p className="text-sm font-medium text-muted-foreground whitespace-nowrap">Achievements</p>
                 <p className="text-3xl font-bold text-foreground" data-testid="text-achievements">{unlockedAchievements}/{achievements.length}</p>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:shadow-yellow-500/50 transition-shadow duration-300 flex-shrink-0">
-                <Sparkles className="w-7 h-7 text-white" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:shadow-yellow-500/50 transition-shadow duration-300 flex-shrink-0 self-start">
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
