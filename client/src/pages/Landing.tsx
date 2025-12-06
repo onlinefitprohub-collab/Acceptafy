@@ -138,19 +138,19 @@ function ROICalculator() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 text-center text-sm">
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-muted-foreground">Subscribers reached</p>
-          <p className="font-bold text-lg">{Math.round(listSize * (openRateImprovement / 100)).toLocaleString()}</p>
+        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Subscribers reached</p>
+          <p className="font-bold text-2xl text-foreground">{Math.round(listSize * (openRateImprovement / 100)).toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">additional opens</p>
         </div>
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-muted-foreground">Formula</p>
-          <p className="font-mono text-xs">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
+        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Formula</p>
+          <p className="font-mono text-sm font-medium text-foreground">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
           <p className="text-xs text-muted-foreground">list × improvement × value</p>
         </div>
-        <div className="p-3 bg-muted/50 rounded-lg">
-          <p className="text-muted-foreground">Annual potential</p>
-          <p className="font-bold text-lg text-green-600">${(potentialValue * 12).toLocaleString()}</p>
+        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Annual potential</p>
+          <p className="font-bold text-2xl text-green-600">${(potentialValue * 12).toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">if maintained monthly</p>
         </div>
       </div>
