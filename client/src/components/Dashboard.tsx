@@ -86,21 +86,21 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 auto-rows-fr">
         <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-level">
           <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-          <CardContent className="relative p-6 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground h-5">Level</p>
-                <p className="text-3xl font-bold text-foreground mt-1" data-testid="text-level">{level}</p>
+          <CardContent className="relative p-5 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Level</p>
+                <p className="text-3xl font-bold text-foreground" data-testid="text-level">{level}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow duration-300 flex-shrink-0">
                 <Star className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-auto pt-4 space-y-2">
+            <div className="mt-4 space-y-1.5">
               <div className="flex justify-between text-sm gap-2">
                 <span className="text-muted-foreground">XP Progress</span>
                 <span className="font-medium">{xp}/{nextLevelXp}</span>
@@ -113,17 +113,17 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
         <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-best-score">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-          <CardContent className="relative p-6 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground h-5">Best Score</p>
-                <p className="text-3xl font-bold text-foreground mt-1" data-testid="text-best-score">{bestScore}</p>
+          <CardContent className="relative p-5 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Best Score</p>
+                <p className="text-3xl font-bold text-foreground" data-testid="text-best-score">{bestScore}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300 flex-shrink-0">
                 <Trophy className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="mt-auto pt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground">
               {bestScore >= 90 ? 'Excellent work!' : bestScore >= 70 ? 'Good progress!' : 'Keep improving!'}
             </p>
           </CardContent>
@@ -132,18 +132,18 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
         <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-emails-graded">
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-          <CardContent className="relative p-6 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground h-5">Graded</p>
-                <p className="text-3xl font-bold text-foreground mt-1" data-testid="text-total-grades">{totalGrades}</p>
+          <CardContent className="relative p-5 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Emails Graded</p>
+                <p className="text-3xl font-bold text-foreground" data-testid="text-total-grades">{totalGrades}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30 group-hover:shadow-green-500/50 transition-shadow duration-300 flex-shrink-0">
                 <Mail className="w-6 h-6 text-white" />
               </div>
             </div>
-            <p className="mt-auto pt-4 text-sm text-muted-foreground">
-              Avg score: {averageScore || '--'}
+            <p className="mt-4 text-sm text-muted-foreground">
+              Average score: {averageScore || '--'}
             </p>
           </CardContent>
         </Card>
@@ -151,17 +151,17 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
         <Card className="relative overflow-visible group transition-all duration-300" data-testid="stats-achievements">
           <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-orange-500/10 rounded-lg" />
           <div className="absolute -inset-px bg-gradient-to-br from-yellow-500/20 to-orange-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
-          <CardContent className="relative p-6 h-full flex flex-col">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground h-5">Achievements</p>
-                <p className="text-3xl font-bold text-foreground mt-1" data-testid="text-achievements">{unlockedAchievements}/{achievements.length}</p>
+          <CardContent className="relative p-5 h-full flex flex-col justify-between">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Achievements</p>
+                <p className="text-3xl font-bold text-foreground" data-testid="text-achievements">{unlockedAchievements}/{achievements.length}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30 group-hover:shadow-yellow-500/50 transition-shadow duration-300 flex-shrink-0">
-                <Sparkles className="w-6 h-6 text-white" />
+                <Sparkles className="w-7 h-7 text-white" />
               </div>
             </div>
-            <p className="mt-auto pt-4 text-sm text-muted-foreground">
+            <p className="mt-4 text-sm text-muted-foreground">
               {achievements.length - unlockedAchievements} more to unlock
             </p>
           </CardContent>
