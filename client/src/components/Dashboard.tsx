@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Mail, 
   Zap, 
@@ -33,7 +32,6 @@ interface DashboardProps {
 export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial }: DashboardProps) {
   const { xp, level, streak, nextLevelXp, achievements, totalGrades, bestScore } = useGamification();
   
-  const xpProgress = (xp / nextLevelXp) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
   
   const recentGrades = history.slice(0, 3);
@@ -100,13 +98,9 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                 <Star className="w-6 h-6 text-white" />
               </div>
             </div>
-            <div className="mt-4 space-y-1.5">
-              <div className="flex justify-between text-sm gap-2">
-                <span className="text-muted-foreground">XP Progress</span>
-                <span className="font-medium">{xp}/{nextLevelXp}</span>
-              </div>
-              <Progress value={xpProgress} className="h-2" />
-            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              XP Progress: {xp}/{nextLevelXp}
+            </p>
           </CardContent>
         </Card>
 
