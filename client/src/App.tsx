@@ -1203,6 +1203,37 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {!body.trim() && (
+              <Card className="bg-muted/50 border-dashed">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Enter your email content below, or go to the <button onClick={() => { setActiveView('grader'); setToolsSubView(null); }} className="text-primary underline">Email Grader</button> first to input your email.
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Subject Line</label>
+                      <Input
+                        value={variations[0]?.subject || ''}
+                        onChange={(e) => setVariations([{ ...variations[0], subject: e.target.value }])}
+                        placeholder="Enter your subject line..."
+                        data-testid="input-tone-subject"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Email Body</label>
+                      <Textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="Paste or type your email content here..."
+                        rows={6}
+                        data-testid="input-tone-body"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="flex flex-wrap gap-2">
               {(['professional', 'friendly', 'urgent', 'fomo', 'storytelling'] as ToneProfile[]).map((tone) => (
                 <Button
