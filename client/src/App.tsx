@@ -1128,6 +1128,37 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {(!variations[0]?.subject.trim() || !body.trim()) && (
+              <Card className="bg-muted/50 border-dashed">
+                <CardContent className="p-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Enter your email content below to generate subject line variations, or go to the <button onClick={() => { setActiveView('grader'); setToolsSubView(null); }} className="text-primary underline">Email Grader</button> first.
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Subject Line (required)</label>
+                      <Input
+                        value={variations[0]?.subject || ''}
+                        onChange={(e) => setVariations([{ ...variations[0], subject: e.target.value }])}
+                        placeholder="Enter your current subject line..."
+                        data-testid="input-variations-subject"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Email Body (required for context)</label>
+                      <Textarea
+                        value={body}
+                        onChange={(e) => setBody(e.target.value)}
+                        placeholder="Paste or type your email content here..."
+                        rows={6}
+                        data-testid="input-variations-body"
+                      />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <Button
               onClick={handleGenerateSubjectVariations}
               disabled={isGeneratingVariations || !variations[0]?.subject.trim() || !body.trim()}
