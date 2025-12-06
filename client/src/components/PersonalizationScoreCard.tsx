@@ -77,7 +77,7 @@ export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> =
           <div className="border-t border-white/10 pt-4 mt-4">
               <h4 className="font-semibold text-gray-300 mb-2">Detailed Feedback:</h4>
               <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
-                {scoreData.feedback.map((item, index) => (
+                {(scoreData.feedback || []).map((item, index) => (
                   <li key={index} className="leading-relaxed">{item}</li>
                 ))}
               </ul>

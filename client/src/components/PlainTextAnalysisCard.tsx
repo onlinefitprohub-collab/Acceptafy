@@ -48,7 +48,7 @@ export const PlainTextAnalysisCard: React.FC<PlainTextAnalysisCardProps> = ({ an
               <div>
                 <h4 className="font-semibold text-gray-300 mb-2">Feedback:</h4>
                 <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
-                    {analysis.feedback.map((item, index) => (
+                    {(analysis.feedback || []).map((item, index) => (
                         <li key={index}>{item}</li>
                     ))}
                 </ul>

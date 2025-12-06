@@ -80,7 +80,7 @@ export const ReplyAbilityCard: React.FC<ReplyAbilityCardProps> = ({
                 <div className="border-t border-white/10 pt-4 mt-4">
                     <h4 className="font-semibold text-gray-300 mb-2">How to improve:</h4>
                     <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
-                        {analysis.feedback.map((item, index) => (
+                        {(analysis.feedback || []).map((item, index) => (
                             <li key={index}>{item}</li>
                         ))}
                     </ul>
