@@ -22,8 +22,11 @@ import {
   checkSpamTriggers,
   checkSpamTriggersAdvanced,
   analyzeSentiment,
-  estimateSenderScore
+  estimateSenderScore,
+  analyzeCompetitorEmail,
+  simulateInboxPlacement
 } from "./gemini";
+import { insertEmailTemplateSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS } from "@shared/schema";
 import { 
   generateVariationsRequestSchema,
@@ -759,6 +762,136 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Sender score estimation error:', error);
       res.status(500).json({ error: 'Failed to estimate sender score' });
+    }
+  });
+
+  // Email Templates API
+  app.get('/api/templates', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const templates = await storage.getEmailTemplates(userId);
+      res.json(templates);
+    } catch (error) {
+      console.error('Get templates error:', error);
+      res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+  });
+
+  app.get('/api/templates/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const template = await storage.getEmailTemplate(req.params.id, userId);
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('Get template error:', error);
+      res.status(500).json({ error: 'Failed to fetch template' });
+    }
+  });
+
+  app.post('/api/templates', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validated = insertEmailTemplateSchema.safeParse({ ...req.body, userId });
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid template data' });
+      }
+      const template = await storage.createEmailTemplate(validated.data);
+      res.json(template);
+    } catch (error) {
+      console.error('Create template error:', error);
+      res.status(500).json({ error: 'Failed to create template' });
+    }
+  });
+
+  app.patch('/api/templates/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const template = await storage.updateEmailTemplate(req.params.id, userId, req.body);
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      console.error('Update template error:', error);
+      res.status(500).json({ error: 'Failed to update template' });
+    }
+  });
+
+  app.delete('/api/templates/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteEmailTemplate(req.params.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete template error:', error);
+      res.status(500).json({ error: 'Failed to delete template' });
+    }
+  });
+
+  // Competitor Analysis API
+  app.post('/api/competitor/analyze', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'gradeCount');
+        if (!allowed) return;
+      }
+
+      const { competitorEmail } = req.body;
+      if (!competitorEmail || typeof competitorEmail !== 'string') {
+        return res.status(400).json({ error: 'Competitor email content is required' });
+      }
+
+      const analysis = await analyzeCompetitorEmail(competitorEmail);
+
+      if (req.user) {
+        const userId = req.user.claims.sub;
+        await storage.createCompetitorAnalysis({
+          userId,
+          competitorEmail,
+          analysis,
+        });
+      }
+
+      res.json(analysis);
+    } catch (error) {
+      console.error('Competitor analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze competitor email' });
+    }
+  });
+
+  app.get('/api/competitor/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 20;
+      const analyses = await storage.getCompetitorAnalyses(userId, limit);
+      res.json(analyses);
+    } catch (error) {
+      console.error('Competitor history error:', error);
+      res.status(500).json({ error: 'Failed to fetch competitor analyses' });
+    }
+  });
+
+  // Inbox Placement Simulation API
+  app.post('/api/inbox/simulate', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { subject, previewText, body, senderDomain } = req.body;
+      if (!body || typeof body !== 'string') {
+        return res.status(400).json({ error: 'Email body is required' });
+      }
+
+      const result = await simulateInboxPlacement(subject || '', previewText || '', body, senderDomain || '');
+      res.json(result);
+    } catch (error) {
+      console.error('Inbox simulation error:', error);
+      res.status(500).json({ error: 'Failed to simulate inbox placement' });
     }
   });
 

@@ -83,6 +83,42 @@ export const userGamification = pgTable("user_gamification", {
 export type UserGamification = typeof userGamification.$inferSelect;
 export type InsertUserGamification = typeof userGamification.$inferInsert;
 
+// Email templates table (saved emails for reuse)
+export const emailTemplates = pgTable("email_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  subject: text("subject"),
+  previewText: text("preview_text"),
+  body: text("body").notNull(),
+  category: varchar("category"),
+  lastScore: integer("last_score"),
+  lastGrade: varchar("last_grade"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type EmailTemplate = typeof emailTemplates.$inferSelect;
+export type InsertEmailTemplate = typeof emailTemplates.$inferInsert;
+
+export const insertEmailTemplateSchema = createInsertSchema(emailTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Competitor analyses table
+export const competitorAnalyses = pgTable("competitor_analyses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  competitorEmail: text("competitor_email").notNull(),
+  analysis: jsonb("analysis").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type CompetitorAnalysis = typeof competitorAnalyses.$inferSelect;
+export type InsertCompetitorAnalysis = typeof competitorAnalyses.$inferInsert;
+
 // Subscription tier limits - designed to prevent abuse while providing value
 export const SUBSCRIPTION_LIMITS = {
   starter: {
@@ -416,3 +452,77 @@ export interface SenderScoreResult {
   recommendations: string[];
   comparisonToIndustry: string;
 }
+
+// Competitor Analysis schemas
+export const competitorAnalysisResultSchema = z.object({
+  strengths: z.array(z.object({
+    point: z.string(),
+    explanation: z.string(),
+    howToApply: z.string(),
+  })),
+  weaknesses: z.array(z.object({
+    point: z.string(),
+    explanation: z.string(),
+    yourOpportunity: z.string(),
+  })),
+  tactics: z.array(z.object({
+    tactic: z.string(),
+    description: z.string(),
+    effectiveness: z.enum(['High', 'Medium', 'Low']),
+  })),
+  overallAssessment: z.string(),
+  keyTakeaways: z.array(z.string()),
+  suggestedImprovements: z.array(z.string()),
+});
+
+export type CompetitorAnalysisResult = z.infer<typeof competitorAnalysisResultSchema>;
+
+// Inbox Placement Simulation schemas
+export const inboxPlacementSimulationSchema = z.object({
+  gmail: z.object({
+    placement: z.enum(['Primary', 'Promotions', 'Social', 'Updates', 'Spam']),
+    confidence: z.number().min(0).max(100),
+    factors: z.array(z.object({
+      factor: z.string(),
+      impact: z.enum(['Positive', 'Negative', 'Neutral']),
+      explanation: z.string(),
+    })),
+    recommendations: z.array(z.string()),
+  }),
+  outlook: z.object({
+    placement: z.enum(['Focused', 'Other', 'Junk']),
+    confidence: z.number().min(0).max(100),
+    factors: z.array(z.object({
+      factor: z.string(),
+      impact: z.enum(['Positive', 'Negative', 'Neutral']),
+      explanation: z.string(),
+    })),
+    recommendations: z.array(z.string()),
+  }),
+  yahoo: z.object({
+    placement: z.enum(['Inbox', 'Spam']),
+    confidence: z.number().min(0).max(100),
+    factors: z.array(z.object({
+      factor: z.string(),
+      impact: z.enum(['Positive', 'Negative', 'Neutral']),
+      explanation: z.string(),
+    })),
+    recommendations: z.array(z.string()),
+  }),
+  appleMail: z.object({
+    placement: z.enum(['Inbox', 'Junk']),
+    confidence: z.number().min(0).max(100),
+    factors: z.array(z.object({
+      factor: z.string(),
+      impact: z.enum(['Positive', 'Negative', 'Neutral']),
+      explanation: z.string(),
+    })),
+    recommendations: z.array(z.string()),
+  }),
+  overallScore: z.number().min(0).max(100),
+  summary: z.string(),
+  topRisks: z.array(z.string()),
+  topOpportunities: z.array(z.string()),
+});
+
+export type InboxPlacementSimulation = z.infer<typeof inboxPlacementSimulationSchema>;

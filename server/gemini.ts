@@ -1496,3 +1496,280 @@ Industry benchmarks:
     comparisonToIndustry: result.comparisonToIndustry || 'Unable to compare'
   };
 };
+
+// Competitor Email Analysis
+import type { CompetitorAnalysisResult, InboxPlacementSimulation } from "@shared/schema";
+
+const competitorAnalysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    strengths: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          point: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          howToApply: { type: Type.STRING },
+        }
+      }
+    },
+    weaknesses: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          point: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          yourOpportunity: { type: Type.STRING },
+        }
+      }
+    },
+    tactics: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          tactic: { type: Type.STRING },
+          description: { type: Type.STRING },
+          effectiveness: { type: Type.STRING },
+        }
+      }
+    },
+    overallAssessment: { type: Type.STRING },
+    keyTakeaways: { type: Type.ARRAY, items: { type: Type.STRING } },
+    suggestedImprovements: { type: Type.ARRAY, items: { type: Type.STRING } },
+  }
+};
+
+export const analyzeCompetitorEmail = async (competitorEmail: string): Promise<CompetitorAnalysisResult> => {
+  const prompt = `Analyze this competitor's marketing email and provide actionable insights for improving my own email marketing.
+
+COMPETITOR EMAIL:
+${competitorEmail}
+
+Provide a comprehensive competitive analysis:
+
+1. **Strengths** (3-5 items): What does this email do well? For each:
+   - point: The strength
+   - explanation: Why it's effective
+   - howToApply: How you can apply this to your own emails
+
+2. **Weaknesses** (3-5 items): What could be improved? For each:
+   - point: The weakness
+   - explanation: Why it hurts the email's effectiveness
+   - yourOpportunity: How you can capitalize on this in your emails
+
+3. **Tactics**: What persuasion/marketing tactics are being used? For each:
+   - tactic: Name of the tactic
+   - description: How it's implemented
+   - effectiveness: 'High', 'Medium', or 'Low'
+
+4. **Overall Assessment**: A 2-3 sentence summary of the email's effectiveness
+
+5. **Key Takeaways**: 4-6 bullet points of the most important lessons
+
+6. **Suggested Improvements**: 4-6 specific ways to beat this competitor's emails`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: competitorAnalysisSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  return {
+    strengths: result.strengths || [],
+    weaknesses: result.weaknesses || [],
+    tactics: result.tactics || [],
+    overallAssessment: result.overallAssessment || 'Unable to analyze',
+    keyTakeaways: result.keyTakeaways || [],
+    suggestedImprovements: result.suggestedImprovements || [],
+  };
+};
+
+// Inbox Placement Simulation
+const inboxPlacementSchema = {
+  type: Type.OBJECT,
+  properties: {
+    gmail: {
+      type: Type.OBJECT,
+      properties: {
+        placement: { type: Type.STRING },
+        confidence: { type: Type.NUMBER },
+        factors: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              factor: { type: Type.STRING },
+              impact: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+            }
+          }
+        },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      }
+    },
+    outlook: {
+      type: Type.OBJECT,
+      properties: {
+        placement: { type: Type.STRING },
+        confidence: { type: Type.NUMBER },
+        factors: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              factor: { type: Type.STRING },
+              impact: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+            }
+          }
+        },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      }
+    },
+    yahoo: {
+      type: Type.OBJECT,
+      properties: {
+        placement: { type: Type.STRING },
+        confidence: { type: Type.NUMBER },
+        factors: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              factor: { type: Type.STRING },
+              impact: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+            }
+          }
+        },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      }
+    },
+    appleMail: {
+      type: Type.OBJECT,
+      properties: {
+        placement: { type: Type.STRING },
+        confidence: { type: Type.NUMBER },
+        factors: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              factor: { type: Type.STRING },
+              impact: { type: Type.STRING },
+              explanation: { type: Type.STRING },
+            }
+          }
+        },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      }
+    },
+    overallScore: { type: Type.NUMBER },
+    summary: { type: Type.STRING },
+    topRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
+    topOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+  }
+};
+
+export const simulateInboxPlacement = async (
+  subject: string,
+  previewText: string,
+  body: string,
+  domain?: string
+): Promise<InboxPlacementSimulation> => {
+  const prompt = `Simulate where this email would land in different email clients' inboxes.
+
+SUBJECT: ${subject}
+PREVIEW TEXT: ${previewText}
+BODY:
+${body}
+
+${domain ? `SENDING DOMAIN: ${domain}` : ''}
+
+Analyze the email content and predict inbox placement for each provider:
+
+**Gmail**: Primary, Promotions, Social, Updates, or Spam
+**Outlook**: Focused, Other, or Junk
+**Yahoo**: Inbox or Spam
+**Apple Mail**: Inbox or Junk
+
+For each provider, provide:
+1. **Placement**: The predicted folder/tab
+2. **Confidence**: 0-100% confidence in this prediction
+3. **Factors**: 3-5 factors influencing this decision, each with:
+   - factor: The factor name
+   - impact: 'Positive', 'Negative', or 'Neutral'
+   - explanation: Why this factor matters
+4. **Recommendations**: 2-3 specific tips to improve placement for this provider
+
+Also provide:
+- **Overall Score**: 0-100 deliverability score
+- **Summary**: 2-3 sentence summary of overall deliverability outlook
+- **Top Risks**: 3-5 biggest deliverability risks
+- **Top Opportunities**: 3-5 ways to improve deliverability
+
+Consider these factors:
+- Spam trigger words
+- HTML/text ratio
+- Personalization indicators
+- Commercial vs conversational language
+- Link density
+- Call-to-action style
+- Subject line characteristics`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: inboxPlacementSchema
+    }
+  });
+
+  const result = JSON.parse(res.text || '{}');
+  
+  const defaultProviderResult = {
+    placement: 'Inbox',
+    confidence: 50,
+    factors: [],
+    recommendations: [],
+  };
+
+  return {
+    gmail: {
+      placement: (result.gmail?.placement as any) || 'Promotions',
+      confidence: result.gmail?.confidence || 50,
+      factors: result.gmail?.factors || [],
+      recommendations: result.gmail?.recommendations || [],
+    },
+    outlook: {
+      placement: (result.outlook?.placement as any) || 'Other',
+      confidence: result.outlook?.confidence || 50,
+      factors: result.outlook?.factors || [],
+      recommendations: result.outlook?.recommendations || [],
+    },
+    yahoo: {
+      placement: (result.yahoo?.placement as any) || 'Inbox',
+      confidence: result.yahoo?.confidence || 50,
+      factors: result.yahoo?.factors || [],
+      recommendations: result.yahoo?.recommendations || [],
+    },
+    appleMail: {
+      placement: (result.appleMail?.placement as any) || 'Inbox',
+      confidence: result.appleMail?.confidence || 50,
+      factors: result.appleMail?.factors || [],
+      recommendations: result.appleMail?.recommendations || [],
+    },
+    overallScore: result.overallScore || 50,
+    summary: result.summary || 'Unable to analyze',
+    topRisks: result.topRisks || [],
+    topOpportunities: result.topOpportunities || [],
+  };
+};

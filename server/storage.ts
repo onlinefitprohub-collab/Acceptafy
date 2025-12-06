@@ -3,6 +3,8 @@ import {
   usageCounters,
   emailAnalyses,
   userGamification,
+  emailTemplates,
+  competitorAnalyses,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -12,6 +14,10 @@ import {
   type InsertEmailAnalysis,
   type UserGamification,
   type InsertUserGamification,
+  type EmailTemplate,
+  type InsertEmailTemplate,
+  type CompetitorAnalysis,
+  type InsertCompetitorAnalysis,
   type SubscriptionTier,
 } from "@shared/schema";
 import { db } from "./db";
@@ -43,6 +49,17 @@ export interface IStorage {
   
   getUserGamification(userId: string): Promise<UserGamification | undefined>;
   upsertUserGamification(data: InsertUserGamification): Promise<UserGamification>;
+  
+  // Email Templates
+  getEmailTemplates(userId: string): Promise<EmailTemplate[]>;
+  getEmailTemplate(id: string, userId: string): Promise<EmailTemplate | undefined>;
+  createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate>;
+  updateEmailTemplate(id: string, userId: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined>;
+  deleteEmailTemplate(id: string, userId: string): Promise<boolean>;
+  
+  // Competitor Analyses
+  getCompetitorAnalyses(userId: string, limit?: number): Promise<CompetitorAnalysis[]>;
+  createCompetitorAnalysis(analysis: InsertCompetitorAnalysis): Promise<CompetitorAnalysis>;
   
   getProduct(productId: string): Promise<any>;
   listProducts(active?: boolean, limit?: number, offset?: number): Promise<any[]>;
@@ -106,6 +123,8 @@ export class DatabaseStorage implements IStorage {
     await db.delete(usageCounters).where(eq(usageCounters.userId, userId));
     await db.delete(emailAnalyses).where(eq(emailAnalyses.userId, userId));
     await db.delete(userGamification).where(eq(userGamification.userId, userId));
+    await db.delete(emailTemplates).where(eq(emailTemplates.userId, userId));
+    await db.delete(competitorAnalyses).where(eq(competitorAnalyses.userId, userId));
     const result = await db.delete(users).where(eq(users.id, userId));
     return true;
   }
@@ -249,6 +268,65 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  // Email Templates
+  async getEmailTemplates(userId: string): Promise<EmailTemplate[]> {
+    return db
+      .select()
+      .from(emailTemplates)
+      .where(eq(emailTemplates.userId, userId))
+      .orderBy(desc(emailTemplates.updatedAt));
+  }
+
+  async getEmailTemplate(id: string, userId: string): Promise<EmailTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(emailTemplates)
+      .where(and(eq(emailTemplates.id, id), eq(emailTemplates.userId, userId)));
+    return template;
+  }
+
+  async createEmailTemplate(template: InsertEmailTemplate): Promise<EmailTemplate> {
+    const [created] = await db
+      .insert(emailTemplates)
+      .values(template)
+      .returning();
+    return created;
+  }
+
+  async updateEmailTemplate(id: string, userId: string, updates: Partial<EmailTemplate>): Promise<EmailTemplate | undefined> {
+    const [updated] = await db
+      .update(emailTemplates)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(emailTemplates.id, id), eq(emailTemplates.userId, userId)))
+      .returning();
+    return updated;
+  }
+
+  async deleteEmailTemplate(id: string, userId: string): Promise<boolean> {
+    await db
+      .delete(emailTemplates)
+      .where(and(eq(emailTemplates.id, id), eq(emailTemplates.userId, userId)));
+    return true;
+  }
+
+  // Competitor Analyses
+  async getCompetitorAnalyses(userId: string, limit: number = 20): Promise<CompetitorAnalysis[]> {
+    return db
+      .select()
+      .from(competitorAnalyses)
+      .where(eq(competitorAnalyses.userId, userId))
+      .orderBy(desc(competitorAnalyses.createdAt))
+      .limit(limit);
+  }
+
+  async createCompetitorAnalysis(analysis: InsertCompetitorAnalysis): Promise<CompetitorAnalysis> {
+    const [created] = await db
+      .insert(competitorAnalyses)
+      .values(analysis)
+      .returning();
+    return created;
   }
 
   async getProduct(productId: string) {
