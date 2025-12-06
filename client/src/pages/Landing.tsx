@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { LoginDialog } from "@/components/LoginDialog";
 import { 
   Mail, 
   Zap, 
@@ -227,12 +228,12 @@ export default function Landing() {
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
               How It Works
             </a>
-            <Button variant="ghost" asChild data-testid="button-login">
-              <a href="/api/login">Log in</a>
-            </Button>
-            <Button asChild data-testid="button-get-started-header">
-              <a href="/api/login">Get Started Free</a>
-            </Button>
+            <LoginDialog>
+              <Button variant="ghost" data-testid="button-login">Log in</Button>
+            </LoginDialog>
+            <LoginDialog>
+              <Button data-testid="button-get-started-header">Get Started Free</Button>
+            </LoginDialog>
           </div>
         </div>
       </header>
@@ -272,12 +273,14 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg" asChild data-testid="button-start-free">
-                  <a href="/api/login" className="flex items-center gap-2">
-                    Get Started Free
-                    <ArrowRight className="w-5 h-5" />
-                  </a>
-                </Button>
+                <LoginDialog>
+                  <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg" data-testid="button-start-free">
+                    <span className="flex items-center gap-2">
+                      Get Started Free
+                      <ArrowRight className="w-5 h-5" />
+                    </span>
+                  </Button>
+                </LoginDialog>
                 <Button size="lg" variant="outline" asChild data-testid="button-see-demo">
                   <a href="#how-it-works" className="flex items-center gap-2">
                     <Play className="w-4 h-4" />
@@ -616,15 +619,16 @@ export default function Landing() {
                 </CardContent>
                 
                 <CardFooter>
-                  <Button 
-                    className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
-                    variant={plan.popular ? "default" : "outline"}
-                    size="lg"
-                    asChild
-                    data-testid={`button-subscribe-${plan.key}`}
-                  >
-                    <a href="/api/login">{plan.cta}</a>
-                  </Button>
+                  <LoginDialog>
+                    <Button 
+                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
+                      variant={plan.popular ? "default" : "outline"}
+                      size="lg"
+                      data-testid={`button-subscribe-${plan.key}`}
+                    >
+                      {plan.cta}
+                    </Button>
+                  </LoginDialog>
                 </CardFooter>
               </Card>
             ))}
@@ -649,12 +653,12 @@ export default function Landing() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto" data-testid="text-final-cta-description">
                 Join thousands of marketers who grade their emails before sending. Start with {SUBSCRIPTION_LIMITS.starter.gradesPerMonth} free grades—no credit card needed.
               </p>
-              <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8" asChild data-testid="button-final-cta">
-                <a href="/api/login">
+              <LoginDialog>
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8" data-testid="button-final-cta">
                   Get Started Free
                   <ArrowRight className="w-5 h-5 ml-2" />
-                </a>
-              </Button>
+                </Button>
+              </LoginDialog>
             </CardContent>
           </Card>
         </div>

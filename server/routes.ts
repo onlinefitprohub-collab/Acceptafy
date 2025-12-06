@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { type Server } from "http";
+import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, optionalAuth } from "./replitAuth";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -51,6 +52,85 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   await setupAuth(app);
+
+  // Email/Password Login
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.passwordHash) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const isValid = await bcrypt.compare(password, user.passwordHash);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Create session for password-authenticated user
+      (req as any).login({ 
+        claims: { sub: user.id, email: user.email },
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+      }, (err: any) => {
+        if (err) {
+          console.error("Login error:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        res.json({ 
+          success: true, 
+          user: { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role,
+            subscriptionTier: user.subscriptionTier 
+          } 
+        });
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  // Check if email/password auth user
+  app.get('/api/auth/session', async (req: any, res) => {
+    try {
+      if (!req.isAuthenticated || !req.isAuthenticated()) {
+        return res.json({ authenticated: false });
+      }
+      
+      const userId = req.user?.claims?.sub;
+      if (!userId) {
+        return res.json({ authenticated: false });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.json({ authenticated: false });
+      }
+
+      res.json({ 
+        authenticated: true, 
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus
+        }
+      });
+    } catch (error) {
+      console.error("Session check error:", error);
+      res.json({ authenticated: false });
+    }
+  });
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

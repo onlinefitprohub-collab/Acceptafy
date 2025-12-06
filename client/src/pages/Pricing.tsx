@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Users, Clock, Zap, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
+import { LoginDialog } from "@/components/LoginDialog";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
 interface Price {
@@ -164,12 +165,12 @@ export default function Pricing() {
               </Button>
             ) : (
               <>
-                <Button variant="ghost" asChild data-testid="button-login">
-                  <a href="/api/login">Log in</a>
-                </Button>
-                <Button asChild data-testid="button-get-started">
-                  <a href="/api/login">Get Started Free</a>
-                </Button>
+                <LoginDialog>
+                  <Button variant="ghost" data-testid="button-login">Log in</Button>
+                </LoginDialog>
+                <LoginDialog>
+                  <Button data-testid="button-get-started">Get Started Free</Button>
+                </LoginDialog>
               </>
             )}
           </div>
@@ -238,26 +239,39 @@ export default function Pricing() {
                   </CardContent>
                   
                   <CardFooter>
-                    <Button 
-                      className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
-                      variant={plan.popular ? "default" : "outline"}
-                      size="lg"
-                      onClick={() => handleSubscribe(plan.priceId, plan.key)}
-                      disabled={checkoutMutation.isPending || isCurrentPlan}
-                      data-testid={`button-subscribe-${plan.key}`}
-                    >
-                      {checkoutMutation.isPending ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isCurrentPlan ? (
-                        "Current Plan"
-                      ) : plan.key === "starter" ? (
-                        "Start Free"
-                      ) : plan.key === "pro" ? (
-                        "Get Pro"
-                      ) : (
-                        "Get Scale"
-                      )}
-                    </Button>
+                    {!isAuthenticated ? (
+                      <LoginDialog>
+                        <Button 
+                          className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
+                          variant={plan.popular ? "default" : "outline"}
+                          size="lg"
+                          data-testid={`button-subscribe-${plan.key}`}
+                        >
+                          {plan.key === "starter" ? "Start Free" : plan.key === "pro" ? "Get Pro" : "Get Scale"}
+                        </Button>
+                      </LoginDialog>
+                    ) : (
+                      <Button 
+                        className={`w-full ${plan.popular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600' : ''}`}
+                        variant={plan.popular ? "default" : "outline"}
+                        size="lg"
+                        onClick={() => handleSubscribe(plan.priceId, plan.key)}
+                        disabled={checkoutMutation.isPending || isCurrentPlan}
+                        data-testid={`button-subscribe-${plan.key}`}
+                      >
+                        {checkoutMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : isCurrentPlan ? (
+                          "Current Plan"
+                        ) : plan.key === "starter" ? (
+                          "Start Free"
+                        ) : plan.key === "pro" ? (
+                          "Get Pro"
+                        ) : (
+                          "Get Scale"
+                        )}
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               );

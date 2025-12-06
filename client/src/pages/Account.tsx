@@ -102,7 +102,7 @@ export default function Account() {
   }
 
   if (!user) {
-    window.location.href = "/api/login";
+    window.location.href = "/";
     return null;
   }
 
