@@ -1949,7 +1949,7 @@ function AppContent() {
               <div className="flex items-center gap-3">
                 <SidebarTrigger 
                   data-testid="button-sidebar-toggle" 
-                  className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/50"
+                  className="p-2 rounded-lg bg-gradient-to-br from-purple-500/30 to-pink-500/30 dark:from-purple-400/25 dark:to-pink-400/25 border border-purple-500/40 dark:border-purple-400/50 shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/60 dark:hover:border-purple-400/70 text-foreground"
                 />
                 <div className="hidden sm:block h-6 w-px bg-border/50" />
                 <h2 className="font-semibold text-foreground tracking-tight">
@@ -1978,8 +1978,11 @@ function AppContent() {
             <div className="flex sm:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
               <Button
                 size="sm"
+                variant={activeView === 'grader' ? undefined : 'ghost'}
                 onClick={() => { setActiveView('grader'); setToolsSubView(null); }}
-                className={`flex-shrink-0 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-muted'}`}
+                className={`flex-shrink-0 ${activeView === 'grader' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-pink-600 hover:text-white [&>svg]:text-white' 
+                  : 'bg-white/10 dark:bg-white/5 text-foreground border border-border/50 hover:bg-white/20 dark:hover:bg-white/10'}`}
                 data-testid="mobile-quick-grader"
               >
                 <Mail className="w-4 h-4 mr-1.5" />
@@ -1987,9 +1990,11 @@ function AppContent() {
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={activeView === 'tools' && toolsSubView === 'rewrite' ? undefined : 'ghost'}
                 onClick={() => { setActiveView('tools'); setToolsSubView('rewrite'); }}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 ${activeView === 'tools' && toolsSubView === 'rewrite' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-pink-600 hover:text-white [&>svg]:text-white' 
+                  : 'bg-white/10 dark:bg-white/5 text-foreground border border-border/50 hover:bg-white/20 dark:hover:bg-white/10'}`}
                 data-testid="mobile-quick-rewrite"
               >
                 <Zap className="w-4 h-4 mr-1.5" />
@@ -1997,9 +2002,11 @@ function AppContent() {
               </Button>
               <Button
                 size="sm"
-                variant="secondary"
+                variant={activeView === 'deliverability' ? undefined : 'ghost'}
                 onClick={() => { setActiveView('deliverability'); setDeliverabilitySubView('domain-health'); }}
-                className="flex-shrink-0"
+                className={`flex-shrink-0 ${activeView === 'deliverability' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-md hover:from-purple-600 hover:to-pink-600 hover:text-white [&>svg]:text-white' 
+                  : 'bg-white/10 dark:bg-white/5 text-foreground border border-border/50 hover:bg-white/20 dark:hover:bg-white/10'}`}
                 data-testid="mobile-quick-deliverability"
               >
                 <ShieldCheck className="w-4 h-4 mr-1.5" />
