@@ -25,7 +25,11 @@ import {
   MessageSquare,
   FileText,
   History,
-  ListChecks
+  ListChecks,
+  Upload,
+  FolderOpen,
+  DollarSign,
+  Info
 } from "lucide-react";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
@@ -270,6 +274,18 @@ export default function Landing() {
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                   <span>1-click AI rewrites</span>
                 </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-templates">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>Save winning templates</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-import">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>.EML file import</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-competitor">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>Competitor analysis</span>
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -330,6 +346,9 @@ export default function Landing() {
               <p className="text-sm text-muted-foreground">Saved per week avg.</p>
             </div>
           </div>
+          <p className="mt-4 text-center text-xs text-muted-foreground" data-testid="disclaimer-results">
+            <span className="font-medium">*Results may vary.</span> Individual outcomes depend on email quality, list health, and industry factors.
+          </p>
         </div>
       </section>
 
@@ -340,7 +359,10 @@ export default function Landing() {
               <Star className="w-3 h-3 mr-1" />
               Trusted by Email Marketers
             </Badge>
-            <h2 className="text-2xl md:text-3xl font-bold mb-4">Real Results from Real Marketers</h2>
+            <h2 className="text-2xl md:text-3xl font-bold mb-2">Real Results from Real Marketers</h2>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium">*Individual results vary.</span> These are examples from actual users; your outcomes may differ.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -510,8 +532,8 @@ export default function Landing() {
                 {[
                   { icon: History, title: "Analysis History", description: "Access all your past grades and rewrites—learn from what works" },
                   { icon: GraduationCap, title: "Email Academy", description: "Master deliverability and copywriting with our expert-curated lessons" },
-                  { icon: Users, title: "Team Collaboration", description: "Share templates, maintain brand voice, and keep everyone aligned" },
-                  { icon: ListChecks, title: "Email List Analyzer", description: "Check list quality, catch invalid addresses, and protect your sender score" },
+                  { icon: FolderOpen, title: "Saved Templates", description: "Save your best-performing emails as reusable templates for consistent results" },
+                  { icon: Upload, title: ".EML Import", description: "Drag and drop .eml files to instantly analyze emails from any email client" },
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
@@ -519,6 +541,37 @@ export default function Landing() {
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                  <Users className="w-4 h-4 text-violet-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Competitive Intelligence</h3>
+                <span className="text-sm text-muted-foreground">— Learn from the best in your industry</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: Users, title: "Competitor Analysis", description: "Paste competitor emails and get side-by-side comparisons with actionable insights" },
+                  { icon: Target, title: "Benchmark Scoring", description: "See how your emails stack up against industry leaders and top performers" },
+                  { icon: TrendingUp, title: "Gap Analysis", description: "Identify what makes competitor emails work and apply those techniques" },
+                  { icon: ListChecks, title: "Best Practice Extraction", description: "Auto-extract winning patterns from competitor emails to improve yours" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-violet-500/10" data-testid={`feature-competitive-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-violet-600" />
                         </div>
                         <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
                         <p className="text-xs text-muted-foreground">{item.description}</p>
@@ -548,21 +601,68 @@ export default function Landing() {
                 
                 <div className="grid md:grid-cols-3 gap-6 text-center">
                   <div data-testid="roi-stat-1">
+                    <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3">
+                      <DollarSign className="w-6 h-6 text-green-600" />
+                    </div>
                     <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">$2,400+</p>
-                    <p className="text-sm text-muted-foreground mt-1">Avg. value of 1% open rate increase<br/>(10k list × $24 avg. subscriber value)</p>
+                    <p className="text-sm text-muted-foreground mt-1">Potential value of 1% open rate increase<br/>(10k list × $24 avg. subscriber value)</p>
                   </div>
                   <div data-testid="roi-stat-2">
+                    <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
+                      <TrendingUp className="w-6 h-6 text-purple-600" />
+                    </div>
                     <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">18%</p>
                     <p className="text-sm text-muted-foreground mt-1">Avg. open rate improvement<br/>reported by our users</p>
                   </div>
                   <div data-testid="roi-stat-3">
+                    <div className="w-12 h-12 rounded-full bg-pink-500/10 flex items-center justify-center mx-auto mb-3">
+                      <Target className="w-6 h-6 text-pink-600" />
+                    </div>
                     <p className="text-4xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">40x</p>
                     <p className="text-sm text-muted-foreground mt-1">Potential ROI on Pro plan<br/>($59/mo vs. $2,400+ value created)</p>
                   </div>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground mt-6">
-                  Plus: Avoid spam folders, protect sender reputation, and save 3+ hours per week on email copy.
+                <div className="mt-8 p-4 bg-muted/50 rounded-lg" data-testid="revenue-benefits">
+                  <h4 className="font-semibold text-center mb-4">Feature-Driven Revenue Impact</h4>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-center text-sm">
+                    <div className="p-3 bg-background rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
+                        <FolderOpen className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <p className="font-semibold text-sm">Saved Templates</p>
+                      <p className="text-green-600 font-medium text-xs mt-1">+15% campaign consistency</p>
+                      <p className="text-muted-foreground text-xs mt-1">Reuse proven emails to reduce campaign setup time by 50%</p>
+                    </div>
+                    <div className="p-3 bg-background rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-2">
+                        <Upload className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <p className="font-semibold text-sm">.EML Import</p>
+                      <p className="text-green-600 font-medium text-xs mt-1">5min saved per email</p>
+                      <p className="text-muted-foreground text-xs mt-1">Skip manual copy-paste and analyze emails directly from your inbox</p>
+                    </div>
+                    <div className="p-3 bg-background rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center mx-auto mb-2">
+                        <Users className="w-5 h-5 text-violet-600" />
+                      </div>
+                      <p className="font-semibold text-sm">Competitor Analysis</p>
+                      <p className="text-green-600 font-medium text-xs mt-1">$500+ per insight applied</p>
+                      <p className="text-muted-foreground text-xs mt-1">Extract winning subject lines and CTAs that drove competitor conversions</p>
+                    </div>
+                    <div className="p-3 bg-background rounded-lg">
+                      <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-2">
+                        <Inbox className="w-5 h-5 text-green-600" />
+                      </div>
+                      <p className="font-semibold text-sm">Inbox Placement</p>
+                      <p className="text-green-600 font-medium text-xs mt-1">$1,200 saved per avoided spam hit</p>
+                      <p className="text-muted-foreground text-xs mt-1">Each email blocked by spam costs you ~12% of potential revenue from that send</p>
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-center text-xs text-muted-foreground mt-6" data-testid="disclaimer-roi">
+                  <span className="font-medium">*Disclaimer:</span> ROI projections and improvement percentages are estimates. Actual results vary based on list size, industry, and email strategy. Past performance does not guarantee future results.
                 </p>
               </CardContent>
             </Card>
