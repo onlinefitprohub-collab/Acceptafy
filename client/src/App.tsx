@@ -67,6 +67,8 @@ import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { SenderScoreEstimator } from './components/SenderScoreEstimator';
 import { EmailTemplates } from './components/EmailTemplates';
+import { EmailImport } from './components/EmailImport';
+import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -81,7 +83,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -102,7 +104,7 @@ import type {
 } from './types';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1301,6 +1303,21 @@ function AppContent() {
         />
       )}
 
+      {toolsSubView === 'import' && (
+        <EmailImport
+          onLoadEmail={(subject, previewText, bodyContent) => {
+            setVariations([{ subject, previewText }]);
+            setBody(bodyContent);
+            setActiveView('grader');
+            setToolsSubView(null);
+          }}
+        />
+      )}
+
+      {toolsSubView === 'competitor' && (
+        <CompetitorAnalysis />
+      )}
+
       {!toolsSubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
@@ -1394,6 +1411,34 @@ function AppContent() {
                   <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">Save and reuse your best emails</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('import')} data-testid="card-tools-import">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Import Email</h3>
+                  <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Import .eml files to analyze</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('competitor')} data-testid="card-tools-competitor">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Competitor Analysis</h3>
+                  <Badge className="bg-gradient-to-r from-violet-500 to-purple-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Analyze competitor email strategies</p>
               </div>
             </CardContent>
           </Card>

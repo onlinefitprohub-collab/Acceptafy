@@ -275,3 +275,30 @@ export interface SentimentAnalysisResult {
   improvements: ToneImprovement[];
   summary: string;
 }
+
+export interface CompetitorStrength {
+  point: string;
+  explanation: string;
+  howToApply: string;
+}
+
+export interface CompetitorWeakness {
+  point: string;
+  explanation: string;
+  yourOpportunity: string;
+}
+
+export interface CompetitorTactic {
+  tactic: string;
+  description: string;
+  effectiveness: 'High' | 'Medium' | 'Low';
+}
+
+export interface CompetitorAnalysisResult {
+  strengths: CompetitorStrength[];
+  weaknesses: CompetitorWeakness[];
+  tactics: CompetitorTactic[];
+  overallAssessment: string;
+  keyTakeaways: string[];
+  suggestedImprovements: string[];
+}

@@ -24,6 +24,8 @@ import {
   Settings,
   ChevronRight,
   FileText,
+  Upload,
+  Users as UsersIcon,
   type LucideIcon
 } from 'lucide-react';
 
@@ -58,7 +60,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 
 interface AppSidebarProps {
@@ -262,6 +264,32 @@ export function AppSidebar({
                         >
                           <FileText className="w-3 h-3" />
                           <span>Templates</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'import'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('import');
+                          }}
+                          data-testid="nav-tools-import"
+                        >
+                          <Upload className="w-3 h-3" />
+                          <span>Import Email</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'competitor'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('competitor');
+                          }}
+                          data-testid="nav-tools-competitor"
+                        >
+                          <UsersIcon className="w-3 h-3" />
+                          <span>Competitor Analysis</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
