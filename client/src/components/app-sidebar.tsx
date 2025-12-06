@@ -246,11 +246,8 @@ export function AppSidebar({
                           }}
                           data-testid="nav-tools-sentiment"
                         >
-                          <Heart className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">Sentiment</span>
-                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full flex-shrink-0">
-                            NEW
-                          </span>
+                          <Heart className="w-3 h-3" />
+                          <span>Sentiment</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
@@ -281,11 +278,8 @@ export function AppSidebar({
                           }}
                           data-testid="nav-deliverability-warmup"
                         >
-                          <Calendar className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">Warm-up Planner</span>
-                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-full flex-shrink-0">
-                            NEW
-                          </span>
+                          <Calendar className="w-3 h-3" />
+                          <span>Warm-up Planner</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
@@ -385,18 +379,13 @@ export function AppSidebar({
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   onClick={onOpenAcademy}
-                  className="group transition-all duration-200 justify-between"
+                  className="group transition-all duration-200"
                   data-testid="nav-academy"
                 >
-                  <span className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
-                      <GraduationCap className="w-4 h-4" />
-                    </div>
-                    <span className="font-medium">Academy</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full shadow-sm shadow-orange-500/30">
-                    NEW
-                  </span>
+                  <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium">Academy</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
