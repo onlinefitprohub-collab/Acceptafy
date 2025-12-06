@@ -72,7 +72,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, Heart, Download, FileText } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -1944,31 +1944,67 @@ function AppContent() {
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-between h-14 px-4 border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-            <div className="flex items-center gap-3">
-              <SidebarTrigger data-testid="button-sidebar-toggle" className="transition-all duration-200" />
-              <div className="h-6 w-px bg-border/50" />
-              <h2 className="font-semibold text-foreground tracking-tight">
-                {activeView === 'dashboard' && 'Dashboard'}
-                {activeView === 'grader' && 'Email Grader'}
-                {activeView === 'history' && 'History'}
-                {activeView === 'tools' && 'AI Tools'}
-                {activeView === 'deliverability' && 'Deliverability Tools'}
-                {activeView === 'account' && 'Account Settings'}
-              </h2>
+          <header className="flex flex-col border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+            <div className="flex items-center justify-between h-14 px-4">
+              <div className="flex items-center gap-3">
+                <SidebarTrigger 
+                  data-testid="button-sidebar-toggle" 
+                  className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 shadow-sm transition-all duration-200 hover:shadow-md hover:border-purple-500/50"
+                />
+                <div className="hidden sm:block h-6 w-px bg-border/50" />
+                <h2 className="font-semibold text-foreground tracking-tight">
+                  {activeView === 'dashboard' && 'Dashboard'}
+                  {activeView === 'grader' && 'Email Grader'}
+                  {activeView === 'history' && 'History'}
+                  {activeView === 'tools' && 'AI Tools'}
+                  {activeView === 'deliverability' && 'Deliverability Tools'}
+                  {activeView === 'account' && 'Account Settings'}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 shadow-sm">
+                  <Trophy className="w-4 h-4 text-yellow-500" />
+                  <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Best: {bestScore}</span>
+                </div>
+                <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${streak > 0 ? 'bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 shadow-sm shadow-orange-500/10' : 'bg-muted/50 border border-border/50'}`}>
+                  <Flame className={`w-4 h-4 transition-all duration-300 ${streak > 0 ? 'text-orange-500 fire-animate' : 'text-muted-foreground/50'}`} />
+                  <span className={`text-sm font-bold transition-all duration-300 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50'}`}>
+                    {streak} day streak
+                  </span>
+                </div>
+                <ThemeToggle />
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 shadow-sm">
-                <Trophy className="w-4 h-4 text-yellow-500" />
-                <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Best: {bestScore}</span>
-              </div>
-              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full transition-all duration-300 ${streak > 0 ? 'bg-gradient-to-r from-orange-500/15 to-red-500/15 border border-orange-500/30 shadow-sm shadow-orange-500/10' : 'bg-muted/50 border border-border/50'}`}>
-                <Flame className={`w-4 h-4 transition-all duration-300 ${streak > 0 ? 'text-orange-500 fire-animate' : 'text-muted-foreground/50'}`} />
-                <span className={`text-sm font-bold transition-all duration-300 ${streak > 0 ? 'text-orange-500' : 'text-muted-foreground/50'}`}>
-                  {streak} day streak
-                </span>
-              </div>
-              <ThemeToggle />
+            <div className="flex sm:hidden items-center gap-2 px-4 pb-3 overflow-x-auto">
+              <Button
+                size="sm"
+                onClick={() => { setActiveView('grader'); setToolsSubView(null); }}
+                className={`flex-shrink-0 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : 'bg-muted'}`}
+                data-testid="mobile-quick-grader"
+              >
+                <Mail className="w-4 h-4 mr-1.5" />
+                Grade
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => { setActiveView('tools'); setToolsSubView('rewrite'); }}
+                className="flex-shrink-0"
+                data-testid="mobile-quick-rewrite"
+              >
+                <Zap className="w-4 h-4 mr-1.5" />
+                Rewrite
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => { setActiveView('deliverability'); setDeliverabilitySubView('domain-health'); }}
+                className="flex-shrink-0"
+                data-testid="mobile-quick-deliverability"
+              >
+                <ShieldCheck className="w-4 h-4 mr-1.5" />
+                Deliverability
+              </Button>
             </div>
           </header>
 
