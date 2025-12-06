@@ -245,13 +245,10 @@ export function AppSidebar({
                             setToolsSubView('sentiment');
                           }}
                           data-testid="nav-tools-sentiment"
-                          className="justify-between"
                         >
-                          <span className="flex items-center gap-2">
-                            <Heart className="w-3 h-3" />
-                            <span>Sentiment Analysis</span>
-                          </span>
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full">
+                          <Heart className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">Sentiment</span>
+                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-full flex-shrink-0">
                             NEW
                           </span>
                         </SidebarMenuSubButton>
@@ -283,13 +280,10 @@ export function AppSidebar({
                             setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-warmup"
-                          className="justify-between"
                         >
-                          <span className="flex items-center gap-2">
-                            <Calendar className="w-3 h-3" />
-                            <span>Warm-up Planner</span>
-                          </span>
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-full">
+                          <Calendar className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">Warm-up Planner</span>
+                          <span className="ml-auto px-1.5 py-0.5 text-[10px] font-bold bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-full flex-shrink-0">
                             NEW
                           </span>
                         </SidebarMenuSubButton>
