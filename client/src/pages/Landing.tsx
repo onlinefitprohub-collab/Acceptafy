@@ -138,20 +138,20 @@ function ROICalculator() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-4 text-center text-sm">
-        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Subscribers reached</p>
-          <p className="font-bold text-2xl text-foreground">{Math.round(listSize * (openRateImprovement / 100)).toLocaleString()}</p>
+        <div className="p-4 bg-card rounded-xl border border-border flex flex-col justify-between min-h-[110px] shadow-sm">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Subscribers reached</p>
+          <p className="font-bold text-3xl text-foreground">{Math.round(listSize * (openRateImprovement / 100)).toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">additional opens</p>
         </div>
-        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Formula</p>
-          <p className="font-mono text-sm font-medium text-foreground">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
+        <div className="p-4 bg-card rounded-xl border border-border flex flex-col justify-between min-h-[110px] shadow-sm">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Formula</p>
+          <p className="font-mono text-base font-semibold text-foreground">{listSize.toLocaleString()} × {openRateImprovement}% × ${subscriberValue}</p>
           <p className="text-xs text-muted-foreground">list × improvement × value</p>
         </div>
-        <div className="p-4 bg-muted/50 rounded-lg border border-border/50 flex flex-col justify-between min-h-[100px]">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Annual potential</p>
-          <p className="font-bold text-2xl text-green-600">${(potentialValue * 12).toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">if maintained monthly</p>
+        <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/20 rounded-xl border-2 border-green-500/30 flex flex-col justify-between min-h-[110px] shadow-lg ring-2 ring-green-500/10">
+          <p className="text-xs text-green-700 dark:text-green-400 uppercase tracking-wide font-semibold">Annual potential</p>
+          <p className="font-bold text-4xl bg-gradient-to-r from-green-600 to-emerald-500 bg-clip-text text-transparent">${(potentialValue * 12).toLocaleString()}</p>
+          <p className="text-xs text-green-600 dark:text-green-400 font-medium">if maintained monthly</p>
         </div>
       </div>
     </div>
