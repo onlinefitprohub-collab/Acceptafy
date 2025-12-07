@@ -976,5 +976,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/admin/metrics', isAdmin, async (req: any, res) => {
+    try {
+      const metrics = await storage.getBusinessMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Admin metrics error:', error);
+      res.status(500).json({ error: 'Failed to fetch business metrics' });
+    }
+  });
+
   return httpServer;
 }

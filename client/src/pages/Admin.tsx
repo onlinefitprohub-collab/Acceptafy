@@ -11,7 +11,10 @@ import {
   Crown,
   Calendar,
   Activity,
-  Clock
+  Clock,
+  DollarSign,
+  AlertTriangle,
+  UserCheck
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -24,6 +27,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+} from "recharts";
 
 interface AdminUser {
   id: string;
@@ -54,6 +71,20 @@ interface AdminCheckResponse {
   isAdmin: boolean;
 }
 
+interface BusinessMetrics {
+  mrr: number;
+  userGrowth: { date: string; count: number }[];
+  churnRate: number;
+  subscriptionBreakdown: { tier: string; count: number; revenue: number }[];
+  activeUsers30d: number;
+}
+
+const TIER_COLORS: Record<string, string> = {
+  'scale': '#8b5cf6',
+  'pro': '#06b6d4',
+  'starter': '#64748b',
+};
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
 
@@ -71,6 +102,11 @@ export default function Admin() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
+    enabled: isAdmin,
+  });
+
+  const { data: metrics, isLoading: metricsLoading } = useQuery<BusinessMetrics>({
+    queryKey: ["/api/admin/metrics"],
     enabled: isAdmin,
   });
 
@@ -206,6 +242,210 @@ export default function Admin() {
               <Loader2 className="h-6 w-6 animate-spin" />
             ) : (
               <div className="text-2xl font-bold">{stats?.recentSignups || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Business Metrics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card data-testid="stat-mrr">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold text-green-500">
+                ${metrics?.mrr?.toLocaleString() || 0}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-churn">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className={`text-2xl font-bold ${(metrics?.churnRate || 0) > 5 ? 'text-red-500' : 'text-green-500'}`}>
+                {metrics?.churnRate || 0}%
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-active-30d">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Users (30d)</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold">{metrics?.activeUsers30d || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-paid-users">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Paid Users</CardTitle>
+            <Crown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {metricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics?.subscriptionBreakdown?.filter(s => s.tier !== 'starter').reduce((acc, s) => acc + s.count, 0) || 0}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card data-testid="user-growth-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              User Growth (12 Weeks)
+            </CardTitle>
+            <CardDescription>
+              New user signups per week
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {metricsLoading || !metrics ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : metrics.userGrowth && metrics.userGrowth.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={metrics.userGrowth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    labelFormatter={(value) => format(new Date(value), 'MMM d, yyyy')}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="#8b5cf6" 
+                    fill="url(#colorGradient)" 
+                    strokeWidth={2}
+                    name="New Users"
+                  />
+                  <defs>
+                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No user growth data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="subscription-breakdown-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Subscription Breakdown
+            </CardTitle>
+            <CardDescription>
+              Revenue and users by tier
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {metricsLoading || !metrics ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : metrics.subscriptionBreakdown && metrics.subscriptionBreakdown.length > 0 && metrics.subscriptionBreakdown.some(s => s.count > 0) ? (
+              <div className="flex gap-4">
+                <ResponsiveContainer width="50%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={metrics.subscriptionBreakdown}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      dataKey="count"
+                      nameKey="tier"
+                      label={({ tier, percent }) => `${tier} (${(percent * 100).toFixed(0)}%)`}
+                      labelLine={false}
+                    >
+                      {metrics.subscriptionBreakdown.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={TIER_COLORS[entry.tier] || '#64748b'}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px'
+                      }}
+                      formatter={(value: number, name: string) => [`${value} users`, name]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="w-1/2 flex flex-col justify-center space-y-3">
+                  {metrics.subscriptionBreakdown.map((item) => (
+                    <div key={item.tier} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: TIER_COLORS[item.tier] || '#64748b' }}
+                        />
+                        <span className="text-sm font-medium capitalize">{item.tier}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-medium">{item.count} users</div>
+                        <div className="text-xs text-muted-foreground">${item.revenue}/mo</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No subscription data available
+              </div>
             )}
           </CardContent>
         </Card>

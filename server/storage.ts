@@ -85,6 +85,13 @@ export interface IStorage {
     totalGrades: number;
     recentSignups: number;
   }>;
+  getBusinessMetrics(): Promise<{
+    mrr: number;
+    userGrowth: { date: string; count: number }[];
+    churnRate: number;
+    subscriptionBreakdown: { tier: string; count: number; revenue: number }[];
+    activeUsers30d: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -508,6 +515,98 @@ export class DatabaseStorage implements IStorage {
       tierBreakdown,
       totalGrades,
       recentSignups,
+    };
+  }
+
+  async getBusinessMetrics(): Promise<{
+    mrr: number;
+    userGrowth: { date: string; count: number }[];
+    churnRate: number;
+    subscriptionBreakdown: { tier: string; count: number; revenue: number }[];
+    activeUsers30d: number;
+  }> {
+    const allUsers = await db.select().from(users);
+    
+    // MRR calculation based on subscription tiers (pro = $29/mo, scale = $79/mo)
+    const tierPrices: Record<string, number> = {
+      'pro': 2900, // cents
+      'scale': 7900,
+      'starter': 0,
+    };
+    
+    let mrr = 0;
+    const subscriptionCounts: Record<string, { count: number; revenue: number }> = {};
+    
+    for (const user of allUsers) {
+      const tier = user.subscriptionTier || 'starter';
+      const price = tierPrices[tier] || 0;
+      
+      if (user.subscriptionStatus === 'active' && tier !== 'starter') {
+        mrr += price;
+      }
+      
+      if (!subscriptionCounts[tier]) {
+        subscriptionCounts[tier] = { count: 0, revenue: 0 };
+      }
+      subscriptionCounts[tier].count++;
+      if (user.subscriptionStatus === 'active') {
+        subscriptionCounts[tier].revenue += price;
+      }
+    }
+    
+    const subscriptionBreakdown = Object.entries(subscriptionCounts).map(([tier, data]) => ({
+      tier,
+      count: data.count,
+      revenue: data.revenue / 100, // Convert to dollars
+    }));
+    
+    // User growth over last 12 weeks
+    const userGrowth: { date: string; count: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      weekStart.setHours(0, 0, 0, 0);
+      
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 7);
+      
+      const count = allUsers.filter(u => {
+        if (!u.createdAt) return false;
+        const created = new Date(u.createdAt);
+        return created >= weekStart && created < weekEnd;
+      }).length;
+      
+      userGrowth.push({
+        date: weekStart.toISOString().split('T')[0],
+        count,
+      });
+    }
+    
+    // Churn rate: canceled paid users / (active + canceled paid users)
+    // Only count users who have or had a paid subscription (pro or scale)
+    const paidTierUsers = allUsers.filter(u => 
+      u.subscriptionTier && 
+      u.subscriptionTier !== 'starter' && 
+      (u.subscriptionStatus === 'active' || u.subscriptionStatus === 'canceled')
+    );
+    const canceledPaidUsers = paidTierUsers.filter(u => u.subscriptionStatus === 'canceled');
+    const churnRate = paidTierUsers.length > 0 ? (canceledPaidUsers.length / paidTierUsers.length) * 100 : 0;
+    
+    // Active users in last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const allGamification = await db.select().from(userGamification);
+    const activeUsers30d = allGamification.filter(g => {
+      if (!g.lastActiveDate) return false;
+      return new Date(g.lastActiveDate) >= thirtyDaysAgo;
+    }).length;
+    
+    return {
+      mrr: mrr / 100, // Convert to dollars
+      userGrowth,
+      churnRate: Math.round(churnRate * 10) / 10,
+      subscriptionBreakdown,
+      activeUsers30d,
     };
   }
 }
