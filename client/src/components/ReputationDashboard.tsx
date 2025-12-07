@@ -41,7 +41,7 @@ export const ReputationDashboard: React.FC<ReputationDashboardProps> = ({ histor
                                         <h3 className="text-xl font-bold text-white">Score History</h3>
                                     </div>
                                     <p className="text-sm text-gray-400 mb-4">
-                                        Track your Acceptafy Score over your last 10 analyses to see how your improvements are affecting your deliverability.
+                                        Track your inbox placement score over your last 10 analyses to see how your improvements are affecting your deliverability.
                                     </p>
                                     <ScoreHistoryChart history={history} />
                                </div>

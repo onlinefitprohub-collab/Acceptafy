@@ -202,7 +202,7 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
                 </div>
                 <span className={`font-bold ${text}`}>{label}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Acceptafy Score</p>
+              <p className="text-sm text-muted-foreground mt-1">Chance of reaching inbox</p>
             </div>
           </div>
           

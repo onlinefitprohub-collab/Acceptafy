@@ -153,7 +153,7 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
             <div className="border-t border-b border-white/10 py-6">
                 <h3 className="text-lg sm:text-xl font-semibold text-center text-gray-300 mb-4">Key Metric Improvements</h3>
                 <div className="max-w-xl mx-auto space-y-2">
-                    <MetricRow label="Inbox Score" originalValue={originalResult.inboxPlacementScore.score} newValue={rewrittenResult.inboxPlacementScore.score} higherIsBetter={true} />
+                    <MetricRow label="Chance of reaching inbox" originalValue={originalResult.inboxPlacementScore.score} newValue={rewrittenResult.inboxPlacementScore.score} higherIsBetter={true} />
                     <MetricRow label="Overall Grade" originalValue={originalResult.overallGrade.grade} newValue={rewrittenResult.overallGrade.grade} isGrade={true} />
                     <MetricRow label="Personalization Score" originalValue={originalResult.personalizationScore?.score || 0} newValue={rewrittenResult.personalizationScore?.score || 0} higherIsBetter={true} />
                     <MetricRow label="Spam Triggers" originalValue={originalResult.spamAnalysis?.length || 0} newValue={rewrittenResult.spamAnalysis?.length || 0} higherIsBetter={false} />

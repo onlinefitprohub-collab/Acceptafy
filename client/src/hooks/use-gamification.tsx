@@ -38,7 +38,7 @@ interface GamificationContextType extends GamificationState {
 
 const defaultAchievements: Achievement[] = [
   { id: 'first_grade', title: 'First Steps', description: 'Grade your first email', icon: 'target', unlocked: false },
-  { id: 'perfect_score', title: 'Perfection', description: 'Get a 90+ inbox score', icon: 'star', unlocked: false },
+  { id: 'perfect_score', title: 'Perfection', description: 'Get a 90%+ chance of reaching inbox', icon: 'star', unlocked: false },
   { id: 'a_plus', title: 'A+ Student', description: 'Get an A+ grade', icon: 'trophy', unlocked: false },
   { id: 'triple_a', title: 'Hat Trick', description: 'Get 3 A+ grades', icon: 'award', unlocked: false },
   { id: 'spam_slayer', title: 'Spam Slayer', description: 'Fix 10 spam triggers', icon: 'shield', unlocked: false },

@@ -226,7 +226,7 @@ function generateEnhancedPdfHtml(
       <div style="display: flex; justify-content: center; gap: 48px; align-items: center; margin-bottom: 24px;">
         <div style="text-align: center;">
           <div style="font-size: 72px; font-weight: bold; color: ${primaryColor}; line-height: 1;">${score}</div>
-          <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Inbox Score</div>
+          <div style="font-size: 14px; color: #6b7280; margin-top: 4px;">Chance of reaching inbox</div>
         </div>
         <div style="text-align: center;">
           <div style="font-size: 72px; font-weight: bold; color: ${gradeColor}; line-height: 1;">${grade}</div>
@@ -316,7 +316,7 @@ function generateEnhancedPdfHtml(
     <div style="page-break-inside: avoid; margin-bottom: 32px;">
       <h2 style="font-size: 18px; font-weight: 600; color: #1f2937; margin: 0 0 20px 0; text-transform: uppercase; letter-spacing: 0.5px;">Progress Comparison</h2>
       <div style="display: flex; justify-content: center; gap: 32px;">
-        ${generateComparisonChart(previousResult.inboxPlacementScore?.score || 0, score, 'Inbox Score', primaryColor)}
+        ${generateComparisonChart(previousResult.inboxPlacementScore?.score || 0, score, 'Chance of reaching inbox', primaryColor)}
       </div>
       <p style="text-align: center; color: #6b7280; font-size: 12px; margin-top: 16px;">Compared to your previous analysis</p>
     </div>
