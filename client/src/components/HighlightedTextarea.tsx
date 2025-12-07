@@ -74,7 +74,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             const matchedWord = match[0];
             const trigger = triggerMap.get(matchedWord.toLowerCase());
             const bgColor = trigger ? getSeverityColor(trigger.severity) : 'transparent';
-            parts.push(`<mark style="background-color: ${bgColor}; color: inherit; border-radius: 3px; padding: 1px 2px;">${escapeHtml(matchedWord)}</mark>`);
+            parts.push(`<mark style="background-color: ${bgColor}; color: inherit; padding: 0; margin: 0; border-radius: 2px; box-decoration-break: clone;">${escapeHtml(matchedWord)}</mark>`);
             lastIndex = regex.lastIndex;
         }
 
