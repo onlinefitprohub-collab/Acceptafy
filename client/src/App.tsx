@@ -1939,6 +1939,7 @@ function AppContent() {
             <ResultsHub 
               scoreData={result.inboxPlacementScore} 
               gradeData={result.overallGrade}
+              benchmarkFeedback={result.benchmarkFeedback}
             />
             <div className="flex flex-col gap-2 shrink-0">
               <Button

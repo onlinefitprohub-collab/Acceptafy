@@ -100,6 +100,7 @@ export interface GradingResult {
   plainTextAnalysis: PlainTextAnalysis;
   inboxPlacementPrediction: InboxPlacementPrediction;
   accessibilityAnalysis: AccessibilityFinding[];
+  benchmarkFeedback?: BenchmarkFeedback;
 }
 
 export interface HistoryItem {
@@ -301,4 +302,12 @@ export interface CompetitorAnalysisResult {
   overallAssessment: string;
   keyTakeaways: string[];
   suggestedImprovements: string[];
+}
+
+export interface BenchmarkFeedback {
+  industryComparison: string | null;
+  emailTypeComparison: string | null;
+  benchmarkInsights: string[];
+  industryPercentile: number | null;
+  emailTypePercentile: number | null;
 }

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Trophy, Zap, Star, TrendingUp, Award } from 'lucide-react';
+import { Trophy, Zap, Star, TrendingUp, Award, BarChart3, Lightbulb, Building2, FileType } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import type { BenchmarkFeedback } from '../types';
 
 interface ResultsHubProps {
   scoreData: {
@@ -13,6 +14,7 @@ interface ResultsHubProps {
     summary: string;
   };
   isComparison?: boolean;
+  benchmarkFeedback?: BenchmarkFeedback;
 }
 
 const getScoreVisualStyle = (score: number) => {
@@ -116,11 +118,17 @@ const useCountUp = (end: number, duration: number = 1500) => {
   return count;
 };
 
-export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, isComparison = false }) => {
+export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, isComparison = false, benchmarkFeedback }) => {
   const { stroke, text, bg, glow, icon, label } = getScoreVisualStyle(scoreData.score);
   const gradeInfo = getGradeInfo(gradeData.grade);
   const animatedScore = useCountUp(scoreData.score);
   const isExcellentScore = scoreData.score >= 90;
+  const hasBenchmarks = Boolean(
+    benchmarkFeedback && 
+    (benchmarkFeedback.industryComparison || 
+     benchmarkFeedback.emailTypeComparison || 
+     (benchmarkFeedback.benchmarkInsights && benchmarkFeedback.benchmarkInsights.length > 0))
+  );
 
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (animatedScore / 100) * circumference;
@@ -240,6 +248,70 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
             )}
           </div>
         </div>
+        
+        {hasBenchmarks && !isComparison && (
+          <div className="mt-8 pt-6 border-t border-border/50" data-testid="benchmark-section">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                <BarChart3 className="w-4 h-4 text-purple-400" />
+              </div>
+              <h3 className="font-semibold text-foreground">Industry Benchmarks</h3>
+            </div>
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              {benchmarkFeedback?.industryComparison && (
+                <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border border-blue-500/20" data-testid="benchmark-industry">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <Building2 className="w-4 h-4 text-blue-400" />
+                    <span className="text-sm font-medium text-muted-foreground">Industry Comparison</span>
+                    {typeof benchmarkFeedback.industryPercentile === 'number' && 
+                     isFinite(benchmarkFeedback.industryPercentile) && 
+                     benchmarkFeedback.industryPercentile > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {benchmarkFeedback.industryPercentile}th percentile
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground">{benchmarkFeedback.industryComparison}</p>
+                </div>
+              )}
+              
+              {benchmarkFeedback?.emailTypeComparison && (
+                <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-emerald-500/5 border border-green-500/20" data-testid="benchmark-email-type">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <FileType className="w-4 h-4 text-green-400" />
+                    <span className="text-sm font-medium text-muted-foreground">Email Type Comparison</span>
+                    {typeof benchmarkFeedback.emailTypePercentile === 'number' && 
+                     isFinite(benchmarkFeedback.emailTypePercentile) && 
+                     benchmarkFeedback.emailTypePercentile > 0 && (
+                      <Badge variant="secondary" className="ml-auto text-xs">
+                        {benchmarkFeedback.emailTypePercentile}th percentile
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-foreground">{benchmarkFeedback.emailTypeComparison}</p>
+                </div>
+              )}
+            </div>
+            
+            {benchmarkFeedback?.benchmarkInsights && benchmarkFeedback.benchmarkInsights.length > 0 && (
+              <div className="mt-4 p-4 rounded-lg bg-gradient-to-br from-purple-500/5 to-pink-500/5 border border-purple-500/20" data-testid="benchmark-insights">
+                <div className="flex items-center gap-2 mb-3">
+                  <Lightbulb className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm font-medium text-foreground">Benchmark Insights</span>
+                </div>
+                <ul className="space-y-2">
+                  {benchmarkFeedback.benchmarkInsights.map((insight, index) => (
+                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground" data-testid={`text-insight-${index}`}>
+                      <span className="text-purple-400 mt-1">•</span>
+                      <span>{insight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
