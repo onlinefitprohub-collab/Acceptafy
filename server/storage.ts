@@ -5,6 +5,7 @@ import {
   userGamification,
   emailTemplates,
   competitorAnalyses,
+  agencyBranding,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -18,6 +19,8 @@ import {
   type InsertEmailTemplate,
   type CompetitorAnalysis,
   type InsertCompetitorAnalysis,
+  type AgencyBranding,
+  type InsertAgencyBranding,
   type SubscriptionTier,
 } from "@shared/schema";
 import { db } from "./db";
@@ -103,6 +106,10 @@ export interface IStorage {
     usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
     totalUsage: number;
   }>;
+  
+  // Agency Branding
+  getAgencyBranding(userId: string): Promise<AgencyBranding | undefined>;
+  upsertAgencyBranding(userId: string, branding: Partial<InsertAgencyBranding>): Promise<AgencyBranding>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -805,6 +812,33 @@ export class DatabaseStorage implements IStorage {
       usageTrends,
       totalUsage,
     };
+  }
+
+  // Agency Branding
+  async getAgencyBranding(userId: string): Promise<AgencyBranding | undefined> {
+    const [branding] = await db
+      .select()
+      .from(agencyBranding)
+      .where(eq(agencyBranding.userId, userId));
+    return branding;
+  }
+
+  async upsertAgencyBranding(userId: string, branding: Partial<InsertAgencyBranding>): Promise<AgencyBranding> {
+    const [result] = await db
+      .insert(agencyBranding)
+      .values({
+        ...branding,
+        userId,
+      })
+      .onConflictDoUpdate({
+        target: agencyBranding.userId,
+        set: {
+          ...branding,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
   }
 }
 

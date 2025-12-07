@@ -12,6 +12,7 @@ import { FollowUpDisplay } from './components/FollowUpDisplay';
 import { FollowUpSequenceDisplay } from './components/FollowUpSequenceDisplay';
 import { ReputationDashboard } from './components/ReputationDashboard';
 import { ErrorMessage } from './components/ErrorMessage';
+import { EnhancedPdfExport } from './components/EnhancedPdfExport';
 import { AcademyHub } from './components/Academy/AcademyHub';
 import { AppSidebar } from './components/app-sidebar';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -125,68 +126,6 @@ function AppContent() {
   const userTier = user?.subscriptionTier === 'scale' ? 'scale' : (user?.subscriptionTier === 'pro' ? 'pro' : 'starter');
   const hasWhitelabelReports = SUBSCRIPTION_LIMITS[userTier].whitelabelReports;
   
-  // Export results as PDF (white-label for Scale tier)
-  const handleExportPdf = useCallback((analysisResult: GradingResult) => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      toast({ title: 'Unable to open print window', description: 'Please allow popups for this site.', variant: 'destructive' });
-      return;
-    }
-    
-    const brandingHtml = hasWhitelabelReports ? '' : 
-      '<div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb;">' +
-      '<div style="display: inline-flex; align-items: center; gap: 8px;">' +
-      '<div style="width: 32px; height: 32px; background: linear-gradient(135deg, #a855f7, #ec4899); border-radius: 8px;"></div>' +
-      '<span style="font-size: 20px; font-weight: bold;">Acceptafy</span>' +
-      '</div>' +
-      '<p style="color: #6b7280; font-size: 12px; margin-top: 8px;">Email Analysis Report</p>' +
-      '</div>';
-    
-    const footerText = hasWhitelabelReports 
-      ? 'Generated on ' + new Date().toLocaleDateString()
-      : 'Generated on ' + new Date().toLocaleDateString() + ' | Powered by Acceptafy';
-    
-    const spamCount = analysisResult.spamAnalysis?.length || 0;
-    const spamRisk = spamCount === 0 ? 'Low' : spamCount <= 3 ? 'Medium' : 'High';
-    
-    const html = '<!DOCTYPE html><html><head><title>Email Analysis Report</title>' +
-      '<style>' +
-      'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #1f2937; }' +
-      '.score-box { text-align: center; padding: 24px; background: #f3f4f6; border-radius: 12px; margin-bottom: 24px; }' +
-      '.score { font-size: 64px; font-weight: bold; color: #a855f7; }' +
-      '.grade { font-size: 48px; font-weight: bold; margin-left: 16px; }' +
-      '.section { margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; }' +
-      '.section-title { font-weight: 600; margin-bottom: 8px; color: #374151; }' +
-      '.feedback-item { padding: 8px 0; border-bottom: 1px solid #e5e7eb; }' +
-      '.feedback-item:last-child { border-bottom: none; }' +
-      '.label { color: #6b7280; font-size: 14px; }' +
-      '.value { font-weight: 500; }' +
-      '@media print { body { padding: 20px; } }' +
-      '</style></head><body>' +
-      brandingHtml +
-      '<div class="score-box">' +
-      '<span class="score">' + (analysisResult.inboxPlacementScore?.score || 0) + '</span>' +
-      '<span class="grade">' + (analysisResult.overallGrade?.grade || 'N/A') + '</span>' +
-      '<p style="color: #6b7280; margin-top: 8px;">' + (analysisResult.overallGrade?.summary || '') + '</p>' +
-      '</div>' +
-      '<div class="section"><div class="section-title">Subject Line Analysis</div>' +
-      '<div class="feedback-item"><span class="label">Grade:</span> <span class="value">' + (analysisResult.subjectLine?.grade || 'N/A') + '</span></div>' +
-      '<div class="feedback-item"><span class="label">Summary:</span> <span class="value">' + (analysisResult.subjectLine?.summary || 'N/A') + '</span></div></div>' +
-      '<div class="section"><div class="section-title">Preview Text Analysis</div>' +
-      '<div class="feedback-item"><span class="label">Grade:</span> <span class="value">' + (analysisResult.previewText?.grade || 'N/A') + '</span></div>' +
-      '<div class="feedback-item"><span class="label">Summary:</span> <span class="value">' + (analysisResult.previewText?.summary || 'N/A') + '</span></div></div>' +
-      '<div class="section"><div class="section-title">Body Copy Analysis</div>' +
-      '<div class="feedback-item"><span class="label">Grade:</span> <span class="value">' + (analysisResult.bodyCopy?.grade || 'N/A') + '</span></div>' +
-      '<div class="feedback-item"><span class="label">Summary:</span> <span class="value">' + (analysisResult.bodyCopy?.summary || 'N/A') + '</span></div></div>' +
-      '<div class="section"><div class="section-title">Spam Risk Analysis</div>' +
-      '<div class="feedback-item"><span class="label">Risk Level:</span> <span class="value">' + spamRisk + ' (' + spamCount + ' triggers found)</span></div></div>' +
-      '<p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 32px;">' + footerText + '</p>' +
-      '</body></html>';
-    
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.print();
-  }, [hasWhitelabelReports, toast]);
   const [variations, setVariations] = useState<EmailVariation[]>([{ 
     subject: EXAMPLE_EMAIL.subject, 
     previewText: EXAMPLE_EMAIL.previewText 
@@ -1965,18 +1904,16 @@ function AppContent() {
                   </>
                 )}
               </Button>
-              <Button
-                onClick={() => handleExportPdf(result)}
-                variant="outline"
-                size="sm"
-                data-testid="button-export-pdf"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Export Report
-                {hasWhitelabelReports && (
-                  <Badge variant="secondary" className="ml-2 text-xs">White-label</Badge>
-                )}
-              </Button>
+              <EnhancedPdfExport 
+                analysisResult={result}
+                hasWhitelabelReports={hasWhitelabelReports}
+                previousResult={history.length > 1 ? history[1]?.result : null}
+                emailContent={{
+                  subject: variations[0]?.subject || '',
+                  previewText: variations[0]?.previewText || '',
+                  body: body
+                }}
+              />
             </div>
           </div>
 

@@ -536,3 +536,42 @@ export const benchmarkFeedbackSchema = z.object({
   emailTypePercentile: z.number().nullable(),
 });
 export type BenchmarkFeedback = z.infer<typeof benchmarkFeedbackSchema>;
+
+// Agency Branding table for whitelabel reports
+export const agencyBranding = pgTable("agency_branding", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id).unique(),
+  agencyName: varchar("agency_name"),
+  logoUrl: varchar("logo_url"),
+  primaryColor: varchar("primary_color").default("#a855f7"),
+  secondaryColor: varchar("secondary_color").default("#ec4899"),
+  footerText: text("footer_text"),
+  introText: text("intro_text"),
+  contactEmail: varchar("contact_email"),
+  contactPhone: varchar("contact_phone"),
+  website: varchar("website"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type AgencyBranding = typeof agencyBranding.$inferSelect;
+export type InsertAgencyBranding = typeof agencyBranding.$inferInsert;
+
+export const insertAgencyBrandingSchema = createInsertSchema(agencyBranding).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Agency Branding Zod schema for validation
+export const agencyBrandingSchema = z.object({
+  agencyName: z.string().optional(),
+  logoUrl: z.string().optional(),
+  primaryColor: z.string().optional(),
+  secondaryColor: z.string().optional(),
+  footerText: z.string().optional(),
+  introText: z.string().optional(),
+  contactEmail: z.string().email().optional().or(z.literal('')),
+  contactPhone: z.string().optional(),
+  website: z.string().optional(),
+});

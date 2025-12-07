@@ -1006,5 +1006,53 @@ export async function registerRoutes(
     }
   });
 
+  // Agency Branding endpoints (Scale tier only)
+  app.get('/api/agency-branding', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (user?.subscriptionTier !== 'scale') {
+        return res.status(403).json({ error: 'Agency branding is only available for Scale tier' });
+      }
+      
+      const branding = await storage.getAgencyBranding(userId);
+      res.json(branding || {});
+    } catch (error) {
+      console.error('Get agency branding error:', error);
+      res.status(500).json({ error: 'Failed to fetch agency branding' });
+    }
+  });
+
+  app.post('/api/agency-branding', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (user?.subscriptionTier !== 'scale') {
+        return res.status(403).json({ error: 'Agency branding is only available for Scale tier' });
+      }
+      
+      const { agencyName, logoUrl, primaryColor, secondaryColor, footerText, introText, contactEmail, contactPhone, website } = req.body;
+      
+      const branding = await storage.upsertAgencyBranding(userId, {
+        agencyName,
+        logoUrl,
+        primaryColor,
+        secondaryColor,
+        footerText,
+        introText,
+        contactEmail,
+        contactPhone,
+        website,
+      });
+      
+      res.json(branding);
+    } catch (error) {
+      console.error('Save agency branding error:', error);
+      res.status(500).json({ error: 'Failed to save agency branding' });
+    }
+  });
+
   return httpServer;
 }

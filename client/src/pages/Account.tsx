@@ -4,6 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   User, 
   CreditCard, 
@@ -16,13 +19,28 @@ import {
   ArrowLeft,
   Loader2,
   ExternalLink,
-  CheckCircle2
+  CheckCircle2,
+  Building2,
+  Palette,
+  Save
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
-import { useEffect } from "react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
+
+interface AgencyBranding {
+  agencyName?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  footerText?: string;
+  introText?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  website?: string;
+}
 
 interface UsageData {
   usage: {
@@ -52,6 +70,17 @@ interface SubscriptionData {
 export default function Account() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  
+  // Agency branding state
+  const [agencyName, setAgencyName] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [primaryColor, setPrimaryColor] = useState('#a855f7');
+  const [secondaryColor, setSecondaryColor] = useState('#ec4899');
+  const [footerText, setFooterText] = useState('');
+  const [introText, setIntroText] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [website, setWebsite] = useState('');
 
   const { data: usageData, isLoading: usageLoading } = useQuery<UsageData>({
     queryKey: ["/api/usage"],
@@ -61,6 +90,59 @@ export default function Account() {
   const { data: subscriptionData } = useQuery<SubscriptionData>({
     queryKey: ["/api/subscription"],
     enabled: !!user,
+  });
+  
+  const isScaleTier = user?.subscriptionTier === 'scale';
+  
+  const { data: brandingData, isLoading: brandingLoading } = useQuery<AgencyBranding>({
+    queryKey: ["/api/agency-branding"],
+    enabled: !!user && isScaleTier,
+  });
+  
+  // Update form when branding data loads
+  useEffect(() => {
+    if (brandingData) {
+      setAgencyName(brandingData.agencyName || '');
+      setLogoUrl(brandingData.logoUrl || '');
+      setPrimaryColor(brandingData.primaryColor || '#a855f7');
+      setSecondaryColor(brandingData.secondaryColor || '#ec4899');
+      setFooterText(brandingData.footerText || '');
+      setIntroText(brandingData.introText || '');
+      setContactEmail(brandingData.contactEmail || '');
+      setContactPhone(brandingData.contactPhone || '');
+      setWebsite(brandingData.website || '');
+    }
+  }, [brandingData]);
+  
+  const saveBrandingMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/agency-branding", {
+        agencyName,
+        logoUrl,
+        primaryColor,
+        secondaryColor,
+        footerText,
+        introText,
+        contactEmail,
+        contactPhone,
+        website,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/agency-branding"] });
+      toast({
+        title: "Branding Saved",
+        description: "Your agency branding has been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save branding. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const billingPortalMutation = useMutation({
@@ -333,6 +415,189 @@ export default function Account() {
                   </a>
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isScaleTier && (
+          <Card className="mt-6" data-testid="card-agency-branding">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="w-5 h-5" />
+                Agency Branding
+              </CardTitle>
+              <CardDescription>
+                Customize your whitelabel reports with your agency's branding
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {brandingLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="agencyName">Agency Name</Label>
+                      <Input
+                        id="agencyName"
+                        placeholder="Your Agency Name"
+                        value={agencyName}
+                        onChange={(e) => setAgencyName(e.target.value)}
+                        data-testid="input-agency-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="logoUrl">Logo URL</Label>
+                      <Input
+                        id="logoUrl"
+                        placeholder="https://yoursite.com/logo.png"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        data-testid="input-logo-url"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="primaryColor" className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        Primary Color
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="primaryColor"
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                          data-testid="input-primary-color"
+                        />
+                        <Input
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          placeholder="#a855f7"
+                          className="flex-1"
+                          data-testid="input-primary-color-hex"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="secondaryColor" className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        Secondary Color
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="secondaryColor"
+                          type="color"
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          className="w-12 h-10 p-1 cursor-pointer"
+                          data-testid="input-secondary-color"
+                        />
+                        <Input
+                          value={secondaryColor}
+                          onChange={(e) => setSecondaryColor(e.target.value)}
+                          placeholder="#ec4899"
+                          className="flex-1"
+                          data-testid="input-secondary-color-hex"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="introText">Report Introduction Text</Label>
+                    <Textarea
+                      id="introText"
+                      placeholder="Add a custom introduction message for your client reports..."
+                      value={introText}
+                      onChange={(e) => setIntroText(e.target.value)}
+                      rows={3}
+                      data-testid="input-intro-text"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="footerText">Report Footer Text</Label>
+                    <Textarea
+                      id="footerText"
+                      placeholder="Add custom footer text for your reports (e.g., disclaimers, contact info)..."
+                      value={footerText}
+                      onChange={(e) => setFooterText(e.target.value)}
+                      rows={2}
+                      data-testid="input-footer-text"
+                    />
+                  </div>
+
+                  <div className="grid gap-6 md:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="contactEmail">Contact Email</Label>
+                      <Input
+                        id="contactEmail"
+                        type="email"
+                        placeholder="contact@youragency.com"
+                        value={contactEmail}
+                        onChange={(e) => setContactEmail(e.target.value)}
+                        data-testid="input-contact-email"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contactPhone">Contact Phone</Label>
+                      <Input
+                        id="contactPhone"
+                        placeholder="+1 (555) 123-4567"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        data-testid="input-contact-phone"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        placeholder="https://youragency.com"
+                        value={website}
+                        onChange={(e) => setWebsite(e.target.value)}
+                        data-testid="input-website"
+                      />
+                    </div>
+                  </div>
+
+                  {logoUrl && (
+                    <div className="p-4 border rounded-lg bg-muted/30">
+                      <Label className="text-sm text-muted-foreground mb-2 block">Logo Preview</Label>
+                      <img
+                        src={logoUrl}
+                        alt="Agency Logo"
+                        className="max-h-16 max-w-48 object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => saveBrandingMutation.mutate()}
+                      disabled={saveBrandingMutation.isPending}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      data-testid="button-save-branding"
+                    >
+                      {saveBrandingMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      Save Branding
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
