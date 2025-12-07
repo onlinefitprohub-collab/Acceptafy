@@ -69,6 +69,16 @@ export interface IStorage {
   listPrices(active?: boolean, limit?: number, offset?: number): Promise<any[]>;
   getPricesForProduct(productId: string): Promise<any[]>;
   getSubscription(subscriptionId: string): Promise<any>;
+  
+  // Admin methods
+  getAllUsers(): Promise<User[]>;
+  getAdminStats(): Promise<{
+    totalUsers: number;
+    activeSubscriptions: number;
+    tierBreakdown: { tier: string; count: number }[];
+    totalGrades: number;
+    recentSignups: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -407,6 +417,53 @@ export class DatabaseStorage implements IStorage {
       sql`SELECT * FROM stripe.subscriptions WHERE id = ${subscriptionId}`
     );
     return result.rows[0] || null;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const allUsers = await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+    return allUsers;
+  }
+
+  async getAdminStats(): Promise<{
+    totalUsers: number;
+    activeSubscriptions: number;
+    tierBreakdown: { tier: string; count: number }[];
+    totalGrades: number;
+    recentSignups: number;
+  }> {
+    const allUsers = await db.select().from(users);
+    const totalUsers = allUsers.length;
+    
+    const activeSubscriptions = allUsers.filter(
+      u => u.subscriptionStatus === 'active' && u.subscriptionTier && u.subscriptionTier !== 'starter'
+    ).length;
+    
+    const tierCounts: Record<string, number> = {};
+    for (const user of allUsers) {
+      const tier = user.subscriptionTier || 'starter';
+      tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+    }
+    const tierBreakdown = Object.entries(tierCounts).map(([tier, count]) => ({ tier, count }));
+    
+    const allAnalyses = await db.select().from(emailAnalyses);
+    const totalGrades = allAnalyses.length;
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentSignups = allUsers.filter(
+      u => u.createdAt && u.createdAt > sevenDaysAgo
+    ).length;
+    
+    return {
+      totalUsers,
+      activeSubscriptions,
+      tierBreakdown,
+      totalGrades,
+      recentSignups,
+    };
   }
 }
 

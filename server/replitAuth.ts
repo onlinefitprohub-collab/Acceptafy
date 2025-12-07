@@ -195,3 +195,21 @@ export const optionalAuth: RequestHandler = async (req, res, next) => {
   }
   return next();
 };
+
+export const isAdmin: RequestHandler = async (req, res, next) => {
+  const user = req.user as any;
+
+  if (!req.isAuthenticated() || !user?.claims?.sub) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const dbUser = await storage.getUser(user.claims.sub);
+    if (!dbUser || dbUser.role !== 'admin') {
+      return res.status(403).json({ message: "Forbidden: Admin access required" });
+    }
+    return next();
+  } catch (error) {
+    return res.status(500).json({ message: "Error checking admin status" });
+  }
+};

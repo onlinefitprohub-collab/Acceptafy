@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { type Server } from "http";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated, optionalAuth } from "./replitAuth";
+import { setupAuth, isAuthenticated, optionalAuth, isAdmin } from "./replitAuth";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { 
   gradeCopy, 
@@ -940,6 +940,39 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Inbox simulation error:', error);
       res.status(500).json({ error: 'Failed to simulate inbox placement' });
+    }
+  });
+
+  // Admin Routes - Protected with isAdmin middleware
+  app.get('/api/admin/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json({ isAdmin: user?.role === 'admin' });
+    } catch (error) {
+      console.error('Admin check error:', error);
+      res.json({ isAdmin: false });
+    }
+  });
+
+  app.get('/api/admin/users', isAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const sanitizedUsers = users.map(({ passwordHash, ...user }) => user);
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error('Admin users error:', error);
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
+  });
+
+  app.get('/api/admin/stats', isAdmin, async (req: any, res) => {
+    try {
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Admin stats error:', error);
+      res.status(500).json({ error: 'Failed to fetch admin stats' });
     }
   });
 
