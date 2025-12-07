@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { Logo } from './components/icons/Logo';
-import { EmailInput } from './components/EmailInput';
+import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
 import { ResultsHub } from './components/ResultsHub';
 import { Loader } from './components/Loader';
 import { RewriteComparison } from './components/RewriteComparison';
@@ -191,6 +191,8 @@ function AppContent() {
     previewText: EXAMPLE_EMAIL.previewText 
   }]);
   const [body, setBody] = useState(EXAMPLE_EMAIL.body);
+  const [industry, setIndustry] = useState<Industry>('');
+  const [emailType, setEmailType] = useState<EmailType>('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<GradingResult | null>(null);
   const [spamTriggers, setSpamTriggers] = useState<SpamTrigger[]>([]);
@@ -267,7 +269,7 @@ function AppContent() {
       const response = await fetch('/api/grade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body, variations })
+        body: JSON.stringify({ body, variations, industry: industry || undefined, emailType: emailType || undefined })
       });
       
       if (response.ok) {
@@ -1922,7 +1924,11 @@ function AppContent() {
         setBody={setBody} 
         onGrade={handleGrade} 
         isLoading={isLoading} 
-        spamTriggers={spamTriggers} 
+        spamTriggers={spamTriggers}
+        industry={industry}
+        setIndustry={setIndustry}
+        emailType={emailType}
+        setEmailType={setEmailType}
       />
 
       {isLoading && <Loader />}

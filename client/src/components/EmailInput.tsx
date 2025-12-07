@@ -5,12 +5,43 @@ import { HighlightedInput } from './HighlightedInput';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail, Building2, FileType } from 'lucide-react';
 
 interface Variation {
   subject: string;
   previewText: string;
 }
+
+export const INDUSTRIES = [
+  { value: '', label: 'No specific industry (General)' },
+  { value: 'saas', label: 'SaaS / Software' },
+  { value: 'ecommerce', label: 'E-commerce / Retail' },
+  { value: 'real_estate', label: 'Real Estate' },
+  { value: 'finance', label: 'Finance / Banking' },
+  { value: 'healthcare', label: 'Healthcare' },
+  { value: 'agency', label: 'Marketing Agency' },
+  { value: 'education', label: 'Education / Coaching' },
+  { value: 'recruiting', label: 'Recruiting / HR' },
+  { value: 'nonprofit', label: 'Nonprofit' },
+  { value: 'consulting', label: 'Consulting / Professional Services' },
+] as const;
+
+export const EMAIL_TYPES = [
+  { value: '', label: 'No specific type (General)' },
+  { value: 'cold_outreach', label: 'Cold Outreach / Sales' },
+  { value: 'newsletter', label: 'Newsletter' },
+  { value: 'promotional', label: 'Promotional / Sale' },
+  { value: 'transactional', label: 'Transactional' },
+  { value: 'welcome', label: 'Welcome / Onboarding' },
+  { value: 'nurture', label: 'Nurture / Drip Sequence' },
+  { value: 'winback', label: 'Win-back / Re-engagement' },
+  { value: 'announcement', label: 'Product Announcement' },
+  { value: 'event', label: 'Event / Webinar Invite' },
+] as const;
+
+export type Industry = typeof INDUSTRIES[number]['value'];
+export type EmailType = typeof EMAIL_TYPES[number]['value'];
 
 interface EmailInputProps {
   variations: Variation[];
@@ -20,6 +51,10 @@ interface EmailInputProps {
   onGrade: () => void;
   isLoading: boolean;
   spamTriggers: SpamTrigger[];
+  industry: Industry;
+  setIndustry: (value: Industry) => void;
+  emailType: EmailType;
+  setEmailType: (value: EmailType) => void;
 }
 
 const SUBJECT_CHAR_LIMIT = 100;
@@ -33,6 +68,10 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   onGrade,
   isLoading,
   spamTriggers,
+  industry,
+  setIndustry,
+  emailType,
+  setEmailType,
 }) => {
   const [openVariations, setOpenVariations] = useState<Set<number>>(new Set());
 
@@ -94,6 +133,47 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="grid md:grid-cols-2 gap-4 p-4 rounded-lg bg-muted/30 border border-border/50">
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <Building2 className="w-4 h-4" />
+                Industry (Optional)
+              </label>
+              <Select value={industry} onValueChange={(val) => setIndustry(val as Industry)}>
+                <SelectTrigger className="w-full" data-testid="select-industry">
+                  <SelectValue placeholder="Select your industry for benchmarks" />
+                </SelectTrigger>
+                <SelectContent>
+                  {INDUSTRIES.map((ind) => (
+                    <SelectItem key={ind.value} value={ind.value || '_none'} data-testid={`option-industry-${ind.value || 'none'}`}>
+                      {ind.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Get industry-specific benchmarks and feedback</p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <FileType className="w-4 h-4" />
+                Email Type (Optional)
+              </label>
+              <Select value={emailType} onValueChange={(val) => setEmailType(val as EmailType)}>
+                <SelectTrigger className="w-full" data-testid="select-email-type">
+                  <SelectValue placeholder="Select email type for benchmarks" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EMAIL_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value || '_none'} data-testid={`option-email-type-${type.value || 'none'}`}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Tailored advice for your email purpose</p>
+            </div>
+          </div>
+
           {variations.map((variation, index) => {
             const isOpen = openVariations.has(index);
             const subjectLength = variation.subject.length;
