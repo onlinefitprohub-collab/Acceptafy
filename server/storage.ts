@@ -545,10 +545,10 @@ export class DatabaseStorage implements IStorage {
   }> {
     const allUsers = await db.select().from(users);
     
-    // MRR calculation based on subscription tiers (pro = $29/mo, scale = $79/mo)
+    // MRR calculation based on subscription tiers (pro = $59/mo, scale = $149/mo)
     const tierPrices: Record<string, number> = {
-      'pro': 2900, // cents
-      'scale': 7900,
+      'pro': 5900, // cents
+      'scale': 14900,
       'starter': 0,
     };
     
