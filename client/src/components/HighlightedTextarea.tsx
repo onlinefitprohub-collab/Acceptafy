@@ -100,9 +100,8 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         <div className={`relative ${className || ''}`}>
             <div
                 ref={highlightRef}
-                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent"
+                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent px-3 py-2"
                 style={{
-                    padding: '12px',
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
