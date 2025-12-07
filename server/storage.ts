@@ -92,6 +92,12 @@ export interface IStorage {
     subscriptionBreakdown: { tier: string; count: number; revenue: number }[];
     activeUsers30d: number;
   }>;
+  getContentAnalytics(): Promise<{
+    topSubjectLines: { subject: string; score: number; grade: string }[];
+    commonSpamTriggers: { word: string; count: number }[];
+    gradeDistribution: { grade: string; count: number }[];
+    scoreDistribution: { range: string; count: number }[];
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -607,6 +613,96 @@ export class DatabaseStorage implements IStorage {
       churnRate: Math.round(churnRate * 10) / 10,
       subscriptionBreakdown,
       activeUsers30d,
+    };
+  }
+
+  async getContentAnalytics(): Promise<{
+    topSubjectLines: { subject: string; score: number; grade: string }[];
+    commonSpamTriggers: { word: string; count: number }[];
+    gradeDistribution: { grade: string; count: number }[];
+    scoreDistribution: { range: string; count: number }[];
+  }> {
+    const allAnalyses = await db.select().from(emailAnalyses);
+    
+    // Top subject lines by score (highest scores first)
+    const withSubjects = allAnalyses
+      .filter(a => a.subject && a.score !== null && a.grade)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 10);
+    
+    const topSubjectLines = withSubjects.map(a => ({
+      subject: a.subject || '',
+      score: a.score || 0,
+      grade: a.grade || 'N/A',
+    }));
+    
+    // Common spam triggers from analysis results
+    const spamWordCounts: Record<string, number> = {};
+    for (const analysis of allAnalyses) {
+      const result = analysis.result as any;
+      if (result?.spamAnalysis && Array.isArray(result.spamAnalysis)) {
+        for (const spam of result.spamAnalysis) {
+          if (spam.word) {
+            const word = spam.word.toLowerCase();
+            spamWordCounts[word] = (spamWordCounts[word] || 0) + 1;
+          }
+        }
+      }
+    }
+    
+    const commonSpamTriggers = Object.entries(spamWordCounts)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 15);
+    
+    // Grade distribution
+    const gradeCounts: Record<string, number> = { 'A': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
+    for (const analysis of allAnalyses) {
+      if (analysis.grade) {
+        const gradeKey = analysis.grade.charAt(0).toUpperCase();
+        if (gradeKey in gradeCounts) {
+          gradeCounts[gradeKey]++;
+        }
+      }
+    }
+    
+    const gradeDistribution = Object.entries(gradeCounts)
+      .map(([grade, count]) => ({ grade, count }))
+      .sort((a, b) => {
+        const order = ['A', 'B', 'C', 'D', 'F'];
+        return order.indexOf(a.grade) - order.indexOf(b.grade);
+      });
+    
+    // Score distribution (ranges: 0-20, 21-40, 41-60, 61-80, 81-100)
+    // Using exclusive upper bounds to handle fractional scores correctly
+    const scoreRanges = [
+      { range: '0-20', min: 0, max: 21, count: 0 },
+      { range: '21-40', min: 21, max: 41, count: 0 },
+      { range: '41-60', min: 41, max: 61, count: 0 },
+      { range: '61-80', min: 61, max: 81, count: 0 },
+      { range: '81-100', min: 81, max: 101, count: 0 },
+    ];
+    
+    for (const analysis of allAnalyses) {
+      if (analysis.score !== null && analysis.score !== undefined) {
+        const score = analysis.score;
+        for (const range of scoreRanges) {
+          // min <= score < max (exclusive upper bound)
+          if (score >= range.min && score < range.max) {
+            range.count++;
+            break;
+          }
+        }
+      }
+    }
+    
+    const scoreDistribution = scoreRanges.map(r => ({ range: r.range, count: r.count }));
+    
+    return {
+      topSubjectLines,
+      commonSpamTriggers,
+      gradeDistribution,
+      scoreDistribution,
     };
   }
 }

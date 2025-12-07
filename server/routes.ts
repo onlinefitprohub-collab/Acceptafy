@@ -986,5 +986,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/admin/content-analytics', isAdmin, async (req: any, res) => {
+    try {
+      const analytics = await storage.getContentAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error('Admin content analytics error:', error);
+      res.status(500).json({ error: 'Failed to fetch content analytics' });
+    }
+  });
+
   return httpServer;
 }

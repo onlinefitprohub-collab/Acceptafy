@@ -14,7 +14,10 @@ import {
   Clock,
   DollarSign,
   AlertTriangle,
-  UserCheck
+  UserCheck,
+  FileText,
+  AlertCircle,
+  BarChart3
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -79,10 +82,25 @@ interface BusinessMetrics {
   activeUsers30d: number;
 }
 
+interface ContentAnalytics {
+  topSubjectLines: { subject: string; score: number; grade: string }[];
+  commonSpamTriggers: { word: string; count: number }[];
+  gradeDistribution: { grade: string; count: number }[];
+  scoreDistribution: { range: string; count: number }[];
+}
+
 const TIER_COLORS: Record<string, string> = {
   'scale': '#8b5cf6',
   'pro': '#06b6d4',
   'starter': '#64748b',
+};
+
+const GRADE_COLORS: Record<string, string> = {
+  'A': '#22c55e',
+  'B': '#84cc16',
+  'C': '#eab308',
+  'D': '#f97316',
+  'F': '#ef4444',
 };
 
 export default function Admin() {
@@ -107,6 +125,11 @@ export default function Admin() {
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<BusinessMetrics>({
     queryKey: ["/api/admin/metrics"],
+    enabled: isAdmin,
+  });
+
+  const { data: contentAnalytics, isLoading: contentAnalyticsLoading } = useQuery<ContentAnalytics>({
+    queryKey: ["/api/admin/content-analytics"],
     enabled: isAdmin,
   });
 
@@ -602,6 +625,218 @@ export default function Admin() {
                     No tier data available
                   </p>
                 )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Content Intelligence Analytics Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Content Intelligence</h2>
+        <p className="text-muted-foreground">
+          Insights from analyzed emails across the platform
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card data-testid="grade-distribution-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Grade Distribution
+            </CardTitle>
+            <CardDescription>
+              Distribution of email grades across all analyses
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {contentAnalyticsLoading || !contentAnalytics ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : contentAnalytics.gradeDistribution && contentAnalytics.gradeDistribution.some(g => g.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={contentAnalytics.gradeDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="grade" 
+                    tick={{ fontSize: 14, fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    formatter={(value: number) => [`${value} emails`, 'Count']}
+                  />
+                  <Bar dataKey="count" name="Emails">
+                    {contentAnalytics.gradeDistribution.map((entry, index) => (
+                      <Cell 
+                        key={`cell-${index}`} 
+                        fill={GRADE_COLORS[entry.grade] || '#64748b'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No grade data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="score-distribution-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Score Distribution
+            </CardTitle>
+            <CardDescription>
+              Email scores grouped by range
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {contentAnalyticsLoading || !contentAnalytics ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : contentAnalytics.scoreDistribution && contentAnalytics.scoreDistribution.some(s => s.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={contentAnalytics.scoreDistribution}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="range" 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    formatter={(value: number) => [`${value} emails`, 'Count']}
+                  />
+                  <Bar dataKey="count" fill="#8b5cf6" name="Emails" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No score data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card data-testid="top-subject-lines-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Top Performing Subject Lines
+            </CardTitle>
+            <CardDescription>
+              Highest scoring subject lines analyzed
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {contentAnalyticsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : contentAnalytics?.topSubjectLines && contentAnalytics.topSubjectLines.length > 0 ? (
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-3">
+                  {contentAnalytics.topSubjectLines.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-start justify-between gap-4 p-3 rounded-lg bg-muted/50"
+                      data-testid={`subject-line-${index}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.subject}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge 
+                          variant="outline"
+                          style={{ 
+                            borderColor: GRADE_COLORS[item.grade.charAt(0)] || '#64748b',
+                            color: GRADE_COLORS[item.grade.charAt(0)] || '#64748b'
+                          }}
+                        >
+                          {item.grade}
+                        </Badge>
+                        <span className="text-sm font-medium">{item.score}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No subject line data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="common-spam-triggers-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Common Spam Triggers
+            </CardTitle>
+            <CardDescription>
+              Most frequently detected spam trigger words
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {contentAnalyticsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : contentAnalytics?.commonSpamTriggers && contentAnalytics.commonSpamTriggers.length > 0 ? (
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {contentAnalytics.commonSpamTriggers.map((item, index) => {
+                    const maxCount = contentAnalytics.commonSpamTriggers[0]?.count || 1;
+                    const percentage = Math.round((item.count / maxCount) * 100);
+                    return (
+                      <div 
+                        key={index} 
+                        className="space-y-1"
+                        data-testid={`spam-trigger-${index}`}
+                      >
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{item.word}</span>
+                          <span className="text-muted-foreground">{item.count} occurrences</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No spam trigger data available
               </div>
             )}
           </CardContent>
