@@ -28,6 +28,7 @@ import {
 } from "./gemini";
 import { insertEmailTemplateSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS } from "@shared/schema";
+import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
   generateToneRewriteRequestSchema,
@@ -474,8 +475,27 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { body, variations } = req.body;
+      const { body, variations, industry, emailType } = req.body;
       const result = await gradeCopy(body, variations);
+
+      // Generate benchmark feedback only if industry or emailType is provided
+      let benchmarkFeedback = null;
+      if (industry || emailType) {
+        // Extract metrics for benchmark comparison
+        const lines = body.split('\n');
+        const subjectLine = lines[0] || '';
+        const subjectLength = subjectLine.length;
+        const words = body.split(/\s+/).filter((w: string) => w.length > 0);
+        const wordCount = words.length;
+        const readingLevel = calculateReadingLevel(body);
+        const spamWordsFound = result.spamAnalysis?.map((s: any) => s.word) || [];
+
+        benchmarkFeedback = generateBenchmarkFeedback(
+          industry,
+          emailType,
+          { subjectLength, wordCount, readingLevel, spamWordsFound }
+        );
+      }
 
       if (req.user) {
         const userId = req.user.claims.sub;
@@ -506,7 +526,12 @@ export async function registerRoutes(
         }
       }
 
-      res.json(result);
+      // Return result with benchmarkFeedback only if it was calculated
+      if (benchmarkFeedback) {
+        res.json({ ...result, benchmarkFeedback });
+      } else {
+        res.json(result);
+      }
     } catch (error) {
       console.error('Grading error:', error);
       res.status(500).json({ error: 'Failed to grade email' });

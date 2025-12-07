@@ -526,3 +526,13 @@ export const inboxPlacementSimulationSchema = z.object({
 });
 
 export type InboxPlacementSimulation = z.infer<typeof inboxPlacementSimulationSchema>;
+
+// Benchmark Feedback schema
+export const benchmarkFeedbackSchema = z.object({
+  industryComparison: z.string().nullable(),
+  emailTypeComparison: z.string().nullable(),
+  benchmarkInsights: z.array(z.string()),
+  industryPercentile: z.number().nullable(),
+  emailTypePercentile: z.number().nullable(),
+});
+export type BenchmarkFeedback = z.infer<typeof benchmarkFeedbackSchema>;
