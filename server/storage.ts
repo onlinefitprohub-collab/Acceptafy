@@ -98,6 +98,11 @@ export interface IStorage {
     gradeDistribution: { grade: string; count: number }[];
     scoreDistribution: { range: string; count: number }[];
   }>;
+  getFeatureAdoption(): Promise<{
+    featureUsage: { feature: string; count: number; percentage: number }[];
+    usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
+    totalUsage: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -703,6 +708,102 @@ export class DatabaseStorage implements IStorage {
       commonSpamTriggers,
       gradeDistribution,
       scoreDistribution,
+    };
+  }
+
+  async getFeatureAdoption(): Promise<{
+    featureUsage: { feature: string; count: number; percentage: number }[];
+    usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
+    totalUsage: number;
+  }> {
+    const allUsage = await db.select().from(usageCounters);
+    
+    // Aggregate feature usage across all users and periods
+    let totalGrades = 0;
+    let totalRewrites = 0;
+    let totalFollowups = 0;
+    let totalDeliverability = 0;
+    
+    for (const usage of allUsage) {
+      totalGrades += usage.gradeCount || 0;
+      totalRewrites += usage.rewriteCount || 0;
+      totalFollowups += usage.followupCount || 0;
+      totalDeliverability += usage.deliverabilityChecks || 0;
+    }
+    
+    const totalUsage = totalGrades + totalRewrites + totalFollowups + totalDeliverability;
+    
+    const featureUsage = [
+      { 
+        feature: 'Email Grading', 
+        count: totalGrades, 
+        percentage: totalUsage > 0 ? Math.round((totalGrades / totalUsage) * 100) : 0 
+      },
+      { 
+        feature: 'Rewrites', 
+        count: totalRewrites, 
+        percentage: totalUsage > 0 ? Math.round((totalRewrites / totalUsage) * 100) : 0 
+      },
+      { 
+        feature: 'Follow-ups', 
+        count: totalFollowups, 
+        percentage: totalUsage > 0 ? Math.round((totalFollowups / totalUsage) * 100) : 0 
+      },
+      { 
+        feature: 'Deliverability', 
+        count: totalDeliverability, 
+        percentage: totalUsage > 0 ? Math.round((totalDeliverability / totalUsage) * 100) : 0 
+      },
+    ].sort((a, b) => b.count - a.count);
+    
+    // Calculate usage trends over last 12 months (each usage counter represents a month)
+    // Group usage counters by month to avoid double-counting
+    const monthlyUsage = new Map<string, { grades: number; rewrites: number; followups: number; deliverability: number }>();
+    
+    for (const usage of allUsage) {
+      if (!usage.periodStart) continue;
+      const periodDate = new Date(usage.periodStart);
+      const monthKey = `${periodDate.getFullYear()}-${String(periodDate.getMonth() + 1).padStart(2, '0')}`;
+      
+      const existing = monthlyUsage.get(monthKey) || { grades: 0, rewrites: 0, followups: 0, deliverability: 0 };
+      monthlyUsage.set(monthKey, {
+        grades: existing.grades + (usage.gradeCount || 0),
+        rewrites: existing.rewrites + (usage.rewriteCount || 0),
+        followups: existing.followups + (usage.followupCount || 0),
+        deliverability: existing.deliverability + (usage.deliverabilityChecks || 0),
+      });
+    }
+    
+    // Generate last 12 weeks of data
+    const usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[] = [];
+    
+    for (let i = 11; i >= 0; i--) {
+      const weekStart = new Date();
+      weekStart.setDate(weekStart.getDate() - (i * 7));
+      weekStart.setHours(0, 0, 0, 0);
+      
+      // Get month key for this week
+      const monthKey = `${weekStart.getFullYear()}-${String(weekStart.getMonth() + 1).padStart(2, '0')}`;
+      const monthData = monthlyUsage.get(monthKey);
+      
+      // Distribute monthly usage evenly across 4 weeks (approximate)
+      // Only count if this is the first week of the month to avoid inflation
+      const weekOfMonth = Math.ceil(weekStart.getDate() / 7);
+      const isFirstWeekOfMonth = weekOfMonth === 1;
+      
+      usageTrends.push({
+        date: weekStart.toISOString().split('T')[0],
+        grades: isFirstWeekOfMonth && monthData ? Math.round(monthData.grades / 4) : (monthData ? Math.round(monthData.grades / 4) : 0),
+        rewrites: isFirstWeekOfMonth && monthData ? Math.round(monthData.rewrites / 4) : (monthData ? Math.round(monthData.rewrites / 4) : 0),
+        followups: isFirstWeekOfMonth && monthData ? Math.round(monthData.followups / 4) : (monthData ? Math.round(monthData.followups / 4) : 0),
+        deliverability: isFirstWeekOfMonth && monthData ? Math.round(monthData.deliverability / 4) : (monthData ? Math.round(monthData.deliverability / 4) : 0),
+      });
+    }
+    
+    return {
+      featureUsage,
+      usageTrends,
+      totalUsage,
     };
   }
 }

@@ -89,6 +89,12 @@ interface ContentAnalytics {
   scoreDistribution: { range: string; count: number }[];
 }
 
+interface FeatureAdoption {
+  featureUsage: { feature: string; count: number; percentage: number }[];
+  usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
+  totalUsage: number;
+}
+
 const TIER_COLORS: Record<string, string> = {
   'scale': '#8b5cf6',
   'pro': '#06b6d4',
@@ -130,6 +136,11 @@ export default function Admin() {
 
   const { data: contentAnalytics, isLoading: contentAnalyticsLoading } = useQuery<ContentAnalytics>({
     queryKey: ["/api/admin/content-analytics"],
+    enabled: isAdmin,
+  });
+
+  const { data: featureAdoption, isLoading: featureAdoptionLoading } = useQuery<FeatureAdoption>({
+    queryKey: ["/api/admin/feature-adoption"],
     enabled: isAdmin,
   });
 
@@ -842,6 +853,206 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Feature Adoption Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Feature Adoption</h2>
+        <p className="text-muted-foreground">
+          Track which features are used most and usage trends over time
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card data-testid="feature-usage-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Feature Usage
+            </CardTitle>
+            <CardDescription>
+              Total usage by feature ({featureAdoption?.totalUsage?.toLocaleString() || 0} total actions)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {featureAdoptionLoading || !featureAdoption ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : featureAdoption.featureUsage && featureAdoption.featureUsage.some(f => f.count > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={featureAdoption.featureUsage} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    type="number"
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis 
+                    type="category"
+                    dataKey="feature"
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    width={100}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value.toLocaleString()} (${props.payload.percentage}%)`,
+                      'Usage'
+                    ]}
+                  />
+                  <Bar dataKey="count" fill="#8b5cf6" name="Usage" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No feature usage data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="usage-trends-chart">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Usage Trends (12 Weeks)
+            </CardTitle>
+            <CardDescription>
+              Feature usage over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {featureAdoptionLoading || !featureAdoption ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : featureAdoption.usageTrends && featureAdoption.usageTrends.some(t => t.grades > 0 || t.rewrites > 0 || t.followups > 0 || t.deliverability > 0) ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={featureAdoption.usageTrends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px'
+                    }}
+                    labelFormatter={(value) => format(new Date(value), 'MMM d, yyyy')}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="grades" 
+                    stackId="1"
+                    stroke="#8b5cf6" 
+                    fill="#8b5cf6" 
+                    fillOpacity={0.6}
+                    name="Grades"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="rewrites" 
+                    stackId="1"
+                    stroke="#06b6d4" 
+                    fill="#06b6d4" 
+                    fillOpacity={0.6}
+                    name="Rewrites"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="followups" 
+                    stackId="1"
+                    stroke="#22c55e" 
+                    fill="#22c55e" 
+                    fillOpacity={0.6}
+                    name="Follow-ups"
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="deliverability" 
+                    stackId="1"
+                    stroke="#f59e0b" 
+                    fill="#f59e0b" 
+                    fillOpacity={0.6}
+                    name="Deliverability"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No usage trend data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Feature Adoption Summary */}
+      <Card data-testid="feature-summary-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Feature Breakdown
+          </CardTitle>
+          <CardDescription>
+            Usage distribution across all features
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {featureAdoptionLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : featureAdoption?.featureUsage && featureAdoption.featureUsage.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {featureAdoption.featureUsage.map((feature, index) => {
+                const colors = ['#8b5cf6', '#06b6d4', '#22c55e', '#f59e0b'];
+                return (
+                  <div 
+                    key={feature.feature} 
+                    className="p-4 rounded-lg bg-muted/50 space-y-2"
+                    data-testid={`feature-stat-${index}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{feature.feature}</span>
+                      <Badge variant="outline" style={{ borderColor: colors[index] || '#64748b', color: colors[index] || '#64748b' }}>
+                        {feature.percentage}%
+                      </Badge>
+                    </div>
+                    <div className="text-2xl font-bold">{feature.count.toLocaleString()}</div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full transition-all"
+                        style={{ 
+                          width: `${feature.percentage}%`,
+                          backgroundColor: colors[index] || '#64748b'
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              No feature data available
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

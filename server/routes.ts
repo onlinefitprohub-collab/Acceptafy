@@ -996,5 +996,15 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/admin/feature-adoption', isAdmin, async (req: any, res) => {
+    try {
+      const adoption = await storage.getFeatureAdoption();
+      res.json(adoption);
+    } catch (error) {
+      console.error('Admin feature adoption error:', error);
+      res.status(500).json({ error: 'Failed to fetch feature adoption data' });
+    }
+  });
+
   return httpServer;
 }
