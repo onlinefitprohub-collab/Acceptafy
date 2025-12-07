@@ -957,7 +957,7 @@ export async function registerRoutes(
 
   app.get('/api/admin/users', isAdmin, async (req: any, res) => {
     try {
-      const users = await storage.getAllUsers();
+      const users = await storage.getAllUsersWithUsage();
       const sanitizedUsers = users.map(({ passwordHash, ...user }) => user);
       res.json(sanitizedUsers);
     } catch (error) {

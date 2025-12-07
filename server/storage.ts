@@ -72,6 +72,12 @@ export interface IStorage {
   
   // Admin methods
   getAllUsers(): Promise<User[]>;
+  getAllUsersWithUsage(): Promise<Array<User & { 
+    totalGrades: number; 
+    totalRewrites: number;
+    totalFollowups: number;
+    lastActiveDate: string | null;
+  }>>;
   getAdminStats(): Promise<{
     totalUsers: number;
     activeSubscriptions: number;
@@ -425,6 +431,45 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .orderBy(desc(users.createdAt));
     return allUsers;
+  }
+
+  async getAllUsersWithUsage(): Promise<Array<User & { 
+    totalGrades: number; 
+    totalRewrites: number;
+    totalFollowups: number;
+    lastActiveDate: string | null;
+  }>> {
+    const allUsers = await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.createdAt));
+    
+    const allGamification = await db.select().from(userGamification);
+    const allUsage = await db.select().from(usageCounters);
+    
+    const gamificationMap = new Map(allGamification.map(g => [g.userId, g]));
+    const usageMap = new Map<string, { grades: number; rewrites: number; followups: number }>();
+    
+    for (const usage of allUsage) {
+      const existing = usageMap.get(usage.userId) || { grades: 0, rewrites: 0, followups: 0 };
+      usageMap.set(usage.userId, {
+        grades: existing.grades + (usage.gradeCount || 0),
+        rewrites: existing.rewrites + (usage.rewriteCount || 0),
+        followups: existing.followups + (usage.followupCount || 0),
+      });
+    }
+    
+    return allUsers.map(user => {
+      const gamification = gamificationMap.get(user.id);
+      const usage = usageMap.get(user.id) || { grades: 0, rewrites: 0, followups: 0 };
+      return {
+        ...user,
+        totalGrades: usage.grades,
+        totalRewrites: usage.rewrites,
+        totalFollowups: usage.followups,
+        lastActiveDate: gamification?.lastActiveDate || null,
+      };
+    });
   }
 
   async getAdminStats(): Promise<{

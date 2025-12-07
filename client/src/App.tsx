@@ -33,6 +33,7 @@ import Account from './pages/Account';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Contact from './pages/Contact';
+import Admin from './pages/Admin';
 import { 
   SidebarProvider, 
   SidebarTrigger,
@@ -2244,6 +2245,7 @@ function App() {
           <Route path="/terms" component={TermsOfService} />
           <Route path="/privacy" component={PrivacyPolicy} />
           <Route path="/contact" component={Contact} />
+          <Route path="/admin" component={Admin} />
           <Route path="/" component={AuthenticatedApp} />
           <Route component={AuthenticatedApp} />
         </Switch>
