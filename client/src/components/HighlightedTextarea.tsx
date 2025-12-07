@@ -100,14 +100,15 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         <div className={`relative ${className || ''}`}>
             <div
                 ref={highlightRef}
-                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent px-3 py-2"
+                className="absolute overflow-hidden pointer-events-none text-transparent text-base md:text-sm px-3 py-2 rounded-md border border-transparent"
                 style={{
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
                     whiteSpace: 'pre-wrap',
                     wordWrap: 'break-word',
                     overflowWrap: 'break-word',
-                    fontFamily: 'inherit',
-                    fontSize: 'inherit',
-                    lineHeight: 'inherit',
                 }}
                 aria-hidden="true"
                 dangerouslySetInnerHTML={{ __html: getHighlightedHtml() }}
