@@ -12,12 +12,15 @@ import { AccessibilityCard } from './AccessibilityCard';
 import { EmailClientPreview } from './EmailClientPreview';
 import { InboxPlacementSimulator } from './InboxPlacementSimulator';
 import { SubjectIcon, PreviewIcon, BodyIcon, CtaIcon, ChecklistIcon, SpamIcon, MonitorIcon } from './icons/CategoryIcons';
-import { Zap } from 'lucide-react';
+import { Zap, Sparkles } from 'lucide-react';
 import { PriorityIssues } from './PriorityIssues';
+import { InsightsPanel } from './InsightsPanel';
 
 interface ResultsTabsProps {
   result: GradingResult;
   body: string;
+  subject?: string;
+  preview?: string;
   onSuggestionClick: (triggerWord: string, suggestion: string) => void;
   onFullRewrite: (originalText: string, newText: string) => void;
   onQuickFix: (triggerWord: string, suggestion: string) => void;
@@ -27,7 +30,7 @@ interface ResultsTabsProps {
   onAppendPs: () => void;
 }
 
-type ActiveTab = 'fixes' | 'core' | 'risks' | 'technical';
+type ActiveTab = 'fixes' | 'core' | 'risks' | 'technical' | 'insights';
 
 const TabButton: React.FC<{
     label: string;
@@ -58,6 +61,8 @@ const TabButton: React.FC<{
 export const ResultsTabs: React.FC<ResultsTabsProps> = ({
   result,
   body,
+  subject = '',
+  preview = '',
   onSuggestionClick,
   onFullRewrite,
   onQuickFix,
@@ -117,6 +122,17 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({
                         <EmailClientPreview result={result} body={body} />
                     </div>
                 );
+            case 'insights':
+                return (
+                    <div className="animate-fade-in">
+                        <InsightsPanel 
+                            emailContent={body}
+                            subject={subject}
+                            preview={preview}
+                            overallScore={result.inboxPlacementScore?.score}
+                        />
+                    </div>
+                );
             default:
                 return null;
         }
@@ -124,11 +140,12 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({
 
   return (
     <div className="space-y-6" data-testid="results-tabs">
-        <div className="flex flex-col sm:flex-row items-center gap-2 border border-white/10 p-1.5 rounded-lg bg-white/5 w-full">
+        <div className="flex flex-col sm:flex-row items-center gap-2 border border-white/10 p-1.5 rounded-lg bg-white/5 w-full overflow-x-auto">
             <TabButton label="Priority Fixes" icon={<Zap className="w-5 h-5" />} isActive={activeTab === 'fixes'} onClick={() => setActiveTab('fixes')} highlighted />
             <TabButton label="Core Analysis" icon={<ChecklistIcon />} isActive={activeTab === 'core'} onClick={() => setActiveTab('core')} />
             <TabButton label="Deliverability Risks" icon={<SpamIcon className="w-5 h-5" />} isActive={activeTab === 'risks'} onClick={() => setActiveTab('risks')} />
             <TabButton label="Technical & Previews" icon={<MonitorIcon />} isActive={activeTab === 'technical'} onClick={() => setActiveTab('technical')} />
+            <TabButton label="AI Insights" icon={<Sparkles className="w-5 h-5" />} isActive={activeTab === 'insights'} onClick={() => setActiveTab('insights')} />
         </div>
         <div className="mt-6">
             {renderTabContent()}

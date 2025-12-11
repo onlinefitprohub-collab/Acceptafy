@@ -1773,3 +1773,230 @@ Consider these factors:
     topOpportunities: result.topOpportunities || [],
   };
 };
+
+// Send Time Optimizer
+const sendTimeSchema = {
+  type: Type.OBJECT,
+  properties: {
+    bestTimes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          day: { type: Type.STRING },
+          hour: { type: Type.STRING },
+          score: { type: Type.NUMBER },
+          reason: { type: Type.STRING }
+        }
+      }
+    },
+    worstTimes: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          day: { type: Type.STRING },
+          hour: { type: Type.STRING },
+          score: { type: Type.NUMBER },
+          reason: { type: Type.STRING }
+        }
+      }
+    },
+    timezone: { type: Type.STRING },
+    industryInsight: { type: Type.STRING },
+    summary: { type: Type.STRING }
+  }
+};
+
+export const optimizeSendTime = async (emailContent: string, industry?: string, audienceType?: string) => {
+  const prompt = `Analyze this email and recommend the optimal send times for maximum engagement.
+
+Email Content:
+${emailContent}
+
+${industry ? `Industry: ${industry}` : ''}
+${audienceType ? `Audience Type: ${audienceType}` : ''}
+
+Provide:
+1. Top 3 best times to send (day of week + hour in 12h format)
+2. Top 2 worst times to avoid
+3. Consider the email content, industry trends, and audience behavior
+4. Each time slot should have a score (0-100) and reason
+5. Provide industry-specific insights
+6. Assume US timezones unless specified`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: sendTimeSchema
+    }
+  });
+
+  return JSON.parse(res.text || '{}');
+};
+
+// Engagement Predictor
+const engagementSchema = {
+  type: Type.OBJECT,
+  properties: {
+    predictedOpenRate: { type: Type.NUMBER },
+    predictedClickRate: { type: Type.NUMBER },
+    predictedUnsubscribeRate: { type: Type.NUMBER },
+    engagementScore: { type: Type.NUMBER },
+    factors: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          factor: { type: Type.STRING },
+          impact: { type: Type.STRING },
+          weight: { type: Type.NUMBER },
+          explanation: { type: Type.STRING }
+        }
+      }
+    },
+    recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+    summary: { type: Type.STRING }
+  }
+};
+
+export const predictEngagement = async (subject: string, preview: string, body: string, industry?: string) => {
+  const prompt = `Predict the engagement metrics for this email campaign.
+
+Subject Line: ${subject}
+Preview Text: ${preview}
+Body: ${body}
+${industry ? `Industry: ${industry}` : ''}
+
+Analyze and predict:
+1. Predicted Open Rate (0-100%)
+2. Predicted Click-Through Rate (0-100%)
+3. Predicted Unsubscribe Rate (0-5%)
+4. Overall Engagement Score (0-100)
+5. List the top factors affecting engagement with their impact (positive/negative/neutral) and weight (0-100)
+6. Provide actionable recommendations to improve engagement
+7. Write a summary of the engagement potential`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: engagementSchema
+    }
+  });
+
+  return JSON.parse(res.text || '{}');
+};
+
+// Industry Benchmarking
+const industryBenchmarkSchema = {
+  type: Type.OBJECT,
+  properties: {
+    industry: { type: Type.STRING },
+    yourScore: { type: Type.NUMBER },
+    industryAverage: { type: Type.NUMBER },
+    topPerformers: { type: Type.NUMBER },
+    percentile: { type: Type.NUMBER },
+    metrics: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          metric: { type: Type.STRING },
+          yourValue: { type: Type.STRING },
+          benchmark: { type: Type.STRING },
+          status: { type: Type.STRING },
+          tip: { type: Type.STRING }
+        }
+      }
+    },
+    summary: { type: Type.STRING }
+  }
+};
+
+export const compareToIndustry = async (emailContent: string, subject: string, industry: string, overallScore: number) => {
+  const prompt = `Compare this email against ${industry} industry benchmarks.
+
+Subject: ${subject}
+Email Content: ${emailContent}
+Current Overall Score: ${overallScore}
+
+Analyze against ${industry} industry standards and provide:
+1. Industry name
+2. The email's score normalized for this industry
+3. Industry average score (based on typical email marketing performance)
+4. Top performers score threshold
+5. Where this email ranks (percentile)
+6. Compare at least 5 key metrics (subject length, personalization, CTA clarity, mobile-friendliness, spam risk) with benchmarks
+7. For each metric, indicate if it's above/at/below benchmark and provide an improvement tip
+8. Summarize how this email compares to industry standards`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: industryBenchmarkSchema
+    }
+  });
+
+  return JSON.parse(res.text || '{}');
+};
+
+// Reputation Insights
+const reputationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallHealth: { type: Type.STRING },
+    score: { type: Type.NUMBER },
+    factors: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          factor: { type: Type.STRING },
+          status: { type: Type.STRING },
+          description: { type: Type.STRING },
+          actionItem: { type: Type.STRING }
+        }
+      }
+    },
+    tips: { type: Type.ARRAY, items: { type: Type.STRING } },
+    summary: { type: Type.STRING }
+  }
+};
+
+export const analyzeReputation = async (emailContent: string, domain?: string, historicalData?: any) => {
+  const prompt = `Analyze the sender reputation signals from this email content.
+
+Email Content: ${emailContent}
+${domain ? `Sender Domain: ${domain}` : ''}
+
+Evaluate reputation factors based on email content:
+1. Overall Health (Excellent/Good/Fair/Poor)
+2. Reputation Score (0-100)
+3. Analyze these factors and their status (good/warning/critical):
+   - Authentication signals (SPF, DKIM, DMARC mentions)
+   - Content quality (spam triggers, professionalism)
+   - List hygiene indicators
+   - Engagement optimization
+   - Unsubscribe compliance
+   - Link quality
+4. Provide actionable items for each factor
+5. List 3-5 quick tips to improve reputation
+6. Summarize the overall reputation health`;
+
+  const res = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: prompt,
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema: reputationSchema
+    }
+  });
+
+  return JSON.parse(res.text || '{}');
+};

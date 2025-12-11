@@ -1992,6 +1992,8 @@ function AppContent() {
           <ResultsTabs
             result={result}
             body={body}
+            subject={variations[0]?.subject || ''}
+            preview={variations[0]?.previewText || ''}
             onSuggestionClick={handleSuggestionClick}
             onFullRewrite={handleFullRewrite}
             onQuickFix={handleQuickFix}

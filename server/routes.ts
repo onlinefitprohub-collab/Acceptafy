@@ -24,7 +24,11 @@ import {
   analyzeSentiment,
   estimateSenderScore,
   analyzeCompetitorEmail,
-  simulateInboxPlacement
+  simulateInboxPlacement,
+  optimizeSendTime,
+  predictEngagement,
+  compareToIndustry,
+  analyzeReputation
 } from "./gemini";
 import { insertEmailTemplateSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS } from "@shared/schema";
@@ -1051,6 +1055,71 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Save agency branding error:', error);
       res.status(500).json({ error: 'Failed to save agency branding' });
+    }
+  });
+
+  // AI Insights Endpoints
+  app.post('/api/insights/send-time', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { emailContent, industry, audienceType } = req.body;
+      const result = await optimizeSendTime(emailContent, industry, audienceType);
+      res.json(result);
+    } catch (error) {
+      console.error('Send time optimization error:', error);
+      res.status(500).json({ error: 'Failed to optimize send time' });
+    }
+  });
+
+  app.post('/api/insights/engagement', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { subject, preview, body, industry } = req.body;
+      const result = await predictEngagement(subject, preview, body, industry);
+      res.json(result);
+    } catch (error) {
+      console.error('Engagement prediction error:', error);
+      res.status(500).json({ error: 'Failed to predict engagement' });
+    }
+  });
+
+  app.post('/api/insights/benchmark', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { emailContent, subject, industry, overallScore } = req.body;
+      const result = await compareToIndustry(emailContent, subject, industry, overallScore);
+      res.json(result);
+    } catch (error) {
+      console.error('Industry benchmark error:', error);
+      res.status(500).json({ error: 'Failed to compare to industry benchmarks' });
+    }
+  });
+
+  app.post('/api/insights/reputation', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { emailContent, domain } = req.body;
+      const result = await analyzeReputation(emailContent, domain);
+      res.json(result);
+    } catch (error) {
+      console.error('Reputation analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze reputation' });
     }
   });
 

@@ -311,3 +311,62 @@ export interface BenchmarkFeedback {
   industryPercentile: number | null;
   emailTypePercentile: number | null;
 }
+
+export interface SendTimeSlot {
+  day: string;
+  hour: string;
+  score: number;
+  reason: string;
+}
+
+export interface SendTimeOptimization {
+  bestTimes: SendTimeSlot[];
+  worstTimes: SendTimeSlot[];
+  timezone: string;
+  industryInsight: string;
+  summary: string;
+}
+
+export interface EngagementPrediction {
+  predictedOpenRate: number;
+  predictedClickRate: number;
+  predictedUnsubscribeRate: number;
+  engagementScore: number;
+  factors: {
+    factor: string;
+    impact: 'positive' | 'negative' | 'neutral';
+    weight: number;
+    explanation: string;
+  }[];
+  recommendations: string[];
+  summary: string;
+}
+
+export interface IndustryBenchmark {
+  industry: string;
+  yourScore: number;
+  industryAverage: number;
+  topPerformers: number;
+  percentile: number;
+  metrics: {
+    metric: string;
+    yourValue: number | string;
+    benchmark: number | string;
+    status: 'above' | 'at' | 'below';
+    tip: string;
+  }[];
+  summary: string;
+}
+
+export interface ReputationInsight {
+  overallHealth: 'Excellent' | 'Good' | 'Fair' | 'Poor';
+  score: number;
+  factors: {
+    factor: string;
+    status: 'good' | 'warning' | 'critical';
+    description: string;
+    actionItem: string;
+  }[];
+  tips: string[];
+  summary: string;
+}
