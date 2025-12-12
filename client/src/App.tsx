@@ -764,8 +764,13 @@ function AppContent() {
                 <label className="text-sm font-medium text-foreground mb-2 block">
                   Load from Previous Email
                 </label>
-                <Select
-                  onValueChange={(value) => {
+                <select
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  data-testid="select-previous-email"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) return;
                     const item = history.find(h => h.id === value);
                     if (item) {
                       const subject = item.content.variations?.[0]?.subject || '';
@@ -781,28 +786,24 @@ function AppContent() {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full bg-background" data-testid="select-previous-email">
-                    <SelectValue placeholder="Select a previous email to improve..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {history.map((item) => {
-                      const score = item.result?.inboxPlacementScore?.score || 0;
-                      const isLowScore = score < 70;
-                      const subject = item.content?.variations?.[0]?.subject || 'No subject';
-                      const truncatedSubject = subject.length > 40 ? subject.slice(0, 40) + '...' : subject;
-                      return (
-                        <SelectItem 
-                          key={item.id} 
-                          value={item.id} 
-                          data-testid={`select-email-${item.id}`}
-                          className={isLowScore ? 'text-amber-500' : ''}
-                        >
-                          {score} - {truncatedSubject}{isLowScore ? ' (!)' : ''}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
+                  <option value="">Select a previous email to improve...</option>
+                  {history.map((item) => {
+                    const score = item.result?.inboxPlacementScore?.score || 0;
+                    const isLowScore = score < 70;
+                    const subject = item.content?.variations?.[0]?.subject || 'No subject';
+                    const truncatedSubject = subject.length > 40 ? subject.slice(0, 40) + '...' : subject;
+                    return (
+                      <option 
+                        key={item.id} 
+                        value={item.id}
+                        data-testid={`select-email-${item.id}`}
+                        className={isLowScore ? 'text-amber-500' : ''}
+                      >
+                        {score} - {truncatedSubject}{isLowScore ? ' (needs improvement)' : ''}
+                      </option>
+                    );
+                  })}
+                </select>
                 <p className="text-xs text-muted-foreground mt-2">
                   {history.filter(h => (h.result?.inboxPlacementScore?.score || 0) < 70).length} email(s) scoring below 70
                 </p>
