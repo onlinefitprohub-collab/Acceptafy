@@ -85,6 +85,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
@@ -758,6 +759,62 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {history.length > 0 && (
+              <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Load from Previous Email
+                </label>
+                <Select
+                  onValueChange={(value) => {
+                    const item = history.find(h => h.id === value);
+                    if (item) {
+                      const newVariations = [...variations];
+                      if (newVariations[0]) {
+                        newVariations[0].subject = item.content.variations[0]?.subject || '';
+                        newVariations[0].previewText = item.content.variations[0]?.previewText || '';
+                        setVariations(newVariations);
+                      }
+                      setBody(item.content.body || '');
+                      toast({
+                        title: 'Email Loaded',
+                        description: `Loaded "${item.content.variations[0]?.subject || 'Untitled'}" for rewriting`,
+                      });
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-background" data-testid="select-previous-email">
+                    <SelectValue placeholder="Select a previous email to improve..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {history.map((item) => {
+                      const score = item.result.inboxPlacementScore?.score || 0;
+                      const isLowScore = score < 70;
+                      return (
+                        <SelectItem key={item.id} value={item.id} data-testid={`select-email-${item.id}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold ${isLowScore ? 'text-amber-500' : 'text-green-500'}`}>
+                              {score}
+                            </span>
+                            <span className="truncate max-w-[300px]">
+                              {item.content.variations[0]?.subject || 'No subject'}
+                            </span>
+                            {isLowScore && (
+                              <Badge variant="outline" className="ml-1 text-xs border-amber-500/50 text-amber-500">
+                                Needs improvement
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {history.filter(h => (h.result.inboxPlacementScore?.score || 0) < 70).length} email(s) scoring below 70
+                </p>
+              </div>
+            )}
+            
             <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">Subject Line</label>
