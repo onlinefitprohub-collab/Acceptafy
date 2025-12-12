@@ -768,16 +768,15 @@ function AppContent() {
                   onValueChange={(value) => {
                     const item = history.find(h => h.id === value);
                     if (item) {
-                      const newVariations = [...variations];
-                      if (newVariations[0]) {
-                        newVariations[0].subject = item.content.variations[0]?.subject || '';
-                        newVariations[0].previewText = item.content.variations[0]?.previewText || '';
-                        setVariations(newVariations);
-                      }
-                      setBody(item.content.body || '');
+                      const subject = item.content.variations?.[0]?.subject || '';
+                      const previewText = item.content.variations?.[0]?.previewText || '';
+                      const emailBody = item.content.body || '';
+                      
+                      setVariations([{ subject, previewText }]);
+                      setBody(emailBody);
                       toast({
                         title: 'Email Loaded',
-                        description: `Loaded "${item.content.variations[0]?.subject || 'Untitled'}" for rewriting`,
+                        description: `Loaded "${subject || 'Untitled'}" for rewriting`,
                       });
                     }
                   }}
@@ -787,10 +786,10 @@ function AppContent() {
                   </SelectTrigger>
                   <SelectContent>
                     {history.map((item) => {
-                      const score = item.result.inboxPlacementScore?.score || 0;
+                      const score = item.result?.inboxPlacementScore?.score || 0;
                       const isLowScore = score < 70;
-                      const subject = item.content.variations[0]?.subject || 'No subject';
-                      const displayText = `${score} - ${subject.slice(0, 40)}${subject.length > 40 ? '...' : ''}${isLowScore ? ' ⚠️' : ''}`;
+                      const subject = item.content?.variations?.[0]?.subject || 'No subject';
+                      const truncatedSubject = subject.length > 40 ? subject.slice(0, 40) + '...' : subject;
                       return (
                         <SelectItem 
                           key={item.id} 
@@ -798,14 +797,14 @@ function AppContent() {
                           data-testid={`select-email-${item.id}`}
                           className={isLowScore ? 'text-amber-500' : ''}
                         >
-                          {displayText}
+                          {score} - {truncatedSubject}{isLowScore ? ' (!)' : ''}
                         </SelectItem>
                       );
                     })}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {history.filter(h => (h.result.inboxPlacementScore?.score || 0) < 70).length} email(s) scoring below 70
+                  {history.filter(h => (h.result?.inboxPlacementScore?.score || 0) < 70).length} email(s) scoring below 70
                 </p>
               </div>
             )}
