@@ -789,21 +789,16 @@ function AppContent() {
                     {history.map((item) => {
                       const score = item.result.inboxPlacementScore?.score || 0;
                       const isLowScore = score < 70;
+                      const subject = item.content.variations[0]?.subject || 'No subject';
+                      const displayText = `${score} - ${subject.slice(0, 40)}${subject.length > 40 ? '...' : ''}${isLowScore ? ' ⚠️' : ''}`;
                       return (
-                        <SelectItem key={item.id} value={item.id} data-testid={`select-email-${item.id}`}>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold ${isLowScore ? 'text-amber-500' : 'text-green-500'}`}>
-                              {score}
-                            </span>
-                            <span className="truncate max-w-[300px]">
-                              {item.content.variations[0]?.subject || 'No subject'}
-                            </span>
-                            {isLowScore && (
-                              <Badge variant="outline" className="ml-1 text-xs border-amber-500/50 text-amber-500">
-                                Needs improvement
-                              </Badge>
-                            )}
-                          </div>
+                        <SelectItem 
+                          key={item.id} 
+                          value={item.id} 
+                          data-testid={`select-email-${item.id}`}
+                          className={isLowScore ? 'text-amber-500' : ''}
+                        >
+                          {displayText}
                         </SelectItem>
                       );
                     })}
