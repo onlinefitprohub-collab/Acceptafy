@@ -89,9 +89,9 @@ export function AppSidebar({
   integrationsSubView,
   setIntegrationsSubView
 }: AppSidebarProps) {
-  const [toolsOpen, setToolsOpen] = useState(true);
-  const [deliverabilityOpen, setDeliverabilityOpen] = useState(true);
-  const [integrationsOpen, setIntegrationsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const [deliverabilityOpen, setDeliverabilityOpen] = useState(false);
+  const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
   
   const xpProgress = (xp / nextLevelXp) * 100;
