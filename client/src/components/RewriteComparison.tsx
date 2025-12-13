@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { GradingResult, RewrittenEmail } from '../types';
 import { ResultsHub } from './ResultsHub';
 import { CopyIcon, CheckIcon } from './icons/CategoryIcons';
+import { SendViaESPDialog } from './SendViaESPDialog';
+import { Send } from 'lucide-react';
 
 interface RewriteComparisonProps {
     originalResult: GradingResult;
@@ -80,6 +82,7 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
         preview: false,
         body: false,
     });
+    const [showSendDialog, setShowSendDialog] = useState(false);
 
     const handleCopy = (text: string, type: 'subject' | 'preview' | 'body') => {
         navigator.clipboard.writeText(text).then(() => {
@@ -192,6 +195,14 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
                     Discard Rewrite
                 </button>
                 <button
+                    onClick={() => setShowSendDialog(true)}
+                    className="w-full sm:w-auto px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-all duration-200 flex items-center justify-center gap-2"
+                    data-testid="button-send-via-esp"
+                >
+                    <Send className="w-4 h-4" />
+                    Send via ESP
+                </button>
+                <button
                     onClick={onAccept}
                     className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-all duration-200"
                     data-testid="button-accept-rewrite"
@@ -199,6 +210,14 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
                     Accept & Use This Version
                 </button>
             </div>
+
+            <SendViaESPDialog
+                open={showSendDialog}
+                onOpenChange={setShowSendDialog}
+                subject={rewrittenContent.subject}
+                body={rewrittenContent.body}
+                previewText={rewrittenContent.previewText}
+            />
         </div>
     );
 };
