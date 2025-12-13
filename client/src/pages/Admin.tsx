@@ -17,7 +17,9 @@ import {
   UserCheck,
   FileText,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  Link2,
+  Zap
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
@@ -95,6 +97,13 @@ interface FeatureAdoption {
   totalUsage: number;
 }
 
+interface ESPMetrics {
+  totalConnections: number;
+  activeConnections: number;
+  providerBreakdown: { provider: string; count: number }[];
+  usersWithConnections: number;
+}
+
 const TIER_COLORS: Record<string, string> = {
   'scale': '#8b5cf6',
   'pro': '#06b6d4',
@@ -141,6 +150,11 @@ export default function Admin() {
 
   const { data: featureAdoption, isLoading: featureAdoptionLoading } = useQuery<FeatureAdoption>({
     queryKey: ["/api/admin/feature-adoption"],
+    enabled: isAdmin,
+  });
+
+  const { data: espMetrics, isLoading: espMetricsLoading } = useQuery<ESPMetrics>({
+    queryKey: ["/api/admin/esp-metrics"],
     enabled: isAdmin,
   });
 
@@ -479,6 +493,76 @@ export default function Admin() {
             ) : (
               <div className="flex items-center justify-center h-[250px] text-muted-foreground">
                 No subscription data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ESP Metrics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card data-testid="stat-esp-connections">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total ESP Connections</CardTitle>
+            <Link2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {espMetricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold">{espMetrics?.totalConnections || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-esp-active">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Connections</CardTitle>
+            <Zap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {espMetricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold text-green-500">{espMetrics?.activeConnections || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-esp-users">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Users with ESP</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {espMetricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="text-2xl font-bold">{espMetrics?.usersWithConnections || 0}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card data-testid="stat-esp-providers">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ESP Providers</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {espMetricsLoading ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <div className="space-y-2">
+                {espMetrics?.providerBreakdown && espMetrics.providerBreakdown.length > 0 ? (
+                  espMetrics.providerBreakdown.slice(0, 3).map((item) => (
+                    <div key={item.provider} className="flex items-center justify-between text-sm">
+                      <span className="capitalize">{item.provider}</span>
+                      <Badge variant="secondary">{item.count}</Badge>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground text-sm">No providers connected</div>
+                )}
               </div>
             )}
           </CardContent>

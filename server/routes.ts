@@ -1032,6 +1032,16 @@ export async function registerRoutes(
     }
   });
 
+  app.get('/api/admin/esp-metrics', isAdmin, async (req: any, res) => {
+    try {
+      const espMetrics = await storage.getESPMetrics();
+      res.json(espMetrics);
+    } catch (error) {
+      console.error('Admin ESP metrics error:', error);
+      res.status(500).json({ error: 'Failed to fetch ESP metrics' });
+    }
+  });
+
   // Agency Branding endpoints (Scale tier only)
   app.get('/api/agency-branding', isAuthenticated, async (req: any, res) => {
     try {
@@ -1346,7 +1356,13 @@ export async function registerRoutes(
       }
 
       const { analyzeESPStats } = await import('./gemini');
-      const analysis = await analyzeESPStats(validation.data.stats);
+      const normalizedStats = {
+        ...validation.data.stats,
+        totalDelivered: validation.data.stats.totalDelivered ?? 0,
+        totalOpened: validation.data.stats.totalOpened ?? 0,
+        totalClicked: validation.data.stats.totalClicked ?? 0,
+      };
+      const analysis = await analyzeESPStats(normalizedStats);
       
       if (!analysis || typeof analysis.healthScore !== 'number') {
         return res.status(500).json({ error: 'AI analysis returned invalid response' });

@@ -110,6 +110,12 @@ export interface IStorage {
     usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
     totalUsage: number;
   }>;
+  getESPMetrics(): Promise<{
+    totalConnections: number;
+    activeConnections: number;
+    providerBreakdown: { provider: string; count: number }[];
+    usersWithConnections: number;
+  }>;
   
   // Agency Branding
   getAgencyBranding(userId: string): Promise<AgencyBranding | undefined>;
@@ -821,6 +827,36 @@ export class DatabaseStorage implements IStorage {
       featureUsage,
       usageTrends,
       totalUsage,
+    };
+  }
+
+  async getESPMetrics(): Promise<{
+    totalConnections: number;
+    activeConnections: number;
+    providerBreakdown: { provider: string; count: number }[];
+    usersWithConnections: number;
+  }> {
+    const allConnections = await db.select().from(espConnections);
+    
+    const totalConnections = allConnections.length;
+    const activeConnections = allConnections.filter(c => c.isConnected).length;
+    
+    const providerCounts: Record<string, number> = {};
+    for (const conn of allConnections) {
+      providerCounts[conn.provider] = (providerCounts[conn.provider] || 0) + 1;
+    }
+    const providerBreakdown = Object.entries(providerCounts)
+      .map(([provider, count]) => ({ provider, count }))
+      .sort((a, b) => b.count - a.count);
+    
+    const uniqueUsers = new Set(allConnections.map(c => c.userId));
+    const usersWithConnections = uniqueUsers.size;
+    
+    return {
+      totalConnections,
+      activeConnections,
+      providerBreakdown,
+      usersWithConnections,
     };
   }
 
