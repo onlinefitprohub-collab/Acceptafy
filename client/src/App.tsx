@@ -1620,6 +1620,12 @@ function AppContent() {
       sendgrid: 'SendGrid',
       mailchimp: 'Mailchimp',
       activecampaign: 'ActiveCampaign',
+      hubspot: 'HubSpot',
+      constantcontact: 'Constant Contact',
+      convertkit: 'ConvertKit',
+      klaviyo: 'Klaviyo',
+      drip: 'Drip',
+      aweber: 'AWeber',
       highlevel: 'HighLevel',
       ontraport: 'Ontraport',
       keap: 'Keap'

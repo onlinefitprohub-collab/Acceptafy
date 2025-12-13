@@ -18,7 +18,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 
-export type ESPProvider = 'sendgrid' | 'mailchimp' | 'activecampaign' | 'highlevel' | 'ontraport' | 'keap';
+export type ESPProvider = 'sendgrid' | 'mailchimp' | 'activecampaign' | 'hubspot' | 'constantcontact' | 'convertkit' | 'klaviyo' | 'drip' | 'aweber' | 'highlevel' | 'ontraport' | 'keap';
 
 interface ESPConnection {
   provider: ESPProvider;
@@ -116,6 +116,85 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     authType: 'oauth',
     docsUrl: 'https://developer.keap.com/docs/restv2/',
     fields: []
+  },
+  {
+    id: 'hubspot',
+    name: 'HubSpot',
+    description: 'Inbound marketing, sales, and CRM platform',
+    color: 'orange',
+    gradient: 'from-orange-500 to-red-500',
+    features: ['Email Sending', 'Campaign Stats', 'CRM Integration'],
+    authType: 'api_key',
+    docsUrl: 'https://developers.hubspot.com/docs/api/overview',
+    fields: [
+      { key: 'apiKey', label: 'Private App Access Token', placeholder: 'pat-na1-xxxxxxxxxx', type: 'password' }
+    ]
+  },
+  {
+    id: 'constantcontact',
+    name: 'Constant Contact',
+    description: 'Email marketing for small businesses',
+    color: 'blue',
+    gradient: 'from-blue-600 to-blue-400',
+    features: ['Email Sending', 'Campaign Stats', 'Contact Lists'],
+    authType: 'api_key',
+    docsUrl: 'https://developer.constantcontact.com/api_guide/',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
+    ]
+  },
+  {
+    id: 'convertkit',
+    name: 'ConvertKit',
+    description: 'Email marketing for creators and bloggers',
+    color: 'red',
+    gradient: 'from-red-500 to-rose-500',
+    features: ['Email Sending', 'Campaign Stats', 'Subscriber Tags'],
+    authType: 'api_key',
+    docsUrl: 'https://developers.convertkit.com/',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
+    ]
+  },
+  {
+    id: 'klaviyo',
+    name: 'Klaviyo',
+    description: 'E-commerce email and SMS marketing',
+    color: 'emerald',
+    gradient: 'from-emerald-500 to-green-500',
+    features: ['Email Sending', 'Campaign Stats', 'E-commerce Flows'],
+    authType: 'api_key',
+    docsUrl: 'https://developers.klaviyo.com/en',
+    fields: [
+      { key: 'apiKey', label: 'Private API Key', placeholder: 'pk_xxxxxxxxxx', type: 'password' }
+    ]
+  },
+  {
+    id: 'drip',
+    name: 'Drip',
+    description: 'E-commerce CRM and automation platform',
+    color: 'violet',
+    gradient: 'from-violet-500 to-purple-500',
+    features: ['Email Sending', 'Campaign Stats', 'Automation Workflows'],
+    authType: 'api_key',
+    docsUrl: 'https://developer.drip.com/',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' },
+      { key: 'accountId', label: 'Account ID', placeholder: 'Your account ID' }
+    ]
+  },
+  {
+    id: 'aweber',
+    name: 'AWeber',
+    description: 'Email marketing and automation for creators',
+    color: 'sky',
+    gradient: 'from-sky-500 to-blue-500',
+    features: ['Email Sending', 'Campaign Stats', 'Broadcast Emails'],
+    authType: 'api_key',
+    docsUrl: 'https://api.aweber.com/',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
+    ]
   }
 ];
 
