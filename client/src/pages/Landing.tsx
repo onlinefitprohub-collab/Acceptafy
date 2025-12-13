@@ -59,7 +59,7 @@ const DEMO_GRADES = [
 
 const TESTIMONIALS = [
   {
-    quote: "I used to spend hours tweaking subject lines. Now I paste my email, get a grade, and the AI rewrites fix everything in seconds. My open rates jumped 27% in the first month.",
+    quote: "I used to spend hours tweaking subject lines. Now I paste my email, get a grade, and Acceptafy rewrites fix everything in seconds. My open rates jumped 27% in the first month.",
     author: "Sarah Chen",
     role: "Email Marketing Manager",
     company: "GrowthStack",
@@ -277,7 +277,7 @@ export default function Landing() {
       limits: SUBSCRIPTION_LIMITS.starter,
       features: [
         `${SUBSCRIPTION_LIMITS.starter.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.starter.rewritesPerMonth} AI rewrites`,
+        `${SUBSCRIPTION_LIMITS.starter.rewritesPerMonth} smart rewrites`,
         "Spam & deliverability checks",
         "Email Academy access",
         "No credit card required",
@@ -293,7 +293,7 @@ export default function Landing() {
       limits: SUBSCRIPTION_LIMITS.pro,
       features: [
         `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} AI rewrites`,
+        `${SUBSCRIPTION_LIMITS.pro.rewritesPerMonth} smart rewrites`,
         "Advanced spam analysis (ISP-specific)",
         "Sender Score Estimator",
         "Domain health & warmup tools",
@@ -311,7 +311,7 @@ export default function Landing() {
       limits: SUBSCRIPTION_LIMITS.scale,
       features: [
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
-        `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} AI rewrites`,
+        `${SUBSCRIPTION_LIMITS.scale.rewritesPerMonth} smart rewrites`,
         "Advanced spam analysis (ISP-specific)",
         "Sender Score Estimator",
         "Full deliverability suite",
@@ -382,7 +382,7 @@ export default function Landing() {
               </h1>
               
               <p className="text-lg text-muted-foreground mb-6 max-w-xl">
-                Stop guessing why your emails underperform. Get instant AI-powered grades, fix issues with one click, and watch your open rates climb. Turn every send into revenue.
+                Stop guessing why your emails underperform. Get instant grades from Acceptafy, fix issues with one click, and watch your open rates climb. Turn every send into revenue.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
@@ -392,11 +392,11 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-grading">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Instant AI grading</span>
+                  <span>Instant Acceptafy grading</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-rewrites">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>1-click AI rewrites</span>
+                  <span>1-click smart rewrites</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-spam">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -493,7 +493,7 @@ export default function Landing() {
               <p className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
                 <AnimatedCounter end={8750} suffix="+" />
               </p>
-              <p className="text-sm text-muted-foreground">AI campaign analyses</p>
+              <p className="text-sm text-muted-foreground">Campaign analyses</p>
             </div>
           </div>
           <p className="mt-4 text-center text-xs text-muted-foreground" data-testid="disclaimer-results">
@@ -563,14 +563,14 @@ export default function Landing() {
                 icon: BarChart3, 
                 step: "2", 
                 title: "Get Instant Analysis", 
-                description: "AI grades every element: spam triggers, readability, CTA strength, and more.",
+                description: "Acceptafy grades every element: spam triggers, readability, CTA strength, and more.",
                 color: "from-pink-500 to-pink-600"
               },
               { 
                 icon: Zap, 
                 step: "3", 
                 title: "Improve & Send", 
-                description: "Apply 1-click fixes, use AI rewrites, then ship with confidence.",
+                description: "Apply 1-click fixes, use smart rewrites, then ship with confidence.",
                 color: "from-purple-500 to-pink-500"
               }
             ].map((item, index) => {
@@ -650,9 +650,9 @@ export default function Landing() {
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { icon: Target, title: "Email Grading Engine", description: "Get detailed scores across 8 dimensions: subject, preview, body, CTAs, personalization & more" },
-                  { icon: Zap, title: "1-Click Auto-Improve", description: "Instantly rewrite your email with AI that fixes every issue we detected" },
+                  { icon: Zap, title: "1-Click Auto-Improve", description: "Instantly rewrite your email with Acceptafy to fix every issue we detected" },
                   { icon: MessageSquare, title: "Follow-Up Generator", description: "Create perfectly-timed follow-up sequences that boost reply rates" },
-                  { icon: FileText, title: "Email Sequence Builder", description: "Plan multi-email campaigns with AI-suggested timing and content flow" },
+                  { icon: FileText, title: "Email Sequence Builder", description: "Plan multi-email campaigns with smart timing and content flow suggestions" },
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
@@ -745,7 +745,7 @@ export default function Landing() {
                 {[
                   { icon: Link2, title: "12+ ESP Connections", description: "Connect SendGrid, Mailchimp, Klaviyo, HubSpot, ActiveCampaign, ConvertKit, and more" },
                   { icon: Activity, title: "Campaign Stats Dashboard", description: "View opens, clicks, bounces, and engagement metrics from your connected ESPs" },
-                  { icon: Brain, title: "AI Stats Analysis", description: "Get AI-powered insights and recommendations based on your real campaign performance" },
+                  { icon: Brain, title: "Smart Stats Analysis", description: "Get Acceptafy insights and recommendations based on your real campaign performance" },
                   { icon: Send, title: "Send via ESP", description: "Grade, rewrite, and send emails directly through your ESP—all from one place" },
                 ].map((item, index) => {
                   const Icon = item.icon;
@@ -906,7 +906,7 @@ export default function Landing() {
                 metric: "-40% bounces"
               },
               {
-                quote: "The AI rewrite feature is magic. I click one button and get a better version of my email instantly. My click rates nearly doubled because the copy is so much sharper now.",
+                quote: "The rewrite feature is magic. I click one button and get a better version of my email instantly. My click rates nearly doubled because the copy is so much sharper now.",
                 author: "Rachel Thompson",
                 role: "Growth Marketer",
                 company: "ScaleUp.io",
@@ -962,7 +962,7 @@ export default function Landing() {
                   How does Acceptafy work with my ESP?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Acceptafy connects to your email service provider (ESP) through secure OAuth or API keys. Once connected, you can grade emails, view campaign stats with AI insights, and even send emails directly through your ESP—all from one dashboard. We support 12+ ESPs including SendGrid, Mailchimp, Klaviyo, HubSpot, and more.
+                  Acceptafy connects to your email service provider (ESP) through secure OAuth or API keys. Once connected, you can grade emails, view campaign stats with smart insights, and even send emails directly through your ESP—all from one dashboard. We support 12+ ESPs including SendGrid, Mailchimp, Klaviyo, HubSpot, and more.
                 </AccordionContent>
               </AccordionItem>
 
@@ -977,10 +977,10 @@ export default function Landing() {
 
               <AccordionItem value="accuracy" data-testid="faq-accuracy">
                 <AccordionTrigger className="text-left">
-                  How accurate is the AI grading?
+                  How accurate is Acceptafy grading?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Our AI grading is powered by advanced language models trained on millions of email campaigns. It analyzes subject lines, preview text, body copy, spam triggers, and more. While no AI is perfect, users typically see 15-25% improvements in open rates after implementing our recommendations. We're constantly improving our models based on real-world performance data.
+                  Acceptafy grading is powered by advanced language models trained on millions of email campaigns. It analyzes subject lines, preview text, body copy, spam triggers, and more. Users typically see 15-25% improvements in open rates after implementing our recommendations. We're constantly improving our models based on real-world performance data.
                 </AccordionContent>
               </AccordionItem>
 
@@ -998,7 +998,7 @@ export default function Landing() {
                   What makes Acceptafy different from other tools?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Unlike standalone email checkers, Acceptafy combines AI-powered grading, 1-click rewrites, ESP integration with real campaign stats, AI analysis of your performance, and educational resources—all in one platform. We don't just tell you what's wrong; we help you fix it and track your improvement over time.
+                  Unlike standalone email checkers, Acceptafy combines smart grading, 1-click rewrites, ESP integration with real campaign stats, performance analysis, and educational resources—all in one platform. We don't just tell you what's wrong; we help you fix it and track your improvement over time.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
