@@ -351,7 +351,7 @@ export default function Landing() {
             <LoginDialog>
               <Button variant="ghost" data-testid="button-login">Log in</Button>
             </LoginDialog>
-            <LoginDialog>
+            <LoginDialog mode="signup">
               <Button data-testid="button-get-started-header">Get Started Free</Button>
             </LoginDialog>
           </div>
@@ -409,7 +409,7 @@ export default function Landing() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <LoginDialog>
+                <LoginDialog mode="signup">
                   <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg" data-testid="button-start-free">
                     <span className="flex items-center gap-2">
                       Get Started Free
@@ -1013,7 +1013,7 @@ export default function Landing() {
               <p className="text-muted-foreground mb-6 max-w-md mx-auto" data-testid="text-final-cta-description">
                 Join thousands of marketers who grade their emails before sending. Start with {SUBSCRIPTION_LIMITS.starter.gradesPerMonth} free grades—no credit card needed.
               </p>
-              <LoginDialog>
+              <LoginDialog mode="signup">
                 <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-lg px-8" data-testid="button-final-cta">
                   Get Started Free
                   <ArrowRight className="w-5 h-5 ml-2" />
