@@ -74,6 +74,7 @@ import { EmailTemplates } from './components/EmailTemplates';
 import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { SendTimeOptimizer } from './components/SendTimeOptimizer';
+import { EmailBuilder } from './components/EmailBuilder';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { ESPStatsDashboard } from './components/ESPStatsDashboard';
 import { 
@@ -112,7 +113,7 @@ import type {
 } from './types';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 type IntegrationsSubView = 'esp' | 'stats' | null;
 
@@ -1384,6 +1385,10 @@ function AppContent() {
 
       {toolsSubView === 'sendtime' && (
         <SendTimeOptimizer />
+      )}
+
+      {toolsSubView === 'builder' && (
+        <EmailBuilder />
       )}
 
       {!toolsSubView && (
