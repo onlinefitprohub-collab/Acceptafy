@@ -59,21 +59,21 @@ const DEMO_GRADES = [
 
 const TESTIMONIALS = [
   {
-    quote: "Connecting our Klaviyo account was a game-changer. Now we grade emails and see real campaign stats with AI insights—all in one dashboard. Open rates up 27%.",
+    quote: "I used to spend hours tweaking subject lines. Now I paste my email, get a grade, and the AI rewrites fix everything in seconds. My open rates jumped 27% in the first month.",
     author: "Sarah Chen",
     role: "Email Marketing Manager",
     company: "GrowthStack",
     metric: "+27% opens"
   },
   {
-    quote: "The ESP stats dashboard gives us AI-powered analysis of our campaigns. We finally understand what's working and why. No more guessing.",
+    quote: "The spam detection alone paid for itself. We had no idea our emails were triggering filters. After fixing the issues Acceptafy found, our deliverability improved dramatically.",
     author: "Marcus Johnson",
     role: "Content Lead",
     company: "Newsletter Pro",
     metric: "2x CTR"
   },
   {
-    quote: "Grade, rewrite, send—all through SendGrid without leaving Acceptafy. The workflow saves us 5+ hours a week and our emails perform better.",
+    quote: "As a solo founder, I don't have time to become an email expert. Acceptafy grades my emails and tells me exactly what to fix. It's like having a copywriter on call 24/7.",
     author: "Emily Rodriguez",
     role: "Founder",
     company: "SoloCraft",
@@ -782,38 +782,6 @@ export default function Landing() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-teal-600" />
-                </div>
-                <h3 className="font-semibold text-lg">Coming Soon</h3>
-                <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">Beta</Badge>
-                <span className="text-sm text-muted-foreground">— Powerful features in development</span>
-              </div>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-                {[
-                  { icon: Layout, title: "Email Builder", description: "Drag-and-drop visual editor to build beautiful emails without coding", color: "teal" },
-                  { icon: Trophy, title: "Gamification", description: "Earn XP, unlock achievements, and track streaks to stay motivated", color: "teal" },
-                  { icon: Timer, title: "Send Time Optimizer", description: "AI predicts the best time to send based on your audience behavior", color: "teal" },
-                  { icon: Palette, title: "Tone Profiles", description: "Save and apply brand voice profiles to maintain consistency", color: "teal" },
-                  { icon: FlaskConical, title: "A/B Subject Lab", description: "Test multiple subject lines with AI predictions before sending", color: "teal" },
-                ].map((item, index) => {
-                  const Icon = item.icon;
-                  return (
-                    <Card key={index} className="hover-elevate border-teal-500/10 opacity-80" data-testid={`feature-coming-${index}`}>
-                      <CardContent className="p-4">
-                        <div className="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center mb-3">
-                          <Icon className="w-4 h-4 text-teal-600" />
-                        </div>
-                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -931,21 +899,21 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
-                quote: "The AI campaign analysis changed everything. We connected Mailchimp and got instant insights on what's working. Bounce rates down 40% in weeks.",
+                quote: "Before Acceptafy, we had no idea why some emails flopped. The grading breakdown shows exactly what's wrong—subject line, preview text, spam triggers. Our bounce rates dropped 40% once we fixed the issues.",
                 author: "David Park",
                 role: "Technical Lead",
                 company: "MailFlow Agency",
                 metric: "-40% bounces"
               },
               {
-                quote: "Being able to see stats from all our ESP campaigns in one dashboard with AI recommendations is incredible. Click rates nearly doubled.",
+                quote: "The AI rewrite feature is magic. I click one button and get a better version of my email instantly. My click rates nearly doubled because the copy is so much sharper now.",
                 author: "Rachel Thompson",
                 role: "Growth Marketer",
                 company: "ScaleUp.io",
                 metric: "1.9x clicks"
               },
               {
-                quote: "I connected ActiveCampaign and now grade, rewrite, and send without switching tools. As a solo founder, the time savings are massive.",
+                quote: "I was spending 30+ minutes per email just second-guessing myself. Now I get instant feedback and confidence that my emails will perform. Total game changer.",
                 author: "James Liu",
                 role: "Indie Maker",
                 company: "BuildFast",
