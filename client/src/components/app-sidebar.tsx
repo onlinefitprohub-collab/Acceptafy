@@ -28,6 +28,7 @@ import {
   Users as UsersIcon,
   Link2,
   BarChart3,
+  Gift,
   type LucideIcon
 } from 'lucide-react';
 
@@ -485,6 +486,21 @@ export function AppSidebar({
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <span className="font-medium">Academy</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  asChild
+                  className="group transition-all duration-200"
+                  data-testid="nav-affiliate"
+                >
+                  <a href="/affiliate" target="_blank" rel="noopener noreferrer">
+                    <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
+                      <Gift className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">Affiliate Program</span>
+                  </a>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

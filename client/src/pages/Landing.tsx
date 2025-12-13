@@ -35,7 +35,8 @@ import {
   Link2,
   Send,
   Activity,
-  Brain
+  Brain,
+  Gift
 } from "lucide-react";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
@@ -329,6 +330,10 @@ export default function Landing() {
             </a>
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
               How It Works
+            </a>
+            <a href="/affiliate" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1" data-testid="link-affiliate">
+              <Gift className="w-3.5 h-3.5" />
+              Affiliate
             </a>
             <LoginDialog>
               <Button variant="ghost" data-testid="button-login">Log in</Button>
