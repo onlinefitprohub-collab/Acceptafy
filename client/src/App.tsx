@@ -71,6 +71,7 @@ import { SenderScoreEstimator } from './components/SenderScoreEstimator';
 import { EmailTemplates } from './components/EmailTemplates';
 import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
+import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -106,9 +107,10 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
+type IntegrationsSubView = 'esp' | 'stats' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -141,6 +143,8 @@ function AppContent() {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [toolsSubView, setToolsSubView] = useState<ToolsSubView>(null);
   const [deliverabilitySubView, setDeliverabilitySubView] = useState<DeliverabilitySubView>(null);
+  const [integrationsSubView, setIntegrationsSubView] = useState<IntegrationsSubView>(null);
+  const [espConnections, setEspConnections] = useState<{ provider: ESPProvider; connected: boolean; accountName?: string; lastSync?: string }[]>([]);
   const [showAcademy, setShowAcademy] = useState(false);
   const [prevLevel, setPrevLevel] = useState(level);
   const [dnsRecords, setDnsRecords] = useState<DnsRecords | null>(null);
@@ -1610,6 +1614,91 @@ function AppContent() {
     </div>
   );
 
+  const handleESPConnect = async (provider: ESPProvider, credentials: Record<string, string>) => {
+    // For now, simulate connection - actual API integration will be added later
+    const providerNames: Record<ESPProvider, string> = {
+      sendgrid: 'SendGrid',
+      mailchimp: 'Mailchimp',
+      activecampaign: 'ActiveCampaign',
+      highlevel: 'HighLevel',
+      ontraport: 'Ontraport',
+      keap: 'Keap'
+    };
+    setEspConnections(prev => [
+      ...prev.filter(c => c.provider !== provider),
+      { provider, connected: true, accountName: `${providerNames[provider]} Account`, lastSync: new Date().toLocaleString() }
+    ]);
+  };
+
+  const handleESPDisconnect = async (provider: ESPProvider) => {
+    setEspConnections(prev => prev.filter(c => c.provider !== provider));
+  };
+
+  const renderIntegrationsView = () => (
+    <div className="animate-fade-in space-y-6">
+      {integrationsSubView === 'esp' && (
+        <ESPSettings
+          connections={espConnections}
+          onConnect={handleESPConnect}
+          onDisconnect={handleESPDisconnect}
+        />
+      )}
+
+      {integrationsSubView === 'stats' && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+              Campaign Statistics
+            </h2>
+            <p className="text-muted-foreground">
+              View and analyze performance metrics from your connected ESPs.
+            </p>
+          </div>
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="text-muted-foreground">
+                Connect an ESP in Settings to view campaign statistics.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {!integrationsSubView && (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Integrations</h2>
+            <p className="text-muted-foreground">Connect your email service providers and view campaign stats</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('esp')} data-testid="card-integrations-esp">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+                  <Mail className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">ESP Settings</h3>
+                  <p className="text-sm text-muted-foreground">Connect SendGrid, Mailchimp & more</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('stats')} data-testid="card-integrations-stats">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Campaign Stats</h3>
+                  <p className="text-sm text-muted-foreground">Analyze ESP performance metrics</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const AccountView = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -2094,6 +2183,8 @@ function AppContent() {
           setToolsSubView={setToolsSubView}
           deliverabilitySubView={deliverabilitySubView}
           setDeliverabilitySubView={setDeliverabilitySubView}
+          integrationsSubView={integrationsSubView}
+          setIntegrationsSubView={setIntegrationsSubView}
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
@@ -2111,6 +2202,7 @@ function AppContent() {
                   {activeView === 'history' && 'History'}
                   {activeView === 'tools' && 'AI Tools'}
                   {activeView === 'deliverability' && 'Deliverability Tools'}
+                  {activeView === 'integrations' && 'Integrations'}
                   {activeView === 'account' && 'Account Settings'}
                 </h2>
               </div>
@@ -2176,6 +2268,7 @@ function AppContent() {
               {activeView === 'history' && renderHistoryView()}
               {activeView === 'tools' && renderToolsView()}
               {activeView === 'deliverability' && renderDeliverabilityView()}
+              {activeView === 'integrations' && renderIntegrationsView()}
               {activeView === 'account' && <AccountView />}
             </div>
           </main>

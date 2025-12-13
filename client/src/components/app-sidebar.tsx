@@ -26,6 +26,8 @@ import {
   FileText,
   Upload,
   Users as UsersIcon,
+  Link2,
+  BarChart3,
   type LucideIcon
 } from 'lucide-react';
 
@@ -59,9 +61,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
+type IntegrationsSubView = 'esp' | 'stats' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -71,6 +74,8 @@ interface AppSidebarProps {
   setToolsSubView: (view: ToolsSubView) => void;
   deliverabilitySubView: DeliverabilitySubView;
   setDeliverabilitySubView: (view: DeliverabilitySubView) => void;
+  integrationsSubView: IntegrationsSubView;
+  setIntegrationsSubView: (view: IntegrationsSubView) => void;
 }
 
 export function AppSidebar({ 
@@ -80,10 +85,13 @@ export function AppSidebar({
   toolsSubView,
   setToolsSubView,
   deliverabilitySubView,
-  setDeliverabilitySubView
+  setDeliverabilitySubView,
+  integrationsSubView,
+  setIntegrationsSubView
 }: AppSidebarProps) {
   const [toolsOpen, setToolsOpen] = useState(true);
   const [deliverabilityOpen, setDeliverabilityOpen] = useState(true);
+  const [integrationsOpen, setIntegrationsOpen] = useState(true);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
   
   const xpProgress = (xp / nextLevelXp) * 100;
@@ -399,6 +407,54 @@ export function AppSidebar({
                 </SidebarMenuItem>
               </Collapsible>
 
+              <Collapsible open={integrationsOpen} onOpenChange={setIntegrationsOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'integrations' ? 'bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/20' : ''}`} data-testid="nav-integrations">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'integrations' ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-md shadow-amber-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <Link2 className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Integrations</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${integrationsOpen ? 'rotate-180' : ''}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={integrationsSubView === 'esp'}
+                          onClick={() => {
+                            setActiveView('integrations');
+                            setIntegrationsSubView('esp');
+                            setToolsSubView(null);
+                            setDeliverabilitySubView(null);
+                          }}
+                          data-testid="nav-integrations-esp"
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>ESP Settings</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={integrationsSubView === 'stats'}
+                          onClick={() => {
+                            setActiveView('integrations');
+                            setIntegrationsSubView('stats');
+                            setToolsSubView(null);
+                            setDeliverabilitySubView(null);
+                          }}
+                          data-testid="nav-integrations-stats"
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          <span>Campaign Stats</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
               <SidebarMenuItem>
                 <SidebarMenuButton 
                   isActive={activeView === 'history'}
@@ -406,6 +462,7 @@ export function AppSidebar({
                     setActiveView('history');
                     setToolsSubView(null);
                     setDeliverabilitySubView(null);
+                    setIntegrationsSubView(null);
                   }}
                   className={`group transition-all duration-200 ${activeView === 'history' ? 'bg-gradient-to-r from-emerald-500/15 to-green-500/15 border border-emerald-500/20' : ''}`}
                   data-testid="nav-history"
