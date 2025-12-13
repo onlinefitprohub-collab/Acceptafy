@@ -49,6 +49,27 @@ const generateRoadmapRequestSchema = z.object({
   body: z.string().default(''),
 });
 
+const espStatsAnalysisRequestSchema = z.object({
+  stats: z.object({
+    totalCampaigns: z.number().min(0),
+    totalSent: z.number().min(0),
+    totalDelivered: z.number().min(0).optional(),
+    totalOpened: z.number().min(0).optional(),
+    totalClicked: z.number().min(0).optional(),
+    avgOpenRate: z.number().min(0).max(100),
+    avgClickRate: z.number().min(0).max(100),
+    avgBounceRate: z.number().min(0).max(100),
+    campaigns: z.array(z.object({
+      campaignName: z.string(),
+      subject: z.string().optional(),
+      totalSent: z.number().min(0),
+      openRate: z.number().min(0).max(100),
+      clickRate: z.number().min(0).max(100),
+      bounceRate: z.number().min(0).max(100),
+    })).optional(),
+  }),
+});
+
 function normalizeTier(tier: string | null | undefined): 'starter' | 'pro' | 'scale' {
   if (!tier || tier === 'free') return 'starter';
   if (tier === 'pro' || tier === 'scale') return tier;
@@ -1311,6 +1332,33 @@ export async function registerRoutes(
     } catch (error) {
       console.error('ESP combined stats error:', error);
       res.status(500).json({ error: 'Failed to fetch combined ESP stats' });
+    }
+  });
+
+  app.post('/api/esp/analyze', isAuthenticated, async (req: any, res) => {
+    try {
+      const validation = espStatsAnalysisRequestSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: 'Invalid stats data provided',
+          details: validation.error.flatten()
+        });
+      }
+
+      const { analyzeESPStats } = await import('./gemini');
+      const analysis = await analyzeESPStats(validation.data.stats);
+      
+      if (!analysis || typeof analysis.healthScore !== 'number') {
+        return res.status(500).json({ error: 'AI analysis returned invalid response' });
+      }
+      
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('ESP stats analysis error:', error);
+      res.status(500).json({ 
+        error: 'Failed to analyze ESP stats',
+        message: error.message || 'Unknown error occurred'
+      });
     }
   });
 

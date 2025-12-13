@@ -2000,3 +2000,167 @@ Evaluate reputation factors based on email content:
 
   return JSON.parse(res.text || '{}');
 };
+
+// ESP Stats Analysis Schema
+const espStatsAnalysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallHealth: { type: Type.STRING, description: "Overall health rating: Excellent, Good, Fair, or Poor" },
+    healthScore: { type: Type.NUMBER, description: "Overall health score from 0-100" },
+    summary: { type: Type.STRING, description: "Executive summary of the ESP performance" },
+    strengths: { 
+      type: Type.ARRAY, 
+      items: { type: Type.STRING },
+      description: "Key strengths identified in the email campaigns"
+    },
+    concerns: { 
+      type: Type.ARRAY, 
+      items: { type: Type.STRING },
+      description: "Areas of concern that need attention"
+    },
+    inboxPlacementInsights: {
+      type: Type.OBJECT,
+      properties: {
+        estimatedInboxRate: { type: Type.NUMBER, description: "Estimated inbox placement rate 0-100" },
+        gmailPrediction: { type: Type.STRING, description: "Predicted Gmail placement: Primary, Promotions, or Spam" },
+        outlookPrediction: { type: Type.STRING, description: "Predicted Outlook placement: Focused, Other, or Junk" },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    engagementAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        openRateAssessment: { type: Type.STRING, description: "Assessment of open rates: Above Average, Average, Below Average" },
+        clickRateAssessment: { type: Type.STRING, description: "Assessment of click rates" },
+        bounceRateAssessment: { type: Type.STRING, description: "Assessment of bounce rates" },
+        suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    actionableRecommendations: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          priority: { type: Type.STRING, description: "Priority: High, Medium, or Low" },
+          category: { type: Type.STRING, description: "Category: Content, Timing, List Health, Technical, or Engagement" },
+          recommendation: { type: Type.STRING, description: "Specific actionable recommendation" },
+          expectedImpact: { type: Type.STRING, description: "Expected impact of implementing this recommendation" }
+        }
+      }
+    },
+    benchmarkComparison: {
+      type: Type.OBJECT,
+      properties: {
+        openRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" },
+        clickRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" },
+        bounceRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" }
+      }
+    }
+  }
+};
+
+export interface ESPStatsAnalysis {
+  overallHealth: string;
+  healthScore: number;
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+  inboxPlacementInsights: {
+    estimatedInboxRate: number;
+    gmailPrediction: string;
+    outlookPrediction: string;
+    recommendations: string[];
+  };
+  engagementAnalysis: {
+    openRateAssessment: string;
+    clickRateAssessment: string;
+    bounceRateAssessment: string;
+    suggestions: string[];
+  };
+  actionableRecommendations: Array<{
+    priority: string;
+    category: string;
+    recommendation: string;
+    expectedImpact: string;
+  }>;
+  benchmarkComparison: {
+    openRateVsIndustry: string;
+    clickRateVsIndustry: string;
+    bounceRateVsIndustry: string;
+  };
+}
+
+export const analyzeESPStats = async (stats: {
+  totalCampaigns: number;
+  totalSent: number;
+  totalDelivered: number;
+  totalOpened: number;
+  totalClicked: number;
+  avgOpenRate: number;
+  avgClickRate: number;
+  avgBounceRate: number;
+  campaigns?: Array<{
+    campaignName: string;
+    subject?: string;
+    totalSent: number;
+    openRate: number;
+    clickRate: number;
+    bounceRate: number;
+  }>;
+}): Promise<ESPStatsAnalysis> => {
+  try {
+    const campaignDetails = stats.campaigns?.slice(0, 10).map(c => 
+      `- "${c.campaignName}": ${c.totalSent} sent, ${c.openRate.toFixed(1)}% opens, ${c.clickRate.toFixed(1)}% clicks, ${c.bounceRate.toFixed(1)}% bounces`
+    ).join('\n') || 'No campaign details available';
+
+    const prompt = `Analyze the following email marketing campaign statistics and provide detailed insights for improving inbox placement and engagement.
+
+**Aggregate Statistics:**
+- Total Campaigns: ${stats.totalCampaigns}
+- Total Emails Sent: ${stats.totalSent}
+- Total Delivered: ${stats.totalDelivered}
+- Total Opened: ${stats.totalOpened}
+- Total Clicked: ${stats.totalClicked}
+- Average Open Rate: ${stats.avgOpenRate.toFixed(1)}%
+- Average Click Rate: ${stats.avgClickRate.toFixed(1)}%
+- Average Bounce Rate: ${stats.avgBounceRate.toFixed(1)}%
+
+**Recent Campaign Breakdown:**
+${campaignDetails}
+
+**Industry Benchmarks for Reference:**
+- Average Email Open Rate: 20-25%
+- Average Click Rate: 2-3%
+- Acceptable Bounce Rate: <2%
+- Spam Complaint Rate: <0.1%
+
+Please provide:
+1. Overall health assessment and score
+2. Key strengths and concerns
+3. Inbox placement insights with predictions for Gmail and Outlook
+4. Engagement analysis with specific suggestions
+5. Prioritized actionable recommendations (at least 5)
+6. Comparison to industry benchmarks`;
+
+    const systemInstruction = `You are an expert email deliverability consultant with deep knowledge of ESP analytics, inbox placement algorithms, and email marketing best practices. Your analysis should be data-driven, actionable, and focused on improving inbox placement rates.
+
+Provide honest, specific feedback based on the statistics. If metrics are below average, be clear about it while offering constructive solutions. Your recommendations should be practical and implementable.
+
+Return your analysis as a single JSON object matching the provided schema.`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: espStatsAnalysisSchema
+      }
+    });
+
+    return JSON.parse(res.text || '{}') as ESPStatsAnalysis;
+  } catch (error) {
+    console.error("Error analyzing ESP stats:", error);
+    throw new Error("Failed to analyze ESP statistics.");
+  }
+};

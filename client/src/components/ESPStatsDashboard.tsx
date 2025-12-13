@@ -20,7 +20,14 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
-  Activity
+  Activity,
+  Brain,
+  Target,
+  Lightbulb,
+  ThumbsUp,
+  ThumbsDown,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 interface ESPCampaignStats {
@@ -78,6 +85,37 @@ interface CombinedStats {
 interface ESPStatsResponse {
   providers: ProviderStats[];
   combinedStats: CombinedStats | null;
+}
+
+interface ESPStatsAnalysis {
+  overallHealth: string;
+  healthScore: number;
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+  inboxPlacementInsights: {
+    estimatedInboxRate: number;
+    gmailPrediction: string;
+    outlookPrediction: string;
+    recommendations: string[];
+  };
+  engagementAnalysis: {
+    openRateAssessment: string;
+    clickRateAssessment: string;
+    bounceRateAssessment: string;
+    suggestions: string[];
+  };
+  actionableRecommendations: Array<{
+    priority: string;
+    category: string;
+    recommendation: string;
+    expectedImpact: string;
+  }>;
+  benchmarkComparison: {
+    openRateVsIndustry: string;
+    clickRateVsIndustry: string;
+    bounceRateVsIndustry: string;
+  };
 }
 
 const ESP_PROVIDER_NAMES: Record<string, string> = {
@@ -259,6 +297,9 @@ export function ESPStatsDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<ESPStatsAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(true);
 
   const fetchStats = async (showRefreshToast = false) => {
     if (showRefreshToast) {
@@ -298,6 +339,54 @@ export function ESPStatsDashboard() {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  const analyzeStats = async () => {
+    if (!stats?.combinedStats) return;
+    
+    setIsAnalyzing(true);
+    try {
+      const allCampaigns = stats.providers.flatMap(p => 
+        p.stats?.campaigns?.map(c => ({
+          campaignName: c.campaignName,
+          subject: c.subject,
+          totalSent: c.totalSent,
+          openRate: c.openRate,
+          clickRate: c.clickRate,
+          bounceRate: c.bounceRate,
+        })) || []
+      );
+
+      const response = await fetch('/api/esp/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stats: {
+            ...stats.combinedStats.totals,
+            campaigns: allCampaigns,
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze stats');
+      }
+
+      const data = await response.json();
+      setAnalysis(data);
+      toast({
+        title: "Analysis Complete",
+        description: "AI-powered insights are now available.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Analysis Failed",
+        description: err.message || "Failed to analyze campaign statistics",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -403,20 +492,35 @@ export function ESPStatsDashboard() {
             Performance metrics from {stats.providers.filter(p => p.stats !== null).length} connected provider{stats.providers.filter(p => p.stats !== null).length !== 1 ? 's' : ''}.
           </p>
         </div>
-        <Button 
-          onClick={() => fetchStats(true)} 
-          disabled={isRefreshing}
-          variant="outline"
-          className="gap-2"
-          data-testid="button-refresh-stats"
-        >
-          {isRefreshing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-          Refresh Stats
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            onClick={() => fetchStats(true)} 
+            disabled={isRefreshing}
+            variant="outline"
+            className="gap-2"
+            data-testid="button-refresh-stats"
+          >
+            {isRefreshing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Refresh Stats
+          </Button>
+          <Button 
+            onClick={analyzeStats} 
+            disabled={isAnalyzing || !stats?.combinedStats}
+            className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            data-testid="button-analyze-stats"
+          >
+            {isAnalyzing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Brain className="w-4 h-4" />
+            )}
+            Analyze with AI
+          </Button>
+        </div>
       </div>
 
       {stats.providers.some(p => p.error) && (
@@ -478,6 +582,151 @@ export function ESPStatsDashboard() {
               gradient="from-orange-500 to-red-500"
             />
           </div>
+
+          {analysis && (
+            <Card className="border-white/10 bg-gradient-to-br from-purple-500/10 to-pink-500/10" data-testid="ai-analysis-section">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-purple-400" />
+                    AI-Powered Insights
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAnalysis(!showAnalysis)}
+                    className="gap-1"
+                    data-testid="button-toggle-analysis"
+                  >
+                    {showAnalysis ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    {showAnalysis ? 'Hide' : 'Show'}
+                  </Button>
+                </div>
+                <CardDescription>{analysis.summary}</CardDescription>
+              </CardHeader>
+              
+              {showAnalysis && (
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
+                        analysis.healthScore >= 80 ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/30' :
+                        analysis.healthScore >= 60 ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/30' :
+                        'bg-red-500/20 text-red-400 ring-2 ring-red-500/30'
+                      }`} data-testid="health-score">
+                        {analysis.healthScore}
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Health Score</p>
+                        <p className={`font-semibold ${
+                          analysis.healthScore >= 80 ? 'text-green-400' :
+                          analysis.healthScore >= 60 ? 'text-yellow-400' :
+                          'text-red-400'
+                        }`} data-testid="health-status">
+                          {analysis.overallHealth}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Target className="w-4 h-4 text-blue-400" />
+                        <span className="text-muted-foreground">Est. Inbox Rate:</span>
+                        <span className="font-medium">{analysis.inboxPlacementInsights.estimatedInboxRate}%</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="w-4 h-4 text-red-400" />
+                        <span className="text-muted-foreground">Gmail:</span>
+                        <span className="font-medium">{analysis.inboxPlacementInsights.gmailPrediction}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="w-4 h-4 text-blue-500" />
+                        <span className="text-muted-foreground">Outlook:</span>
+                        <span className="font-medium">{analysis.inboxPlacementInsights.outlookPrediction}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <h4 className="font-medium flex items-center gap-2 text-green-400">
+                        <ThumbsUp className="w-4 h-4" />
+                        Strengths
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.strengths.map((strength, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-3">
+                      <h4 className="font-medium flex items-center gap-2 text-yellow-400">
+                        <ThumbsDown className="w-4 h-4" />
+                        Areas for Improvement
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.concerns.map((concern, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <AlertTriangle className="w-4 h-4 text-yellow-400 mt-0.5 shrink-0" />
+                            <span>{concern}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4 text-purple-400" />
+                      Recommendations
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      {analysis.actionableRecommendations.map((rec, i) => (
+                        <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10" data-testid={`recommendation-${i}`}>
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <Badge 
+                              variant={rec.priority === 'High' ? 'destructive' : rec.priority === 'Medium' ? 'secondary' : 'outline'}
+                              className="text-xs"
+                            >
+                              {rec.priority} Priority
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {rec.category}
+                            </Badge>
+                          </div>
+                          <p className="text-sm mb-1">{rec.recommendation}</p>
+                          <p className="text-xs text-muted-foreground">Expected impact: {rec.expectedImpact}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-cyan-400" />
+                      Industry Benchmarks
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Open Rate</p>
+                        <p className="font-medium">{analysis.benchmarkComparison.openRateVsIndustry}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Click Rate</p>
+                        <p className="font-medium">{analysis.benchmarkComparison.clickRateVsIndustry}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs mb-1">Bounce Rate</p>
+                        <p className="font-medium">{analysis.benchmarkComparison.bounceRateVsIndustry}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {stats.providers.filter(p => p.stats !== null).map(providerStats => (
