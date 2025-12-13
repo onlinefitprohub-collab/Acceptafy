@@ -31,7 +31,11 @@ import {
   FolderOpen,
   DollarSign,
   Info,
-  Calculator
+  Calculator,
+  Link2,
+  Send,
+  Activity,
+  Brain
 } from "lucide-react";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
@@ -44,21 +48,21 @@ const DEMO_GRADES = [
 
 const TESTIMONIALS = [
   {
-    quote: "We increased our open rates by 23% in the first month. The spam detection alone saved us from a major deliverability issue.",
+    quote: "Connecting our Klaviyo account was a game-changer. Now we grade emails and see real campaign stats with AI insights—all in one dashboard. Open rates up 27%.",
     author: "Sarah Chen",
     role: "Email Marketing Manager",
     company: "GrowthStack",
-    metric: "+23% opens"
+    metric: "+27% opens"
   },
   {
-    quote: "Finally, a tool that tells me WHY my emails underperform before I hit send. Game changer for our weekly newsletters.",
+    quote: "The ESP stats dashboard gives us AI-powered analysis of our campaigns. We finally understand what's working and why. No more guessing.",
     author: "Marcus Johnson",
     role: "Content Lead",
     company: "Newsletter Pro",
     metric: "2x CTR"
   },
   {
-    quote: "The AI rewrites save me hours every week. I paste in my draft, get suggestions, and ship better emails faster.",
+    quote: "Grade, rewrite, send—all through SendGrid without leaving Acceptafy. The workflow saves us 5+ hours a week and our emails perform better.",
     author: "Emily Rodriguez",
     role: "Founder",
     company: "SoloCraft",
@@ -344,41 +348,45 @@ export default function Landing() {
         <div className="container mx-auto px-4 relative">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
+              <Badge variant="outline" className="mb-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30" data-testid="badge-new-feature">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Now with 12+ ESP Integrations
+              </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                Send Emails That{" "}
+                AI-Powered Email Optimization{" "}
                 <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                  Actually Get Opened
+                  Connected to Your ESP
                 </span>
               </h1>
               
               <p className="text-lg text-muted-foreground mb-6 max-w-xl">
-                Stop guessing why your emails underperform. Grade your copy, catch spam triggers, and get AI-powered rewrites—all before you hit send.
+                Grade your emails, get AI-powered rewrites, and send directly through your favorite ESP. Connect SendGrid, Mailchimp, Klaviyo and 9 more—analyze real campaign stats with AI insights.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-esp">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>12+ ESP integrations</span>
+                </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-grading">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Instant email grading</span>
+                  <span>AI email grading</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-spam">
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-stats">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Spam detection</span>
+                  <span>Campaign stats + AI analysis</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-send">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>Send via ESP</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-rewrites">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
                   <span>1-click AI rewrites</span>
                 </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-templates">
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-spam">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Save winning templates</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-import">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>.EML file import</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-competitor">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Competitor analysis</span>
+                  <span>Spam detection</span>
                 </div>
               </div>
 
@@ -421,23 +429,23 @@ export default function Landing() {
               </p>
               <p className="text-sm text-muted-foreground">Emails graded this month</p>
             </div>
+            <div className="text-center" data-testid="stat-esp-connections">
+              <p className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
+                12+
+              </p>
+              <p className="text-sm text-muted-foreground">ESP integrations</p>
+            </div>
             <div className="text-center" data-testid="stat-avg-improvement">
               <p className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                +18%
+                +21%
               </p>
               <p className="text-sm text-muted-foreground">Avg. open rate lift</p>
             </div>
-            <div className="text-center" data-testid="stat-spam-caught">
+            <div className="text-center" data-testid="stat-ai-analyses">
               <p className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                <AnimatedCounter end={12340} suffix="+" />
+                <AnimatedCounter end={8750} suffix="+" />
               </p>
-              <p className="text-sm text-muted-foreground">Spam issues caught</p>
-            </div>
-            <div className="text-center" data-testid="stat-time-saved">
-              <p className="text-3xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                3.2hrs
-              </p>
-              <p className="text-sm text-muted-foreground">Saved per week avg.</p>
+              <p className="text-sm text-muted-foreground">AI campaign analyses</p>
             </div>
           </div>
           <p className="mt-4 text-center text-xs text-muted-foreground" data-testid="disclaimer-results">
@@ -675,6 +683,56 @@ export default function Landing() {
                 })}
               </div>
             </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                  <Link2 className="w-4 h-4 text-orange-600" />
+                </div>
+                <h3 className="font-semibold text-lg">ESP Integrations</h3>
+                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30">New</Badge>
+                <span className="text-sm text-muted-foreground">— Connect your email service provider</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { icon: Link2, title: "12+ ESP Connections", description: "Connect SendGrid, Mailchimp, Klaviyo, HubSpot, ActiveCampaign, ConvertKit, and more" },
+                  { icon: Activity, title: "Campaign Stats Dashboard", description: "View opens, clicks, bounces, and engagement metrics from your connected ESPs" },
+                  { icon: Brain, title: "AI Stats Analysis", description: "Get AI-powered insights and recommendations based on your real campaign performance" },
+                  { icon: Send, title: "Send via ESP", description: "Grade, rewrite, and send emails directly through your ESP—all from one place" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-orange-500/10" data-testid={`feature-esp-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-orange-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
+                <span className="font-medium">Supported ESPs:</span>
+                <span>SendGrid</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>Mailchimp</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>Klaviyo</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>HubSpot</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>ActiveCampaign</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>ConvertKit</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>Constant Contact</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>+5 more</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -792,21 +850,21 @@ export default function Landing() {
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
-                quote: "Our bounce rates dropped by 40% after implementing the deliverability recommendations. The DNS setup wizard alone is worth the subscription.",
+                quote: "The AI campaign analysis changed everything. We connected Mailchimp and got instant insights on what's working. Bounce rates down 40% in weeks.",
                 author: "David Park",
                 role: "Technical Lead",
                 company: "MailFlow Agency",
                 metric: "-40% bounces"
               },
               {
-                quote: "I was skeptical at first, but after seeing my click rates nearly double in two months, I'm a believer. The competitor analysis feature is gold.",
+                quote: "Being able to see stats from all our ESP campaigns in one dashboard with AI recommendations is incredible. Click rates nearly doubled.",
                 author: "Rachel Thompson",
                 role: "Growth Marketer",
                 company: "ScaleUp.io",
                 metric: "1.9x clicks"
               },
               {
-                quote: "As a solo founder, I don't have time to learn email marketing deeply. Acceptafy's grades and auto-rewrites let me send professional emails fast.",
+                quote: "I connected ActiveCampaign and now grade, rewrite, and send without switching tools. As a solo founder, the time savings are massive.",
                 author: "James Liu",
                 role: "Indie Maker",
                 company: "BuildFast",
