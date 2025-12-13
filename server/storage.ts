@@ -6,6 +6,7 @@ import {
   emailTemplates,
   competitorAnalyses,
   agencyBranding,
+  espConnections,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -22,6 +23,9 @@ import {
   type AgencyBranding,
   type InsertAgencyBranding,
   type SubscriptionTier,
+  type ESPConnection,
+  type InsertESPConnection,
+  type ESPProviderType,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -110,6 +114,12 @@ export interface IStorage {
   // Agency Branding
   getAgencyBranding(userId: string): Promise<AgencyBranding | undefined>;
   upsertAgencyBranding(userId: string, branding: Partial<InsertAgencyBranding>): Promise<AgencyBranding>;
+  
+  // ESP Connections
+  getESPConnections(userId: string): Promise<ESPConnection[]>;
+  getESPConnection(userId: string, provider: ESPProviderType): Promise<ESPConnection | undefined>;
+  upsertESPConnection(connection: InsertESPConnection): Promise<ESPConnection>;
+  deleteESPConnection(userId: string, provider: ESPProviderType): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -839,6 +849,49 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  // ESP Connections
+  async getESPConnections(userId: string): Promise<ESPConnection[]> {
+    return db
+      .select()
+      .from(espConnections)
+      .where(eq(espConnections.userId, userId))
+      .orderBy(desc(espConnections.updatedAt));
+  }
+
+  async getESPConnection(userId: string, provider: ESPProviderType): Promise<ESPConnection | undefined> {
+    const [connection] = await db
+      .select()
+      .from(espConnections)
+      .where(and(eq(espConnections.userId, userId), eq(espConnections.provider, provider)));
+    return connection;
+  }
+
+  async upsertESPConnection(connection: InsertESPConnection): Promise<ESPConnection> {
+    const existing = await this.getESPConnection(connection.userId, connection.provider as ESPProviderType);
+    
+    if (existing) {
+      const [updated] = await db
+        .update(espConnections)
+        .set({ ...connection, updatedAt: new Date() })
+        .where(eq(espConnections.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db
+      .insert(espConnections)
+      .values(connection)
+      .returning();
+    return created;
+  }
+
+  async deleteESPConnection(userId: string, provider: ESPProviderType): Promise<boolean> {
+    await db
+      .delete(espConnections)
+      .where(and(eq(espConnections.userId, userId), eq(espConnections.provider, provider)));
+    return true;
   }
 }
 
