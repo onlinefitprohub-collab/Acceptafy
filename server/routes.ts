@@ -30,7 +30,7 @@ import {
   compareToIndustry,
   analyzeReputation
 } from "./gemini";
-import { insertEmailTemplateSchema } from "@shared/schema";
+import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
@@ -1412,6 +1412,36 @@ export async function registerRoutes(
     } catch (error) {
       console.error('ESP send error:', error);
       res.status(500).json({ error: 'Failed to send email via ESP' });
+    }
+  });
+
+  // Contact form endpoint
+  app.post('/api/contact', async (req, res) => {
+    try {
+      const validation = insertContactMessageSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          message: 'Invalid input', 
+          errors: validation.error.errors 
+        });
+      }
+
+      const message = await storage.createContactMessage(validation.data);
+      res.json({ success: true, id: message.id });
+    } catch (error) {
+      console.error('Contact form error:', error);
+      res.status(500).json({ message: 'Failed to send message' });
+    }
+  });
+
+  // Admin endpoint to view contact messages
+  app.get('/api/admin/contact-messages', isAdmin, async (req, res) => {
+    try {
+      const messages = await storage.getContactMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error('Get contact messages error:', error);
+      res.status(500).json({ message: 'Failed to fetch messages' });
     }
   });
 

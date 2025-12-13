@@ -671,3 +671,22 @@ export const connectESPRequestSchema = z.object({
 });
 
 export type ConnectESPRequest = z.infer<typeof connectESPRequestSchema>;
+
+// Contact messages table for support widget
+export const contactMessages = pgTable("contact_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  email: varchar("email").notNull(),
+  message: text("message").notNull(),
+  status: varchar("status").default("unread"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type ContactMessage = typeof contactMessages.$inferSelect;
+export type InsertContactMessage = typeof contactMessages.$inferInsert;
+
+export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({
+  id: true,
+  status: true,
+  createdAt: true,
+});

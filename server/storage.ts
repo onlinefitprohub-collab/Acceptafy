@@ -7,6 +7,7 @@ import {
   competitorAnalyses,
   agencyBranding,
   espConnections,
+  contactMessages,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -26,6 +27,8 @@ import {
   type ESPConnection,
   type InsertESPConnection,
   type ESPProviderType,
+  type ContactMessage,
+  type InsertContactMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -126,6 +129,10 @@ export interface IStorage {
   getESPConnection(userId: string, provider: ESPProviderType): Promise<ESPConnection | undefined>;
   upsertESPConnection(connection: InsertESPConnection): Promise<ESPConnection>;
   deleteESPConnection(userId: string, provider: ESPProviderType): Promise<boolean>;
+  
+  // Contact Messages
+  createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
+  getContactMessages(): Promise<ContactMessage[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -928,6 +935,22 @@ export class DatabaseStorage implements IStorage {
       .delete(espConnections)
       .where(and(eq(espConnections.userId, userId), eq(espConnections.provider, provider)));
     return true;
+  }
+
+  // Contact Messages
+  async createContactMessage(message: InsertContactMessage): Promise<ContactMessage> {
+    const [created] = await db
+      .insert(contactMessages)
+      .values(message)
+      .returning();
+    return created;
+  }
+
+  async getContactMessages(): Promise<ContactMessage[]> {
+    return db
+      .select()
+      .from(contactMessages)
+      .orderBy(desc(contactMessages.createdAt));
   }
 }
 

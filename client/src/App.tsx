@@ -28,6 +28,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { CookieConsent } from './components/CookieConsent';
+import { ContactWidget } from './components/ContactWidget';
 import Landing from './pages/Landing';
 import Pricing from './pages/Pricing';
 import Account from './pages/Account';
@@ -2325,6 +2326,7 @@ function App() {
           <Route component={AuthenticatedApp} />
         </Switch>
         <CookieConsent />
+        <ContactWidget />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
