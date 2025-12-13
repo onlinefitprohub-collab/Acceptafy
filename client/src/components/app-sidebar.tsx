@@ -60,6 +60,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Logo } from './icons/Logo';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
@@ -517,18 +518,22 @@ export function AppSidebar({
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild
-                  className="group transition-all duration-200"
-                  data-testid="nav-affiliate"
-                >
-                  <a href="/affiliate" target="_blank" rel="noopener noreferrer">
-                    <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
-                      <Gift className="w-4 h-4" />
-                    </div>
-                    <span className="font-medium">Affiliate Program</span>
-                  </a>
-                </SidebarMenuButton>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton 
+                      className="group transition-all duration-200 cursor-not-allowed opacity-60"
+                      data-testid="nav-affiliate"
+                    >
+                      <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80">
+                        <Gift className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Affiliate Program</span>
+                    </SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Coming Soon</p>
+                  </TooltipContent>
+                </Tooltip>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

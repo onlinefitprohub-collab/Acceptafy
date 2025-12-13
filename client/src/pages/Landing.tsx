@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { LoginDialog } from "@/components/LoginDialog";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Mail, 
   Zap, 
@@ -331,10 +332,17 @@ export default function Landing() {
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
               How It Works
             </a>
-            <a href="/affiliate" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1" data-testid="link-affiliate">
-              <Gift className="w-3.5 h-3.5" />
-              Affiliate
-            </a>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-sm text-muted-foreground/60 cursor-not-allowed flex items-center gap-1" data-testid="link-affiliate">
+                  <Gift className="w-3.5 h-3.5" />
+                  Affiliate
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Coming Soon</p>
+              </TooltipContent>
+            </Tooltip>
             <LoginDialog>
               <Button variant="ghost" data-testid="button-login">Log in</Button>
             </LoginDialog>
