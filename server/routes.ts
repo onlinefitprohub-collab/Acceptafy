@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { type Server } from "http";
 import bcrypt from "bcrypt";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, optionalAuth, isAdmin } from "./replitAuth";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
@@ -1444,6 +1445,142 @@ export async function registerRoutes(
       res.status(500).json({ message: 'Failed to fetch messages' });
     }
   });
+
+  // WebSocket Chat Support
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  interface ChatClient {
+    ws: WebSocket;
+    id: string;
+    name: string;
+    isSupport: boolean;
+    connectedAt: Date;
+  }
+  
+  const clients = new Map<string, ChatClient>();
+  const supportQueue: string[] = [];
+  
+  wss.on('connection', (ws) => {
+    const clientId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const client: ChatClient = {
+      ws,
+      id: clientId,
+      name: 'Guest',
+      isSupport: false,
+      connectedAt: new Date()
+    };
+    
+    clients.set(clientId, client);
+    
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'system',
+      message: 'Welcome to Acceptafy Support! How can we help you today?',
+      timestamp: new Date().toISOString(),
+      clientId
+    }));
+    
+    ws.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        switch (message.type) {
+          case 'chat':
+            // Broadcast to all connected clients (in a real app, you'd route to specific support agents)
+            const chatMessage = {
+              type: 'chat',
+              clientId,
+              name: client.name,
+              message: message.content,
+              timestamp: new Date().toISOString()
+            };
+            
+            // Send to all other clients
+            clients.forEach((c) => {
+              if (c.ws.readyState === WebSocket.OPEN) {
+                c.ws.send(JSON.stringify(chatMessage));
+              }
+            });
+            
+            // Auto-response for demo (simulate support agent)
+            setTimeout(() => {
+              if (ws.readyState === WebSocket.OPEN) {
+                const autoResponse = generateAutoResponse(message.content);
+                ws.send(JSON.stringify({
+                  type: 'chat',
+                  clientId: 'support',
+                  name: 'Support Team',
+                  message: autoResponse,
+                  timestamp: new Date().toISOString(),
+                  isSupport: true
+                }));
+              }
+            }, 1000 + Math.random() * 2000);
+            break;
+            
+          case 'setName':
+            client.name = message.name || 'Guest';
+            break;
+            
+          case 'typing':
+            // Broadcast typing indicator
+            clients.forEach((c) => {
+              if (c.id !== clientId && c.ws.readyState === WebSocket.OPEN) {
+                c.ws.send(JSON.stringify({
+                  type: 'typing',
+                  clientId,
+                  name: client.name,
+                  isTyping: message.isTyping
+                }));
+              }
+            });
+            break;
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      clients.delete(clientId);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clients.delete(clientId);
+    });
+  });
+  
+  function generateAutoResponse(userMessage: string): string {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('pricing') || lowerMessage.includes('cost') || lowerMessage.includes('plan')) {
+      return "Great question! We offer three plans: Starter (free), Pro ($19/month), and Scale ($49/month). Each plan comes with different limits for grading, rewrites, and deliverability checks. Would you like me to explain the differences?";
+    }
+    
+    if (lowerMessage.includes('help') || lowerMessage.includes('how')) {
+      return "I'd be happy to help! Our platform helps you optimize your email campaigns with AI-powered grading, rewriting tools, and deliverability analysis. What specific feature would you like to learn more about?";
+    }
+    
+    if (lowerMessage.includes('grade') || lowerMessage.includes('score')) {
+      return "Our Email Grader analyzes your subject lines, preview text, and body copy. It checks for spam triggers, readability, and overall effectiveness. Just paste your email content in the Grader section and click 'Analyze' to get your score!";
+    }
+    
+    if (lowerMessage.includes('deliverability') || lowerMessage.includes('spam')) {
+      return "Deliverability is crucial! We offer tools to check your domain health, generate DNS records (SPF, DKIM, DMARC), and analyze your sender reputation. Head to the Deliverability section in the sidebar to get started.";
+    }
+    
+    if (lowerMessage.includes('thanks') || lowerMessage.includes('thank you')) {
+      return "You're welcome! Is there anything else I can help you with today?";
+    }
+    
+    if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
+      return "Thanks for chatting with us! Feel free to reach out anytime you have questions. Have a great day!";
+    }
+    
+    return "Thanks for your message! Our team is here to help with any questions about email marketing, deliverability, or using our platform. What would you like to know more about?";
+  }
 
   return httpServer;
 }
