@@ -29,6 +29,7 @@ import {
   Link2,
   BarChart3,
   Gift,
+  Clock,
   type LucideIcon
 } from 'lucide-react';
 
@@ -63,7 +64,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 type IntegrationsSubView = 'esp' | 'stats' | null;
 
@@ -299,6 +300,19 @@ export function AppSidebar({
                         >
                           <UsersIcon className="w-3 h-3" />
                           <span>Competitor Analysis</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'sendtime'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('sendtime');
+                          }}
+                          data-testid="nav-tools-sendtime"
+                        >
+                          <Clock className="w-3 h-3" />
+                          <span>Send Time Optimizer</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
