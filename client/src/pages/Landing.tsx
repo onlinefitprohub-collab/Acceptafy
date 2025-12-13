@@ -37,8 +37,17 @@ import {
   Send,
   Activity,
   Brain,
-  Gift
+  Gift,
+  Trophy,
+  Flame,
+  Palette,
+  Timer,
+  FlaskConical,
+  Layout,
+  HelpCircle,
+  ChevronDown
 } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
 
 const DEMO_GRADES = [
@@ -424,6 +433,32 @@ export default function Landing() {
                 <ShieldCheck className="w-4 h-4" />
                 No credit card required. {SUBSCRIPTION_LIMITS.starter.gradesPerMonth} free grades included.
               </p>
+
+              <div className="mt-8 flex items-center gap-4" data-testid="social-proof-bar">
+                <div className="flex -space-x-3">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div 
+                      key={i} 
+                      className="w-10 h-10 rounded-full border-2 border-background bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold"
+                      data-testid={`avatar-${i}`}
+                    >
+                      {['SC', 'MJ', 'ER', 'DP', 'RT'][i-1]}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1 mb-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-yellow-500 text-yellow-500" />
+                    ))}
+                    <span className="text-sm font-semibold ml-1">4.9</span>
+                  </div>
+                  <p className="text-sm">
+                    <span className="font-semibold">Join 5,000+ email marketers</span>
+                    <span className="text-muted-foreground"> who improved their open rates</span>
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div className="lg:pl-8">
@@ -746,6 +781,39 @@ export default function Landing() {
                 <span>+5 more</span>
               </div>
             </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-teal-600" />
+                </div>
+                <h3 className="font-semibold text-lg">Coming Soon</h3>
+                <Badge variant="outline" className="bg-teal-500/10 text-teal-600 border-teal-500/30">Beta</Badge>
+                <span className="text-sm text-muted-foreground">— Powerful features in development</span>
+              </div>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                {[
+                  { icon: Layout, title: "Email Builder", description: "Drag-and-drop visual editor to build beautiful emails without coding", color: "teal" },
+                  { icon: Trophy, title: "Gamification", description: "Earn XP, unlock achievements, and track streaks to stay motivated", color: "teal" },
+                  { icon: Timer, title: "Send Time Optimizer", description: "AI predicts the best time to send based on your audience behavior", color: "teal" },
+                  { icon: Palette, title: "Tone Profiles", description: "Save and apply brand voice profiles to maintain consistency", color: "teal" },
+                  { icon: FlaskConical, title: "A/B Subject Lab", description: "Test multiple subject lines with AI predictions before sending", color: "teal" },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <Card key={index} className="hover-elevate border-teal-500/10 opacity-80" data-testid={`feature-coming-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="w-9 h-9 rounded-lg bg-teal-500/10 flex items-center justify-center mb-3">
+                          <Icon className="w-4 h-4 text-teal-600" />
+                        </div>
+                        <h4 className="font-semibold text-sm mb-1">{item.title}</h4>
+                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -904,6 +972,68 @@ export default function Landing() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-muted/30" data-testid="section-faq">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-10">
+              <Badge variant="outline" className="mb-4">
+                <HelpCircle className="w-3 h-3 mr-1" />
+                FAQ
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">Frequently Asked Questions</h2>
+              <p className="text-muted-foreground">Everything you need to know about Acceptafy</p>
+            </div>
+
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem value="esp" data-testid="faq-esp">
+                <AccordionTrigger className="text-left">
+                  How does Acceptafy work with my ESP?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Acceptafy connects to your email service provider (ESP) through secure OAuth or API keys. Once connected, you can grade emails, view campaign stats with AI insights, and even send emails directly through your ESP—all from one dashboard. We support 12+ ESPs including SendGrid, Mailchimp, Klaviyo, HubSpot, and more.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="trial" data-testid="faq-trial">
+                <AccordionTrigger className="text-left">
+                  Can I try it before paying?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Absolutely! Our Starter plan is completely free and includes {SUBSCRIPTION_LIMITS.starter.gradesPerMonth} email grades per month. No credit card required. You can upgrade to Pro or Scale anytime when you need more features or higher limits.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="accuracy" data-testid="faq-accuracy">
+                <AccordionTrigger className="text-left">
+                  How accurate is the AI grading?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Our AI grading is powered by advanced language models trained on millions of email campaigns. It analyzes subject lines, preview text, body copy, spam triggers, and more. While no AI is perfect, users typically see 15-25% improvements in open rates after implementing our recommendations. We're constantly improving our models based on real-world performance data.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="cancel" data-testid="faq-cancel">
+                <AccordionTrigger className="text-left">
+                  Can I cancel anytime?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Yes! All paid plans are month-to-month with no long-term contracts. You can cancel anytime from your account settings, and you'll continue to have access until the end of your billing period. No cancellation fees, no hassle.
+                </AccordionContent>
+              </AccordionItem>
+
+              <AccordionItem value="different" data-testid="faq-different">
+                <AccordionTrigger className="text-left">
+                  What makes Acceptafy different from other tools?
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  Unlike standalone email checkers, Acceptafy combines AI-powered grading, 1-click rewrites, ESP integration with real campaign stats, AI analysis of your performance, and educational resources—all in one platform. We don't just tell you what's wrong; we help you fix it and track your improvement over time.
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
       </section>
