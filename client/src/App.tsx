@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
@@ -173,6 +173,7 @@ function AppContent() {
   const [emailPreview, setEmailPreview] = useState<EmailPreview | null>(null);
   const [generatedPs, setGeneratedPs] = useState<string | null>(null);
   const [isGeneratingPs, setIsGeneratingPs] = useState(false);
+  const loadingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -213,6 +214,11 @@ function AppContent() {
     setRewrittenEmail(null);
     setFollowUpEmail(null);
     setFollowUpSequence([]);
+    
+    // Scroll to loading indicator
+    setTimeout(() => {
+      loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
     
     try {
       const response = await fetch('/api/grade', {
@@ -2014,7 +2020,9 @@ function AppContent() {
         setEmailType={setEmailType}
       />
 
-      {isLoading && <Loader />}
+      <div ref={loadingRef}>
+        {isLoading && <Loader />}
+      </div>
 
       {result && !isLoading && (
         <div className="mt-8 space-y-8 animate-fade-in">
