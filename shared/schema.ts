@@ -575,3 +575,99 @@ export const agencyBrandingSchema = z.object({
   contactPhone: z.string().optional(),
   website: z.string().optional(),
 });
+
+// ESP Connections table for storing user's email service provider credentials
+export const espConnections = pgTable("esp_connections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(), // sendgrid, mailchimp, activecampaign, hubspot, etc.
+  apiKey: text("api_key"), // Encrypted API key
+  apiUrl: text("api_url"), // For providers like ActiveCampaign that need a URL
+  appId: varchar("app_id"), // For providers like Ontraport
+  accessToken: text("access_token"), // For OAuth providers
+  refreshToken: text("refresh_token"), // For OAuth providers
+  accountName: varchar("account_name"),
+  accountEmail: varchar("account_email"),
+  isConnected: boolean("is_connected").default(false),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ESPConnection = typeof espConnections.$inferSelect;
+export type InsertESPConnection = typeof espConnections.$inferInsert;
+
+export const insertESPConnectionSchema = createInsertSchema(espConnections).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// ESP Provider enum
+export const espProviderSchema = z.enum([
+  'sendgrid',
+  'mailchimp',
+  'activecampaign',
+  'hubspot',
+  'constantcontact',
+  'convertkit',
+  'klaviyo',
+  'drip',
+  'aweber',
+  'highlevel',
+  'ontraport',
+  'keap'
+]);
+
+export type ESPProviderType = z.infer<typeof espProviderSchema>;
+
+// ESP Campaign Stats schema
+export const espCampaignStatsSchema = z.object({
+  campaignId: z.string(),
+  campaignName: z.string(),
+  subject: z.string().optional(),
+  sentAt: z.string().optional(),
+  totalSent: z.number(),
+  delivered: z.number(),
+  opened: z.number(),
+  clicked: z.number(),
+  bounced: z.number(),
+  unsubscribed: z.number(),
+  spamReports: z.number(),
+  openRate: z.number(),
+  clickRate: z.number(),
+  bounceRate: z.number(),
+  unsubscribeRate: z.number(),
+});
+
+export type ESPCampaignStats = z.infer<typeof espCampaignStatsSchema>;
+
+// ESP Stats Summary schema
+export const espStatsSummarySchema = z.object({
+  provider: espProviderSchema,
+  accountName: z.string().optional(),
+  campaigns: z.array(espCampaignStatsSchema),
+  totals: z.object({
+    totalCampaigns: z.number(),
+    totalSent: z.number(),
+    totalDelivered: z.number(),
+    totalOpened: z.number(),
+    totalClicked: z.number(),
+    avgOpenRate: z.number(),
+    avgClickRate: z.number(),
+    avgBounceRate: z.number(),
+  }),
+  lastSyncAt: z.string().optional(),
+});
+
+export type ESPStatsSummary = z.infer<typeof espStatsSummarySchema>;
+
+// ESP Connection Request schema
+export const connectESPRequestSchema = z.object({
+  provider: espProviderSchema,
+  apiKey: z.string().optional(),
+  apiUrl: z.string().optional(),
+  appId: z.string().optional(),
+});
+
+export type ConnectESPRequest = z.infer<typeof connectESPRequestSchema>;
