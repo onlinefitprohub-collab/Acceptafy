@@ -252,15 +252,11 @@ function LiveDemoPreview() {
           ))}
         </div>
 
-        <div className="pt-2 border-t flex items-center justify-between">
+        <div className="pt-2 border-t">
           <div>
             <p className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent" data-testid="text-overall-grade">B+</p>
             <p className="text-xs text-muted-foreground">Overall Grade</p>
           </div>
-          <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500" data-testid="button-demo-improve">
-            <Zap className="w-3 h-3 mr-1" />
-            Auto-Improve
-          </Button>
         </div>
       </CardContent>
     </Card>
