@@ -2118,28 +2118,6 @@ function AppContent() {
             </Card>
           )}
 
-          <PriorityIssues 
-            result={result}
-            onApplyFix={(issue) => {
-              if (issue.originalText && issue.replacement) {
-                const newBody = body.replace(new RegExp(issue.originalText, 'gi'), issue.replacement);
-                setBody(newBody);
-                toast({
-                  title: 'Fix Applied',
-                  description: `Replaced "${issue.originalText}" with "${issue.replacement}"`,
-                });
-              }
-            }}
-            onRequestRewrite={(category) => {
-              setActiveView('tools');
-              setToolsSubView('rewrite');
-              toast({
-                title: 'AI Rewrite Ready',
-                description: `Use the rewrite tool to improve your ${category.toLowerCase()}`,
-              });
-            }}
-          />
-
           <ResultsTabs
             result={result}
             body={body}
