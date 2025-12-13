@@ -31,7 +31,8 @@ import {
   analyzeReputation
 } from "./gemini";
 import { insertEmailTemplateSchema } from "@shared/schema";
-import { SUBSCRIPTION_LIMITS } from "@shared/schema";
+import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
+import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -1120,6 +1121,233 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Reputation analysis error:', error);
       res.status(500).json({ error: 'Failed to analyze reputation' });
+    }
+  });
+
+  // ESP Integration Routes
+  app.get('/api/esp/connections', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const connections = await storage.getESPConnections(userId);
+      res.json(connections);
+    } catch (error) {
+      console.error('Get ESP connections error:', error);
+      res.status(500).json({ error: 'Failed to fetch ESP connections' });
+    }
+  });
+
+  app.post('/api/esp/connect', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const validated = connectESPRequestSchema.safeParse(req.body);
+      
+      if (!validated.success) {
+        return res.status(400).json({ error: validated.error.errors[0]?.message || 'Invalid request' });
+      }
+
+      const { provider, apiKey, apiUrl, appId } = validated.data;
+      
+      const credentials: ESPCredentials = { apiKey, apiUrl, appId };
+      const accountInfo = await validateESPConnection(provider, credentials);
+      
+      if (!accountInfo.isValid) {
+        return res.status(400).json({ error: accountInfo.error || 'Invalid credentials' });
+      }
+
+      const connection = await storage.upsertESPConnection({
+        userId,
+        provider,
+        apiKey,
+        apiUrl,
+        appId,
+        accountName: accountInfo.accountName,
+        accountEmail: accountInfo.accountEmail,
+        isConnected: true,
+        lastSyncAt: new Date(),
+      });
+
+      res.json({ success: true, connection, accountInfo });
+    } catch (error) {
+      console.error('ESP connect error:', error);
+      res.status(500).json({ error: 'Failed to connect to ESP provider' });
+    }
+  });
+
+  app.delete('/api/esp/disconnect/:provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const providerValidation = espProviderSchema.safeParse(req.params.provider);
+      
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      await storage.deleteESPConnection(userId, providerValidation.data);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('ESP disconnect error:', error);
+      res.status(500).json({ error: 'Failed to disconnect from ESP provider' });
+    }
+  });
+
+  app.post('/api/esp/test/:provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const providerValidation = espProviderSchema.safeParse(req.params.provider);
+      
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
+      if (!connection) {
+        return res.status(404).json({ error: 'ESP connection not found' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
+      };
+      
+      const accountInfo = await validateESPConnection(providerValidation.data, credentials);
+      
+      if (accountInfo.isValid) {
+        await storage.upsertESPConnection({
+          ...connection,
+          isConnected: true,
+          lastSyncAt: new Date(),
+        });
+      }
+
+      res.json({ success: accountInfo.isValid, accountInfo });
+    } catch (error) {
+      console.error('ESP test connection error:', error);
+      res.status(500).json({ error: 'Failed to test ESP connection' });
+    }
+  });
+
+  app.get('/api/esp/stats/:provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const providerValidation = espProviderSchema.safeParse(req.params.provider);
+      
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
+      if (!connection || !connection.isConnected) {
+        return res.status(404).json({ error: 'ESP connection not found or not active' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
+      };
+
+      const limit = parseInt(req.query.limit as string) || 10;
+      const stats = await fetchESPStats(providerValidation.data, credentials, limit);
+      
+      await storage.upsertESPConnection({
+        ...connection,
+        lastSyncAt: new Date(),
+      });
+
+      res.json(stats);
+    } catch (error) {
+      console.error('ESP stats error:', error);
+      res.status(500).json({ error: 'Failed to fetch ESP stats' });
+    }
+  });
+
+  app.get('/api/esp/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const connections = await storage.getESPConnections(userId);
+      const activeConnections = connections.filter(c => c.isConnected);
+
+      if (activeConnections.length === 0) {
+        return res.json({ providers: [], combinedStats: null });
+      }
+
+      const limit = parseInt(req.query.limit as string) || 10;
+      const allStats = await Promise.all(
+        activeConnections.map(async (connection) => {
+          try {
+            const credentials: ESPCredentials = {
+              apiKey: connection.apiKey || undefined,
+              apiUrl: connection.apiUrl || undefined,
+              appId: connection.appId || undefined,
+            };
+            const stats = await fetchESPStats(connection.provider as any, credentials, limit);
+            return { provider: connection.provider, stats, error: null };
+          } catch (error: any) {
+            return { provider: connection.provider, stats: null, error: error.message };
+          }
+        })
+      );
+
+      const successfulStats = allStats.filter(s => s.stats !== null);
+      
+      let combinedStats = null;
+      if (successfulStats.length > 0) {
+        const allCampaigns = successfulStats.flatMap(s => s.stats!.campaigns);
+        const totals = {
+          totalCampaigns: allCampaigns.length,
+          totalSent: allCampaigns.reduce((sum, c) => sum + c.totalSent, 0),
+          totalDelivered: allCampaigns.reduce((sum, c) => sum + c.delivered, 0),
+          totalOpened: allCampaigns.reduce((sum, c) => sum + c.opened, 0),
+          totalClicked: allCampaigns.reduce((sum, c) => sum + c.clicked, 0),
+          avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
+          avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
+          avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
+        };
+        combinedStats = { campaigns: allCampaigns, totals };
+      }
+
+      res.json({ providers: allStats, combinedStats });
+    } catch (error) {
+      console.error('ESP combined stats error:', error);
+      res.status(500).json({ error: 'Failed to fetch combined ESP stats' });
+    }
+  });
+
+  app.post('/api/esp/send', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { provider, to, subject, html, from, fromName, replyTo } = req.body;
+
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
+      if (!connection || !connection.isConnected) {
+        return res.status(404).json({ error: 'ESP connection not found or not active' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
+      };
+
+      const result = await sendEmailViaESP(providerValidation.data, credentials, {
+        to,
+        subject,
+        html,
+        from,
+        fromName,
+        replyTo,
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('ESP send error:', error);
+      res.status(500).json({ error: 'Failed to send email via ESP' });
     }
   });
 
