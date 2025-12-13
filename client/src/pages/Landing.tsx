@@ -375,9 +375,9 @@ export default function Landing() {
                 Now with 12+ ESP Integrations
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-                Send Emails That{" "}
+                AI-Powered Email Optimization{" "}
                 <span className="bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">
-                  Get Opened
+                  Connected to Your ESP
                 </span>
               </h1>
               
