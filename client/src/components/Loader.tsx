@@ -236,14 +236,14 @@ export const Loader: React.FC<LoaderProps> = ({ messages = loaderSteps }) => {
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
           
           <div className="relative flex items-start gap-3">
-            <div className="flex-shrink-0 p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-              <FactIcon className="w-5 h-5 text-white" />
+            <div className="flex-shrink-0 p-2 rounded-lg bg-black/10 dark:bg-white/10 backdrop-blur-sm">
+              <FactIcon className="w-5 h-5 text-foreground" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-1">
+              <p className="text-xs font-semibold text-foreground/80 uppercase tracking-wider mb-1">
                 {fact.title}
               </p>
-              <p className="text-sm text-white font-medium leading-relaxed">
+              <p className="text-sm text-foreground font-medium leading-relaxed">
                 {fact.content}
               </p>
             </div>
