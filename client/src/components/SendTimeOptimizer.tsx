@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -43,23 +45,29 @@ const AUDIENCE_TYPES = [
   { value: 'mixed', label: 'Mixed Audience' },
 ];
 
-const DAYS_ORDER = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const HOURS = Array.from({ length: 24 }, (_, i) => {
-  const hour = i;
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${displayHour}:00 ${ampm}`;
-});
-
 export const SendTimeOptimizer: React.FC = () => {
   const { toast } = useToast();
   const [emailContent, setEmailContent] = useState('');
   const [industry, setIndustry] = useState('');
   const [audienceType, setAudienceType] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<SendTimeResult | null>(null);
 
-  const handleOptimize = async () => {
+  const optimizeMutation = useMutation({
+    mutationKey: ['send-time-optimizer'],
+    mutationFn: async (data: { emailContent: string; industry?: string; audienceType?: string }) => {
+      const response = await apiRequest('POST', '/api/insights/send-time', data);
+      return response.json() as Promise<SendTimeResult>;
+    },
+    onError: (error) => {
+      console.error('Failed to optimize send time:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Could not analyze send times. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleOptimize = () => {
     if (!emailContent.trim()) {
       toast({
         title: "Email Required",
@@ -69,38 +77,15 @@ export const SendTimeOptimizer: React.FC = () => {
       return;
     }
     
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/insights/send-time', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          emailContent: emailContent.trim(),
-          industry: industry || undefined,
-          audienceType: audienceType || undefined
-        })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setResult(data);
-      } else {
-        toast({
-          title: "Analysis Failed",
-          description: "Could not analyze send times. Please try again.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Failed to optimize send time:', error);
-      toast({
-        title: "Connection Error",
-        description: "Failed to connect to the analysis service. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    optimizeMutation.mutate({
+      emailContent: emailContent.trim(),
+      industry: industry || undefined,
+      audienceType: audienceType || undefined
+    });
   };
+
+  const isLoading = optimizeMutation.isPending;
+  const result = optimizeMutation.data ?? null;
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-500';

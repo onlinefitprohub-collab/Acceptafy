@@ -1591,90 +1591,104 @@ Provide a comprehensive competitive analysis:
   };
 };
 
-// Inbox Placement Simulation
+// Inbox Placement Simulation - Enhanced with additional analysis factors
+const providerAnalysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    placement: { type: Type.STRING },
+    confidence: { type: Type.NUMBER },
+    confidenceBreakdown: {
+      type: Type.OBJECT,
+      properties: {
+        contentScore: { type: Type.NUMBER },
+        structureScore: { type: Type.NUMBER },
+        authenticationScore: { type: Type.NUMBER },
+        reputationScore: { type: Type.NUMBER },
+      }
+    },
+    factors: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          factor: { type: Type.STRING },
+          impact: { type: Type.STRING },
+          weight: { type: Type.NUMBER },
+          explanation: { type: Type.STRING },
+        }
+      }
+    },
+    providerSpecificNotes: { type: Type.STRING },
+    recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+  }
+};
+
 const inboxPlacementSchema = {
   type: Type.OBJECT,
   properties: {
-    gmail: {
-      type: Type.OBJECT,
-      properties: {
-        placement: { type: Type.STRING },
-        confidence: { type: Type.NUMBER },
-        factors: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              factor: { type: Type.STRING },
-              impact: { type: Type.STRING },
-              explanation: { type: Type.STRING },
-            }
-          }
-        },
-        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-      }
-    },
-    outlook: {
-      type: Type.OBJECT,
-      properties: {
-        placement: { type: Type.STRING },
-        confidence: { type: Type.NUMBER },
-        factors: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              factor: { type: Type.STRING },
-              impact: { type: Type.STRING },
-              explanation: { type: Type.STRING },
-            }
-          }
-        },
-        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-      }
-    },
-    yahoo: {
-      type: Type.OBJECT,
-      properties: {
-        placement: { type: Type.STRING },
-        confidence: { type: Type.NUMBER },
-        factors: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              factor: { type: Type.STRING },
-              impact: { type: Type.STRING },
-              explanation: { type: Type.STRING },
-            }
-          }
-        },
-        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-      }
-    },
-    appleMail: {
-      type: Type.OBJECT,
-      properties: {
-        placement: { type: Type.STRING },
-        confidence: { type: Type.NUMBER },
-        factors: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              factor: { type: Type.STRING },
-              impact: { type: Type.STRING },
-              explanation: { type: Type.STRING },
-            }
-          }
-        },
-        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-      }
-    },
+    gmail: providerAnalysisSchema,
+    outlook: providerAnalysisSchema,
+    yahoo: providerAnalysisSchema,
+    appleMail: providerAnalysisSchema,
     overallScore: { type: Type.NUMBER },
     summary: { type: Type.STRING },
     topRisks: { type: Type.ARRAY, items: { type: Type.STRING } },
     topOpportunities: { type: Type.ARRAY, items: { type: Type.STRING } },
+    htmlAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        hasInlineStyles: { type: Type.BOOLEAN },
+        usesTableLayout: { type: Type.BOOLEAN },
+        hasExternalResources: { type: Type.BOOLEAN },
+        cssComplexity: { type: Type.STRING },
+        structureScore: { type: Type.NUMBER },
+        issues: { type: Type.ARRAY, items: { type: Type.STRING } },
+        recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+      }
+    },
+    imageTextRatio: {
+      type: Type.OBJECT,
+      properties: {
+        ratio: { type: Type.NUMBER },
+        rating: { type: Type.STRING },
+        estimatedImageCount: { type: Type.NUMBER },
+        textPercentage: { type: Type.NUMBER },
+        recommendation: { type: Type.STRING },
+      }
+    },
+    authenticationImpact: {
+      type: Type.OBJECT,
+      properties: {
+        spfImpact: { type: Type.STRING },
+        dkimImpact: { type: Type.STRING },
+        dmarcImpact: { type: Type.STRING },
+        overallAuthScore: { type: Type.NUMBER },
+        missingAuthentication: { type: Type.ARRAY, items: { type: Type.STRING } },
+        recommendation: { type: Type.STRING },
+      }
+    },
+    patternMatching: {
+      type: Type.OBJECT,
+      properties: {
+        matchedPatterns: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              pattern: { type: Type.STRING },
+              category: { type: Type.STRING },
+              severity: { type: Type.STRING },
+              description: { type: Type.STRING },
+            }
+          }
+        },
+        spamSignatureScore: { type: Type.NUMBER },
+        promotionalSignatureScore: { type: Type.NUMBER },
+        transactionalSignatureScore: { type: Type.NUMBER },
+        personalSignatureScore: { type: Type.NUMBER },
+        dominantCategory: { type: Type.STRING },
+      }
+    },
   }
 };
 
@@ -1684,45 +1698,93 @@ export const simulateInboxPlacement = async (
   body: string,
   domain?: string
 ): Promise<InboxPlacementSimulation> => {
-  const prompt = `Simulate where this email would land in different email clients' inboxes.
+  const prompt = `Perform a comprehensive inbox placement simulation for this email across major email providers.
 
 SUBJECT: ${subject}
 PREVIEW TEXT: ${previewText}
 BODY:
 ${body}
 
-${domain ? `SENDING DOMAIN: ${domain}` : ''}
+${domain ? `SENDING DOMAIN: ${domain}` : 'SENDING DOMAIN: Not provided (assume typical sender)'}
 
-Analyze the email content and predict inbox placement for each provider:
+## PROVIDER-SPECIFIC ANALYSIS
 
-**Gmail**: Primary, Promotions, Social, Updates, or Spam
-**Outlook**: Focused, Other, or Junk
-**Yahoo**: Inbox or Spam
-**Apple Mail**: Inbox or Junk
+For each provider (Gmail, Outlook, Yahoo, Apple Mail), provide:
 
-For each provider, provide:
-1. **Placement**: The predicted folder/tab
-2. **Confidence**: 0-100% confidence in this prediction
-3. **Factors**: 3-5 factors influencing this decision, each with:
+1. **Placement**: 
+   - Gmail: Primary, Promotions, Social, Updates, or Spam
+   - Outlook: Focused, Other, or Junk
+   - Yahoo: Inbox or Spam
+   - Apple Mail: Inbox or Junk
+
+2. **Confidence**: 0-100% overall confidence in this prediction
+
+3. **Confidence Breakdown** (0-100 each):
+   - contentScore: Based on email copy quality and spam signals
+   - structureScore: Based on HTML/formatting quality
+   - authenticationScore: Based on expected authentication (SPF/DKIM/DMARC)
+   - reputationScore: Based on domain reputation signals
+
+4. **Factors**: 4-6 weighted factors influencing this decision:
    - factor: The factor name
    - impact: 'Positive', 'Negative', or 'Neutral'
-   - explanation: Why this factor matters
-4. **Recommendations**: 2-3 specific tips to improve placement for this provider
+   - weight: 0-100 (importance of this factor)
+   - explanation: Detailed explanation of why this factor matters for THIS specific provider
 
-Also provide:
-- **Overall Score**: 0-100 deliverability score
-- **Summary**: 2-3 sentence summary of overall deliverability outlook
-- **Top Risks**: 3-5 biggest deliverability risks
-- **Top Opportunities**: 3-5 ways to improve deliverability
+5. **Provider-Specific Notes**: Unique considerations for this provider's filtering algorithms
 
-Consider these factors:
-- Spam trigger words
-- HTML/text ratio
-- Personalization indicators
-- Commercial vs conversational language
-- Link density
-- Call-to-action style
-- Subject line characteristics`;
+6. **Recommendations**: 3-4 specific, actionable tips for this provider
+
+## HTML STRUCTURE ANALYSIS
+
+Analyze the email's HTML structure:
+- hasInlineStyles: Does it use inline CSS styles?
+- usesTableLayout: Does it use table-based layouts (common in email)?
+- hasExternalResources: Are there external images, CSS, or scripts?
+- cssComplexity: 'Simple', 'Moderate', or 'Complex'
+- structureScore: 0-100 overall HTML quality score
+- issues: List of specific HTML/structure problems found
+- recommendations: How to improve the HTML structure
+
+## IMAGE-TO-TEXT RATIO ANALYSIS
+
+Analyze the balance between images and text:
+- ratio: Decimal ratio (e.g., 0.3 means 30% images, 70% text)
+- rating: 'Excellent', 'Good', 'Fair', 'Poor', or 'Critical'
+- estimatedImageCount: Number of images detected/implied
+- textPercentage: Percentage of content that is readable text
+- recommendation: Specific advice to improve the ratio
+
+## AUTHENTICATION IMPACT ANALYSIS
+
+Analyze how email authentication affects deliverability:
+- spfImpact: 'Critical', 'High', 'Medium', or 'Low' - how much SPF affects this email
+- dkimImpact: 'Critical', 'High', 'Medium', or 'Low' - how much DKIM affects this email
+- dmarcImpact: 'Critical', 'High', 'Medium', or 'Low' - how much DMARC affects this email
+- overallAuthScore: 0-100 expected authentication score
+- missingAuthentication: List any authentication that appears to be missing
+- recommendation: Authentication setup advice
+
+## PATTERN MATCHING ANALYSIS
+
+Identify spam and category patterns:
+- matchedPatterns: Array of detected patterns with:
+  - pattern: Name/description of the pattern
+  - category: 'Spam', 'Promotional', 'Transactional', or 'Personal'
+  - severity: 'High', 'Medium', or 'Low'
+  - description: Why this pattern was detected
+- spamSignatureScore: 0-100 how much this looks like spam
+- promotionalSignatureScore: 0-100 how much this looks promotional
+- transactionalSignatureScore: 0-100 how much this looks transactional
+- personalSignatureScore: 0-100 how much this looks like personal mail
+- dominantCategory: The most likely category for this email
+
+## OVERALL ANALYSIS
+
+- **Overall Score**: 0-100 comprehensive deliverability score
+- **Summary**: 3-4 sentence summary covering key findings
+- **Top Risks**: 4-6 specific, prioritized deliverability risks
+- **Top Opportunities**: 4-6 actionable improvements ranked by impact`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -1735,42 +1797,114 @@ Consider these factors:
 
   const result = JSON.parse(res.text || '{}');
   
-  const defaultProviderResult = {
-    placement: 'Inbox',
-    confidence: 50,
-    factors: [],
-    recommendations: [],
+  const defaultConfidenceBreakdown = {
+    contentScore: 50,
+    structureScore: 50,
+    authenticationScore: 50,
+    reputationScore: 50,
   };
 
+  const defaultHtmlAnalysis = {
+    hasInlineStyles: false,
+    usesTableLayout: false,
+    hasExternalResources: false,
+    cssComplexity: 'Simple' as const,
+    structureScore: 50,
+    issues: [] as string[],
+    recommendations: [] as string[],
+  };
+
+  const defaultImageTextRatio = {
+    ratio: 0,
+    rating: 'Good' as const,
+    estimatedImageCount: 0,
+    textPercentage: 100,
+    recommendation: '',
+  };
+
+  const defaultAuthImpact = {
+    spfImpact: 'Medium' as const,
+    dkimImpact: 'Medium' as const,
+    dmarcImpact: 'Medium' as const,
+    overallAuthScore: 50,
+    missingAuthentication: [] as string[],
+    recommendation: '',
+  };
+
+  const defaultPatternMatching = {
+    matchedPatterns: [] as Array<{ pattern: string; category: string; severity: string; description: string }>,
+    spamSignatureScore: 0,
+    promotionalSignatureScore: 0,
+    transactionalSignatureScore: 0,
+    personalSignatureScore: 0,
+    dominantCategory: 'Personal' as const,
+  };
+
+  const parseProviderResult = (provider: any, defaultPlacement: string) => ({
+    placement: provider?.placement || defaultPlacement,
+    confidence: provider?.confidence ?? 50,
+    confidenceBreakdown: provider?.confidenceBreakdown ? {
+      contentScore: provider.confidenceBreakdown.contentScore ?? 50,
+      structureScore: provider.confidenceBreakdown.structureScore ?? 50,
+      authenticationScore: provider.confidenceBreakdown.authenticationScore ?? 50,
+      reputationScore: provider.confidenceBreakdown.reputationScore ?? 50,
+    } : defaultConfidenceBreakdown,
+    factors: (provider?.factors || []).map((f: any) => ({
+      factor: f.factor || '',
+      impact: f.impact || 'Neutral',
+      weight: f.weight ?? 50,
+      explanation: f.explanation || '',
+    })),
+    providerSpecificNotes: provider?.providerSpecificNotes || '',
+    recommendations: provider?.recommendations || [],
+  });
+
   return {
-    gmail: {
-      placement: (result.gmail?.placement as any) || 'Promotions',
-      confidence: result.gmail?.confidence || 50,
-      factors: result.gmail?.factors || [],
-      recommendations: result.gmail?.recommendations || [],
-    },
-    outlook: {
-      placement: (result.outlook?.placement as any) || 'Other',
-      confidence: result.outlook?.confidence || 50,
-      factors: result.outlook?.factors || [],
-      recommendations: result.outlook?.recommendations || [],
-    },
-    yahoo: {
-      placement: (result.yahoo?.placement as any) || 'Inbox',
-      confidence: result.yahoo?.confidence || 50,
-      factors: result.yahoo?.factors || [],
-      recommendations: result.yahoo?.recommendations || [],
-    },
-    appleMail: {
-      placement: (result.appleMail?.placement as any) || 'Inbox',
-      confidence: result.appleMail?.confidence || 50,
-      factors: result.appleMail?.factors || [],
-      recommendations: result.appleMail?.recommendations || [],
-    },
-    overallScore: result.overallScore || 50,
+    gmail: parseProviderResult(result.gmail, 'Promotions'),
+    outlook: parseProviderResult(result.outlook, 'Other'),
+    yahoo: parseProviderResult(result.yahoo, 'Inbox'),
+    appleMail: parseProviderResult(result.appleMail, 'Inbox'),
+    overallScore: result.overallScore ?? 50,
     summary: result.summary || 'Unable to analyze',
     topRisks: result.topRisks || [],
     topOpportunities: result.topOpportunities || [],
+    htmlAnalysis: result.htmlAnalysis ? {
+      hasInlineStyles: result.htmlAnalysis.hasInlineStyles ?? false,
+      usesTableLayout: result.htmlAnalysis.usesTableLayout ?? false,
+      hasExternalResources: result.htmlAnalysis.hasExternalResources ?? false,
+      cssComplexity: result.htmlAnalysis.cssComplexity || 'Simple',
+      structureScore: result.htmlAnalysis.structureScore ?? 50,
+      issues: result.htmlAnalysis.issues || [],
+      recommendations: result.htmlAnalysis.recommendations || [],
+    } : defaultHtmlAnalysis,
+    imageTextRatio: result.imageTextRatio ? {
+      ratio: result.imageTextRatio.ratio ?? 0,
+      rating: result.imageTextRatio.rating || 'Good',
+      estimatedImageCount: result.imageTextRatio.estimatedImageCount ?? 0,
+      textPercentage: result.imageTextRatio.textPercentage ?? 100,
+      recommendation: result.imageTextRatio.recommendation || '',
+    } : defaultImageTextRatio,
+    authenticationImpact: result.authenticationImpact ? {
+      spfImpact: result.authenticationImpact.spfImpact || 'Medium',
+      dkimImpact: result.authenticationImpact.dkimImpact || 'Medium',
+      dmarcImpact: result.authenticationImpact.dmarcImpact || 'Medium',
+      overallAuthScore: result.authenticationImpact.overallAuthScore ?? 50,
+      missingAuthentication: result.authenticationImpact.missingAuthentication || [],
+      recommendation: result.authenticationImpact.recommendation || '',
+    } : defaultAuthImpact,
+    patternMatching: result.patternMatching ? {
+      matchedPatterns: (result.patternMatching.matchedPatterns || []).map((p: any) => ({
+        pattern: p.pattern || '',
+        category: p.category || 'Personal',
+        severity: p.severity || 'Low',
+        description: p.description || '',
+      })),
+      spamSignatureScore: result.patternMatching.spamSignatureScore ?? 0,
+      promotionalSignatureScore: result.patternMatching.promotionalSignatureScore ?? 0,
+      transactionalSignatureScore: result.patternMatching.transactionalSignatureScore ?? 0,
+      personalSignatureScore: result.patternMatching.personalSignatureScore ?? 0,
+      dominantCategory: result.patternMatching.dominantCategory || 'Personal',
+    } : defaultPatternMatching,
   };
 };
 

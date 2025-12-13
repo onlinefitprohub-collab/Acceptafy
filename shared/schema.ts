@@ -477,55 +477,90 @@ export const competitorAnalysisResultSchema = z.object({
 
 export type CompetitorAnalysisResult = z.infer<typeof competitorAnalysisResultSchema>;
 
-// Inbox Placement Simulation schemas
+// Enhanced Inbox Placement Simulation schemas with deep analysis
+const confidenceBreakdownSchema = z.object({
+  contentScore: z.number().min(0).max(100).default(50),
+  structureScore: z.number().min(0).max(100).default(50),
+  authenticationScore: z.number().min(0).max(100).default(50),
+  reputationScore: z.number().min(0).max(100).default(50),
+});
+
+const providerAnalysisSchema = z.object({
+  placement: z.string(),
+  confidence: z.number().min(0).max(100).default(50),
+  confidenceBreakdown: confidenceBreakdownSchema.optional(),
+  factors: z.array(z.object({
+    factor: z.string(),
+    impact: z.enum(['Positive', 'Negative', 'Neutral']).default('Neutral'),
+    weight: z.number().min(0).max(100).default(50),
+    explanation: z.string(),
+  })).default([]),
+  providerSpecificNotes: z.string().optional().default(''),
+  recommendations: z.array(z.string()).default([]),
+});
+
+const htmlAnalysisSchema = z.object({
+  hasInlineStyles: z.boolean().default(false),
+  usesTableLayout: z.boolean().default(false),
+  hasExternalResources: z.boolean().default(false),
+  cssComplexity: z.enum(['Simple', 'Moderate', 'Complex']).default('Simple'),
+  structureScore: z.number().min(0).max(100).default(50),
+  issues: z.array(z.string()).default([]),
+  recommendations: z.array(z.string()).default([]),
+});
+
+const imageTextRatioSchema = z.object({
+  ratio: z.number().min(0).max(1).default(0),
+  rating: z.enum(['Excellent', 'Good', 'Fair', 'Poor', 'Critical']).default('Good'),
+  estimatedImageCount: z.number().min(0).default(0),
+  textPercentage: z.number().min(0).max(100).default(100),
+  recommendation: z.string().default(''),
+});
+
+const authenticationImpactSchema = z.object({
+  spfImpact: z.enum(['Critical', 'High', 'Medium', 'Low']).default('Medium'),
+  dkimImpact: z.enum(['Critical', 'High', 'Medium', 'Low']).default('Medium'),
+  dmarcImpact: z.enum(['Critical', 'High', 'Medium', 'Low']).default('Medium'),
+  overallAuthScore: z.number().min(0).max(100).default(50),
+  missingAuthentication: z.array(z.string()).default([]),
+  recommendation: z.string().default(''),
+});
+
+const patternMatchingSchema = z.object({
+  matchedPatterns: z.array(z.object({
+    pattern: z.string(),
+    category: z.enum(['Spam', 'Promotional', 'Transactional', 'Personal']).default('Personal'),
+    severity: z.enum(['High', 'Medium', 'Low']).default('Low'),
+    description: z.string(),
+  })).default([]),
+  spamSignatureScore: z.number().min(0).max(100).default(0),
+  promotionalSignatureScore: z.number().min(0).max(100).default(0),
+  transactionalSignatureScore: z.number().min(0).max(100).default(0),
+  personalSignatureScore: z.number().min(0).max(100).default(0),
+  dominantCategory: z.enum(['Spam', 'Promotional', 'Transactional', 'Personal']).default('Personal'),
+});
+
 export const inboxPlacementSimulationSchema = z.object({
-  gmail: z.object({
-    placement: z.enum(['Primary', 'Promotions', 'Social', 'Updates', 'Spam']),
-    confidence: z.number().min(0).max(100),
-    factors: z.array(z.object({
-      factor: z.string(),
-      impact: z.enum(['Positive', 'Negative', 'Neutral']),
-      explanation: z.string(),
-    })),
-    recommendations: z.array(z.string()),
-  }),
-  outlook: z.object({
-    placement: z.enum(['Focused', 'Other', 'Junk']),
-    confidence: z.number().min(0).max(100),
-    factors: z.array(z.object({
-      factor: z.string(),
-      impact: z.enum(['Positive', 'Negative', 'Neutral']),
-      explanation: z.string(),
-    })),
-    recommendations: z.array(z.string()),
-  }),
-  yahoo: z.object({
-    placement: z.enum(['Inbox', 'Spam']),
-    confidence: z.number().min(0).max(100),
-    factors: z.array(z.object({
-      factor: z.string(),
-      impact: z.enum(['Positive', 'Negative', 'Neutral']),
-      explanation: z.string(),
-    })),
-    recommendations: z.array(z.string()),
-  }),
-  appleMail: z.object({
-    placement: z.enum(['Inbox', 'Junk']),
-    confidence: z.number().min(0).max(100),
-    factors: z.array(z.object({
-      factor: z.string(),
-      impact: z.enum(['Positive', 'Negative', 'Neutral']),
-      explanation: z.string(),
-    })),
-    recommendations: z.array(z.string()),
-  }),
-  overallScore: z.number().min(0).max(100),
-  summary: z.string(),
-  topRisks: z.array(z.string()),
-  topOpportunities: z.array(z.string()),
+  gmail: providerAnalysisSchema,
+  outlook: providerAnalysisSchema,
+  yahoo: providerAnalysisSchema,
+  appleMail: providerAnalysisSchema,
+  overallScore: z.number().min(0).max(100).default(50),
+  summary: z.string().default('Unable to analyze'),
+  topRisks: z.array(z.string()).default([]),
+  topOpportunities: z.array(z.string()).default([]),
+  htmlAnalysis: htmlAnalysisSchema.optional(),
+  imageTextRatio: imageTextRatioSchema.optional(),
+  authenticationImpact: authenticationImpactSchema.optional(),
+  patternMatching: patternMatchingSchema.optional(),
 });
 
 export type InboxPlacementSimulation = z.infer<typeof inboxPlacementSimulationSchema>;
+export type ProviderAnalysis = z.infer<typeof providerAnalysisSchema>;
+export type HtmlAnalysis = z.infer<typeof htmlAnalysisSchema>;
+export type ImageTextRatio = z.infer<typeof imageTextRatioSchema>;
+export type AuthenticationImpact = z.infer<typeof authenticationImpactSchema>;
+export type PatternMatching = z.infer<typeof patternMatchingSchema>;
 
 // Benchmark Feedback schema
 export const benchmarkFeedbackSchema = z.object({
