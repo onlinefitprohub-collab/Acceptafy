@@ -27,6 +27,8 @@ export function ChatWidget() {
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasReceivedWelcome = useRef(false);
+  const isConnecting = useRef(false);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,7 +39,9 @@ export function ChatWidget() {
   }, [messages, scrollToBottom]);
 
   const connectWebSocket = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN || isConnecting.current) return;
+    
+    isConnecting.current = true;
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
@@ -45,6 +49,7 @@ export function ChatWidget() {
 
     socket.onopen = () => {
       setIsConnected(true);
+      isConnecting.current = false;
     };
 
     socket.onmessage = (event) => {
@@ -53,14 +58,17 @@ export function ChatWidget() {
         
         if (data.type === 'system') {
           setClientId(data.clientId);
-          setMessages(prev => [...prev, {
-            id: `msg_${Date.now()}`,
-            type: 'system',
-            clientId: 'system',
-            name: 'System',
-            message: data.message,
-            timestamp: data.timestamp
-          }]);
+          if (!hasReceivedWelcome.current) {
+            hasReceivedWelcome.current = true;
+            setMessages(prev => [...prev, {
+              id: `msg_${Date.now()}`,
+              type: 'system',
+              clientId: 'system',
+              name: 'System',
+              message: data.message,
+              timestamp: data.timestamp
+            }]);
+          }
         } else if (data.type === 'chat') {
           // Don't duplicate own messages
           if (data.clientId !== clientId || data.isSupport) {
@@ -91,6 +99,8 @@ export function ChatWidget() {
 
     socket.onclose = () => {
       setIsConnected(false);
+      isConnecting.current = false;
+      wsRef.current = null;
       // Attempt to reconnect after a delay
       setTimeout(() => {
         if (isOpen) {
@@ -102,10 +112,11 @@ export function ChatWidget() {
     socket.onerror = (error) => {
       console.error('WebSocket error:', error);
       setIsConnected(false);
+      isConnecting.current = false;
     };
 
     wsRef.current = socket;
-  }, [isOpen, clientId]);
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && !wsRef.current) {
