@@ -372,7 +372,7 @@ export default function Landing() {
             <div>
               <Badge variant="outline" className="mb-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30" data-testid="badge-new-feature">
                 <Sparkles className="w-3 h-3 mr-1" />
-                Now with 12+ ESP Integrations
+                Trusted by 5,000+ Email Marketers
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
                 Send Emails That{" "}
@@ -382,25 +382,17 @@ export default function Landing() {
               </h1>
               
               <p className="text-lg text-muted-foreground mb-6 max-w-xl">
-                Grade your emails, get AI-powered rewrites, and send directly through your favorite ESP. Connect SendGrid, Mailchimp, Klaviyo and 9 more—analyze real campaign stats with AI insights.
+                Stop guessing why your emails underperform. Get instant AI-powered grades, fix issues with one click, and watch your open rates climb. Turn every send into revenue.
               </p>
 
               <div className="flex flex-wrap gap-4 mb-8">
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-esp">
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-opens">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>12+ ESP integrations</span>
+                  <span>+21% avg. open rate lift</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-grading">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>AI email grading</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-stats">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Campaign stats + AI analysis</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm" data-testid="benefit-send">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Send via ESP</span>
+                  <span>Instant AI grading</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-rewrites">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -408,7 +400,15 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-2 text-sm" data-testid="benefit-spam">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>Spam detection</span>
+                  <span>Avoid spam folders</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-revenue">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>More clicks, more sales</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm" data-testid="benefit-time">
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span>Save hours per campaign</span>
                 </div>
               </div>
 
