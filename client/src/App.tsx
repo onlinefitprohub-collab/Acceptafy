@@ -72,6 +72,7 @@ import { EmailTemplates } from './components/EmailTemplates';
 import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
+import { ESPStatsDashboard } from './components/ESPStatsDashboard';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -1651,23 +1652,7 @@ function AppContent() {
       )}
 
       {integrationsSubView === 'stats' && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Campaign Statistics
-            </h2>
-            <p className="text-muted-foreground">
-              View and analyze performance metrics from your connected ESPs.
-            </p>
-          </div>
-          <Card>
-            <CardContent className="p-8 text-center">
-              <p className="text-muted-foreground">
-                Connect an ESP in Settings to view campaign statistics.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <ESPStatsDashboard />
       )}
 
       {!integrationsSubView && (
