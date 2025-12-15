@@ -88,9 +88,11 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     color: 'green',
     gradient: 'from-green-500 to-emerald-500',
     features: ['Email Sending', 'Campaign Stats', 'CRM Sync'],
-    authType: 'oauth',
+    authType: 'api_key',
     docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
-    fields: []
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
+    ]
   },
   {
     id: 'ontraport',
