@@ -853,11 +853,11 @@ const ontraportProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey || !credentials.appId) return [];
     try {
-      // Use the message/outstats endpoint (objectID 69) for broadcast statistics
-      // This returns the actual broadcast history with sent, opened, clicked stats
-      const endpoint = `https://api.ontraport.com/1/message/outstats?range=${limit}&sort=date&sortDir=desc`;
+      // Use the Messages endpoint - it contains mcsent, mcopened, mcclicked stats
+      // Filter for messages that have been sent (mcsent > 0)
+      const endpoint = `https://api.ontraport.com/1/Messages?range=${limit}&sort=date&sortDir=desc`;
       
-      console.log(`Ontraport fetching broadcast stats: ${endpoint}`);
+      console.log(`Ontraport fetching messages: ${endpoint}`);
       const resp = await fetch(endpoint, {
         headers: { 
           'Api-Key': credentials.apiKey,
@@ -865,43 +865,38 @@ const ontraportProvider: ESPProvider = {
         }
       });
       
-      console.log(`Ontraport broadcast stats response:`, resp.status);
+      console.log(`Ontraport messages response:`, resp.status);
       
       if (resp.ok) {
         const data = await resp.json();
-        console.log('Ontraport broadcast stats raw:', JSON.stringify(data).slice(0, 1500));
+        console.log('Ontraport messages raw:', JSON.stringify(data).slice(0, 1500));
         
-        const broadcasts = data.data || [];
-        if (broadcasts.length > 0) {
-          return broadcasts.slice(0, limit).map((b: any) => {
-            // Parse the broadcast stats - field names from Ontraport's outstats endpoint
-            const sent = parseInt(b.sent) || parseInt(b.queued) || 0;
-            const delivered = parseInt(b.delivered) || sent;
-            const opened = parseInt(b.opened) || parseInt(b.unique_opens) || 0;
-            const clicked = parseInt(b.clicked) || parseInt(b.unique_clicks) || 0;
-            const bounced = parseInt(b.bounced) || parseInt(b.hard_bounces) || 0;
-            const unsubscribed = parseInt(b.opt_outs) || parseInt(b.unsubscribed) || 0;
-            const spamReports = parseInt(b.spam_score) || parseInt(b.abuse) || 0;
+        const messages = data.data || [];
+        // Filter for messages that have actually been sent (mcsent > 0)
+        const sentMessages = messages.filter((m: any) => parseInt(m.mcsent) > 0);
+        
+        console.log(`Ontraport found ${sentMessages.length} sent messages out of ${messages.length} total`);
+        
+        if (sentMessages.length > 0) {
+          return sentMessages.slice(0, limit).map((m: any) => {
+            // Ontraport uses mc* prefix for stats: mcsent, mcopened, mcclicked, mcabuse, mcunsub
+            const sent = parseInt(m.mcsent) || 0;
+            const delivered = sent; // Ontraport doesn't provide separate delivered count
+            const opened = parseInt(m.mcopened) || 0;
+            const clicked = parseInt(m.mcclicked) || 0;
+            const bounced = 0; // Not directly available in Messages endpoint
+            const unsubscribed = parseInt(m.mcunsub) || 0;
+            const spamReports = parseInt(m.mcabuse) || 0;
             
-            // Parse open/click rates if provided as percentages
-            let openRate = 0;
-            let clickRate = 0;
-            if (b.opened && typeof b.opened === 'string' && b.opened.includes('%')) {
-              openRate = parseFloat(b.opened.replace('%', '').replace('(', '').replace(')', ''));
-            } else {
-              openRate = delivered > 0 ? (opened / delivered) * 100 : 0;
-            }
-            if (b.clicked && typeof b.clicked === 'string' && b.clicked.includes('%')) {
-              clickRate = parseFloat(b.clicked.replace('%', '').replace('(', '').replace(')', ''));
-            } else {
-              clickRate = delivered > 0 ? (clicked / delivered) * 100 : 0;
-            }
+            // Calculate rates
+            const openRate = sent > 0 ? (opened / sent) * 100 : 0;
+            const clickRate = sent > 0 ? (clicked / sent) * 100 : 0;
             
             return {
-              campaignId: (b.id || b.message_id || b.broadcast_id)?.toString() || '',
-              campaignName: b.name || b.subject || b.alias || 'Broadcast',
-              subject: b.subject || b.name,
-              sentAt: b.date_sent || b.date || b.send_date,
+              campaignId: m.id?.toString() || '',
+              campaignName: m.alias || m.subject || m.name || 'Untitled Message',
+              subject: m.subject || m.alias || m.name,
+              sentAt: m.date ? new Date(parseInt(m.date) * 1000).toISOString() : undefined,
               totalSent: sent,
               delivered,
               opened,
@@ -911,60 +906,14 @@ const ontraportProvider: ESPProvider = {
               spamReports,
               openRate,
               clickRate,
-              bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
-              unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+              bounceRate: 0,
+              unsubscribeRate: sent > 0 ? (unsubscribed / sent) * 100 : 0,
             };
           });
         }
       }
       
-      // Fallback: try objectID 69 directly
-      const fallbackEndpoint = `https://api.ontraport.com/1/objects?objectID=69&range=${limit}&sort=date&sortDir=desc`;
-      console.log(`Ontraport fallback endpoint: ${fallbackEndpoint}`);
-      const fallbackResp = await fetch(fallbackEndpoint, {
-        headers: { 
-          'Api-Key': credentials.apiKey,
-          'Api-Appid': credentials.appId
-        }
-      });
-      
-      if (fallbackResp.ok) {
-        const fallbackData = await fallbackResp.json();
-        console.log('Ontraport objectID 69 raw:', JSON.stringify(fallbackData).slice(0, 1500));
-        
-        const items = fallbackData.data || [];
-        if (items.length > 0) {
-          return items.slice(0, limit).map((b: any) => {
-            const sent = parseInt(b.sent) || parseInt(b.queued) || 0;
-            const delivered = parseInt(b.delivered) || sent;
-            const opened = parseInt(b.opened) || 0;
-            const clicked = parseInt(b.clicked) || 0;
-            const bounced = parseInt(b.bounced) || 0;
-            const unsubscribed = parseInt(b.opt_outs) || 0;
-            const spamReports = parseInt(b.spam_score) || 0;
-            
-            return {
-              campaignId: (b.id || b.message_id)?.toString() || '',
-              campaignName: b.name || b.subject || 'Broadcast',
-              subject: b.subject || b.name,
-              sentAt: b.date_sent || b.date,
-              totalSent: sent,
-              delivered,
-              opened,
-              clicked,
-              bounced,
-              unsubscribed,
-              spamReports,
-              openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-              clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
-              bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
-              unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
-            };
-          });
-        }
-      }
-      
-      console.log('Ontraport: No broadcast stats found');
+      console.log('Ontraport: No sent messages found');
       return [];
     } catch (error) {
       console.error('Ontraport fetchCampaignStats error:', error);
