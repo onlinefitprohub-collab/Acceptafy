@@ -643,14 +643,26 @@ const highlevelProvider: ESPProvider = {
       return { accountName: '', isValid: false, error: 'API key is required' };
     }
     try {
-      const response = await fetch('https://rest.gohighlevel.com/v1/custom-values/', {
-        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      const response = await fetch('https://services.leadconnectorhq.com/locations/', {
+        headers: { 
+          'Authorization': `Bearer ${credentials.apiKey}`,
+          'Version': '2021-07-28'
+        }
       });
       if (!response.ok) {
-        return { accountName: '', isValid: false, error: 'Invalid API key' };
+        const legacyResp = await fetch('https://rest.gohighlevel.com/v1/custom-values/', {
+          headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+        });
+        if (!legacyResp.ok) {
+          return { accountName: '', isValid: false, error: 'Invalid API key' };
+        }
+        return { accountName: 'HighLevel Account', isValid: true };
       }
+      const data = await response.json();
+      const location = data.locations?.[0];
       return {
-        accountName: 'HighLevel Account',
+        accountName: location?.name || 'HighLevel Account',
+        accountEmail: location?.email,
         isValid: true
       };
     } catch (error: any) {
@@ -658,8 +670,60 @@ const highlevelProvider: ESPProvider = {
     }
   },
 
-  async fetchCampaignStats(): Promise<ESPCampaignStats[]> {
-    return [];
+  async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
+    if (!credentials.apiKey) return [];
+    try {
+      const locResp = await fetch('https://services.leadconnectorhq.com/locations/', {
+        headers: { 
+          'Authorization': `Bearer ${credentials.apiKey}`,
+          'Version': '2021-07-28'
+        }
+      });
+      if (!locResp.ok) return [];
+      const locData = await locResp.json();
+      const locationId = locData.locations?.[0]?.id;
+      if (!locationId) return [];
+
+      const campaignsResp = await fetch(`https://services.leadconnectorhq.com/campaigns/?locationId=${locationId}&limit=${limit}`, {
+        headers: { 
+          'Authorization': `Bearer ${credentials.apiKey}`,
+          'Version': '2021-07-28'
+        }
+      });
+      if (!campaignsResp.ok) return [];
+      const campaignsData = await campaignsResp.json();
+      
+      return (campaignsData.campaigns || []).map((c: any) => {
+        const stats = c.statistics || {};
+        const sent = stats.sent || 0;
+        const delivered = stats.delivered || sent;
+        const opened = stats.opened || 0;
+        const clicked = stats.clicked || 0;
+        const bounced = stats.bounced || 0;
+        const unsubscribed = stats.unsubscribed || 0;
+        const spamReports = stats.spamComplaints || 0;
+        
+        return {
+          campaignId: c.id || '',
+          campaignName: c.name || 'Untitled Campaign',
+          subject: c.subject,
+          sentAt: c.createdAt,
+          totalSent: sent,
+          delivered,
+          opened,
+          clicked,
+          bounced,
+          unsubscribed,
+          spamReports,
+          openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+          clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+          bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+          unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+        };
+      });
+    } catch {
+      return [];
+    }
   },
 
   async sendEmail(): Promise<SendEmailResult> {
@@ -691,8 +755,51 @@ const ontraportProvider: ESPProvider = {
     }
   },
 
-  async fetchCampaignStats(): Promise<ESPCampaignStats[]> {
-    return [];
+  async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
+    if (!credentials.apiKey || !credentials.appId) return [];
+    try {
+      const messagesResp = await fetch(`https://api.ontraport.com/1/Messages?range=${limit}&listFields=id,name,subject,type,stats`, {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId
+        }
+      });
+      if (!messagesResp.ok) return [];
+      const messagesData = await messagesResp.json();
+      
+      const emailMessages = (messagesData.data || []).filter((m: any) => m.type === 'e' || m.type === 'email');
+      
+      return emailMessages.map((m: any) => {
+        const stats = m.stats || {};
+        const sent = parseInt(stats.sent) || 0;
+        const delivered = parseInt(stats.delivered) || sent;
+        const opened = parseInt(stats.unique_opens) || parseInt(stats.opens) || 0;
+        const clicked = parseInt(stats.unique_clicks) || parseInt(stats.clicks) || 0;
+        const bounced = (parseInt(stats.hard_bounces) || 0) + (parseInt(stats.soft_bounces) || 0);
+        const unsubscribed = parseInt(stats.unsubscribes) || 0;
+        const spamReports = parseInt(stats.spam_complaints) || 0;
+        
+        return {
+          campaignId: m.id?.toString() || '',
+          campaignName: m.name || 'Untitled Message',
+          subject: m.subject,
+          sentAt: m.date_sent || m.date,
+          totalSent: sent,
+          delivered,
+          opened,
+          clicked,
+          bounced,
+          unsubscribed,
+          spamReports,
+          openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+          clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+          bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+          unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+        };
+      });
+    } catch {
+      return [];
+    }
   },
 
   async sendEmail(): Promise<SendEmailResult> {

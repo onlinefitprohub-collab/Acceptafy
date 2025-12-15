@@ -37,26 +37,63 @@ interface GamificationContextType extends GamificationState {
 }
 
 const defaultAchievements: Achievement[] = [
+  // Getting Started
   { id: 'first_grade', title: 'First Steps', description: 'Grade your first email', icon: 'target', unlocked: false },
-  { id: 'perfect_score', title: 'Perfection', description: 'Get a 90%+ chance of reaching inbox', icon: 'star', unlocked: false },
+  { id: 'first_rewrite', title: 'AI Apprentice', description: 'Use AI rewrite for the first time', icon: 'sparkles', unlocked: false },
+  { id: 'first_deliverability', title: 'Health Check', description: 'Run your first deliverability check', icon: 'activity', unlocked: false },
+  
+  // Excellence Milestones
+  { id: 'perfect_score', title: 'Perfection', description: 'Get a 90%+ inbox placement score', icon: 'star', unlocked: false },
   { id: 'a_plus', title: 'A+ Student', description: 'Get an A+ grade', icon: 'trophy', unlocked: false },
   { id: 'triple_a', title: 'Hat Trick', description: 'Get 3 A+ grades', icon: 'award', unlocked: false },
-  { id: 'spam_slayer', title: 'Spam Slayer', description: 'Fix 10 spam triggers', icon: 'shield', unlocked: false },
+  { id: 'five_a_plus', title: 'Honor Roll', description: 'Get 5 A+ grades', icon: 'medal', unlocked: false },
+  { id: 'ten_a_plus', title: 'Valedictorian', description: 'Get 10 A+ grades', icon: 'crown', unlocked: false },
+  { id: 'twenty_a_plus', title: 'A+ Champion', description: 'Get 20 A+ grades', icon: 'trophy', unlocked: false },
+  
+  // Volume Milestones - Grading
+  { id: 'prolific', title: 'Prolific', description: 'Grade 10 emails', icon: 'mail', unlocked: false },
+  { id: 'veteran', title: 'Veteran', description: 'Grade 25 emails', icon: 'medal', unlocked: false },
+  { id: 'expert', title: 'Expert', description: 'Grade 50 emails', icon: 'graduation', unlocked: false },
+  { id: 'centurion', title: 'Centurion', description: 'Grade 100 emails', icon: 'shield', unlocked: false },
+  { id: 'grading_legend', title: 'Grading Legend', description: 'Grade 250 emails', icon: 'star', unlocked: false },
+  
+  // Volume Milestones - Rewrites
   { id: 'rewrite_master', title: 'Rewrite Master', description: 'Use AI rewrite 5 times', icon: 'sparkles', unlocked: false },
   { id: 'rewrite_pro', title: 'Rewrite Pro', description: 'Use AI rewrite 15 times', icon: 'wand', unlocked: false },
+  { id: 'rewrite_expert', title: 'Rewrite Expert', description: 'Use AI rewrite 30 times', icon: 'wand', unlocked: false },
+  { id: 'rewrite_legend', title: 'Transformation Master', description: 'Use AI rewrite 50 times', icon: 'zap', unlocked: false },
+  
+  // Volume Milestones - Follow-ups
+  { id: 'followup_first', title: 'Follow Through', description: 'Generate your first follow-up', icon: 'reply', unlocked: false },
+  { id: 'followup_pro', title: 'Persistent', description: 'Generate 10 follow-ups', icon: 'repeat', unlocked: false },
+  { id: 'followup_expert', title: 'Sequence Specialist', description: 'Generate 25 follow-ups', icon: 'mail-plus', unlocked: false },
+  { id: 'followup_legend', title: 'Follow-up Wizard', description: 'Generate 50 follow-ups', icon: 'wand', unlocked: false },
+  
+  // Deliverability Achievements
+  { id: 'deliverability_check', title: 'Domain Detective', description: 'Run a deliverability check', icon: 'search', unlocked: false },
+  { id: 'deliverability_pro', title: 'Deliverability Pro', description: 'Run 10 deliverability checks', icon: 'check-circle', unlocked: false },
+  { id: 'deliverability_expert', title: 'Inbox Guardian', description: 'Run 25 deliverability checks', icon: 'shield', unlocked: false },
+  { id: 'deliverability_master', title: 'Deliverability Master', description: 'Run 50 deliverability checks', icon: 'crown', unlocked: false },
+  
+  // Streak Achievements
   { id: 'streak_3', title: 'On Fire', description: 'Maintain a 3-day streak', icon: 'flame', unlocked: false },
   { id: 'streak_7', title: 'Unstoppable', description: 'Maintain a 7-day streak', icon: 'zap', unlocked: false },
   { id: 'streak_14', title: 'Dedicated', description: 'Maintain a 14-day streak', icon: 'calendar', unlocked: false },
   { id: 'streak_30', title: 'Email Master', description: 'Maintain a 30-day streak', icon: 'crown', unlocked: false },
-  { id: 'prolific', title: 'Prolific', description: 'Grade 10 emails', icon: 'mail', unlocked: false },
-  { id: 'veteran', title: 'Veteran', description: 'Grade 25 emails', icon: 'medal', unlocked: false },
-  { id: 'expert', title: 'Expert', description: 'Grade 50 emails', icon: 'graduation', unlocked: false },
-  { id: 'followup_first', title: 'Follow Through', description: 'Generate your first follow-up', icon: 'reply', unlocked: false },
-  { id: 'followup_pro', title: 'Persistent', description: 'Generate 10 follow-ups', icon: 'repeat', unlocked: false },
-  { id: 'deliverability_check', title: 'Domain Detective', description: 'Run a deliverability check', icon: 'search', unlocked: false },
-  { id: 'deliverability_pro', title: 'Deliverability Pro', description: 'Run 10 deliverability checks', icon: 'check-circle', unlocked: false },
+  { id: 'streak_60', title: 'Iron Will', description: 'Maintain a 60-day streak', icon: 'diamond', unlocked: false },
+  { id: 'streak_90', title: 'Legendary Dedication', description: 'Maintain a 90-day streak', icon: 'trophy', unlocked: false },
+  
+  // Level Achievements
   { id: 'level_5', title: 'Rising Star', description: 'Reach level 5', icon: 'trending-up', unlocked: false },
   { id: 'level_10', title: 'Email Guru', description: 'Reach level 10', icon: 'star', unlocked: false },
+  { id: 'level_15', title: 'Marketing Maven', description: 'Reach level 15', icon: 'award', unlocked: false },
+  { id: 'level_20', title: 'Email Titan', description: 'Reach level 20', icon: 'crown', unlocked: false },
+  { id: 'level_25', title: 'Deliverability Deity', description: 'Reach level 25', icon: 'sparkles', unlocked: false },
+  
+  // XP Achievements
+  { id: 'xp_1000', title: 'XP Hunter', description: 'Earn 1,000 total XP', icon: 'zap', unlocked: false },
+  { id: 'xp_5000', title: 'XP Master', description: 'Earn 5,000 total XP', icon: 'bolt', unlocked: false },
+  { id: 'xp_10000', title: 'XP Legend', description: 'Earn 10,000 total XP', icon: 'star', unlocked: false },
 ];
 
 const STORAGE_KEY = 'acceptafy_gamification';
@@ -224,25 +261,63 @@ export function GamificationProvider({ children }: { children: React.ReactNode }
   const checkAndUnlockAchievements = useCallback((currentState: GamificationState) => {
     const achievementsToUnlock: string[] = [];
     
+    // Getting Started
     if (currentState.totalGrades >= 1 && !shownAchievementsRef.current.has('first_grade')) achievementsToUnlock.push('first_grade');
+    if (currentState.totalRewrites >= 1 && !shownAchievementsRef.current.has('first_rewrite')) achievementsToUnlock.push('first_rewrite');
+    if (currentState.totalDeliverabilityChecks >= 1 && !shownAchievementsRef.current.has('first_deliverability')) achievementsToUnlock.push('first_deliverability');
+    
+    // Excellence Milestones
+    if (currentState.perfectScoreCount >= 1 && !shownAchievementsRef.current.has('perfect_score')) achievementsToUnlock.push('perfect_score');
+    if (currentState.aPlusCount >= 1 && !shownAchievementsRef.current.has('a_plus')) achievementsToUnlock.push('a_plus');
+    if (currentState.aPlusCount >= 3 && !shownAchievementsRef.current.has('triple_a')) achievementsToUnlock.push('triple_a');
+    if (currentState.aPlusCount >= 5 && !shownAchievementsRef.current.has('five_a_plus')) achievementsToUnlock.push('five_a_plus');
+    if (currentState.aPlusCount >= 10 && !shownAchievementsRef.current.has('ten_a_plus')) achievementsToUnlock.push('ten_a_plus');
+    if (currentState.aPlusCount >= 20 && !shownAchievementsRef.current.has('twenty_a_plus')) achievementsToUnlock.push('twenty_a_plus');
+    
+    // Volume Milestones - Grading
     if (currentState.totalGrades >= 10 && !shownAchievementsRef.current.has('prolific')) achievementsToUnlock.push('prolific');
     if (currentState.totalGrades >= 25 && !shownAchievementsRef.current.has('veteran')) achievementsToUnlock.push('veteran');
     if (currentState.totalGrades >= 50 && !shownAchievementsRef.current.has('expert')) achievementsToUnlock.push('expert');
+    if (currentState.totalGrades >= 100 && !shownAchievementsRef.current.has('centurion')) achievementsToUnlock.push('centurion');
+    if (currentState.totalGrades >= 250 && !shownAchievementsRef.current.has('grading_legend')) achievementsToUnlock.push('grading_legend');
+    
+    // Volume Milestones - Rewrites
     if (currentState.totalRewrites >= 5 && !shownAchievementsRef.current.has('rewrite_master')) achievementsToUnlock.push('rewrite_master');
     if (currentState.totalRewrites >= 15 && !shownAchievementsRef.current.has('rewrite_pro')) achievementsToUnlock.push('rewrite_pro');
+    if (currentState.totalRewrites >= 30 && !shownAchievementsRef.current.has('rewrite_expert')) achievementsToUnlock.push('rewrite_expert');
+    if (currentState.totalRewrites >= 50 && !shownAchievementsRef.current.has('rewrite_legend')) achievementsToUnlock.push('rewrite_legend');
+    
+    // Volume Milestones - Follow-ups
     if (currentState.totalFollowups >= 1 && !shownAchievementsRef.current.has('followup_first')) achievementsToUnlock.push('followup_first');
     if (currentState.totalFollowups >= 10 && !shownAchievementsRef.current.has('followup_pro')) achievementsToUnlock.push('followup_pro');
+    if (currentState.totalFollowups >= 25 && !shownAchievementsRef.current.has('followup_expert')) achievementsToUnlock.push('followup_expert');
+    if (currentState.totalFollowups >= 50 && !shownAchievementsRef.current.has('followup_legend')) achievementsToUnlock.push('followup_legend');
+    
+    // Deliverability Achievements
     if (currentState.totalDeliverabilityChecks >= 1 && !shownAchievementsRef.current.has('deliverability_check')) achievementsToUnlock.push('deliverability_check');
     if (currentState.totalDeliverabilityChecks >= 10 && !shownAchievementsRef.current.has('deliverability_pro')) achievementsToUnlock.push('deliverability_pro');
+    if (currentState.totalDeliverabilityChecks >= 25 && !shownAchievementsRef.current.has('deliverability_expert')) achievementsToUnlock.push('deliverability_expert');
+    if (currentState.totalDeliverabilityChecks >= 50 && !shownAchievementsRef.current.has('deliverability_master')) achievementsToUnlock.push('deliverability_master');
+    
+    // Streak Achievements
     if (currentState.streak >= 3 && !shownAchievementsRef.current.has('streak_3')) achievementsToUnlock.push('streak_3');
     if (currentState.streak >= 7 && !shownAchievementsRef.current.has('streak_7')) achievementsToUnlock.push('streak_7');
     if (currentState.streak >= 14 && !shownAchievementsRef.current.has('streak_14')) achievementsToUnlock.push('streak_14');
     if (currentState.streak >= 30 && !shownAchievementsRef.current.has('streak_30')) achievementsToUnlock.push('streak_30');
-    if (currentState.aPlusCount >= 3 && !shownAchievementsRef.current.has('triple_a')) achievementsToUnlock.push('triple_a');
+    if (currentState.streak >= 60 && !shownAchievementsRef.current.has('streak_60')) achievementsToUnlock.push('streak_60');
+    if (currentState.streak >= 90 && !shownAchievementsRef.current.has('streak_90')) achievementsToUnlock.push('streak_90');
+    
+    // Level Achievements
     if (currentState.level >= 5 && !shownAchievementsRef.current.has('level_5')) achievementsToUnlock.push('level_5');
     if (currentState.level >= 10 && !shownAchievementsRef.current.has('level_10')) achievementsToUnlock.push('level_10');
-    if (currentState.perfectScoreCount >= 1 && !shownAchievementsRef.current.has('perfect_score')) achievementsToUnlock.push('perfect_score');
-    if (currentState.aPlusCount >= 1 && !shownAchievementsRef.current.has('a_plus')) achievementsToUnlock.push('a_plus');
+    if (currentState.level >= 15 && !shownAchievementsRef.current.has('level_15')) achievementsToUnlock.push('level_15');
+    if (currentState.level >= 20 && !shownAchievementsRef.current.has('level_20')) achievementsToUnlock.push('level_20');
+    if (currentState.level >= 25 && !shownAchievementsRef.current.has('level_25')) achievementsToUnlock.push('level_25');
+    
+    // XP Achievements
+    if (currentState.xp >= 1000 && !shownAchievementsRef.current.has('xp_1000')) achievementsToUnlock.push('xp_1000');
+    if (currentState.xp >= 5000 && !shownAchievementsRef.current.has('xp_5000')) achievementsToUnlock.push('xp_5000');
+    if (currentState.xp >= 10000 && !shownAchievementsRef.current.has('xp_10000')) achievementsToUnlock.push('xp_10000');
 
     if (achievementsToUnlock.length > 0) {
       achievementsToUnlock.forEach(id => shownAchievementsRef.current.add(id));

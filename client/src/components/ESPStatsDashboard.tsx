@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -27,7 +28,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Shield,
+  Zap
 } from 'lucide-react';
 
 interface ESPCampaignStats {
@@ -293,6 +296,7 @@ function CampaignRow({ campaign, provider }: { campaign: ESPCampaignStats; provi
 
 export function ESPStatsDashboard() {
   const { toast } = useToast();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [stats, setStats] = useState<ESPStatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -300,6 +304,74 @@ export function ESPStatsDashboard() {
   const [analysis, setAnalysis] = useState<ESPStatsAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(true);
+
+  const isScaleMember = user?.subscriptionTier === 'scale';
+
+  if (isAuthLoading) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-white/10 bg-gradient-to-br from-white/5 to-transparent" data-testid="esp-stats-loading">
+          <CardContent className="p-8">
+            <div className="flex items-center justify-center gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
+              <p className="text-muted-foreground">Loading ESP Stats Dashboard...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isScaleMember) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-purple-500/20 bg-gradient-to-br from-purple-500/5 to-pink-500/5" data-testid="scale-only-esp-stats">
+          <CardHeader className="text-center pb-2">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            <CardTitle className="text-2xl">Scale Plan Required</CardTitle>
+            <CardDescription className="text-base mt-2">
+              ESP Stats Dashboard is an exclusive feature for Scale plan members.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <Target className="w-6 h-6 mx-auto mb-2 text-purple-400" />
+                <p className="font-medium text-sm">Inbox Prediction</p>
+                <p className="text-xs text-muted-foreground">AI-powered analysis</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <Activity className="w-6 h-6 mx-auto mb-2 text-pink-400" />
+                <p className="font-medium text-sm">Health Scoring</p>
+                <p className="text-xs text-muted-foreground">Comprehensive grades</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <BarChart3 className="w-6 h-6 mx-auto mb-2 text-blue-400" />
+                <p className="font-medium text-sm">Deep Analytics</p>
+                <p className="text-xs text-muted-foreground">Beyond ESP dashboards</p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <Zap className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
+                <p className="font-medium text-sm">Action Items</p>
+                <p className="text-xs text-muted-foreground">Prioritized steps</p>
+              </div>
+            </div>
+            <p className="text-center text-muted-foreground">
+              Connect your email service provider and get AI-powered insights on your email deliverability, 
+              inbox placement predictions, and personalized recommendations to improve your sender reputation.
+            </p>
+            <div className="flex justify-center">
+              <Button asChild className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" data-testid="button-upgrade-scale">
+                <a href="/pricing">Upgrade to Scale</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const fetchStats = async (showRefreshToast = false) => {
     if (showRefreshToast) {

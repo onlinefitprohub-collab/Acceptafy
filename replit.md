@@ -106,3 +106,26 @@ Preferred communication style: Simple, everyday language.
 3. **No Database Migrations**: Uses `drizzle-kit push` for schema synchronization
 4. **Static Asset Strategy**: Client built separately, served as static files in production
 5. **Session Strategy**: Infrastructure for PostgreSQL session store present but not actively used
+
+## Recent Changes
+
+### December 2025
+
+**ESP Stats Dashboard (Scale-only)**:
+- Added subscription tier check requiring Scale plan membership
+- Loading state while authentication is being verified
+- Upgrade prompt for non-Scale members with feature highlights
+- AI-powered deliverability analysis with inbox placement predictions
+
+**Gamification System Expansion**:
+- Expanded from 20 to 40 achievements across 8 categories:
+  - Getting Started (3): First grade, first rewrite, first deliverability check
+  - Excellence Milestones (6): A+ grades from 1 to 20
+  - Volume - Grading (5): 10 to 250 emails graded
+  - Volume - Rewrites (4): 5 to 50 AI rewrites
+  - Volume - Follow-ups (4): 1 to 50 follow-ups
+  - Deliverability (4): 1 to 50 deliverability checks
+  - Streaks (6): 3 to 90 day streaks
+  - Levels (5): Level 5 to 25
+  - XP (3): 1,000 to 10,000 XP earned
+- All achievements have corresponding unlock conditions in checkAndUnlockAchievements function
