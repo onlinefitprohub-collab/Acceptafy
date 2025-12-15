@@ -725,55 +725,98 @@ const highlevelProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey) return [];
     try {
+      // For Private Integration Tokens (pit-*), try different approaches
+      const isPIT = credentials.apiKey.startsWith('pit-');
+      
+      // Try to get location ID first (works for Agency tokens)
+      let locationId: string | null = null;
       const locResp = await fetch('https://services.leadconnectorhq.com/locations/', {
         headers: { 
           'Authorization': `Bearer ${credentials.apiKey}`,
           'Version': '2021-07-28'
         }
       });
-      if (!locResp.ok) return [];
-      const locData = await locResp.json();
-      const locationId = locData.locations?.[0]?.id;
-      if (!locationId) return [];
-
-      const campaignsResp = await fetch(`https://services.leadconnectorhq.com/campaigns/?locationId=${locationId}&limit=${limit}`, {
-        headers: { 
-          'Authorization': `Bearer ${credentials.apiKey}`,
-          'Version': '2021-07-28'
-        }
-      });
-      if (!campaignsResp.ok) return [];
-      const campaignsData = await campaignsResp.json();
       
-      return (campaignsData.campaigns || []).map((c: any) => {
-        const stats = c.statistics || {};
-        const sent = stats.sent || 0;
-        const delivered = stats.delivered || sent;
-        const opened = stats.opened || 0;
-        const clicked = stats.clicked || 0;
-        const bounced = stats.bounced || 0;
-        const unsubscribed = stats.unsubscribed || 0;
-        const spamReports = stats.spamComplaints || 0;
+      if (locResp.ok) {
+        const locData = await locResp.json();
+        locationId = locData.locations?.[0]?.id;
+      }
+
+      // Try email/campaigns endpoints with multiple approaches
+      const endpoints = [
+        // V2 API campaigns endpoint
+        locationId 
+          ? `https://services.leadconnectorhq.com/campaigns/?locationId=${locationId}&limit=${limit}`
+          : null,
+        // Email campaigns/statistics endpoint
+        'https://services.leadconnectorhq.com/emails/stats',
+        // Marketing email stats
+        'https://services.leadconnectorhq.com/marketing/emails',
+        // Conversations/messages (has email stats)
+        'https://services.leadconnectorhq.com/conversations/messages',
+      ].filter(Boolean);
+
+      for (const endpoint of endpoints) {
+        if (!endpoint) continue;
         
-        return {
-          campaignId: c.id || '',
-          campaignName: c.name || 'Untitled Campaign',
-          subject: c.subject,
-          sentAt: c.createdAt,
-          totalSent: sent,
-          delivered,
-          opened,
-          clicked,
-          bounced,
-          unsubscribed,
-          spamReports,
-          openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-          clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
-          bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
-          unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
-        };
-      });
-    } catch {
+        console.log(`HighLevel trying endpoint: ${endpoint}`);
+        const resp = await fetch(endpoint, {
+          headers: { 
+            'Authorization': `Bearer ${credentials.apiKey}`,
+            'Version': '2021-07-28',
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log(`HighLevel ${endpoint} response:`, resp.status);
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          console.log('HighLevel campaign data:', JSON.stringify(data).slice(0, 500));
+          
+          // Parse campaigns from response
+          const campaigns = data.campaigns || data.emails || data.data || data.messages || [];
+          if (campaigns.length > 0) {
+            return campaigns.slice(0, limit).map((c: any) => {
+              const stats = c.statistics || c.stats || c;
+              const sent = stats.sent || stats.totalSent || 0;
+              const delivered = stats.delivered || sent;
+              const opened = stats.opened || stats.opens || stats.uniqueOpens || 0;
+              const clicked = stats.clicked || stats.clicks || stats.uniqueClicks || 0;
+              const bounced = stats.bounced || stats.bounces || 0;
+              const unsubscribed = stats.unsubscribed || stats.unsubscribes || 0;
+              const spamReports = stats.spamComplaints || stats.complaints || 0;
+              
+              return {
+                campaignId: c.id || c._id || '',
+                campaignName: c.name || c.subject || 'Untitled Campaign',
+                subject: c.subject || c.name,
+                sentAt: c.createdAt || c.sentAt || c.date,
+                totalSent: sent,
+                delivered,
+                opened,
+                clicked,
+                bounced,
+                unsubscribed,
+                spamReports,
+                openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+                clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+                bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+                unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+              };
+            });
+          }
+        }
+      }
+
+      // For PITs with limited permissions, return empty but log the issue
+      if (isPIT) {
+        console.log('HighLevel PIT: No campaign stats available - token may need Email Marketing permissions');
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('HighLevel fetchCampaignStats error:', error);
       return [];
     }
   },
