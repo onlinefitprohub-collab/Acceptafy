@@ -55,6 +55,11 @@ import {
   StickyNote,
   Eye,
   Download,
+  Heart,
+  Target,
+  ChevronDown,
+  CalendarDays,
+  Lightbulb,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -164,6 +169,79 @@ interface AdminNote {
   createdAt: string;
 }
 
+interface UserHealthScore {
+  userId: string;
+  email: string;
+  healthScore: number;
+  riskLevel: 'healthy' | 'at_risk' | 'critical';
+  factors: {
+    usageScore: number;
+    paymentScore: number;
+    engagementScore: number;
+    tenureScore: number;
+  };
+  lastActivity: string | null;
+  daysSinceActive: number;
+}
+
+interface CohortRetention {
+  cohorts: Array<{
+    cohort: string;
+    totalUsers: number;
+    week1: number;
+    week2: number;
+    week3: number;
+    week4: number;
+    week8: number;
+    week12: number;
+  }>;
+  funnel: Array<{
+    stage: string;
+    count: number;
+    percentage: number;
+  }>;
+}
+
+interface AtRiskUser {
+  user: {
+    id: string;
+    email: string;
+    subscriptionTier: string;
+    subscriptionStatus: string;
+  };
+  healthScore: number;
+  reason: string;
+  suggestedAction: string;
+}
+
+interface DateRangeAnalytics {
+  userMetrics: {
+    newUsers: number;
+    activeUsers: number;
+    churnedUsers: number;
+    upgrades: number;
+    downgrades: number;
+  };
+  emailMetrics: {
+    totalAnalyses: number;
+    avgScore: number;
+    gradeDistribution: { grade: string; count: number }[];
+  };
+  revenueMetrics: {
+    mrr: number;
+    mrrChange: number;
+    newRevenue: number;
+  };
+  dailyActivity: { date: string; users: number; analyses: number }[];
+}
+
+const DATE_RANGE_OPTIONS = [
+  { label: 'Last 7 days', value: '7d', days: 7 },
+  { label: 'Last 30 days', value: '30d', days: 30 },
+  { label: 'Last 90 days', value: '90d', days: 90 },
+  { label: 'Last 12 months', value: '12m', days: 365 },
+];
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -178,6 +256,18 @@ export default function Admin() {
   const [newNote, setNewNote] = useState("");
   const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
   const [resetLink, setResetLink] = useState("");
+  const [dateRange, setDateRange] = useState<string>("30d");
+
+  const dateRangeDates = useMemo(() => {
+    const option = DATE_RANGE_OPTIONS.find(o => o.value === dateRange) || DATE_RANGE_OPTIONS[1];
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    const start = new Date(end.getTime() - option.days * 24 * 60 * 60 * 1000);
+    return { 
+      start: start.toISOString().split('T')[0], 
+      end: end.toISOString().split('T')[0]
+    };
+  }, [dateRange]);
 
   const { data: adminCheck, isLoading: adminCheckLoading, isSuccess: adminCheckSuccess } = useQuery<AdminCheckResponse>({
     queryKey: ["/api/admin/check"],
@@ -219,6 +309,35 @@ export default function Admin() {
   const { data: userNotes, isLoading: notesLoading } = useQuery<AdminNote[]>({
     queryKey: ["/api/admin/users", selectedUser?.id, "notes"],
     enabled: !!selectedUser && showNotesDialog,
+  });
+
+  const { data: dateRangeAnalytics, isLoading: analyticsLoading } = useQuery<DateRangeAnalytics>({
+    queryKey: ["/api/admin/analytics", dateRangeDates.start, dateRangeDates.end],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: dateRangeDates.start,
+        endDate: dateRangeDates.end,
+      });
+      const res = await fetch(`/api/admin/analytics?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch analytics");
+      return res.json();
+    },
+    enabled: isAdmin,
+  });
+
+  const { data: healthScores, isLoading: healthScoresLoading } = useQuery<UserHealthScore[]>({
+    queryKey: ["/api/admin/health-scores"],
+    enabled: isAdmin,
+  });
+
+  const { data: cohortRetention, isLoading: cohortLoading } = useQuery<CohortRetention>({
+    queryKey: ["/api/admin/cohort-retention"],
+    enabled: isAdmin,
+  });
+
+  const { data: atRiskUsers, isLoading: atRiskLoading } = useQuery<AtRiskUser[]>({
+    queryKey: ["/api/admin/at-risk-users"],
+    enabled: isAdmin,
   });
 
   const resetPasswordMutation = useMutation({
@@ -374,14 +493,68 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen p-6 lg:p-8 space-y-8" data-testid="admin-dashboard">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Admin Dashboard
-        </h1>
-        <p className="text-muted-foreground">
-          Manage users and monitor platform activity
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Admin Dashboard
+          </h1>
+          <p className="text-muted-foreground">
+            Manage users and monitor platform activity
+          </p>
+        </div>
+        <Select value={dateRange} onValueChange={setDateRange}>
+          <SelectTrigger className="w-[180px]" data-testid="select-date-range">
+            <CalendarDays className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Select range" />
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_RANGE_OPTIONS.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
+
+      {/* Insights & At-Risk Users Section */}
+      {atRiskUsers && atRiskUsers.length > 0 && (
+        <Card className="border-orange-500/30 bg-orange-500/5" data-testid="at-risk-users-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-500">
+              <AlertTriangle className="h-5 w-5" />
+              Users Needing Attention
+            </CardTitle>
+            <CardDescription>
+              Users at risk of churning based on usage and payment patterns
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {atRiskUsers.slice(0, 6).map((item, index) => (
+                <div 
+                  key={item.user.id} 
+                  className="flex items-start gap-3 p-3 rounded-lg bg-muted/50"
+                  data-testid={`at-risk-user-${index}`}
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                    item.healthScore < 40 ? 'bg-red-500' : 'bg-orange-500'
+                  }`}>
+                    {item.healthScore}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.user.email}</p>
+                    <p className="text-xs text-muted-foreground">{item.reason}</p>
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {item.suggestedAction}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card data-testid="stat-total-users">
@@ -1003,6 +1176,156 @@ export default function Admin() {
                     No tier data available
                   </p>
                 )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* User Health & Retention Analytics */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">User Health & Retention</h2>
+        <p className="text-muted-foreground">
+          Monitor user engagement and identify at-risk accounts
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* User Health Score Distribution */}
+        <Card data-testid="health-score-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Heart className="h-5 w-5" />
+              User Health Scores
+            </CardTitle>
+            <CardDescription>
+              Distribution of users by health score (higher is better)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {healthScoresLoading || !healthScores ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : healthScores.length > 0 ? (
+              <div className="space-y-4">
+                {/* Health score summary */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-3 rounded-lg bg-green-500/10">
+                    <div className="text-2xl font-bold text-green-500">
+                      {healthScores.filter(h => h.riskLevel === 'healthy').length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Healthy</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-orange-500/10">
+                    <div className="text-2xl font-bold text-orange-500">
+                      {healthScores.filter(h => h.riskLevel === 'at_risk').length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">At Risk</div>
+                  </div>
+                  <div className="text-center p-3 rounded-lg bg-red-500/10">
+                    <div className="text-2xl font-bold text-red-500">
+                      {healthScores.filter(h => h.riskLevel === 'critical').length}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Critical</div>
+                  </div>
+                </div>
+                {/* Health score bars */}
+                <div className="space-y-2 max-h-[180px] overflow-y-auto">
+                  {healthScores.slice(0, 10).map((hs) => (
+                    <div key={hs.userId} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                        style={{
+                          backgroundColor: hs.riskLevel === 'healthy' ? '#22c55e' : 
+                            hs.riskLevel === 'at_risk' ? '#f97316' : '#ef4444'
+                        }}
+                      >
+                        {hs.healthScore}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{hs.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {hs.daysSinceActive === 0 ? 'Active today' : `${hs.daysSinceActive}d ago`}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[250px]">
+                <p className="text-muted-foreground text-sm">No health score data</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Cohort Retention */}
+        <Card data-testid="cohort-retention-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Cohort Retention
+            </CardTitle>
+            <CardDescription>
+              User retention by signup cohort over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {cohortLoading || !cohortRetention ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : cohortRetention.cohorts && cohortRetention.cohorts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Cohort</TableHead>
+                      <TableHead className="text-center">Users</TableHead>
+                      <TableHead className="text-center">W1</TableHead>
+                      <TableHead className="text-center">W2</TableHead>
+                      <TableHead className="text-center">W4</TableHead>
+                      <TableHead className="text-center">W8</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cohortRetention.cohorts.slice(0, 6).map((cohort) => (
+                      <TableRow key={cohort.cohort}>
+                        <TableCell className="font-medium text-xs">
+                          {cohort.cohort}
+                        </TableCell>
+                        <TableCell className="text-center text-sm">
+                          {cohort.totalUsers}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={cohort.week1 >= 50 ? 'default' : 'secondary'} className="text-xs">
+                            {cohort.week1}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={cohort.week2 >= 40 ? 'default' : 'secondary'} className="text-xs">
+                            {cohort.week2}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={cohort.week4 >= 30 ? 'default' : 'secondary'} className="text-xs">
+                            {cohort.week4}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={cohort.week8 >= 20 ? 'default' : 'secondary'} className="text-xs">
+                            {cohort.week8}%
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-[250px]">
+                <p className="text-muted-foreground text-sm">No cohort data yet</p>
               </div>
             )}
           </CardContent>

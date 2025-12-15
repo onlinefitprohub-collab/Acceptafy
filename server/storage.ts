@@ -1033,6 +1033,389 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return created;
   }
+
+  // Enhanced Analytics with Date Range
+  async getAnalyticsWithDateRange(startDate: Date, endDate: Date): Promise<{
+    userMetrics: {
+      newUsers: number;
+      activeUsers: number;
+      churnedUsers: number;
+      upgrades: number;
+      downgrades: number;
+    };
+    emailMetrics: {
+      totalAnalyses: number;
+      avgScore: number;
+      gradeDistribution: { grade: string; count: number }[];
+    };
+    revenueMetrics: {
+      mrr: number;
+      mrrChange: number;
+      newRevenue: number;
+    };
+    dailyActivity: { date: string; users: number; analyses: number }[];
+  }> {
+    const allUsers = await db.select().from(users);
+    const allAnalyses = await db.select().from(emailAnalyses);
+    const allUsage = await db.select().from(usageCounters);
+
+    // Filter users created in date range
+    const newUsers = allUsers.filter(u => 
+      u.createdAt && u.createdAt >= startDate && u.createdAt <= endDate
+    ).length;
+
+    // Active users (those with usage in the period)
+    const activeUserIds = new Set<string>();
+    for (const usage of allUsage) {
+      if (usage.periodStart >= startDate && usage.periodEnd <= endDate) {
+        if ((usage.gradeCount || 0) > 0 || (usage.rewriteCount || 0) > 0) {
+          activeUserIds.add(usage.userId);
+        }
+      }
+    }
+    
+    // Analyses in date range
+    const analysesInRange = allAnalyses.filter(a =>
+      a.createdAt && a.createdAt >= startDate && a.createdAt <= endDate
+    );
+
+    // Grade distribution
+    const gradeCount: Record<string, number> = {};
+    let totalScore = 0;
+    let scoreCount = 0;
+    for (const analysis of analysesInRange) {
+      if (analysis.grade) {
+        const grade = analysis.grade.charAt(0);
+        gradeCount[grade] = (gradeCount[grade] || 0) + 1;
+      }
+      if (analysis.score) {
+        totalScore += analysis.score;
+        scoreCount++;
+      }
+    }
+
+    // Daily activity
+    const dailyMap: Record<string, { users: Set<string>; analyses: number }> = {};
+    for (const analysis of analysesInRange) {
+      if (analysis.createdAt) {
+        const dateKey = analysis.createdAt.toISOString().split('T')[0];
+        if (!dailyMap[dateKey]) {
+          dailyMap[dateKey] = { users: new Set(), analyses: 0 };
+        }
+        dailyMap[dateKey].users.add(analysis.userId);
+        dailyMap[dateKey].analyses++;
+      }
+    }
+
+    const dailyActivity = Object.entries(dailyMap)
+      .map(([date, data]) => ({ date, users: data.users.size, analyses: data.analyses }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // MRR calculation
+    const tierPrices: Record<string, number> = { pro: 59, scale: 149, starter: 0 };
+    let mrr = 0;
+    for (const user of allUsers) {
+      if (user.subscriptionStatus === 'active' && user.subscriptionTier && user.subscriptionTier !== 'starter') {
+        mrr += tierPrices[user.subscriptionTier] || 0;
+      }
+    }
+
+    return {
+      userMetrics: {
+        newUsers,
+        activeUsers: activeUserIds.size,
+        churnedUsers: allUsers.filter(u => u.subscriptionStatus === 'canceled').length,
+        upgrades: 0,
+        downgrades: 0,
+      },
+      emailMetrics: {
+        totalAnalyses: analysesInRange.length,
+        avgScore: scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0,
+        gradeDistribution: ['A', 'B', 'C', 'D', 'F'].map(grade => ({
+          grade,
+          count: gradeCount[grade] || 0,
+        })),
+      },
+      revenueMetrics: {
+        mrr,
+        mrrChange: 0,
+        newRevenue: 0,
+      },
+      dailyActivity,
+    };
+  }
+
+  // User Health Scores
+  async getUserHealthScores(): Promise<Array<{
+    userId: string;
+    email: string;
+    healthScore: number;
+    riskLevel: 'healthy' | 'at_risk' | 'critical';
+    factors: {
+      usageScore: number;
+      paymentScore: number;
+      engagementScore: number;
+      tenureScore: number;
+    };
+    lastActivity: string | null;
+    daysSinceActive: number;
+  }>> {
+    const allUsers = await db.select().from(users);
+    const allUsage = await db.select().from(usageCounters);
+    const allAnalyses = await db.select().from(emailAnalyses);
+
+    const now = new Date();
+    const healthScores: Array<{
+      userId: string;
+      email: string;
+      healthScore: number;
+      riskLevel: 'healthy' | 'at_risk' | 'critical';
+      factors: {
+        usageScore: number;
+        paymentScore: number;
+        engagementScore: number;
+        tenureScore: number;
+      };
+      lastActivity: string | null;
+      daysSinceActive: number;
+    }> = [];
+
+    for (const user of allUsers) {
+      // Get user's usage data
+      const userUsage = allUsage.filter(u => u.userId === user.id);
+      const userAnalyses = allAnalyses.filter(a => a.userId === user.id);
+
+      // Calculate usage score (0-100)
+      const totalGrades = userUsage.reduce((sum, u) => sum + (u.gradeCount || 0), 0);
+      const usageScore = Math.min(100, totalGrades * 10);
+
+      // Payment score
+      let paymentScore = 50;
+      if (user.subscriptionStatus === 'active') paymentScore = 100;
+      else if (user.subscriptionStatus === 'past_due') paymentScore = 25;
+      else if (user.subscriptionStatus === 'canceled') paymentScore = 0;
+
+      // Engagement score based on recency
+      const lastAnalysis = userAnalyses.sort((a, b) => 
+        (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0)
+      )[0];
+      const lastActivityDate = lastAnalysis?.createdAt || user.lastLoginAt;
+      const daysSinceActive = lastActivityDate 
+        ? Math.floor((now.getTime() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24))
+        : 999;
+
+      let engagementScore = 100;
+      if (daysSinceActive > 7) engagementScore = 80;
+      if (daysSinceActive > 14) engagementScore = 60;
+      if (daysSinceActive > 30) engagementScore = 40;
+      if (daysSinceActive > 60) engagementScore = 20;
+      if (daysSinceActive > 90) engagementScore = 0;
+
+      // Tenure score
+      const accountAge = user.createdAt 
+        ? Math.floor((now.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
+      const tenureScore = Math.min(100, accountAge * 2);
+
+      // Calculate overall health score
+      const healthScore = Math.round(
+        (usageScore * 0.3) + 
+        (paymentScore * 0.3) + 
+        (engagementScore * 0.3) + 
+        (tenureScore * 0.1)
+      );
+
+      // Determine risk level
+      let riskLevel: 'healthy' | 'at_risk' | 'critical' = 'healthy';
+      if (healthScore < 40) riskLevel = 'critical';
+      else if (healthScore < 70) riskLevel = 'at_risk';
+
+      healthScores.push({
+        userId: user.id,
+        email: user.email || '',
+        healthScore,
+        riskLevel,
+        factors: {
+          usageScore,
+          paymentScore,
+          engagementScore,
+          tenureScore,
+        },
+        lastActivity: lastActivityDate?.toISOString() || null,
+        daysSinceActive,
+      });
+    }
+
+    return healthScores.sort((a, b) => a.healthScore - b.healthScore);
+  }
+
+  // Cohort Retention Analysis
+  async getCohortRetention(): Promise<{
+    cohorts: Array<{
+      cohort: string;
+      totalUsers: number;
+      week1: number;
+      week2: number;
+      week3: number;
+      week4: number;
+      week8: number;
+      week12: number;
+    }>;
+    funnel: Array<{
+      stage: string;
+      count: number;
+      percentage: number;
+    }>;
+  }> {
+    const allUsers = await db.select().from(users);
+    const allAnalyses = await db.select().from(emailAnalyses);
+    const now = new Date();
+
+    // Group users by signup week
+    const cohortMap: Record<string, {
+      users: Array<{ id: string; createdAt: Date }>;
+      activeByWeek: Record<number, Set<string>>;
+    }> = {};
+
+    for (const user of allUsers) {
+      if (!user.createdAt) continue;
+      
+      const weekStart = new Date(user.createdAt);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const cohortKey = weekStart.toISOString().split('T')[0];
+
+      if (!cohortMap[cohortKey]) {
+        cohortMap[cohortKey] = { users: [], activeByWeek: {} };
+      }
+      cohortMap[cohortKey].users.push({ id: user.id, createdAt: user.createdAt });
+    }
+
+    // Calculate activity by week for each cohort
+    for (const analysis of allAnalyses) {
+      if (!analysis.createdAt) continue;
+      
+      const user = allUsers.find(u => u.id === analysis.userId);
+      if (!user?.createdAt) continue;
+
+      const weekStart = new Date(user.createdAt);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const cohortKey = weekStart.toISOString().split('T')[0];
+
+      if (!cohortMap[cohortKey]) continue;
+
+      const weeksSinceSignup = Math.floor(
+        (analysis.createdAt.getTime() - user.createdAt.getTime()) / (1000 * 60 * 60 * 24 * 7)
+      );
+
+      if (!cohortMap[cohortKey].activeByWeek[weeksSinceSignup]) {
+        cohortMap[cohortKey].activeByWeek[weeksSinceSignup] = new Set();
+      }
+      cohortMap[cohortKey].activeByWeek[weeksSinceSignup].add(analysis.userId);
+    }
+
+    // Build cohort data (last 8 weeks)
+    const cohorts: Array<{
+      cohort: string;
+      totalUsers: number;
+      week1: number;
+      week2: number;
+      week3: number;
+      week4: number;
+      week8: number;
+      week12: number;
+    }> = [];
+
+    const sortedCohorts = Object.entries(cohortMap)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 8);
+
+    for (const [cohort, data] of sortedCohorts) {
+      const totalUsers = data.users.length;
+      cohorts.push({
+        cohort,
+        totalUsers,
+        week1: Math.round((data.activeByWeek[0]?.size || 0) / totalUsers * 100) || 0,
+        week2: Math.round((data.activeByWeek[1]?.size || 0) / totalUsers * 100) || 0,
+        week3: Math.round((data.activeByWeek[2]?.size || 0) / totalUsers * 100) || 0,
+        week4: Math.round((data.activeByWeek[3]?.size || 0) / totalUsers * 100) || 0,
+        week8: Math.round((data.activeByWeek[7]?.size || 0) / totalUsers * 100) || 0,
+        week12: Math.round((data.activeByWeek[11]?.size || 0) / totalUsers * 100) || 0,
+      });
+    }
+
+    // Funnel analysis
+    const totalSignups = allUsers.length;
+    const usersWithAnalysis = new Set(allAnalyses.map(a => a.userId)).size;
+    const paidUsers = allUsers.filter(u => 
+      u.subscriptionTier && u.subscriptionTier !== 'starter' && u.subscriptionStatus === 'active'
+    ).length;
+    const activeThisMonth = new Set(
+      allAnalyses
+        .filter(a => a.createdAt && a.createdAt >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000))
+        .map(a => a.userId)
+    ).size;
+
+    const funnel = [
+      { stage: 'Signed Up', count: totalSignups, percentage: 100 },
+      { stage: 'First Analysis', count: usersWithAnalysis, percentage: Math.round(usersWithAnalysis / totalSignups * 100) || 0 },
+      { stage: 'Subscribed', count: paidUsers, percentage: Math.round(paidUsers / totalSignups * 100) || 0 },
+      { stage: 'Active (30d)', count: activeThisMonth, percentage: Math.round(activeThisMonth / totalSignups * 100) || 0 },
+    ];
+
+    return { cohorts, funnel };
+  }
+
+  // Get at-risk users for insights
+  async getAtRiskUsers(limit: number = 10): Promise<Array<{
+    user: {
+      id: string;
+      email: string;
+      subscriptionTier: string;
+      subscriptionStatus: string;
+    };
+    healthScore: number;
+    reason: string;
+    suggestedAction: string;
+  }>> {
+    const healthScores = await this.getUserHealthScores();
+    const atRisk = healthScores
+      .filter(h => h.riskLevel === 'critical' || h.riskLevel === 'at_risk')
+      .slice(0, limit);
+
+    const allUsers = await db.select().from(users);
+
+    return atRisk.map(h => {
+      const user = allUsers.find(u => u.id === h.userId);
+      let reason = '';
+      let suggestedAction = '';
+
+      if (h.factors.paymentScore < 50) {
+        reason = 'Payment issues detected';
+        suggestedAction = 'Reach out about billing';
+      } else if (h.factors.engagementScore < 50) {
+        reason = `Inactive for ${h.daysSinceActive} days`;
+        suggestedAction = 'Send re-engagement email';
+      } else if (h.factors.usageScore < 30) {
+        reason = 'Low feature adoption';
+        suggestedAction = 'Offer onboarding call';
+      } else {
+        reason = 'Multiple risk factors';
+        suggestedAction = 'Review account';
+      }
+
+      return {
+        user: {
+          id: h.userId,
+          email: h.email,
+          subscriptionTier: user?.subscriptionTier || 'starter',
+          subscriptionStatus: user?.subscriptionStatus || 'active',
+        },
+        healthScore: h.healthScore,
+        reason,
+        suggestedAction,
+      };
+    });
+  }
 }
 
 export const storage = new DatabaseStorage();

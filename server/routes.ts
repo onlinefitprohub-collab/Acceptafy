@@ -1272,6 +1272,72 @@ export async function registerRoutes(
     }
   });
 
+  // Enhanced Analytics with Date Range
+  app.get('/api/admin/analytics', isAdmin, async (req: any, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      // Parse date strings and set proper UTC boundaries
+      let start: Date;
+      let end: Date;
+      
+      if (startDate) {
+        // Parse YYYY-MM-DD and set to start of day UTC
+        const [year, month, day] = (startDate as string).split('-').map(Number);
+        start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      } else {
+        start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      }
+      
+      if (endDate) {
+        // Parse YYYY-MM-DD and set to end of day UTC
+        const [year, month, day] = (endDate as string).split('-').map(Number);
+        end = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      } else {
+        end = new Date();
+      }
+      
+      const analytics = await storage.getAnalyticsWithDateRange(start, end);
+      res.json(analytics);
+    } catch (error) {
+      console.error('Admin analytics error:', error);
+      res.status(500).json({ error: 'Failed to fetch analytics' });
+    }
+  });
+
+  // User Health Scores
+  app.get('/api/admin/health-scores', isAdmin, async (req: any, res) => {
+    try {
+      const healthScores = await storage.getUserHealthScores();
+      res.json(healthScores);
+    } catch (error) {
+      console.error('Admin health scores error:', error);
+      res.status(500).json({ error: 'Failed to fetch health scores' });
+    }
+  });
+
+  // Cohort Retention
+  app.get('/api/admin/cohort-retention', isAdmin, async (req: any, res) => {
+    try {
+      const retention = await storage.getCohortRetention();
+      res.json(retention);
+    } catch (error) {
+      console.error('Admin cohort retention error:', error);
+      res.status(500).json({ error: 'Failed to fetch cohort retention' });
+    }
+  });
+
+  // At-Risk Users / Insights
+  app.get('/api/admin/at-risk-users', isAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const atRiskUsers = await storage.getAtRiskUsers(limit);
+      res.json(atRiskUsers);
+    } catch (error) {
+      console.error('Admin at-risk users error:', error);
+      res.status(500).json({ error: 'Failed to fetch at-risk users' });
+    }
+  });
+
   // Agency Branding endpoints (Scale tier only)
   app.get('/api/agency-branding', isAuthenticated, async (req: any, res) => {
     try {
