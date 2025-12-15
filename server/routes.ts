@@ -115,6 +115,9 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
+      // Update last login time
+      await storage.updateUser(user.id, { lastLoginAt: new Date() });
+
       // Create session for password-authenticated user
       (req as any).login({ 
         claims: { sub: user.id, email: user.email },
@@ -1755,6 +1758,66 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Create admin note error:', error);
       res.status(500).json({ message: 'Failed to create note' });
+    }
+  });
+
+  // Admin action: Export users as CSV
+  app.get('/api/admin/users/export/csv', isAdmin, async (req: any, res) => {
+    try {
+      const usersWithUsage = await storage.getAllUsersWithUsage();
+      
+      // Build CSV content
+      const headers = [
+        'ID',
+        'Email',
+        'First Name',
+        'Last Name',
+        'Role',
+        'Subscription Tier',
+        'Subscription Status',
+        'Total Grades',
+        'Total Rewrites',
+        'Total Followups',
+        'Last Login',
+        'Last Active',
+        'Created At'
+      ].join(',');
+      
+      const rows = usersWithUsage.map(user => {
+        const escapeCsv = (val: any) => {
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        
+        return [
+          escapeCsv(user.id),
+          escapeCsv(user.email),
+          escapeCsv(user.firstName),
+          escapeCsv(user.lastName),
+          escapeCsv(user.role),
+          escapeCsv(user.subscriptionTier),
+          escapeCsv(user.subscriptionStatus),
+          escapeCsv(user.totalGrades),
+          escapeCsv(user.totalRewrites),
+          escapeCsv(user.totalFollowups),
+          escapeCsv(user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : ''),
+          escapeCsv(user.lastActiveDate),
+          escapeCsv(user.createdAt ? new Date(user.createdAt).toISOString() : '')
+        ].join(',');
+      });
+      
+      const csv = [headers, ...rows].join('\n');
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="users-export-${new Date().toISOString().split('T')[0]}.csv"`);
+      res.send(csv);
+    } catch (error) {
+      console.error('CSV export error:', error);
+      res.status(500).json({ message: 'Failed to export users' });
     }
   });
 

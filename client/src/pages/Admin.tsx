@@ -54,6 +54,7 @@ import {
   UserPlus,
   StickyNote,
   Eye,
+  Download,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -94,6 +95,7 @@ interface AdminUser {
   role: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  lastLoginAt: string | null;
   totalGrades: number;
   totalRewrites: number;
   totalFollowups: number;
@@ -760,6 +762,37 @@ export default function Admin() {
                     <SelectItem value="past_due">Past Due</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/admin/users/export/csv', {
+                        credentials: 'include'
+                      });
+                      if (!response.ok) {
+                        throw new Error('Export failed');
+                      }
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `users-export-${new Date().toISOString().split('T')[0]}.csv`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                      document.body.removeChild(a);
+                      toast({ title: "Export Complete", description: "CSV file downloaded successfully" });
+                    } catch (error) {
+                      console.error('CSV export error:', error);
+                      toast({ title: "Export Failed", description: "Failed to export users to CSV", variant: "destructive" });
+                    }
+                  }}
+                  data-testid="button-export-csv"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </Button>
               </div>
             </div>
             <div className="text-sm text-muted-foreground">

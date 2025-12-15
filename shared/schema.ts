@@ -27,6 +27,7 @@ export const users = pgTable("users", {
   subscriptionStatus: varchar("subscription_status").default("active"),
   subscriptionTier: varchar("subscription_tier").default("starter"),
   role: varchar("role").default("user"),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
