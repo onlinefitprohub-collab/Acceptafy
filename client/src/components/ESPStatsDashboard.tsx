@@ -96,11 +96,41 @@ interface ESPStatsAnalysis {
   summary: string;
   strengths: string[];
   concerns: string[];
+  senderReputation: {
+    score: number;
+    status: string;
+    explanation: string;
+  };
+  domainHealth: {
+    score: number;
+    status: string;
+    listQuality: string;
+    explanation: string;
+  };
+  spamRisk: {
+    level: string;
+    score: number;
+    factors: string[];
+    explanation: string;
+  };
   inboxPlacementInsights: {
     estimatedInboxRate: number;
     gmailPrediction: string;
+    gmailConfidence: number;
     outlookPrediction: string;
+    outlookConfidence: number;
+    yahooPrediction: string;
+    yahooConfidence: number;
+    promotionsRisk: number;
+    spamRisk: number;
     recommendations: string[];
+  };
+  engagementScore: {
+    score: number;
+    status: string;
+    openEngagement: string;
+    clickEngagement: string;
+    trend: string;
   };
   engagementAnalysis: {
     openRateAssessment: string;
@@ -119,6 +149,86 @@ interface ESPStatsAnalysis {
     clickRateVsIndustry: string;
     bounceRateVsIndustry: string;
   };
+}
+
+// Score gauge component
+function ScoreGauge({ score, size = 'md', label, sublabel }: { 
+  score: number; 
+  size?: 'sm' | 'md' | 'lg';
+  label: string;
+  sublabel?: string;
+}) {
+  const getColor = (s: number) => {
+    if (s >= 80) return { ring: 'ring-green-500/30', bg: 'bg-green-500/20', text: 'text-green-400', stroke: '#22c55e' };
+    if (s >= 60) return { ring: 'ring-yellow-500/30', bg: 'bg-yellow-500/20', text: 'text-yellow-400', stroke: '#eab308' };
+    return { ring: 'ring-red-500/30', bg: 'bg-red-500/20', text: 'text-red-400', stroke: '#ef4444' };
+  };
+  
+  const colors = getColor(score);
+  const sizeClasses = {
+    sm: 'w-14 h-14 text-lg',
+    md: 'w-20 h-20 text-2xl',
+    lg: 'w-24 h-24 text-3xl'
+  };
+  
+  const circumference = 2 * Math.PI * 40;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className={`relative ${sizeClasses[size]} flex items-center justify-center`}>
+        <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/10" />
+          <circle 
+            cx="50" cy="50" r="40" fill="none" 
+            stroke={colors.stroke} strokeWidth="8" 
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            className="transition-all duration-1000"
+          />
+        </svg>
+        <span className={`font-bold ${colors.text}`}>{score}</span>
+      </div>
+      <p className="text-xs text-muted-foreground text-center">{label}</p>
+      {sublabel && <p className={`text-xs font-medium ${colors.text}`}>{sublabel}</p>}
+    </div>
+  );
+}
+
+// Provider prediction card
+function ProviderPredictionCard({ 
+  provider, 
+  prediction, 
+  confidence,
+  icon: Icon,
+  color 
+}: { 
+  provider: string;
+  prediction: string;
+  confidence: number;
+  icon: any;
+  color: string;
+}) {
+  const getPredictionColor = (pred: string) => {
+    const lowerPred = pred.toLowerCase();
+    if (lowerPred.includes('primary') || lowerPred.includes('focused') || lowerPred.includes('inbox')) return 'text-green-400';
+    if (lowerPred.includes('promotions') || lowerPred.includes('other')) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+  
+  return (
+    <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+      <div className="flex items-center gap-2">
+        <Icon className={`w-4 h-4 ${color}`} />
+        <span className="text-sm font-medium">{provider}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className={`text-sm font-semibold ${getPredictionColor(prediction)}`}>{prediction}</span>
+        <span className="text-xs text-muted-foreground">{confidence}% confident</span>
+      </div>
+    </div>
+  );
 }
 
 const ESP_PROVIDER_NAMES: Record<string, string> = {
@@ -656,11 +766,14 @@ export function ESPStatsDashboard() {
           </div>
 
           {analysis && (
-            <Card className="border-white/10 bg-gradient-to-br from-purple-500/10 to-pink-500/10" data-testid="ai-analysis-section">
+            <Card className="border-white/10 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 overflow-hidden" data-testid="ai-analysis-section">
+              <div className="h-1 w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Brain className="w-5 h-5 text-purple-400" />
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                      <Sparkles className="w-4 h-4 text-purple-400" />
+                    </div>
                     Acceptafy Powered Insights
                   </CardTitle>
                   <Button
@@ -674,55 +787,142 @@ export function ESPStatsDashboard() {
                     {showAnalysis ? 'Hide' : 'Show'}
                   </Button>
                 </div>
-                <CardDescription>{analysis.summary}</CardDescription>
+                <CardDescription className="text-sm leading-relaxed">{analysis.summary}</CardDescription>
               </CardHeader>
               
               {showAnalysis && (
                 <CardContent className="space-y-6">
-                  <div className="flex flex-col md:flex-row items-start md:items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold ${
-                        analysis.healthScore >= 80 ? 'bg-green-500/20 text-green-400 ring-2 ring-green-500/30' :
-                        analysis.healthScore >= 60 ? 'bg-yellow-500/20 text-yellow-400 ring-2 ring-yellow-500/30' :
-                        'bg-red-500/20 text-red-400 ring-2 ring-red-500/30'
-                      }`} data-testid="health-score">
-                        {analysis.healthScore}
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Health Score</p>
-                        <p className={`font-semibold ${
-                          analysis.healthScore >= 80 ? 'text-green-400' :
-                          analysis.healthScore >= 60 ? 'text-yellow-400' :
-                          'text-red-400'
-                        }`} data-testid="health-status">
-                          {analysis.overallHealth}
-                        </p>
-                      </div>
+                  {/* Score Gauges Row */}
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/10">
+                    <ScoreGauge 
+                      score={analysis.healthScore} 
+                      size="lg" 
+                      label="Overall Health" 
+                      sublabel={analysis.overallHealth}
+                    />
+                    <ScoreGauge 
+                      score={analysis.senderReputation?.score || 0} 
+                      size="md" 
+                      label="Sender Rep" 
+                      sublabel={analysis.senderReputation?.status}
+                    />
+                    <ScoreGauge 
+                      score={analysis.domainHealth?.score || 0} 
+                      size="md" 
+                      label="Domain Health" 
+                      sublabel={analysis.domainHealth?.status}
+                    />
+                    <ScoreGauge 
+                      score={analysis.engagementScore?.score || 0} 
+                      size="md" 
+                      label="Engagement" 
+                      sublabel={analysis.engagementScore?.status}
+                    />
+                    <ScoreGauge 
+                      score={100 - (analysis.spamRisk?.score || 0)} 
+                      size="md" 
+                      label="Spam Safety" 
+                      sublabel={analysis.spamRisk?.level === 'Low' ? 'Safe' : analysis.spamRisk?.level === 'Medium' ? 'Caution' : 'At Risk'}
+                    />
+                  </div>
+
+                  {/* Inbox Placement Predictions */}
+                  <div className="space-y-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Target className="w-4 h-4 text-blue-400" />
+                      Where Your Emails Land
+                      <Badge variant="secondary" className="text-xs ml-auto">
+                        {analysis.inboxPlacementInsights.estimatedInboxRate}% inbox rate
+                      </Badge>
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <ProviderPredictionCard 
+                        provider="Gmail" 
+                        prediction={analysis.inboxPlacementInsights.gmailPrediction}
+                        confidence={analysis.inboxPlacementInsights.gmailConfidence || 75}
+                        icon={Mail}
+                        color="text-red-400"
+                      />
+                      <ProviderPredictionCard 
+                        provider="Outlook" 
+                        prediction={analysis.inboxPlacementInsights.outlookPrediction}
+                        confidence={analysis.inboxPlacementInsights.outlookConfidence || 75}
+                        icon={Mail}
+                        color="text-blue-400"
+                      />
+                      <ProviderPredictionCard 
+                        provider="Yahoo" 
+                        prediction={analysis.inboxPlacementInsights.yahooPrediction || 'Inbox'}
+                        confidence={analysis.inboxPlacementInsights.yahooConfidence || 70}
+                        icon={Mail}
+                        color="text-purple-400"
+                      />
                     </div>
-                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Target className="w-4 h-4 text-blue-400" />
-                        <span className="text-muted-foreground">Est. Inbox Rate:</span>
-                        <span className="font-medium">{analysis.inboxPlacementInsights.estimatedInboxRate}%</span>
+                    {(analysis.inboxPlacementInsights.promotionsRisk > 20 || analysis.inboxPlacementInsights.spamRisk > 10) && (
+                      <div className="flex flex-wrap gap-3 mt-2">
+                        {analysis.inboxPlacementInsights.promotionsRisk > 20 && (
+                          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20">
+                            <AlertTriangle className="w-3 h-3" />
+                            {analysis.inboxPlacementInsights.promotionsRisk}% chance of Promotions tab
+                          </div>
+                        )}
+                        {analysis.inboxPlacementInsights.spamRisk > 10 && (
+                          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+                            <Shield className="w-3 h-3" />
+                            {analysis.inboxPlacementInsights.spamRisk}% spam risk
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-red-400" />
-                        <span className="text-muted-foreground">Gmail:</span>
-                        <span className="font-medium">{analysis.inboxPlacementInsights.gmailPrediction}</span>
+                    )}
+                  </div>
+
+                  {/* Quick Insights Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Sender Reputation */}
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-400" />
+                        <span className="text-sm font-medium">Sender Reputation</span>
                       </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="w-4 h-4 text-blue-500" />
-                        <span className="text-muted-foreground">Outlook:</span>
-                        <span className="font-medium">{analysis.inboxPlacementInsights.outlookPrediction}</span>
+                      <p className="text-xs text-muted-foreground">{analysis.senderReputation?.explanation}</p>
+                    </div>
+                    
+                    {/* Domain Health */}
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4 text-green-400" />
+                        <span className="text-sm font-medium">Domain Health</span>
+                        <Badge variant="outline" className="text-xs ml-auto">{analysis.domainHealth?.listQuality} List</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{analysis.domainHealth?.explanation}</p>
+                    </div>
+                    
+                    {/* Engagement Trend */}
+                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-purple-400" />
+                        <span className="text-sm font-medium">Engagement Trend</span>
+                        <Badge 
+                          variant={analysis.engagementScore?.trend === 'Improving' ? 'default' : 'secondary'} 
+                          className="text-xs ml-auto"
+                        >
+                          {analysis.engagementScore?.trend}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-4 text-xs">
+                        <span className="text-muted-foreground">Opens: <span className={analysis.engagementScore?.openEngagement === 'Strong' ? 'text-green-400' : 'text-yellow-400'}>{analysis.engagementScore?.openEngagement}</span></span>
+                        <span className="text-muted-foreground">Clicks: <span className={analysis.engagementScore?.clickEngagement === 'Strong' ? 'text-green-400' : 'text-yellow-400'}>{analysis.engagementScore?.clickEngagement}</span></span>
                       </div>
                     </div>
                   </div>
 
+                  {/* Strengths & Concerns */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-3">
+                    {analysis.strengths && analysis.strengths.length > 0 && (
+                    <div className="p-4 rounded-xl bg-green-500/5 border border-green-500/20 space-y-3">
                       <h4 className="font-medium flex items-center gap-2 text-green-400">
                         <ThumbsUp className="w-4 h-4" />
-                        Strengths
+                        What's Working Well
                       </h4>
                       <ul className="space-y-2">
                         {analysis.strengths.map((strength, i) => (
@@ -733,10 +933,12 @@ export function ESPStatsDashboard() {
                         ))}
                       </ul>
                     </div>
-                    <div className="space-y-3">
+                    )}
+                    {analysis.concerns && analysis.concerns.length > 0 && (
+                    <div className="p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/20 space-y-3">
                       <h4 className="font-medium flex items-center gap-2 text-yellow-400">
-                        <ThumbsDown className="w-4 h-4" />
-                        Areas for Improvement
+                        <Zap className="w-4 h-4" />
+                        Room to Improve
                       </h4>
                       <ul className="space-y-2">
                         {analysis.concerns.map((concern, i) => (
@@ -747,54 +949,101 @@ export function ESPStatsDashboard() {
                         ))}
                       </ul>
                     </div>
+                    )}
                   </div>
 
+                  {/* Spam Risk Factors */}
+                  {analysis.spamRisk?.factors && analysis.spamRisk.factors.length > 0 && (
+                    <div className="p-4 rounded-xl bg-red-500/5 border border-red-500/20 space-y-3">
+                      <h4 className="font-medium flex items-center gap-2 text-red-400">
+                        <Shield className="w-4 h-4" />
+                        Spam Risk Factors
+                      </h4>
+                      <p className="text-xs text-muted-foreground mb-2">{analysis.spamRisk.explanation}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {analysis.spamRisk.factors.map((factor, i) => (
+                          <Badge key={i} variant="outline" className="text-xs border-red-500/30 text-red-300">
+                            {factor}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
+                  {analysis.actionableRecommendations && analysis.actionableRecommendations.length > 0 && (
                   <div className="space-y-3">
                     <h4 className="font-medium flex items-center gap-2">
                       <Lightbulb className="w-4 h-4 text-purple-400" />
-                      Recommendations
+                      Action Plan
                     </h4>
-                    <div className="grid grid-cols-1 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {analysis.actionableRecommendations.map((rec, i) => (
-                        <div key={i} className="p-3 rounded-lg bg-white/5 border border-white/10" data-testid={`recommendation-${i}`}>
-                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <div 
+                          key={i} 
+                          className={`p-4 rounded-xl border space-y-2 ${
+                            rec.priority === 'High' 
+                              ? 'bg-red-500/5 border-red-500/20' 
+                              : rec.priority === 'Medium'
+                              ? 'bg-yellow-500/5 border-yellow-500/20'
+                              : 'bg-white/5 border-white/10'
+                          }`}
+                          data-testid={`recommendation-${i}`}
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
                             <Badge 
                               variant={rec.priority === 'High' ? 'destructive' : rec.priority === 'Medium' ? 'secondary' : 'outline'}
                               className="text-xs"
                             >
-                              {rec.priority} Priority
+                              {rec.priority}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
                               {rec.category}
                             </Badge>
                           </div>
-                          <p className="text-sm mb-1">{rec.recommendation}</p>
-                          <p className="text-xs text-muted-foreground">Expected impact: {rec.expectedImpact}</p>
+                          <p className="text-sm font-medium">{rec.recommendation}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" />
+                            {rec.expectedImpact}
+                          </p>
                         </div>
                       ))}
                     </div>
                   </div>
+                  )}
 
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                  {/* Industry Benchmarks */}
+                  {analysis.benchmarkComparison && (
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-500/20">
+                    <h4 className="font-medium mb-4 flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-cyan-400" />
-                      Industry Benchmarks
+                      How You Compare to Industry
                     </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground text-xs mb-1">Open Rate</p>
-                        <p className="font-medium">{analysis.benchmarkComparison.openRateVsIndustry}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Open Rate</span>
+                          <Eye className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium">{analysis.benchmarkComparison.openRateVsIndustry || 'N/A'}</p>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs mb-1">Click Rate</p>
-                        <p className="font-medium">{analysis.benchmarkComparison.clickRateVsIndustry}</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Click Rate</span>
+                          <MousePointerClick className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium">{analysis.benchmarkComparison.clickRateVsIndustry || 'N/A'}</p>
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs mb-1">Bounce Rate</p>
-                        <p className="font-medium">{analysis.benchmarkComparison.bounceRateVsIndustry}</p>
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Bounce Rate</span>
+                          <AlertTriangle className="w-3 h-3 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium">{analysis.benchmarkComparison.bounceRateVsIndustry || 'N/A'}</p>
                       </div>
                     </div>
                   </div>
+                  )}
                 </CardContent>
               )}
             </Card>
