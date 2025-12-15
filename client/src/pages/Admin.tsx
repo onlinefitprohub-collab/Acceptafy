@@ -284,6 +284,26 @@ export default function Admin() {
     },
   });
 
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    
+    return users.filter((u) => {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        (u.email && u.email.toLowerCase().includes(searchLower)) ||
+        (u.firstName && u.firstName.toLowerCase().includes(searchLower)) ||
+        (u.lastName && u.lastName.toLowerCase().includes(searchLower));
+      
+      const matchesTier = tierFilter === "all" || 
+        (u.subscriptionTier || 'starter') === tierFilter;
+      
+      const matchesStatus = statusFilter === "all" || 
+        (u.subscriptionStatus || 'active') === statusFilter;
+      
+      return matchesSearch && matchesTier && matchesStatus;
+    });
+  }, [users, searchQuery, tierFilter, statusFilter]);
+
   if (authLoading || adminCheckLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" data-testid="admin-loading">
@@ -351,26 +371,6 @@ export default function Admin() {
     }
     return '?';
   };
-
-  const filteredUsers = useMemo(() => {
-    if (!users) return [];
-    
-    return users.filter((u) => {
-      const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = !searchQuery || 
-        (u.email && u.email.toLowerCase().includes(searchLower)) ||
-        (u.firstName && u.firstName.toLowerCase().includes(searchLower)) ||
-        (u.lastName && u.lastName.toLowerCase().includes(searchLower));
-      
-      const matchesTier = tierFilter === "all" || 
-        (u.subscriptionTier || 'starter') === tierFilter;
-      
-      const matchesStatus = statusFilter === "all" || 
-        (u.subscriptionStatus || 'active') === statusFilter;
-      
-      return matchesSearch && matchesTier && matchesStatus;
-    });
-  }, [users, searchQuery, tierFilter, statusFilter]);
 
   return (
     <div className="min-h-screen p-6 lg:p-8 space-y-8" data-testid="admin-dashboard">
