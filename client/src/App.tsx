@@ -193,6 +193,30 @@ function AppContent() {
   }, [user]);
 
   useEffect(() => {
+    const loadESPConnections = async () => {
+      if (user) {
+        try {
+          const response = await fetch('/api/esp/connections', {
+            credentials: 'include',
+          });
+          if (response.ok) {
+            const connections = await response.json();
+            setEspConnections(connections.map((c: any) => ({
+              provider: c.provider,
+              connected: c.isConnected,
+              accountName: c.accountName,
+              lastSync: c.lastSyncAt ? new Date(c.lastSyncAt).toLocaleString() : undefined,
+            })));
+          }
+        } catch (error) {
+          console.error('Failed to load ESP connections:', error);
+        }
+      }
+    };
+    loadESPConnections();
+  }, [user]);
+
+  useEffect(() => {
     if (level > prevLevel && prevLevel > 0) {
       celebrate('level_up', { level });
     }
@@ -1638,28 +1662,46 @@ function AppContent() {
   );
 
   const handleESPConnect = async (provider: ESPProvider, credentials: Record<string, string>) => {
-    // For now, simulate connection - actual API integration will be added later
-    const providerNames: Record<ESPProvider, string> = {
-      sendgrid: 'SendGrid',
-      mailchimp: 'Mailchimp',
-      activecampaign: 'ActiveCampaign',
-      hubspot: 'HubSpot',
-      constantcontact: 'Constant Contact',
-      convertkit: 'ConvertKit',
-      klaviyo: 'Klaviyo',
-      drip: 'Drip',
-      aweber: 'AWeber',
-      highlevel: 'HighLevel',
-      ontraport: 'Ontraport',
-      keap: 'Keap'
-    };
+    const response = await fetch('/api/esp/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider,
+        apiKey: credentials.apiKey,
+        apiUrl: credentials.apiUrl,
+        appId: credentials.appId,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to connect');
+    }
+
+    const data = await response.json();
     setEspConnections(prev => [
       ...prev.filter(c => c.provider !== provider),
-      { provider, connected: true, accountName: `${providerNames[provider]} Account`, lastSync: new Date().toLocaleString() }
+      { 
+        provider, 
+        connected: true, 
+        accountName: data.accountInfo?.accountName || data.connection?.accountName,
+        lastSync: new Date().toLocaleString() 
+      }
     ]);
   };
 
   const handleESPDisconnect = async (provider: ESPProvider) => {
+    const response = await fetch(`/api/esp/disconnect/${provider}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to disconnect');
+    }
+
     setEspConnections(prev => prev.filter(c => c.provider !== provider));
   };
 
