@@ -100,18 +100,12 @@ export const clearHistoryFromApi = async (): Promise<boolean> => {
   }
 };
 
-// Migrate localStorage history to database (call once after login)
-const MIGRATION_KEY = 'inboxAuthorityMigrated';
-
+// Migrate localStorage history to database (called on every login)
 export const migrateLocalStorageToApi = async (): Promise<number> => {
-  // Check if already migrated
-  if (localStorage.getItem(MIGRATION_KEY)) {
-    return 0;
-  }
-
   const localHistory = getHistory();
+  
+  // Nothing to migrate
   if (localHistory.length === 0) {
-    localStorage.setItem(MIGRATION_KEY, 'true');
     return 0;
   }
 
@@ -127,7 +121,6 @@ export const migrateLocalStorageToApi = async (): Promise<number> => {
       const data = await response.json();
       // Clear localStorage after successful migration
       localStorage.removeItem(HISTORY_KEY);
-      localStorage.setItem(MIGRATION_KEY, 'true');
       return data.migrated || 0;
     }
     return 0;
