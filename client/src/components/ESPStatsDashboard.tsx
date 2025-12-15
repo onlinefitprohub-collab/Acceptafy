@@ -649,8 +649,8 @@ export function ESPStatsDashboard() {
               value={`${(totals?.avgBounceRate || 0).toFixed(1)}%`}
               subValue="Lower is better"
               icon={AlertTriangle}
-              trend={totals?.avgBounceRate && totals.avgBounceRate < 1 ? 'up' : totals?.avgBounceRate && totals.avgBounceRate < 3 ? 'neutral' : 'down'}
-              trendValue={totals?.avgBounceRate && totals.avgBounceRate < 1 ? 'Excellent' : totals?.avgBounceRate && totals.avgBounceRate < 3 ? 'Acceptable' : 'Needs attention'}
+              trend={(totals?.avgBounceRate ?? 0) < 1 ? 'up' : (totals?.avgBounceRate ?? 0) < 3 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgBounceRate ?? 0) < 1 ? 'Excellent' : (totals?.avgBounceRate ?? 0) < 3 ? 'Acceptable' : 'Needs attention'}
               gradient="from-orange-500 to-red-500"
             />
           </div>
