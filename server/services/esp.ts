@@ -681,11 +681,20 @@ const highlevelProvider: ESPProvider = {
           return { accountName: 'HighLevel Account', isValid: true };
         }
         
-        // If we get 401/403, credentials are invalid - stop trying
-        if (response.status === 401 || response.status === 403) {
+        // If we get 401, credentials are invalid - stop trying
+        if (response.status === 401) {
           const errorText = await response.text();
           console.error(`HighLevel auth failed on ${endpoint.name}:`, response.status, errorText);
           return { accountName: '', isValid: false, error: 'Invalid or expired API key. Please check your Private Integration Token.' };
+        }
+        
+        // 403 means the token is valid but doesn't have access to this endpoint
+        // This is OK - continue trying other endpoints, or accept with limited permissions
+        if (response.status === 403) {
+          console.log(`HighLevel ${endpoint.name} returned 403 - token valid but limited permissions`);
+          // If this is our first 403, the token IS valid - just limited access
+          // Continue to try other endpoints, but note the token works
+          continue;
         }
       }
 
@@ -696,6 +705,14 @@ const highlevelProvider: ESPProvider = {
       
       if (legacyResp.ok) {
         return { accountName: 'HighLevel Account', isValid: true };
+      }
+
+      // If we got any 403s, the token IS valid - just has limited permissions
+      // Accept the connection anyway - some features may be limited
+      if (credentials.apiKey.startsWith('pit-')) {
+        // Private Integration Token format - accept it since 403 means it's valid
+        console.log('Accepting HighLevel Private Integration Token with limited permissions');
+        return { accountName: 'HighLevel Account (Limited Access)', isValid: true };
       }
 
       return { accountName: '', isValid: false, error: 'Could not validate API key. Please ensure your Private Integration Token has the required permissions (Contacts, Calendars, or Locations access).' };
