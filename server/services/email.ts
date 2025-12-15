@@ -1,0 +1,280 @@
+// Email service using Resend integration
+import { Resend } from 'resend';
+
+let connectionSettings: any;
+
+async function getCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+  }
+
+  connectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
+    throw new Error('Resend not connected');
+  }
+  return { apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email };
+}
+
+async function getUncachableResendClient() {
+  const { apiKey, fromEmail } = await getCredentials();
+  return {
+    client: new Resend(apiKey),
+    fromEmail
+  };
+}
+
+// Email Templates
+const templates = {
+  welcome: (email: string) => ({
+    subject: 'Welcome to Acceptafy!',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Welcome to Acceptafy</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hi there!</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Thanks for signing up for Acceptafy. You're now ready to start optimizing your email campaigns with AI-powered analysis.</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Here's what you can do:</p>
+          <ul style="font-size: 16px; line-height: 1.8; margin-bottom: 24px; padding-left: 24px;">
+            <li>Grade your emails for deliverability and engagement</li>
+            <li>Get AI-powered rewrites to improve your copy</li>
+            <li>Generate follow-up sequences automatically</li>
+            <li>Check your domain reputation and DNS settings</li>
+          </ul>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://acceptafy.com" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Start Grading Emails</a>
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Just reply to this email and we'll help you out.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Welcome to Acceptafy!
+
+Hi there!
+
+Thanks for signing up for Acceptafy. You're now ready to start optimizing your email campaigns with AI-powered analysis.
+
+Here's what you can do:
+- Grade your emails for deliverability and engagement
+- Get AI-powered rewrites to improve your copy
+- Generate follow-up sequences automatically
+- Check your domain reputation and DNS settings
+
+Visit https://acceptafy.com to get started.
+
+Questions? Just reply to this email and we'll help you out.`
+  }),
+
+  passwordReset: (resetUrl: string) => ({
+    subject: 'Reset Your Acceptafy Password',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Password Reset</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">You requested to reset your password. Click the button below to create a new password:</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Reset Password</a>
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">This link will expire in 1 hour.</p>
+          <p style="font-size: 14px; color: #94a3b8;">If you didn't request this, you can safely ignore this email. Your password won't be changed.</p>
+          <hr style="border: none; border-top: 1px solid #2d2150; margin: 32px 0;">
+          <p style="font-size: 12px; color: #64748b; text-align: center;">Can't click the button? Copy and paste this URL into your browser:<br><span style="color: #a855f7; word-break: break-all;">${resetUrl}</span></p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Password Reset
+
+You requested to reset your password. Click the link below to create a new password:
+
+${resetUrl}
+
+This link will expire in 1 hour.
+
+If you didn't request this, you can safely ignore this email. Your password won't be changed.`
+  }),
+
+  accountDeactivated: (email: string) => ({
+    subject: 'Your Acceptafy Account Has Been Deactivated',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #e2e8f0; font-size: 28px; margin: 0;">Account Deactivated</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Your Acceptafy account has been deactivated.</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">If you believe this was done in error or would like to reactivate your account, please contact our support team.</p>
+          <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Reply to this email for assistance.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Account Deactivated
+
+Your Acceptafy account has been deactivated.
+
+If you believe this was done in error or would like to reactivate your account, please contact our support team.
+
+Questions? Reply to this email for assistance.`
+  }),
+
+  usageLimitWarning: (email: string, feature: string, current: number, limit: number) => ({
+    subject: `You're approaching your ${feature} limit`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #f59e0b; font-size: 28px; margin: 0;">Usage Limit Warning</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">You've used ${current} of your ${limit} monthly ${feature}.</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Upgrade your plan to get more ${feature} and unlock additional features.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://acceptafy.com/pricing" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View Plans</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Usage Limit Warning
+
+You've used ${current} of your ${limit} monthly ${feature}.
+
+Upgrade your plan to get more ${feature} and unlock additional features.
+
+Visit https://acceptafy.com/pricing to view plans.`
+  })
+};
+
+// Email sending functions
+export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.welcome(toEmail);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Welcome email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send welcome email:', error);
+    return false;
+  }
+}
+
+export async function sendPasswordResetEmail(toEmail: string, resetUrl: string): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.passwordReset(resetUrl);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Password reset email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    return false;
+  }
+}
+
+export async function sendAccountDeactivatedEmail(toEmail: string): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.accountDeactivated(toEmail);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Account deactivated email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send account deactivated email:', error);
+    return false;
+  }
+}
+
+export async function sendUsageLimitWarningEmail(
+  toEmail: string, 
+  feature: string, 
+  current: number, 
+  limit: number
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.usageLimitWarning(toEmail, feature, current, limit);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Usage limit warning email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send usage limit warning email:', error);
+    return false;
+  }
+}

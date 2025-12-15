@@ -34,6 +34,7 @@ import {
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail } from "./services/email";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -82,6 +83,17 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // Helper function to get base URL securely (prevents host header injection)
+  function getBaseUrl(req: any): string {
+    if (process.env.REPLIT_DEV_DOMAIN) {
+      return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+    }
+    if (process.env.APP_URL) {
+      return process.env.APP_URL;
+    }
+    return `${req.protocol}://${req.get('host')}`;
+  }
+
   await setupAuth(app);
 
   // Email/Password Login
@@ -157,6 +169,9 @@ export async function registerRoutes(
       // Hash password and create user
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter');
+
+      // Send welcome email (don't block registration if email fails)
+      sendWelcomeEmail(email).catch(err => console.error('Welcome email failed:', err));
 
       // Create session for newly registered user
       (req as any).login({ 
@@ -288,10 +303,9 @@ export async function registerRoutes(
 
       await storage.createPasswordResetToken(user.id, token, expiresAt);
 
-      // TODO: Send email with reset link
-      // For now, log the reset link (in production, this should be sent via email)
-      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
-      console.log(`Password reset link for ${email}: ${resetUrl}`);
+      // Send password reset email
+      const resetUrl = `${getBaseUrl(req)}/reset-password?token=${token}`;
+      sendPasswordResetEmail(email, resetUrl).catch(err => console.error('Password reset email failed:', err));
 
       res.json({ success: true, message: "If an account exists with this email, you will receive a password reset link." });
     } catch (error) {
@@ -1630,14 +1644,18 @@ export async function registerRoutes(
       
       await storage.createPasswordResetToken(user.id, token, expiresAt);
       
-      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+      const resetUrl = `${getBaseUrl(req)}/reset-password?token=${token}`;
       console.log(`Admin triggered password reset for ${user.email}: ${resetUrl}`);
       
-      // TODO: Send email in Task 6
+      // Send password reset email to user
+      if (user.email) {
+        sendPasswordResetEmail(user.email, resetUrl).catch(err => console.error('Admin reset email failed:', err));
+      }
+      
       res.json({ 
         success: true, 
-        message: 'Password reset link generated',
-        resetUrl // Include URL for admin to share (in production, this would be emailed)
+        message: 'Password reset link generated and sent to user',
+        resetUrl // Include URL for admin to share as backup
       });
     } catch (error) {
       console.error('Admin password reset error:', error);
@@ -1667,6 +1685,11 @@ export async function registerRoutes(
       }
       
       await storage.updateUser(id, { subscriptionStatus: 'inactive' });
+      
+      // Send notification email if user has email
+      if (user.email) {
+        sendAccountDeactivatedEmail(user.email).catch(err => console.error('Deactivation email failed:', err));
+      }
       
       res.json({ success: true, message: 'User account deactivated' });
     } catch (error) {
