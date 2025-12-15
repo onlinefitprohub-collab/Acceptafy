@@ -63,6 +63,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
+import { useAuth } from '@/hooks/useAuth';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | null;
@@ -96,6 +97,8 @@ export function AppSidebar({
   const [deliverabilityOpen, setDeliverabilityOpen] = useState(false);
   const [integrationsOpen, setIntegrationsOpen] = useState(false);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   
   const xpProgress = (xp / nextLevelXp) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -466,21 +469,23 @@ export function AppSidebar({
                           <span>ESP Settings</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'stats'}
-                          onClick={() => {
-                            setActiveView('integrations');
-                            setIntegrationsSubView('stats');
-                            setToolsSubView(null);
-                            setDeliverabilitySubView(null);
-                          }}
-                          data-testid="nav-integrations-stats"
-                        >
-                          <BarChart3 className="w-3 h-3" />
-                          <span>Campaign Stats</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
+                      {isAdmin && (
+                        <SidebarMenuSubItem>
+                          <SidebarMenuSubButton 
+                            isActive={integrationsSubView === 'stats'}
+                            onClick={() => {
+                              setActiveView('integrations');
+                              setIntegrationsSubView('stats');
+                              setToolsSubView(null);
+                              setDeliverabilitySubView(null);
+                            }}
+                            data-testid="nav-integrations-stats"
+                          >
+                            <BarChart3 className="w-3 h-3" />
+                            <span>Campaign Stats</span>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      )}
                     </SidebarMenuSub>
                   </CollapsibleContent>
                 </SidebarMenuItem>
