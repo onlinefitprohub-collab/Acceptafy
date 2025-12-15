@@ -2141,30 +2141,72 @@ const espStatsAnalysisSchema = {
   properties: {
     overallHealth: { type: Type.STRING, description: "Overall health rating: Excellent, Good, Fair, or Poor" },
     healthScore: { type: Type.NUMBER, description: "Overall health score from 0-100" },
-    summary: { type: Type.STRING, description: "Executive summary of the ESP performance" },
+    summary: { type: Type.STRING, description: "Brief 1-2 sentence summary in simple language" },
     strengths: { 
       type: Type.ARRAY, 
       items: { type: Type.STRING },
-      description: "Key strengths identified in the email campaigns"
+      description: "Key strengths - short, simple sentences"
     },
     concerns: { 
       type: Type.ARRAY, 
       items: { type: Type.STRING },
-      description: "Areas of concern that need attention"
+      description: "Areas needing attention - short, simple sentences"
+    },
+    senderReputation: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER, description: "Estimated sender reputation 0-100 based on engagement data" },
+        status: { type: Type.STRING, description: "Excellent, Good, Fair, or Poor" },
+        explanation: { type: Type.STRING, description: "Simple explanation of what this means" }
+      }
+    },
+    domainHealth: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER, description: "Domain health score 0-100 based on bounce rates and engagement" },
+        status: { type: Type.STRING, description: "Healthy, At Risk, or Critical" },
+        listQuality: { type: Type.STRING, description: "Clean, Needs Attention, or Poor based on bounces" },
+        explanation: { type: Type.STRING, description: "Simple explanation" }
+      }
+    },
+    spamRisk: {
+      type: Type.OBJECT,
+      properties: {
+        level: { type: Type.STRING, description: "Low, Medium, or High" },
+        score: { type: Type.NUMBER, description: "Spam risk score 0-100 (lower is better)" },
+        factors: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Risk factors if any" },
+        explanation: { type: Type.STRING, description: "Simple explanation" }
+      }
     },
     inboxPlacementInsights: {
       type: Type.OBJECT,
       properties: {
         estimatedInboxRate: { type: Type.NUMBER, description: "Estimated inbox placement rate 0-100" },
-        gmailPrediction: { type: Type.STRING, description: "Predicted Gmail placement: Primary, Promotions, or Spam" },
-        outlookPrediction: { type: Type.STRING, description: "Predicted Outlook placement: Focused, Other, or Junk" },
+        gmailPrediction: { type: Type.STRING, description: "Primary, Promotions, or Spam" },
+        gmailConfidence: { type: Type.NUMBER, description: "Confidence percentage 0-100" },
+        outlookPrediction: { type: Type.STRING, description: "Focused, Other, or Junk" },
+        outlookConfidence: { type: Type.NUMBER, description: "Confidence percentage 0-100" },
+        yahooPrediction: { type: Type.STRING, description: "Inbox or Spam" },
+        yahooConfidence: { type: Type.NUMBER, description: "Confidence percentage 0-100" },
+        promotionsRisk: { type: Type.NUMBER, description: "Chance of landing in Promotions tab 0-100" },
+        spamRisk: { type: Type.NUMBER, description: "Chance of landing in Spam 0-100" },
         recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    },
+    engagementScore: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER, description: "Overall engagement score 0-100" },
+        status: { type: Type.STRING, description: "Excellent, Good, Average, or Poor" },
+        openEngagement: { type: Type.STRING, description: "Strong, Average, or Weak" },
+        clickEngagement: { type: Type.STRING, description: "Strong, Average, or Weak" },
+        trend: { type: Type.STRING, description: "Improving, Stable, or Declining based on campaign data" }
       }
     },
     engagementAnalysis: {
       type: Type.OBJECT,
       properties: {
-        openRateAssessment: { type: Type.STRING, description: "Assessment of open rates: Above Average, Average, Below Average" },
+        openRateAssessment: { type: Type.STRING, description: "Above Average, Average, or Below Average" },
         clickRateAssessment: { type: Type.STRING, description: "Assessment of click rates" },
         bounceRateAssessment: { type: Type.STRING, description: "Assessment of bounce rates" },
         suggestions: { type: Type.ARRAY, items: { type: Type.STRING } }
@@ -2177,17 +2219,17 @@ const espStatsAnalysisSchema = {
         properties: {
           priority: { type: Type.STRING, description: "Priority: High, Medium, or Low" },
           category: { type: Type.STRING, description: "Category: Content, Timing, List Health, Technical, or Engagement" },
-          recommendation: { type: Type.STRING, description: "Specific actionable recommendation" },
-          expectedImpact: { type: Type.STRING, description: "Expected impact of implementing this recommendation" }
+          recommendation: { type: Type.STRING, description: "Specific actionable recommendation in simple language" },
+          expectedImpact: { type: Type.STRING, description: "Expected impact in simple terms" }
         }
       }
     },
     benchmarkComparison: {
       type: Type.OBJECT,
       properties: {
-        openRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" },
-        clickRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" },
-        bounceRateVsIndustry: { type: Type.STRING, description: "Comparison to industry average" }
+        openRateVsIndustry: { type: Type.STRING, description: "Simple comparison like '10% above average'" },
+        clickRateVsIndustry: { type: Type.STRING, description: "Simple comparison" },
+        bounceRateVsIndustry: { type: Type.STRING, description: "Simple comparison" }
       }
     }
   }
@@ -2199,11 +2241,41 @@ export interface ESPStatsAnalysis {
   summary: string;
   strengths: string[];
   concerns: string[];
+  senderReputation: {
+    score: number;
+    status: string;
+    explanation: string;
+  };
+  domainHealth: {
+    score: number;
+    status: string;
+    listQuality: string;
+    explanation: string;
+  };
+  spamRisk: {
+    level: string;
+    score: number;
+    factors: string[];
+    explanation: string;
+  };
   inboxPlacementInsights: {
     estimatedInboxRate: number;
     gmailPrediction: string;
+    gmailConfidence: number;
     outlookPrediction: string;
+    outlookConfidence: number;
+    yahooPrediction: string;
+    yahooConfidence: number;
+    promotionsRisk: number;
+    spamRisk: number;
     recommendations: string[];
+  };
+  engagementScore: {
+    score: number;
+    status: string;
+    openEngagement: string;
+    clickEngagement: string;
+    trend: string;
   };
   engagementAnalysis: {
     openRateAssessment: string;
@@ -2247,47 +2319,61 @@ export const analyzeESPStats = async (stats: {
       `- "${c.campaignName}": ${c.totalSent} sent, ${c.openRate.toFixed(1)}% opens, ${c.clickRate.toFixed(1)}% clicks, ${c.bounceRate.toFixed(1)}% bounces`
     ).join('\n') || 'No campaign details available';
 
-    const prompt = `Analyze these email campaign stats and give easy-to-understand insights.
+    const prompt = `Analyze these email campaign stats and provide comprehensive deliverability insights.
 
-**Your Numbers:**
-- Campaigns Sent: ${stats.totalCampaigns}
-- Emails Sent: ${stats.totalSent}
-- Emails Delivered: ${stats.totalDelivered}
-- People Who Opened: ${stats.totalOpened}
-- People Who Clicked: ${stats.totalClicked}
+**Email Performance Data:**
+- Total Campaigns: ${stats.totalCampaigns}
+- Total Sent: ${stats.totalSent}
+- Total Delivered: ${stats.totalDelivered}
+- Total Opened: ${stats.totalOpened}
+- Total Clicked: ${stats.totalClicked}
 - Open Rate: ${stats.avgOpenRate.toFixed(1)}%
 - Click Rate: ${stats.avgClickRate.toFixed(1)}%
 - Bounce Rate: ${stats.avgBounceRate.toFixed(1)}%
 
-**Campaign Details:**
+**Individual Campaign Performance:**
 ${campaignDetails}
 
-**What's Typical:**
-- Open rates: 20-25% is normal
-- Click rates: 2-3% is normal
-- Bounces: Under 2% is good
+**Industry Standards:**
+- Good open rate: 20-25%
+- Good click rate: 2-3%
+- Acceptable bounce rate: Under 2%
+- Spam complaint threshold: Under 0.1%
 
-Please provide simple, actionable insights that a non-technical business owner can understand.`;
+Provide a complete deliverability analysis including:
+1. Sender reputation score based on engagement patterns
+2. Domain health assessment based on bounce rates
+3. Spam risk evaluation
+4. Inbox placement predictions for Gmail (Primary/Promotions/Spam), Outlook (Focused/Other/Junk), and Yahoo
+5. Overall engagement score and trend
+6. Prioritized recommendations`;
 
-    const systemInstruction = `You are a friendly email marketing coach helping small business owners understand their email performance. 
+    const systemInstruction = `You are Acceptafy's email deliverability expert. Your job is to analyze email campaign data and provide comprehensive insights about inbox placement, sender reputation, and deliverability.
 
-IMPORTANT RULES FOR YOUR RESPONSE:
-1. Use simple, everyday language - no technical jargon
-2. Write like you're talking to a friend, not a tech expert
-3. Keep sentences short and clear
-4. Use "you/your" language to make it personal
-5. Focus on what they can DO to improve, not technical explanations
-6. Give specific, actionable tips they can implement today
-7. Celebrate their wins before discussing improvements
-8. Avoid terms like "engagement metrics", "deliverability", "aggregate", "infrastructure", "inbox placement algorithms"
+WRITING STYLE:
+- Use simple, friendly language anyone can understand
+- Be specific with numbers and percentages
+- Keep explanations brief but informative
+- Use "you/your" to make it personal
+- Celebrate wins before discussing problems
 
-Instead of: "Exceptional bounce rate indicating superior list hygiene"
-Say: "Your email list is super clean - almost no bad addresses!"
+ANALYSIS APPROACH:
+1. **Sender Reputation**: Calculate based on open rates, click rates, and bounces. High engagement = good reputation.
+2. **Domain Health**: Based on bounce rates and delivery success. 0% bounces = perfect health.
+3. **Spam Risk**: Evaluate based on engagement levels. Low clicks + high volume = higher spam risk.
+4. **Inbox Placement**: Predict where emails land based on engagement patterns:
+   - High engagement + personal content = Primary/Focused
+   - Marketing content + moderate engagement = Promotions/Other
+   - Low engagement + high volume = Spam risk
+5. **Engagement Score**: Weighted combination of opens and clicks vs. industry benchmarks.
 
-Instead of: "Low click-through rates for large-volume campaigns"
-Say: "Your big email sends aren't getting many clicks - try shorter emails with one clear button"
+SCORING GUIDELINES:
+- 90-100: Excellent - top performer
+- 80-89: Good - above average
+- 60-79: Fair - room for improvement  
+- Below 60: Needs attention
 
-Return your analysis as a single JSON object matching the provided schema.`;
+Return your analysis as a JSON object matching the provided schema.`;
 
     const res = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
