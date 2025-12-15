@@ -661,7 +661,7 @@ export function ESPStatsDashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Brain className="w-5 h-5 text-purple-400" />
-                    AI-Powered Insights
+                    Acceptafy Powered Insights
                   </CardTitle>
                   <Button
                     variant="ghost"

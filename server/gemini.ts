@@ -2247,38 +2247,45 @@ export const analyzeESPStats = async (stats: {
       `- "${c.campaignName}": ${c.totalSent} sent, ${c.openRate.toFixed(1)}% opens, ${c.clickRate.toFixed(1)}% clicks, ${c.bounceRate.toFixed(1)}% bounces`
     ).join('\n') || 'No campaign details available';
 
-    const prompt = `Analyze the following email marketing campaign statistics and provide detailed insights for improving inbox placement and engagement.
+    const prompt = `Analyze these email campaign stats and give easy-to-understand insights.
 
-**Aggregate Statistics:**
-- Total Campaigns: ${stats.totalCampaigns}
-- Total Emails Sent: ${stats.totalSent}
-- Total Delivered: ${stats.totalDelivered}
-- Total Opened: ${stats.totalOpened}
-- Total Clicked: ${stats.totalClicked}
-- Average Open Rate: ${stats.avgOpenRate.toFixed(1)}%
-- Average Click Rate: ${stats.avgClickRate.toFixed(1)}%
-- Average Bounce Rate: ${stats.avgBounceRate.toFixed(1)}%
+**Your Numbers:**
+- Campaigns Sent: ${stats.totalCampaigns}
+- Emails Sent: ${stats.totalSent}
+- Emails Delivered: ${stats.totalDelivered}
+- People Who Opened: ${stats.totalOpened}
+- People Who Clicked: ${stats.totalClicked}
+- Open Rate: ${stats.avgOpenRate.toFixed(1)}%
+- Click Rate: ${stats.avgClickRate.toFixed(1)}%
+- Bounce Rate: ${stats.avgBounceRate.toFixed(1)}%
 
-**Recent Campaign Breakdown:**
+**Campaign Details:**
 ${campaignDetails}
 
-**Industry Benchmarks for Reference:**
-- Average Email Open Rate: 20-25%
-- Average Click Rate: 2-3%
-- Acceptable Bounce Rate: <2%
-- Spam Complaint Rate: <0.1%
+**What's Typical:**
+- Open rates: 20-25% is normal
+- Click rates: 2-3% is normal
+- Bounces: Under 2% is good
 
-Please provide:
-1. Overall health assessment and score
-2. Key strengths and concerns
-3. Inbox placement insights with predictions for Gmail and Outlook
-4. Engagement analysis with specific suggestions
-5. Prioritized actionable recommendations (at least 5)
-6. Comparison to industry benchmarks`;
+Please provide simple, actionable insights that a non-technical business owner can understand.`;
 
-    const systemInstruction = `You are an expert email deliverability consultant with deep knowledge of ESP analytics, inbox placement algorithms, and email marketing best practices. Your analysis should be data-driven, actionable, and focused on improving inbox placement rates.
+    const systemInstruction = `You are a friendly email marketing coach helping small business owners understand their email performance. 
 
-Provide honest, specific feedback based on the statistics. If metrics are below average, be clear about it while offering constructive solutions. Your recommendations should be practical and implementable.
+IMPORTANT RULES FOR YOUR RESPONSE:
+1. Use simple, everyday language - no technical jargon
+2. Write like you're talking to a friend, not a tech expert
+3. Keep sentences short and clear
+4. Use "you/your" language to make it personal
+5. Focus on what they can DO to improve, not technical explanations
+6. Give specific, actionable tips they can implement today
+7. Celebrate their wins before discussing improvements
+8. Avoid terms like "engagement metrics", "deliverability", "aggregate", "infrastructure", "inbox placement algorithms"
+
+Instead of: "Exceptional bounce rate indicating superior list hygiene"
+Say: "Your email list is super clean - almost no bad addresses!"
+
+Instead of: "Low click-through rates for large-volume campaigns"
+Say: "Your big email sends aren't getting many clicks - try shorter emails with one clear button"
 
 Return your analysis as a single JSON object matching the provided schema.`;
 
