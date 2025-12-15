@@ -41,6 +41,7 @@ import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUserWithPassword(email: string, passwordHash: string, role?: string, subscriptionTier?: string): Promise<User>;
   updateUser(userId: string, updates: Partial<User>): Promise<User>;
@@ -158,6 +159,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId));
     return user;
   }
 

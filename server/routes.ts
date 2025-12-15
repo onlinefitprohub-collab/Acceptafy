@@ -659,6 +659,21 @@ export async function registerRoutes(
     if (!req.user) return true;
     
     const userId = req.user.claims.sub;
+    
+    // Check subscription status first
+    const user = await storage.getUser(userId);
+    if (user) {
+      const restrictedStatuses = ['past_due', 'canceled', 'unpaid', 'incomplete_expired'];
+      if (user.subscriptionStatus && restrictedStatuses.includes(user.subscriptionStatus)) {
+        res.status(403).json({ 
+          error: 'Subscription issue',
+          message: 'Your subscription has a payment issue. Please update your payment method to continue using premium features.',
+          subscriptionStatus: user.subscriptionStatus
+        });
+        return false;
+      }
+    }
+    
     const { allowed, current, limit } = await storage.checkUsageLimit(userId, field);
     
     if (!allowed) {

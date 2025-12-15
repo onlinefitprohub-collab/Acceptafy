@@ -186,6 +186,44 @@ You've used ${current} of your ${limit} monthly ${feature}.
 Upgrade your plan to get more ${feature} and unlock additional features.
 
 Visit https://acceptafy.com/pricing to view plans.`
+  }),
+
+  paymentFailed: (email: string, amountDue: string) => ({
+    subject: 'Action Required: Payment Failed for Your Acceptafy Subscription',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="color: #ef4444; font-size: 28px; margin: 0;">Payment Failed</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">We were unable to process your payment of ${amountDue} for your Acceptafy subscription.</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">To avoid any interruption to your service, please update your payment method as soon as possible.</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">If your payment method is not updated, your access to premium features may be restricted.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://acceptafy.com/settings" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Update Payment Method</a>
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Need help? Reply to this email and we'll assist you.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Payment Failed
+
+We were unable to process your payment of ${amountDue} for your Acceptafy subscription.
+
+To avoid any interruption to your service, please update your payment method as soon as possible.
+
+If your payment method is not updated, your access to premium features may be restricted.
+
+Visit https://acceptafy.com/settings to update your payment method.
+
+Need help? Reply to this email and we'll assist you.`
   })
 };
 
@@ -275,6 +313,27 @@ export async function sendUsageLimitWarningEmail(
     return true;
   } catch (error) {
     console.error('Failed to send usage limit warning email:', error);
+    return false;
+  }
+}
+
+export async function sendPaymentFailedEmail(toEmail: string, amountDue: string): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.paymentFailed(toEmail, amountDue);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Payment failed email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send payment failed email:', error);
     return false;
   }
 }
