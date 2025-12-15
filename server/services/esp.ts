@@ -853,73 +853,118 @@ const ontraportProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey || !credentials.appId) return [];
     try {
-      // Try multiple Ontraport endpoints for email data
-      const endpoints = [
-        // Email messages with stats
-        `https://api.ontraport.com/1/Messages?range=${limit}`,
-        // Broadcast emails
-        `https://api.ontraport.com/1/objects?objectID=65&range=${limit}`,
-        // Campaign stats
-        `https://api.ontraport.com/1/objects?objectID=140&range=${limit}`,
-      ];
-
-      for (const endpoint of endpoints) {
-        console.log(`Ontraport trying endpoint: ${endpoint}`);
-        const resp = await fetch(endpoint, {
-          headers: { 
-            'Api-Key': credentials.apiKey,
-            'Api-Appid': credentials.appId
-          }
-        });
+      // Use the message/outstats endpoint (objectID 69) for broadcast statistics
+      // This returns the actual broadcast history with sent, opened, clicked stats
+      const endpoint = `https://api.ontraport.com/1/message/outstats?range=${limit}&sort=date&sortDir=desc`;
+      
+      console.log(`Ontraport fetching broadcast stats: ${endpoint}`);
+      const resp = await fetch(endpoint, {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId
+        }
+      });
+      
+      console.log(`Ontraport broadcast stats response:`, resp.status);
+      
+      if (resp.ok) {
+        const data = await resp.json();
+        console.log('Ontraport broadcast stats raw:', JSON.stringify(data).slice(0, 1500));
         
-        console.log(`Ontraport ${endpoint} response:`, resp.status);
-        
-        if (resp.ok) {
-          const data = await resp.json();
-          console.log('Ontraport raw response:', JSON.stringify(data).slice(0, 1000));
-          
-          const items = data.data || [];
-          if (items.length > 0) {
-            // Filter for email type messages if this is the Messages endpoint
-            const emailItems = endpoint.includes('Messages') 
-              ? items.filter((m: any) => m.type === 'e' || m.type === 'email' || m.type === '1' || !m.type)
-              : items;
+        const broadcasts = data.data || [];
+        if (broadcasts.length > 0) {
+          return broadcasts.slice(0, limit).map((b: any) => {
+            // Parse the broadcast stats - field names from Ontraport's outstats endpoint
+            const sent = parseInt(b.sent) || parseInt(b.queued) || 0;
+            const delivered = parseInt(b.delivered) || sent;
+            const opened = parseInt(b.opened) || parseInt(b.unique_opens) || 0;
+            const clicked = parseInt(b.clicked) || parseInt(b.unique_clicks) || 0;
+            const bounced = parseInt(b.bounced) || parseInt(b.hard_bounces) || 0;
+            const unsubscribed = parseInt(b.opt_outs) || parseInt(b.unsubscribed) || 0;
+            const spamReports = parseInt(b.spam_score) || parseInt(b.abuse) || 0;
             
-            if (emailItems.length > 0) {
-              return emailItems.slice(0, limit).map((m: any) => {
-                const stats = m.stats || m;
-                const sent = parseInt(stats.sent) || parseInt(m.mcsent) || 0;
-                const delivered = parseInt(stats.delivered) || sent;
-                const opened = parseInt(stats.unique_opens) || parseInt(stats.opens) || parseInt(m.unique_open_count) || 0;
-                const clicked = parseInt(stats.unique_clicks) || parseInt(stats.clicks) || parseInt(m.unique_click_count) || 0;
-                const bounced = (parseInt(stats.hard_bounces) || 0) + (parseInt(stats.soft_bounces) || 0) + (parseInt(m.bounces) || 0);
-                const unsubscribed = parseInt(stats.unsubscribes) || parseInt(m.unsubscribes) || 0;
-                const spamReports = parseInt(stats.spam_complaints) || parseInt(m.spam) || 0;
-                
-                return {
-                  campaignId: (m.id || m.drip_id)?.toString() || '',
-                  campaignName: m.name || m.subject || m.alias || 'Untitled Message',
-                  subject: m.subject || m.name,
-                  sentAt: m.date_sent || m.date || m.send_date,
-                  totalSent: sent,
-                  delivered,
-                  opened,
-                  clicked,
-                  bounced,
-                  unsubscribed,
-                  spamReports,
-                  openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-                  clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
-                  bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
-                  unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
-                };
-              });
+            // Parse open/click rates if provided as percentages
+            let openRate = 0;
+            let clickRate = 0;
+            if (b.opened && typeof b.opened === 'string' && b.opened.includes('%')) {
+              openRate = parseFloat(b.opened.replace('%', '').replace('(', '').replace(')', ''));
+            } else {
+              openRate = delivered > 0 ? (opened / delivered) * 100 : 0;
             }
-          }
+            if (b.clicked && typeof b.clicked === 'string' && b.clicked.includes('%')) {
+              clickRate = parseFloat(b.clicked.replace('%', '').replace('(', '').replace(')', ''));
+            } else {
+              clickRate = delivered > 0 ? (clicked / delivered) * 100 : 0;
+            }
+            
+            return {
+              campaignId: (b.id || b.message_id || b.broadcast_id)?.toString() || '',
+              campaignName: b.name || b.subject || b.alias || 'Broadcast',
+              subject: b.subject || b.name,
+              sentAt: b.date_sent || b.date || b.send_date,
+              totalSent: sent,
+              delivered,
+              opened,
+              clicked,
+              bounced,
+              unsubscribed,
+              spamReports,
+              openRate,
+              clickRate,
+              bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+              unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+            };
+          });
         }
       }
       
-      console.log('Ontraport: No email campaigns found in any endpoint');
+      // Fallback: try objectID 69 directly
+      const fallbackEndpoint = `https://api.ontraport.com/1/objects?objectID=69&range=${limit}&sort=date&sortDir=desc`;
+      console.log(`Ontraport fallback endpoint: ${fallbackEndpoint}`);
+      const fallbackResp = await fetch(fallbackEndpoint, {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId
+        }
+      });
+      
+      if (fallbackResp.ok) {
+        const fallbackData = await fallbackResp.json();
+        console.log('Ontraport objectID 69 raw:', JSON.stringify(fallbackData).slice(0, 1500));
+        
+        const items = fallbackData.data || [];
+        if (items.length > 0) {
+          return items.slice(0, limit).map((b: any) => {
+            const sent = parseInt(b.sent) || parseInt(b.queued) || 0;
+            const delivered = parseInt(b.delivered) || sent;
+            const opened = parseInt(b.opened) || 0;
+            const clicked = parseInt(b.clicked) || 0;
+            const bounced = parseInt(b.bounced) || 0;
+            const unsubscribed = parseInt(b.opt_outs) || 0;
+            const spamReports = parseInt(b.spam_score) || 0;
+            
+            return {
+              campaignId: (b.id || b.message_id)?.toString() || '',
+              campaignName: b.name || b.subject || 'Broadcast',
+              subject: b.subject || b.name,
+              sentAt: b.date_sent || b.date,
+              totalSent: sent,
+              delivered,
+              opened,
+              clicked,
+              bounced,
+              unsubscribed,
+              spamReports,
+              openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+              clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+              bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+              unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+            };
+          });
+        }
+      }
+      
+      console.log('Ontraport: No broadcast stats found');
       return [];
     } catch (error) {
       console.error('Ontraport fetchCampaignStats error:', error);
