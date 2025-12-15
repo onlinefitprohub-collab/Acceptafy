@@ -128,6 +128,61 @@ export async function registerRoutes(
     }
   });
 
+  // Email/Password Registration
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Please enter a valid email address" });
+      }
+
+      // Validate password strength
+      if (password.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(409).json({ message: "An account with this email already exists" });
+      }
+
+      // Hash password and create user
+      const passwordHash = await bcrypt.hash(password, 10);
+      const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter');
+
+      // Create session for newly registered user
+      (req as any).login({ 
+        claims: { sub: user.id, email: user.email },
+        expires_at: Math.floor(Date.now() / 1000) + (7 * 24 * 60 * 60) // 7 days
+      }, (err: any) => {
+        if (err) {
+          console.error("Registration login error:", err);
+          return res.status(500).json({ message: "Account created but login failed" });
+        }
+        res.json({ 
+          success: true, 
+          user: { 
+            id: user.id, 
+            email: user.email, 
+            role: user.role,
+            subscriptionTier: user.subscriptionTier 
+          } 
+        });
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
   // Check if email/password auth user
   app.get('/api/auth/session', async (req: any, res) => {
     try {

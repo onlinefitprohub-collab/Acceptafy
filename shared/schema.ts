@@ -572,6 +572,31 @@ export const benchmarkFeedbackSchema = z.object({
 });
 export type BenchmarkFeedback = z.infer<typeof benchmarkFeedbackSchema>;
 
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  token: varchar("token").notNull().unique(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = typeof passwordResetTokens.$inferInsert;
+
+// Admin notes on users table
+export const adminNotes = pgTable("admin_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AdminNote = typeof adminNotes.$inferSelect;
+export type InsertAdminNote = typeof adminNotes.$inferInsert;
+
 // Agency Branding table for whitelabel reports
 export const agencyBranding = pgTable("agency_branding", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

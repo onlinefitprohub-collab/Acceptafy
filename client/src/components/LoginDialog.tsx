@@ -18,24 +18,26 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login, isLoggingIn } = useAuth();
+  const { login, isLoggingIn, register, isRegistering } = useAuth();
 
   const isSignup = currentMode === "signup";
+  const isSubmitting = isLoggingIn || isRegistering;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     
     try {
-      const result = await login({ email, password });
+      const authFn = isSignup ? register : login;
+      const result = await authFn({ email, password });
       if (result.success) {
         setOpen(false);
         window.location.reload();
       } else {
-        setError(result.message || "Login failed");
+        setError(result.message || (isSignup ? "Registration failed" : "Login failed"));
       }
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.message || (isSignup ? "Registration failed" : "Login failed"));
     }
   };
 
@@ -102,10 +104,10 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
             <Button 
               type="submit" 
               className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              disabled={isLoggingIn}
+              disabled={isSubmitting}
               data-testid="button-login-submit"
             >
-              {isLoggingIn ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   {isSignup ? "Creating account..." : "Signing in..."}
