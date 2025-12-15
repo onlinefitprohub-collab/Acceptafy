@@ -124,24 +124,22 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="w-full">
-                      <SidebarMenuButton 
-                        className="group transition-all duration-200 cursor-not-allowed opacity-60 w-full"
-                        data-testid="nav-dashboard"
-                      >
-                        <div className="p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80">
-                          <LayoutDashboard className="w-4 h-4" />
-                        </div>
-                        <span className="font-medium">Dashboard</span>
-                      </SidebarMenuButton>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Coming Soon</p>
-                  </TooltipContent>
-                </Tooltip>
+                <SidebarMenuButton 
+                  isActive={activeView === 'dashboard'}
+                  onClick={() => {
+                    setActiveView('dashboard');
+                    setToolsSubView(null);
+                    setDeliverabilitySubView(null);
+                    setIntegrationsSubView(null);
+                  }}
+                  className={`group transition-all duration-200 ${activeView === 'dashboard' ? 'bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/20' : ''}`}
+                  data-testid="nav-dashboard"
+                >
+                  <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'dashboard' ? 'bg-gradient-to-br from-purple-500 to-pink-500 shadow-md shadow-purple-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                    <LayoutDashboard className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium">Dashboard</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
