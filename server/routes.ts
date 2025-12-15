@@ -616,6 +616,40 @@ export async function registerRoutes(
     }
   });
 
+  // Migrate localStorage history to database
+  app.post('/api/history/migrate', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { items } = req.body;
+      
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.json({ migrated: 0 });
+      }
+
+      let migrated = 0;
+      for (const item of items) {
+        try {
+          await storage.createEmailAnalysis({
+            userId,
+            body: item.content?.body || '',
+            variations: item.content?.variations || [],
+            result: item.result,
+            score: item.result?.inboxPlacementScore?.score,
+            grade: item.result?.overallGrade?.grade,
+          });
+          migrated++;
+        } catch (err) {
+          console.error('Error migrating history item:', err);
+        }
+      }
+
+      res.json({ migrated });
+    } catch (error) {
+      console.error("History migration error:", error);
+      res.status(500).json({ message: "Failed to migrate history" });
+    }
+  });
+
   app.get('/api/gamification', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;

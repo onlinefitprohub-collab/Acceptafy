@@ -99,3 +99,40 @@ export const clearHistoryFromApi = async (): Promise<boolean> => {
     return false;
   }
 };
+
+// Migrate localStorage history to database (call once after login)
+const MIGRATION_KEY = 'inboxAuthorityMigrated';
+
+export const migrateLocalStorageToApi = async (): Promise<number> => {
+  // Check if already migrated
+  if (localStorage.getItem(MIGRATION_KEY)) {
+    return 0;
+  }
+
+  const localHistory = getHistory();
+  if (localHistory.length === 0) {
+    localStorage.setItem(MIGRATION_KEY, 'true');
+    return 0;
+  }
+
+  try {
+    const response = await fetch('/api/history/migrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ items: localHistory }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Clear localStorage after successful migration
+      localStorage.removeItem(HISTORY_KEY);
+      localStorage.setItem(MIGRATION_KEY, 'true');
+      return data.migrated || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error('Error migrating history to API:', error);
+    return 0;
+  }
+};

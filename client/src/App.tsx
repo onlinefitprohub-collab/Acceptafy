@@ -85,7 +85,8 @@ import {
   clearHistory,
   fetchHistoryFromApi,
   deleteHistoryItemFromApi,
-  clearHistoryFromApi
+  clearHistoryFromApi,
+  migrateLocalStorageToApi
 } from './services/historyService';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -180,6 +181,8 @@ function AppContent() {
   useEffect(() => {
     const loadHistory = async () => {
       if (user) {
+        // Migrate any localStorage history to database on first load
+        await migrateLocalStorageToApi();
         const apiHistory = await fetchHistoryFromApi();
         setHistory(apiHistory);
       } else {
