@@ -15,8 +15,10 @@ import {
   Mail,
   BarChart3,
   Send,
-  AlertCircle
+  AlertCircle,
+  HelpCircle
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export type ESPProvider = 'sendgrid' | 'mailchimp' | 'activecampaign' | 'hubspot' | 'constantcontact' | 'convertkit' | 'klaviyo' | 'drip' | 'aweber' | 'highlevel' | 'ontraport' | 'keap';
 
@@ -38,6 +40,7 @@ interface ESPProviderInfo {
   authType: 'api_key' | 'oauth' | 'api_key_url';
   docsUrl: string;
   fields: { key: string; label: string; placeholder: string; type?: string }[];
+  apiKeyHelp: string;
 }
 
 const ESP_PROVIDERS: ESPProviderInfo[] = [
@@ -53,7 +56,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     fields: [
       { key: 'appId', label: 'App ID', placeholder: 'Your App ID' },
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Administration > Integrations > Ontraport API. Your App ID and API Key are displayed there. If you don\'t have one, click "New API Key" to generate it.'
   },
   {
     id: 'highlevel',
@@ -66,7 +70,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > Business Profile > scroll down to "API Key". Copy your Location API Key. For Agency access, use Settings > Company > API Keys.'
   },
   {
     id: 'sendgrid',
@@ -79,7 +84,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://docs.sendgrid.com/for-developers/sending-email/api-getting-started',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'SG.xxxxxxxxxx', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > API Keys > Create API Key. Give it a name, select "Full Access" or custom permissions, then copy the key (it starts with "SG.").'
   },
   {
     id: 'mailchimp',
@@ -92,7 +98,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://mailchimp.com/developer/marketing/guides/quick-start/',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'xxxxxxxxxx-us1', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Account > Extras > API Keys > Create A Key. Your key ends with your data center (e.g., "-us1"). Copy the full key including the suffix.'
   },
   {
     id: 'activecampaign',
@@ -106,7 +113,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     fields: [
       { key: 'apiUrl', label: 'API URL', placeholder: 'https://youraccountname.api-us1.com' },
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > Developer. Copy your API URL (looks like https://yourname.api-us1.com) and your API Key from this page.'
   },
   {
     id: 'keap',
@@ -117,7 +125,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     features: ['Email Sending', 'Campaign Stats', 'Sales Pipeline'],
     authType: 'oauth',
     docsUrl: 'https://developer.keap.com/docs/restv2/',
-    fields: []
+    fields: [],
+    apiKeyHelp: 'Keap uses OAuth authentication. Click Connect to authorize access through your Keap account.'
   },
   {
     id: 'hubspot',
@@ -130,7 +139,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://developers.hubspot.com/docs/api/overview',
     fields: [
       { key: 'apiKey', label: 'Private App Access Token', placeholder: 'pat-na1-xxxxxxxxxx', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > Integrations > Private Apps > Create a private app. Give it a name, select scopes, then copy the Access Token after creation.'
   },
   {
     id: 'constantcontact',
@@ -143,7 +153,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://developer.constantcontact.com/api_guide/',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to My Applications at developer.constantcontact.com. Create a new application, then generate and copy your API Key and Access Token.'
   },
   {
     id: 'convertkit',
@@ -156,7 +167,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://developers.convertkit.com/',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > Advanced > API. Your API Secret is displayed there. Copy the full key to use for authentication.'
   },
   {
     id: 'klaviyo',
@@ -169,7 +181,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://developers.klaviyo.com/en',
     fields: [
       { key: 'apiKey', label: 'Private API Key', placeholder: 'pk_xxxxxxxxxx', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > API Keys > Create Private API Key. Select Full Access or custom scopes, then copy the key (starts with "pk_").'
   },
   {
     id: 'drip',
@@ -183,7 +196,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' },
       { key: 'accountId', label: 'Account ID', placeholder: 'Your account ID' }
-    ]
+    ],
+    apiKeyHelp: 'Go to Settings > User Settings > API Token to find your API key. Your Account ID is in the URL when logged in (e.g., app.drip.com/ACCOUNT_ID).'
   },
   {
     id: 'aweber',
@@ -196,7 +210,8 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://api.aweber.com/',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
+    ],
+    apiKeyHelp: 'Go to My Apps at labs.aweber.com. Create a new app, then generate your Access Token. Copy the full token for authentication.'
   }
 ];
 
@@ -310,7 +325,20 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                       <Mail className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">{provider.name}</CardTitle>
+                      <div className="flex items-center gap-1.5">
+                        <CardTitle className="text-base">{provider.name}</CardTitle>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button className="text-muted-foreground hover:text-foreground transition-colors" data-testid={`help-${provider.id}`}>
+                              <HelpCircle className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-sm">
+                            <p className="font-medium mb-1">How to get your API key:</p>
+                            <p>{provider.apiKeyHelp}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <CardDescription className="text-xs mt-0.5">
                         {provider.description}
                       </CardDescription>
