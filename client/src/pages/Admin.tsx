@@ -1,7 +1,33 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Users, 
   CreditCard, 
@@ -19,8 +45,18 @@ import {
   AlertCircle,
   BarChart3,
   Link2,
-  Zap
+  Zap,
+  Search,
+  Filter,
+  MoreHorizontal,
+  KeyRound,
+  UserX,
+  UserPlus,
+  StickyNote,
+  Eye,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import {
@@ -118,8 +154,28 @@ const GRADE_COLORS: Record<string, string> = {
   'F': '#ef4444',
 };
 
+interface AdminNote {
+  id: string;
+  userId: string;
+  adminId: string;
+  note: string;
+  createdAt: string;
+}
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [tierFilter, setTierFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [showNotesDialog, setShowNotesDialog] = useState(false);
+  const [showAddNoteDialog, setShowAddNoteDialog] = useState(false);
+  const [newNote, setNewNote] = useState("");
+  const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
+  const [resetLink, setResetLink] = useState("");
 
   const { data: adminCheck, isLoading: adminCheckLoading, isSuccess: adminCheckSuccess } = useQuery<AdminCheckResponse>({
     queryKey: ["/api/admin/check"],
@@ -156,6 +212,74 @@ export default function Admin() {
   const { data: espMetrics, isLoading: espMetricsLoading } = useQuery<ESPMetrics>({
     queryKey: ["/api/admin/esp-metrics"],
     enabled: isAdmin,
+  });
+
+  const { data: userNotes, isLoading: notesLoading } = useQuery<AdminNote[]>({
+    queryKey: ["/api/admin/users", selectedUser?.id, "notes"],
+    enabled: !!selectedUser && showNotesDialog,
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/reset-password`);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setResetLink(data.resetUrl);
+      setShowResetLinkDialog(true);
+      toast({ title: "Password reset link generated", description: "Share this link with the user" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to generate reset link", variant: "destructive" });
+    },
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/deactivate`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/metrics"] });
+      toast({ title: "Account deactivated", description: "User account has been deactivated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to deactivate account", variant: "destructive" });
+    },
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/reactivate`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/metrics"] });
+      toast({ title: "Account reactivated", description: "User account has been reactivated" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to reactivate account", variant: "destructive" });
+    },
+  });
+
+  const addNoteMutation = useMutation({
+    mutationFn: async ({ userId, note }: { userId: string; note: string }) => {
+      const res = await apiRequest("POST", `/api/admin/users/${userId}/notes`, { note });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users", selectedUser?.id, "notes"] });
+      setNewNote("");
+      setShowAddNoteDialog(false);
+      toast({ title: "Note added", description: "Admin note has been saved" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to add note", variant: "destructive" });
+    },
   });
 
   if (authLoading || adminCheckLoading) {
@@ -225,6 +349,26 @@ export default function Admin() {
     }
     return '?';
   };
+
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    
+    return users.filter((u) => {
+      const searchLower = searchQuery.toLowerCase();
+      const matchesSearch = !searchQuery || 
+        (u.email && u.email.toLowerCase().includes(searchLower)) ||
+        (u.firstName && u.firstName.toLowerCase().includes(searchLower)) ||
+        (u.lastName && u.lastName.toLowerCase().includes(searchLower));
+      
+      const matchesTier = tierFilter === "all" || 
+        (u.subscriptionTier || 'starter') === tierFilter;
+      
+      const matchesStatus = statusFilter === "all" || 
+        (u.subscriptionStatus || 'active') === statusFilter;
+      
+      return matchesSearch && matchesTier && matchesStatus;
+    });
+  }, [users, searchQuery, tierFilter, statusFilter]);
 
   return (
     <div className="min-h-screen p-6 lg:p-8 space-y-8" data-testid="admin-dashboard">
@@ -574,13 +718,53 @@ export default function Admin() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              All Users
+              User Management
             </CardTitle>
             <CardDescription>
-              Complete list of registered users with subscription and usage details
+              Search, filter, and manage all registered users
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-user-search"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Select value={tierFilter} onValueChange={setTierFilter}>
+                  <SelectTrigger className="w-[130px]" data-testid="select-tier-filter">
+                    <Filter className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Tiers</SelectItem>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="pro">Pro</SelectItem>
+                    <SelectItem value="scale">Scale</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[130px]" data-testid="select-status-filter">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="canceled">Canceled</SelectItem>
+                    <SelectItem value="past_due">Past Due</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Showing {filteredUsers.length} of {users?.length || 0} users
+            </div>
             {usersLoading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -595,10 +779,11 @@ export default function Admin() {
                       <TableHead>Usage</TableHead>
                       <TableHead>Last Active</TableHead>
                       <TableHead>Joined</TableHead>
+                      <TableHead className="w-[50px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users?.map((u) => (
+                    {filteredUsers.map((u) => (
                       <TableRow key={u.id} data-testid={`user-row-${u.id}`}>
                         <TableCell>
                           <div className="flex items-center gap-3">
@@ -661,12 +846,77 @@ export default function Admin() {
                             {formatDate(u.createdAt)}
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" data-testid={`button-actions-${u.id}`}>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  resetPasswordMutation.mutate(u.id);
+                                }}
+                                disabled={resetPasswordMutation.isPending}
+                                data-testid={`action-reset-password-${u.id}`}
+                              >
+                                <KeyRound className="h-4 w-4 mr-2" />
+                                Send Password Reset
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {u.subscriptionStatus === 'inactive' ? (
+                                <DropdownMenuItem
+                                  onClick={() => reactivateMutation.mutate(u.id)}
+                                  disabled={reactivateMutation.isPending}
+                                  data-testid={`action-reactivate-${u.id}`}
+                                >
+                                  <UserPlus className="h-4 w-4 mr-2" />
+                                  Reactivate Account
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => deactivateMutation.mutate(u.id)}
+                                  disabled={deactivateMutation.isPending || u.role === 'admin'}
+                                  data-testid={`action-deactivate-${u.id}`}
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Deactivate Account
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setShowAddNoteDialog(true);
+                                }}
+                                data-testid={`action-add-note-${u.id}`}
+                              >
+                                <StickyNote className="h-4 w-4 mr-2" />
+                                Add Note
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedUser(u);
+                                  setShowNotesDialog(true);
+                                }}
+                                data-testid={`action-view-notes-${u.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Notes
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
                       </TableRow>
                     ))}
-                    {(!users || users.length === 0) && (
+                    {filteredUsers.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No users found
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          {searchQuery || tierFilter !== "all" || statusFilter !== "all" 
+                            ? "No users match your filters" 
+                            : "No users found"}
                         </TableCell>
                       </TableRow>
                     )}
@@ -1137,6 +1387,114 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
+      {/* View Notes Dialog */}
+      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Admin Notes</DialogTitle>
+            <DialogDescription>
+              Notes for {selectedUser?.email || 'user'}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[300px]">
+            {notesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : userNotes && userNotes.length > 0 ? (
+              <div className="space-y-3">
+                {userNotes.map((note) => (
+                  <div key={note.id} className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-sm">{note.note}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {format(new Date(note.createdAt), 'MMM d, yyyy h:mm a')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No notes yet</p>
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowNotesDialog(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setShowNotesDialog(false);
+              setShowAddNoteDialog(true);
+            }}>
+              Add Note
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Note Dialog */}
+      <Dialog open={showAddNoteDialog} onOpenChange={setShowAddNoteDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Admin Note</DialogTitle>
+            <DialogDescription>
+              Add a note for {selectedUser?.email || 'user'}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Enter your note..."
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            rows={4}
+            data-testid="input-admin-note"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowAddNoteDialog(false);
+              setNewNote("");
+            }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (selectedUser && newNote.trim()) {
+                  addNoteMutation.mutate({ userId: selectedUser.id, note: newNote });
+                }
+              }}
+              disabled={!newNote.trim() || addNoteMutation.isPending}
+              data-testid="button-save-note"
+            >
+              {addNoteMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Note
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Password Reset Link Dialog */}
+      <Dialog open={showResetLinkDialog} onOpenChange={setShowResetLinkDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Password Reset Link Generated</DialogTitle>
+            <DialogDescription>
+              Share this link with the user to reset their password
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-3 rounded-lg bg-muted/50 break-all text-sm">
+            {resetLink}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResetLinkDialog(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              navigator.clipboard.writeText(resetLink);
+              toast({ title: "Copied", description: "Link copied to clipboard" });
+            }}>
+              Copy Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

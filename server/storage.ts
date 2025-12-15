@@ -9,6 +9,7 @@ import {
   espConnections,
   contactMessages,
   passwordResetTokens,
+  adminNotes,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -31,6 +32,8 @@ import {
   type ContactMessage,
   type InsertContactMessage,
   type PasswordResetToken,
+  type AdminNote,
+  type InsertAdminNote,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -141,6 +144,10 @@ export interface IStorage {
   getPasswordResetToken(token: string): Promise<any>;
   markPasswordResetTokenUsed(token: string): Promise<boolean>;
   deleteExpiredPasswordResetTokens(): Promise<number>;
+  
+  // Admin Notes
+  getAdminNotes(userId: string): Promise<AdminNote[]>;
+  createAdminNote(note: InsertAdminNote): Promise<AdminNote>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1002,6 +1009,23 @@ export class DatabaseStorage implements IStorage {
       .delete(passwordResetTokens)
       .where(lte(passwordResetTokens.expiresAt, new Date()));
     return 0;
+  }
+
+  // Admin Notes
+  async getAdminNotes(userId: string): Promise<AdminNote[]> {
+    return db
+      .select()
+      .from(adminNotes)
+      .where(eq(adminNotes.userId, userId))
+      .orderBy(desc(adminNotes.createdAt));
+  }
+
+  async createAdminNote(note: InsertAdminNote): Promise<AdminNote> {
+    const [created] = await db
+      .insert(adminNotes)
+      .values(note)
+      .returning();
+    return created;
   }
 }
 

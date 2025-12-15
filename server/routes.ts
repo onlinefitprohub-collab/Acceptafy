@@ -1609,6 +1609,132 @@ export async function registerRoutes(
     }
   });
 
+  // Admin action: Trigger password reset for a user
+  app.post('/api/admin/users/:id/reset-password', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (!user.passwordHash) {
+        return res.status(400).json({ message: 'User uses OAuth authentication, cannot reset password' });
+      }
+      
+      // Generate secure token
+      const crypto = await import('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      
+      await storage.createPasswordResetToken(user.id, token, expiresAt);
+      
+      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+      console.log(`Admin triggered password reset for ${user.email}: ${resetUrl}`);
+      
+      // TODO: Send email in Task 6
+      res.json({ 
+        success: true, 
+        message: 'Password reset link generated',
+        resetUrl // Include URL for admin to share (in production, this would be emailed)
+      });
+    } catch (error) {
+      console.error('Admin password reset error:', error);
+      res.status(500).json({ message: 'Failed to generate password reset' });
+    }
+  });
+
+  // Admin action: Deactivate user account
+  app.post('/api/admin/users/:id/deactivate', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const adminId = req.user.claims.sub;
+      
+      // Prevent self-deactivation
+      if (id === adminId) {
+        return res.status(400).json({ message: 'Cannot deactivate your own account' });
+      }
+      
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      if (user.role === 'admin') {
+        return res.status(400).json({ message: 'Cannot deactivate admin accounts' });
+      }
+      
+      await storage.updateUser(id, { subscriptionStatus: 'inactive' });
+      
+      res.json({ success: true, message: 'User account deactivated' });
+    } catch (error) {
+      console.error('Admin deactivate user error:', error);
+      res.status(500).json({ message: 'Failed to deactivate user' });
+    }
+  });
+
+  // Admin action: Reactivate user account
+  app.post('/api/admin/users/:id/reactivate', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      await storage.updateUser(id, { subscriptionStatus: 'active' });
+      
+      res.json({ success: true, message: 'User account reactivated' });
+    } catch (error) {
+      console.error('Admin reactivate user error:', error);
+      res.status(500).json({ message: 'Failed to reactivate user' });
+    }
+  });
+
+  // Admin action: Get notes for a user
+  app.get('/api/admin/users/:id/notes', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const notes = await storage.getAdminNotes(id);
+      res.json(notes);
+    } catch (error) {
+      console.error('Get admin notes error:', error);
+      res.status(500).json({ message: 'Failed to fetch notes' });
+    }
+  });
+
+  // Admin action: Add note to a user
+  app.post('/api/admin/users/:id/notes', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { note } = req.body;
+      const adminId = req.user.claims.sub;
+      
+      if (!note || typeof note !== 'string' || note.trim().length === 0) {
+        return res.status(400).json({ message: 'Note content is required' });
+      }
+      
+      const user = await storage.getUser(id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
+      const created = await storage.createAdminNote({
+        userId: id,
+        adminId,
+        note: note.trim(),
+      });
+      
+      res.json(created);
+    } catch (error) {
+      console.error('Create admin note error:', error);
+      res.status(500).json({ message: 'Failed to create note' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
