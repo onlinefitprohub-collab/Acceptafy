@@ -643,43 +643,53 @@ const highlevelProvider: ESPProvider = {
       return { accountName: '', isValid: false, error: 'API key is required' };
     }
     try {
-      // Try the v2 API first (works with Private Integration Tokens)
-      const response = await fetch('https://services.leadconnectorhq.com/locations/', {
-        headers: { 
-          'Authorization': `Bearer ${credentials.apiKey}`,
-          'Version': '2021-07-28'
-        }
-      });
+      // Try multiple endpoints to validate the token
+      // For Agency tokens: /locations/ works
+      // For Location/Sub-account Private Integration Tokens: need /contacts or /calendars
       
-      if (response.ok) {
-        const data = await response.json();
-        const location = data.locations?.[0];
-        return {
-          accountName: location?.name || 'HighLevel Account',
-          accountEmail: location?.email,
-          isValid: true
-        };
+      const endpoints = [
+        { url: 'https://services.leadconnectorhq.com/locations/', name: 'locations' },
+        { url: 'https://services.leadconnectorhq.com/calendars/', name: 'calendars' },
+        { url: 'https://services.leadconnectorhq.com/contacts/?limit=1', name: 'contacts' },
+        { url: 'https://services.leadconnectorhq.com/opportunities/', name: 'opportunities' },
+      ];
+
+      for (const endpoint of endpoints) {
+        const response = await fetch(endpoint.url, {
+          headers: { 
+            'Authorization': `Bearer ${credentials.apiKey}`,
+            'Version': '2021-07-28',
+            'Accept': 'application/json'
+          }
+        });
+        
+        console.log(`HighLevel ${endpoint.name} endpoint:`, response.status);
+        
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Extract account info based on endpoint
+          if (endpoint.name === 'locations' && data.locations?.[0]) {
+            return {
+              accountName: data.locations[0].name || 'HighLevel Account',
+              accountEmail: data.locations[0].email,
+              isValid: true
+            };
+          }
+          
+          // For other endpoints, connection is valid
+          return { accountName: 'HighLevel Account', isValid: true };
+        }
+        
+        // If we get 401/403, credentials are invalid - stop trying
+        if (response.status === 401 || response.status === 403) {
+          const errorText = await response.text();
+          console.error(`HighLevel auth failed on ${endpoint.name}:`, response.status, errorText);
+          return { accountName: '', isValid: false, error: 'Invalid or expired API key. Please check your Private Integration Token.' };
+        }
       }
 
-      // For location-level Private Integration Tokens, try the users endpoint
-      const usersResp = await fetch('https://services.leadconnectorhq.com/users/', {
-        headers: { 
-          'Authorization': `Bearer ${credentials.apiKey}`,
-          'Version': '2021-07-28'
-        }
-      });
-      
-      if (usersResp.ok) {
-        const usersData = await usersResp.json();
-        const user = usersData.users?.[0];
-        return {
-          accountName: user?.name || user?.email || 'HighLevel Account',
-          accountEmail: user?.email,
-          isValid: true
-        };
-      }
-
-      // Try legacy API as fallback
+      // Try legacy API as final fallback
       const legacyResp = await fetch('https://rest.gohighlevel.com/v1/custom-values/', {
         headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
       });
@@ -688,10 +698,7 @@ const highlevelProvider: ESPProvider = {
         return { accountName: 'HighLevel Account', isValid: true };
       }
 
-      // Check if it's an authentication error vs other error
-      const errorBody = await response.text();
-      console.error('HighLevel validation failed:', response.status, errorBody);
-      return { accountName: '', isValid: false, error: 'Invalid API key. Make sure you have the correct permissions enabled for your Private Integration Token.' };
+      return { accountName: '', isValid: false, error: 'Could not validate API key. Please ensure your Private Integration Token has the required permissions (Contacts, Calendars, or Locations access).' };
     } catch (error: any) {
       console.error('HighLevel validation error:', error);
       return { accountName: '', isValid: false, error: error.message };
