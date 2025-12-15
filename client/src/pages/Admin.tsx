@@ -240,6 +240,7 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Last 30 days', value: '30d', days: 30 },
   { label: 'Last 90 days', value: '90d', days: 90 },
   { label: 'Last 12 months', value: '12m', days: 365 },
+  { label: 'Custom range', value: 'custom', days: 0 },
 ];
 
 export default function Admin() {
@@ -257,8 +258,44 @@ export default function Admin() {
   const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
   const [resetLink, setResetLink] = useState("");
   const [dateRange, setDateRange] = useState<string>("30d");
+  
+  // Custom date range state
+  const getDefaultCustomDates = () => {
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  };
+  const [customStartDate, setCustomStartDate] = useState<string>(getDefaultCustomDates().start);
+  const [customEndDate, setCustomEndDate] = useState<string>(getDefaultCustomDates().end);
+
+  // Validate custom dates - ensure start <= end
+  const isCustomDateValid = useMemo(() => {
+    if (dateRange !== 'custom') return true;
+    if (!customStartDate || !customEndDate) return false;
+    return customStartDate <= customEndDate;
+  }, [dateRange, customStartDate, customEndDate]);
 
   const dateRangeDates = useMemo(() => {
+    if (dateRange === 'custom') {
+      // If invalid custom range, fall back to last 30 days
+      if (!customStartDate || !customEndDate || customStartDate > customEndDate) {
+        const now = new Date();
+        const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        const start = new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
+        return { 
+          start: start.toISOString().split('T')[0], 
+          end: end.toISOString().split('T')[0]
+        };
+      }
+      return { 
+        start: customStartDate, 
+        end: customEndDate 
+      };
+    }
     const option = DATE_RANGE_OPTIONS.find(o => o.value === dateRange) || DATE_RANGE_OPTIONS[1];
     const now = new Date();
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
@@ -267,7 +304,7 @@ export default function Admin() {
       start: start.toISOString().split('T')[0], 
       end: end.toISOString().split('T')[0]
     };
-  }, [dateRange]);
+  }, [dateRange, customStartDate, customEndDate]);
 
   const { data: adminCheck, isLoading: adminCheckLoading, isSuccess: adminCheckSuccess } = useQuery<AdminCheckResponse>({
     queryKey: ["/api/admin/check"],
@@ -502,19 +539,46 @@ export default function Admin() {
             Manage users and monitor platform activity
           </p>
         </div>
-        <Select value={dateRange} onValueChange={setDateRange}>
-          <SelectTrigger className="w-[180px]" data-testid="select-date-range">
-            <CalendarDays className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Select range" />
-          </SelectTrigger>
-          <SelectContent>
-            {DATE_RANGE_OPTIONS.map(option => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[180px]" data-testid="select-date-range">
+              <CalendarDays className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Select range" />
+            </SelectTrigger>
+            <SelectContent>
+              {DATE_RANGE_OPTIONS.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => setCustomStartDate(e.target.value)}
+                max={customEndDate}
+                className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
+                data-testid="input-custom-start-date"
+              />
+              <span className="text-muted-foreground">to</span>
+              <Input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => setCustomEndDate(e.target.value)}
+                min={customStartDate}
+                className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
+                data-testid="input-custom-end-date"
+              />
+              {!isCustomDateValid && (
+                <span className="text-destructive text-sm">Invalid range</span>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Insights & At-Risk Users Section */}
