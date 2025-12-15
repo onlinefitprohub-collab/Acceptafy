@@ -209,7 +209,8 @@ export async function registerRoutes(
           lastName: user.lastName,
           role: user.role,
           subscriptionTier: user.subscriptionTier,
-          subscriptionStatus: user.subscriptionStatus
+          subscriptionStatus: user.subscriptionStatus,
+          isEmailPasswordUser: !!user.passwordHash
         }
       });
     } catch (error) {
@@ -260,6 +261,113 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Change password error:", error);
       res.status(500).json({ message: "Failed to change password" });
+    }
+  });
+
+  // Request password reset
+  app.post('/api/auth/forgot-password', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      
+      // Always return success to prevent email enumeration
+      if (!user || !user.passwordHash) {
+        console.log(`Password reset requested for non-existent or OAuth email: ${email}`);
+        return res.json({ success: true, message: "If an account exists with this email, you will receive a password reset link." });
+      }
+
+      // Generate secure token
+      const crypto = await import('crypto');
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      await storage.createPasswordResetToken(user.id, token, expiresAt);
+
+      // TODO: Send email with reset link
+      // For now, log the reset link (in production, this should be sent via email)
+      const resetUrl = `${req.protocol}://${req.get('host')}/reset-password?token=${token}`;
+      console.log(`Password reset link for ${email}: ${resetUrl}`);
+
+      res.json({ success: true, message: "If an account exists with this email, you will receive a password reset link." });
+    } catch (error) {
+      console.error("Password reset request error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  });
+
+  // Reset password with token
+  app.post('/api/auth/reset-password', async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: "Password must be at least 8 characters" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset link" });
+      }
+
+      if (resetToken.usedAt) {
+        return res.status(400).json({ message: "This reset link has already been used" });
+      }
+
+      if (new Date() > resetToken.expiresAt) {
+        return res.status(400).json({ message: "This reset link has expired" });
+      }
+
+      // Hash new password and update user
+      const passwordHash = await bcrypt.hash(newPassword, 10);
+      await storage.updateUser(resetToken.userId, { passwordHash });
+      
+      // Mark token as used
+      await storage.markPasswordResetTokenUsed(token);
+
+      res.json({ success: true, message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error("Password reset error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Verify reset token (for frontend to check if token is valid before showing form)
+  app.get('/api/auth/verify-reset-token', async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.json({ valid: false, message: "No token provided" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken) {
+        return res.json({ valid: false, message: "Invalid reset link" });
+      }
+
+      if (resetToken.usedAt) {
+        return res.json({ valid: false, message: "This reset link has already been used" });
+      }
+
+      if (new Date() > resetToken.expiresAt) {
+        return res.json({ valid: false, message: "This reset link has expired" });
+      }
+
+      res.json({ valid: true, email: resetToken.user.email });
+    } catch (error) {
+      console.error("Token verification error:", error);
+      res.json({ valid: false, message: "Failed to verify token" });
     }
   });
 

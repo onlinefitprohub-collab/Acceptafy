@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
+import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 import { Loader2, Mail, Lock, LogIn, UserPlus } from "lucide-react";
 
 interface LoginDialogProps {
@@ -120,6 +121,20 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
               )}
             </Button>
           </form>
+
+          {!isSignup && (
+            <div className="text-center">
+              <ForgotPasswordDialog>
+                <button 
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-purple-500"
+                  data-testid="button-forgot-password"
+                >
+                  Forgot your password?
+                </button>
+              </ForgotPasswordDialog>
+            </div>
+          )}
 
           <p className="text-center text-sm text-muted-foreground">
             {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}

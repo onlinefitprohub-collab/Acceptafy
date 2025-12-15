@@ -8,6 +8,7 @@ import {
   agencyBranding,
   espConnections,
   contactMessages,
+  passwordResetTokens,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -29,6 +30,7 @@ import {
   type ESPProviderType,
   type ContactMessage,
   type InsertContactMessage,
+  type PasswordResetToken,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -133,6 +135,12 @@ export interface IStorage {
   // Contact Messages
   createContactMessage(message: InsertContactMessage): Promise<ContactMessage>;
   getContactMessages(): Promise<ContactMessage[]>;
+  
+  // Password Reset Tokens
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<any>;
+  getPasswordResetToken(token: string): Promise<any>;
+  markPasswordResetTokenUsed(token: string): Promise<boolean>;
+  deleteExpiredPasswordResetTokens(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -951,6 +959,49 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(contactMessages)
       .orderBy(desc(contactMessages.createdAt));
+  }
+
+  // Password Reset Tokens
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const [created] = await db
+      .insert(passwordResetTokens)
+      .values({
+        userId,
+        token,
+        expiresAt,
+      })
+      .returning();
+    return created;
+  }
+
+  async getPasswordResetToken(token: string): Promise<(PasswordResetToken & { user: User }) | undefined> {
+    const [result] = await db
+      .select()
+      .from(passwordResetTokens)
+      .innerJoin(users, eq(passwordResetTokens.userId, users.id))
+      .where(eq(passwordResetTokens.token, token));
+    
+    if (!result) return undefined;
+    
+    return {
+      ...result.password_reset_tokens,
+      user: result.users,
+    };
+  }
+
+  async markPasswordResetTokenUsed(token: string): Promise<boolean> {
+    await db
+      .update(passwordResetTokens)
+      .set({ usedAt: new Date() })
+      .where(eq(passwordResetTokens.token, token));
+    return true;
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<number> {
+    const result = await db
+      .delete(passwordResetTokens)
+      .where(lte(passwordResetTokens.expiresAt, new Date()));
+    return 0;
   }
 }
 

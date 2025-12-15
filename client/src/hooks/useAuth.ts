@@ -2,9 +2,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
 
+interface AuthUser extends User {
+  isEmailPasswordUser?: boolean;
+}
+
 interface SessionResponse {
   authenticated: boolean;
-  user?: User;
+  user?: AuthUser;
 }
 
 interface AuthResponse {
