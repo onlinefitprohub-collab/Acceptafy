@@ -42,6 +42,33 @@ interface ESPProviderInfo {
 
 const ESP_PROVIDERS: ESPProviderInfo[] = [
   {
+    id: 'ontraport',
+    name: 'Ontraport',
+    description: 'Business automation for growing companies',
+    color: 'rose',
+    gradient: 'from-rose-500 to-pink-500',
+    features: ['Email Sending', 'Campaign Stats', 'Contact Management'],
+    authType: 'api_key',
+    docsUrl: 'https://api.ontraport.com/doc/',
+    fields: [
+      { key: 'appId', label: 'App ID', placeholder: 'Your App ID' },
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
+    ]
+  },
+  {
+    id: 'highlevel',
+    name: 'HighLevel',
+    description: 'All-in-one CRM and marketing automation',
+    color: 'green',
+    gradient: 'from-green-500 to-emerald-500',
+    features: ['Email Sending', 'Campaign Stats', 'CRM Sync'],
+    authType: 'api_key',
+    docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
+    ]
+  },
+  {
     id: 'sendgrid',
     name: 'SendGrid',
     description: 'Reliable email delivery with powerful analytics',
@@ -78,33 +105,6 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     docsUrl: 'https://developers.activecampaign.com/reference/overview',
     fields: [
       { key: 'apiUrl', label: 'API URL', placeholder: 'https://youraccountname.api-us1.com' },
-      { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
-    ]
-  },
-  {
-    id: 'highlevel',
-    name: 'HighLevel',
-    description: 'All-in-one CRM and marketing automation',
-    color: 'green',
-    gradient: 'from-green-500 to-emerald-500',
-    features: ['Email Sending', 'Campaign Stats', 'CRM Sync'],
-    authType: 'api_key',
-    docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
-    fields: [
-      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
-    ]
-  },
-  {
-    id: 'ontraport',
-    name: 'Ontraport',
-    description: 'Business automation for growing companies',
-    color: 'rose',
-    gradient: 'from-rose-500 to-pink-500',
-    features: ['Email Sending', 'Campaign Stats', 'Contact Management'],
-    authType: 'api_key',
-    docsUrl: 'https://api.ontraport.com/doc/',
-    fields: [
-      { key: 'appId', label: 'App ID', placeholder: 'Your App ID' },
       { key: 'apiKey', label: 'API Key', placeholder: 'Your API key', type: 'password' }
     ]
   },
