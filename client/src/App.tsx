@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Switch, Route, useLocation } from 'wouter';
+import { Switch, Route } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
 import { ResultsHub } from './components/ResultsHub';
@@ -222,6 +222,11 @@ function AppContent() {
     }
     setPrevLevel(level);
   }, [level, prevLevel, celebrate]);
+
+  const handleAnalyzeSubject = (subject: string) => {
+    setVariations([{ subject, previewText: '' }]);
+    setActiveView('grader');
+  };
 
   const handleDashboardNavigate = (view: 'grader' | 'history' | 'tools' | 'deliverability', subView?: string) => {
     setActiveView(view);
@@ -1716,7 +1721,7 @@ function AppContent() {
       )}
 
       {integrationsSubView === 'stats' && (
-        <ESPStatsDashboard />
+        <ESPStatsDashboard onAnalyzeSubject={handleAnalyzeSubject} />
       )}
 
       {!integrationsSubView && (

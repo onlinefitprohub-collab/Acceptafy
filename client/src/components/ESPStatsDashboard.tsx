@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { 
@@ -30,7 +31,11 @@ import {
   ChevronDown,
   ChevronUp,
   Shield,
-  Zap
+  Zap,
+  Copy,
+  ExternalLink,
+  Calendar,
+  Send
 } from 'lucide-react';
 
 interface ESPCampaignStats {
@@ -158,13 +163,30 @@ function ScoreGauge({ score, size = 'md', label, sublabel }: {
   label: string;
   sublabel?: string;
 }) {
-  const getColor = (s: number) => {
-    if (s >= 80) return { ring: 'ring-green-500/30', bg: 'bg-green-500/20', text: 'text-green-400', stroke: '#22c55e' };
-    if (s >= 60) return { ring: 'ring-yellow-500/30', bg: 'bg-yellow-500/20', text: 'text-yellow-400', stroke: '#eab308' };
-    return { ring: 'ring-red-500/30', bg: 'bg-red-500/20', text: 'text-red-400', stroke: '#ef4444' };
+  const uniqueId = useId();
+  const getGradient = (s: number) => {
+    if (s >= 80) return { 
+      text: 'text-green-400', 
+      start: '#22c55e', 
+      end: '#10b981',
+      glow: 'drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]'
+    };
+    if (s >= 60) return { 
+      text: 'text-yellow-400', 
+      start: '#eab308', 
+      end: '#f59e0b',
+      glow: 'drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]'
+    };
+    return { 
+      text: 'text-red-400', 
+      start: '#ef4444', 
+      end: '#f97316',
+      glow: 'drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'
+    };
   };
   
-  const colors = getColor(score);
+  const gradient = getGradient(score);
+  const gradientId = `gauge-gradient-${uniqueId}`;
   const sizeClasses = {
     sm: 'w-14 h-14 text-lg',
     md: 'w-20 h-20 text-2xl',
@@ -176,22 +198,28 @@ function ScoreGauge({ score, size = 'md', label, sublabel }: {
   
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className={`relative ${sizeClasses[size]} flex items-center justify-center`}>
+      <div className={`relative ${sizeClasses[size]} flex items-center justify-center ${gradient.glow}`}>
         <svg className="absolute inset-0 -rotate-90" viewBox="0 0 100 100">
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={gradient.start} />
+              <stop offset="100%" stopColor={gradient.end} />
+            </linearGradient>
+          </defs>
           <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/10" />
           <circle 
             cx="50" cy="50" r="40" fill="none" 
-            stroke={colors.stroke} strokeWidth="8" 
+            stroke={`url(#${gradientId})`} strokeWidth="8" 
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             className="transition-all duration-1000"
           />
         </svg>
-        <span className={`font-bold ${colors.text}`}>{score}</span>
+        <span className={`font-bold ${gradient.text}`}>{score}</span>
       </div>
       <p className="text-xs text-muted-foreground text-center">{label}</p>
-      {sublabel && <p className={`text-xs font-medium ${colors.text}`}>{sublabel}</p>}
+      {sublabel && <p className={`text-xs font-medium ${gradient.text}`}>{sublabel}</p>}
     </div>
   );
 }
@@ -349,10 +377,20 @@ function StatCard({
   );
 }
 
-function CampaignRow({ campaign, provider }: { campaign: ESPCampaignStats; provider: string }) {
+function CampaignRow({ 
+  campaign, 
+  provider,
+  onClick 
+}: { 
+  campaign: ESPCampaignStats; 
+  provider: string;
+  onClick: () => void;
+}) {
   return (
-    <div 
-      className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+    <button 
+      type="button"
+      onClick={onClick}
+      className="w-full text-left flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all cursor-pointer group"
       data-testid={`campaign-row-${campaign.campaignId}`}
     >
       <div className="flex-1 min-w-0">
@@ -361,8 +399,9 @@ function CampaignRow({ campaign, provider }: { campaign: ESPCampaignStats; provi
             {ESP_PROVIDER_NAMES[provider] || provider}
           </Badge>
           <span className="text-xs text-muted-foreground">{formatDate(campaign.sentAt)}</span>
+          <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
         </div>
-        <p className="font-medium truncate" data-testid={`text-campaign-name-${campaign.campaignId}`}>
+        <p className="font-medium truncate group-hover:text-purple-300 transition-colors" data-testid={`text-campaign-name-${campaign.campaignId}`}>
           {campaign.campaignName}
         </p>
         {campaign.subject && (
@@ -400,11 +439,175 @@ function CampaignRow({ campaign, provider }: { campaign: ESPCampaignStats; provi
           <span className="text-muted-foreground text-xs">bounces</span>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
-export function ESPStatsDashboard() {
+// Campaign Detail Modal
+function CampaignDetailModal({ 
+  campaign, 
+  provider, 
+  isOpen, 
+  onClose,
+  onCopyToGrader 
+}: { 
+  campaign: ESPCampaignStats | null; 
+  provider: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onCopyToGrader: (subject: string) => void;
+}) {
+  const { toast } = useToast();
+  
+  if (!campaign) return null;
+  
+  const copySubject = () => {
+    if (campaign.subject) {
+      navigator.clipboard.writeText(campaign.subject);
+      toast({
+        title: "Copied!",
+        description: "Subject line copied to clipboard",
+      });
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl" data-testid="campaign-detail-modal">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Mail className="w-5 h-5 text-purple-400" />
+            Campaign Details
+          </DialogTitle>
+          <DialogDescription>
+            View campaign performance and copy content to the email grader
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {ESP_PROVIDER_NAMES[provider] || provider}
+              </Badge>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {formatDate(campaign.sentAt)}
+              </span>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold">{campaign.campaignName}</h3>
+            </div>
+            
+            {campaign.subject && (
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Subject Line</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={copySubject}
+                    className="h-7 gap-1 text-xs"
+                    data-testid="button-copy-subject"
+                  >
+                    <Copy className="w-3 h-3" />
+                    Copy
+                  </Button>
+                </div>
+                <p className="font-medium text-lg">{campaign.subject}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Send className="w-4 h-4 text-blue-400" />
+              </div>
+              <p className="text-xl font-bold">{formatNumber(campaign.totalSent)}</p>
+              <p className="text-xs text-muted-foreground">Sent</p>
+            </div>
+            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Eye className="w-4 h-4 text-purple-400" />
+              </div>
+              <p className={`text-xl font-bold ${getRateColor(campaign.openRate, 'open')}`}>
+                {campaign.openRate.toFixed(1)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Open Rate</p>
+            </div>
+            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <MousePointerClick className="w-4 h-4 text-green-400" />
+              </div>
+              <p className={`text-xl font-bold ${getRateColor(campaign.clickRate, 'click')}`}>
+                {campaign.clickRate.toFixed(1)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Click Rate</p>
+            </div>
+            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              </div>
+              <p className={`text-xl font-bold ${getRateColor(campaign.bounceRate, 'bounce')}`}>
+                {campaign.bounceRate.toFixed(1)}%
+              </p>
+              <p className="text-xs text-muted-foreground">Bounce Rate</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="text-center">
+              <p className="font-medium">{formatNumber(campaign.delivered)}</p>
+              <p className="text-xs text-muted-foreground">Delivered</p>
+            </div>
+            <div className="text-center">
+              <p className="font-medium">{formatNumber(campaign.opened)}</p>
+              <p className="text-xs text-muted-foreground">Opened</p>
+            </div>
+            <div className="text-center">
+              <p className="font-medium">{formatNumber(campaign.clicked)}</p>
+              <p className="text-xs text-muted-foreground">Clicked</p>
+            </div>
+          </div>
+          
+          {campaign.subject && (
+            <div className="pt-4 border-t border-white/10">
+              <Button 
+                onClick={() => onCopyToGrader(campaign.subject || '')}
+                className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                data-testid="button-copy-to-grader"
+              >
+                <Sparkles className="w-4 h-4" />
+                Analyze Subject Line in Email Grader
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Opens the email grader with your subject line pre-filled
+              </p>
+            </div>
+          )}
+          
+          {!campaign.subject && (
+            <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
+              <AlertTriangle className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
+              <p className="text-sm text-yellow-400">No subject line available</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This campaign doesn't have a subject line stored in your ESP
+              </p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+interface ESPStatsDashboardProps {
+  onAnalyzeSubject?: (subject: string) => void;
+}
+
+export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
   const [stats, setStats] = useState<ESPStatsResponse | null>(null);
@@ -414,6 +617,24 @@ export function ESPStatsDashboard() {
   const [analysis, setAnalysis] = useState<ESPStatsAnalysis | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(true);
+  const [selectedCampaign, setSelectedCampaign] = useState<{ campaign: ESPCampaignStats; provider: string } | null>(null);
+
+  const handleCopyToGrader = (subject: string) => {
+    setSelectedCampaign(null);
+    if (onAnalyzeSubject && subject && subject.trim()) {
+      onAnalyzeSubject(subject);
+      toast({
+        title: "Subject copied!",
+        description: "Opening the email grader with your subject line",
+      });
+    } else if (!subject || !subject.trim()) {
+      toast({
+        title: "No subject line",
+        description: "This campaign doesn't have a subject line to analyze",
+        variant: "destructive",
+      });
+    }
+  };
 
   const isScaleMember = user?.subscriptionTier === 'scale';
 
@@ -1113,7 +1334,8 @@ export function ESPStatsDashboard() {
                 <CampaignRow 
                   key={`${provider}-${campaign.campaignId}`} 
                   campaign={campaign} 
-                  provider={provider} 
+                  provider={provider}
+                  onClick={() => setSelectedCampaign({ campaign, provider })}
                 />
               ))}
               {allCampaigns.length === 0 && (
@@ -1131,6 +1353,14 @@ export function ESPStatsDashboard() {
           </Card>
         </>
       )}
+
+      <CampaignDetailModal
+        campaign={selectedCampaign?.campaign || null}
+        provider={selectedCampaign?.provider || ''}
+        isOpen={!!selectedCampaign}
+        onClose={() => setSelectedCampaign(null)}
+        onCopyToGrader={handleCopyToGrader}
+      />
     </div>
   );
 }
