@@ -853,46 +853,76 @@ const ontraportProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey || !credentials.appId) return [];
     try {
-      const messagesResp = await fetch(`https://api.ontraport.com/1/Messages?range=${limit}&listFields=id,name,subject,type,stats`, {
-        headers: { 
-          'Api-Key': credentials.apiKey,
-          'Api-Appid': credentials.appId
-        }
-      });
-      if (!messagesResp.ok) return [];
-      const messagesData = await messagesResp.json();
-      
-      const emailMessages = (messagesData.data || []).filter((m: any) => m.type === 'e' || m.type === 'email');
-      
-      return emailMessages.map((m: any) => {
-        const stats = m.stats || {};
-        const sent = parseInt(stats.sent) || 0;
-        const delivered = parseInt(stats.delivered) || sent;
-        const opened = parseInt(stats.unique_opens) || parseInt(stats.opens) || 0;
-        const clicked = parseInt(stats.unique_clicks) || parseInt(stats.clicks) || 0;
-        const bounced = (parseInt(stats.hard_bounces) || 0) + (parseInt(stats.soft_bounces) || 0);
-        const unsubscribed = parseInt(stats.unsubscribes) || 0;
-        const spamReports = parseInt(stats.spam_complaints) || 0;
+      // Try multiple Ontraport endpoints for email data
+      const endpoints = [
+        // Email messages with stats
+        `https://api.ontraport.com/1/Messages?range=${limit}`,
+        // Broadcast emails
+        `https://api.ontraport.com/1/objects?objectID=65&range=${limit}`,
+        // Campaign stats
+        `https://api.ontraport.com/1/objects?objectID=140&range=${limit}`,
+      ];
+
+      for (const endpoint of endpoints) {
+        console.log(`Ontraport trying endpoint: ${endpoint}`);
+        const resp = await fetch(endpoint, {
+          headers: { 
+            'Api-Key': credentials.apiKey,
+            'Api-Appid': credentials.appId
+          }
+        });
         
-        return {
-          campaignId: m.id?.toString() || '',
-          campaignName: m.name || 'Untitled Message',
-          subject: m.subject,
-          sentAt: m.date_sent || m.date,
-          totalSent: sent,
-          delivered,
-          opened,
-          clicked,
-          bounced,
-          unsubscribed,
-          spamReports,
-          openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-          clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
-          bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
-          unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
-        };
-      });
-    } catch {
+        console.log(`Ontraport ${endpoint} response:`, resp.status);
+        
+        if (resp.ok) {
+          const data = await resp.json();
+          console.log('Ontraport raw response:', JSON.stringify(data).slice(0, 1000));
+          
+          const items = data.data || [];
+          if (items.length > 0) {
+            // Filter for email type messages if this is the Messages endpoint
+            const emailItems = endpoint.includes('Messages') 
+              ? items.filter((m: any) => m.type === 'e' || m.type === 'email' || m.type === '1' || !m.type)
+              : items;
+            
+            if (emailItems.length > 0) {
+              return emailItems.slice(0, limit).map((m: any) => {
+                const stats = m.stats || m;
+                const sent = parseInt(stats.sent) || parseInt(m.mcsent) || 0;
+                const delivered = parseInt(stats.delivered) || sent;
+                const opened = parseInt(stats.unique_opens) || parseInt(stats.opens) || parseInt(m.unique_open_count) || 0;
+                const clicked = parseInt(stats.unique_clicks) || parseInt(stats.clicks) || parseInt(m.unique_click_count) || 0;
+                const bounced = (parseInt(stats.hard_bounces) || 0) + (parseInt(stats.soft_bounces) || 0) + (parseInt(m.bounces) || 0);
+                const unsubscribed = parseInt(stats.unsubscribes) || parseInt(m.unsubscribes) || 0;
+                const spamReports = parseInt(stats.spam_complaints) || parseInt(m.spam) || 0;
+                
+                return {
+                  campaignId: (m.id || m.drip_id)?.toString() || '',
+                  campaignName: m.name || m.subject || m.alias || 'Untitled Message',
+                  subject: m.subject || m.name,
+                  sentAt: m.date_sent || m.date || m.send_date,
+                  totalSent: sent,
+                  delivered,
+                  opened,
+                  clicked,
+                  bounced,
+                  unsubscribed,
+                  spamReports,
+                  openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+                  clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+                  bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+                  unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+                };
+              });
+            }
+          }
+        }
+      }
+      
+      console.log('Ontraport: No email campaigns found in any endpoint');
+      return [];
+    } catch (error) {
+      console.error('Ontraport fetchCampaignStats error:', error);
       return [];
     }
   },
