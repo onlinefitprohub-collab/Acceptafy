@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { LoginDialog } from "@/components/LoginDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { 
   Mail, 
   Zap, 
@@ -45,7 +46,8 @@ import {
   FlaskConical,
   Layout,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Menu
 } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
@@ -330,7 +332,8 @@ export default function Landing() {
             </div>
             <span className="text-xl font-bold">Acceptafy</span>
           </a>
-          <div className="flex items-center gap-4">
+          
+          <div className="hidden md:flex items-center gap-4">
             <a href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-pricing">
               Pricing
             </a>
@@ -354,6 +357,43 @@ export default function Landing() {
             <LoginDialog mode="signup">
               <Button data-testid="button-get-started-header">Get Started Free</Button>
             </LoginDialog>
+          </div>
+
+          <div className="flex md:hidden items-center gap-2">
+            <LoginDialog mode="signup">
+              <Button size="sm" data-testid="button-get-started-header-mobile">Get Started</Button>
+            </LoginDialog>
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" data-testid="button-mobile-menu">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] pt-12">
+                <nav className="flex flex-col gap-4">
+                  <a href="#pricing" className="text-lg font-medium hover:text-primary transition-colors py-2" data-testid="link-pricing-mobile">
+                    Pricing
+                  </a>
+                  <a href="#how-it-works" className="text-lg font-medium hover:text-primary transition-colors py-2" data-testid="link-how-it-works-mobile">
+                    How It Works
+                  </a>
+                  <div className="flex items-center gap-2 text-lg font-medium text-muted-foreground/60 py-2">
+                    <Gift className="w-4 h-4" />
+                    Affiliate
+                    <Badge variant="outline" className="ml-1 text-xs">Soon</Badge>
+                  </div>
+                  <div className="border-t pt-4 mt-2 space-y-3">
+                    <LoginDialog>
+                      <Button variant="outline" className="w-full" data-testid="button-login-mobile">Log in</Button>
+                    </LoginDialog>
+                    <LoginDialog mode="signup">
+                      <Button className="w-full" data-testid="button-signup-mobile">Get Started Free</Button>
+                    </LoginDialog>
+                  </div>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
