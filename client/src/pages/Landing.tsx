@@ -643,14 +643,16 @@ export default function Landing() {
             </p>
           </div>
 
-          <div className="space-y-12 max-w-6xl mx-auto">
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
-                  <Inbox className="w-4 h-4 text-green-600" />
+          <div className="space-y-8 max-w-6xl mx-auto">
+            <div className="rounded-xl border bg-gradient-to-br from-green-500/5 to-emerald-500/5 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 pb-4 border-b border-green-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg">
+                    <Inbox className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-xl bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">Inbox Delivery</h3>
                 </div>
-                <h3 className="font-semibold text-lg">Inbox Delivery</h3>
-                <span className="text-sm text-muted-foreground">— Make sure your emails actually arrive</span>
+                <span className="text-sm text-muted-foreground sm:ml-2">Make sure your emails actually arrive</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -661,7 +663,7 @@ export default function Landing() {
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <Card key={index} className="hover-elevate border-green-500/10" data-testid={`feature-inbox-${index}`}>
+                    <Card key={index} className="hover-elevate border-green-500/20 bg-background/50" data-testid={`feature-inbox-${index}`}>
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-green-600" />
@@ -675,13 +677,15 @@ export default function Landing() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 text-purple-600" />
+            <div className="rounded-xl border bg-gradient-to-br from-purple-500/5 to-pink-500/5 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 pb-4 border-b border-purple-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                    <TrendingUp className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-xl bg-gradient-to-r from-purple-500 to-pink-500 bg-clip-text text-transparent">Revenue Optimization</h3>
                 </div>
-                <h3 className="font-semibold text-lg">Revenue Optimization</h3>
-                <span className="text-sm text-muted-foreground">— Write emails that convert</span>
+                <span className="text-sm text-muted-foreground sm:ml-2">Write emails that convert</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -692,7 +696,7 @@ export default function Landing() {
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <Card key={index} className="hover-elevate border-purple-500/10" data-testid={`feature-revenue-${index}`}>
+                    <Card key={index} className="hover-elevate border-purple-500/20 bg-background/50" data-testid={`feature-revenue-${index}`}>
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-purple-600" />
@@ -706,13 +710,15 @@ export default function Landing() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-blue-600" />
+            <div className="rounded-xl border bg-gradient-to-br from-blue-500/5 to-cyan-500/5 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 pb-4 border-b border-blue-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-xl bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">Workflow & Learning</h3>
                 </div>
-                <h3 className="font-semibold text-lg">Workflow & Learning</h3>
-                <span className="text-sm text-muted-foreground">— Work smarter, not harder</span>
+                <span className="text-sm text-muted-foreground sm:ml-2">Work smarter, not harder</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -723,7 +729,7 @@ export default function Landing() {
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <Card key={index} className="hover-elevate border-blue-500/10" data-testid={`feature-workflow-${index}`}>
+                    <Card key={index} className="hover-elevate border-blue-500/20 bg-background/50" data-testid={`feature-workflow-${index}`}>
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-blue-600" />
@@ -737,13 +743,15 @@ export default function Landing() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                  <Users className="w-4 h-4 text-violet-600" />
+            <div className="rounded-xl border bg-gradient-to-br from-violet-500/5 to-fuchsia-500/5 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 pb-4 border-b border-violet-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                    <Users className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">Competitive Intelligence</h3>
                 </div>
-                <h3 className="font-semibold text-lg">Competitive Intelligence</h3>
-                <span className="text-sm text-muted-foreground">— Learn from the best in your industry</span>
+                <span className="text-sm text-muted-foreground sm:ml-2">Learn from the best in your industry</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -754,7 +762,7 @@ export default function Landing() {
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <Card key={index} className="hover-elevate border-violet-500/10" data-testid={`feature-competitive-${index}`}>
+                    <Card key={index} className="hover-elevate border-violet-500/20 bg-background/50" data-testid={`feature-competitive-${index}`}>
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-violet-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-violet-600" />
