@@ -40,7 +40,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   GitCompare,
-  FileText,
   Calendar,
   Gauge,
   Info,
@@ -132,17 +131,6 @@ interface CampaignComparison {
   insights: string[];
 }
 
-interface TemplateHealth {
-  templateId: string;
-  templateName: string;
-  timesUsed: number;
-  avgOpenRate: number;
-  avgClickRate: number;
-  avgBounceRate: number;
-  trend: 'improving' | 'stable' | 'declining';
-  lastUsed?: string;
-}
-
 interface FrequencyInsights {
   currentSendsPerWeek: number;
   baselineSendsPerWeek: number;
@@ -181,10 +169,6 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
     enabled: connectedProviders.length > 0,
   });
 
-  const { data: templateHealth, isLoading: loadingTemplates } = useQuery<TemplateHealth[]>({
-    queryKey: ['/api/deliverability/template-health'],
-    enabled: connectedProviders.length > 0,
-  });
 
   const { data: frequencyInsights, isLoading: loadingFrequency } = useQuery<FrequencyInsights>({
     queryKey: ['/api/deliverability/frequency-tracking', selectedProvider],
@@ -204,7 +188,6 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/provider-health'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/alerts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/campaign-history', provider] });
-      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/template-health'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/frequency-tracking', provider] });
     },
     onError: () => {
@@ -814,76 +797,6 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
                 </div>
               )}
             </div>
-          </AccordionContent>
-        </AccordionItem>
-
-        <AccordionItem value="templates" className="border rounded-lg">
-          <AccordionTrigger className="px-4 hover:no-underline">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              <span>Template Health</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-4 pb-4">
-            {loadingTemplates ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16" />
-                <Skeleton className="h-16" />
-              </div>
-            ) : templateHealth && templateHealth.length > 0 ? (
-              <div className="space-y-2">
-                {templateHealth.map((template) => (
-                  <div
-                    key={template.templateId}
-                    className="p-3 rounded-lg border flex items-center justify-between"
-                    data-testid={`template-health-${template.templateId}`}
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{template.templateName}</p>
-                        <div className="flex items-center gap-1">
-                          {getTrendIcon(template.trend)}
-                          <span className="text-xs text-muted-foreground">{template.trend}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Used {template.timesUsed} times
-                        {template.lastUsed && ` • Last used ${new Date(template.lastUsed).toLocaleDateString()}`}
-                      </p>
-                    </div>
-                    <div className="flex gap-4 text-sm">
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <span className="text-green-500 font-medium">{template.avgOpenRate.toFixed(1)}%</span>
-                        </TooltipTrigger>
-                        <TooltipContent>Avg Open Rate</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <span className="text-blue-500 font-medium">{template.avgClickRate.toFixed(1)}%</span>
-                        </TooltipTrigger>
-                        <TooltipContent>Avg Click Rate</TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger>
-                          <span className={`font-medium ${template.avgBounceRate > 3 ? 'text-red-500' : 'text-muted-foreground'}`}>
-                            {template.avgBounceRate.toFixed(1)}%
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent>Avg Bounce Rate</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 text-center">
-                <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-muted-foreground text-sm">
-                  No template data yet. Save and reuse templates to track their performance.
-                </p>
-              </div>
-            )}
           </AccordionContent>
         </AccordionItem>
 
