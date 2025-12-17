@@ -62,28 +62,70 @@ const sendgridProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey) return [];
     try {
-      const response = await fetch(`https://api.sendgrid.com/v3/marketing/stats/automations?page_size=${limit}`, {
-        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      const allCampaigns: (ESPCampaignStats & { _sortDate?: string })[] = [];
+      
+      // Fetch both automation and single-send stats in parallel
+      // Request more than limit to ensure we get a good mix after merging
+      const fetchSize = Math.max(limit, 25);
+      
+      const [autoResponse, singleResponse] = await Promise.all([
+        fetch(`https://api.sendgrid.com/v3/marketing/stats/automations?page_size=${fetchSize}`, {
+          headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+        }),
+        fetch(`https://api.sendgrid.com/v3/marketing/stats/singlesends?page_size=${fetchSize}`, {
+          headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+        })
+      ]);
+      
+      if (autoResponse.ok) {
+        const autoData = await autoResponse.json();
+        const automations = (autoData.results || []).map((c: any) => ({
+          campaignId: c.id,
+          campaignName: c.name || 'Unnamed Automation',
+          subject: '',
+          sentAt: c.aggregation?.stats?.[0]?.date,
+          _sortDate: c.aggregation?.stats?.[0]?.date || '',
+          totalSent: c.aggregation?.stats?.[0]?.stats?.requests || 0,
+          delivered: c.aggregation?.stats?.[0]?.stats?.delivered || 0,
+          opened: c.aggregation?.stats?.[0]?.stats?.unique_opens || 0,
+          clicked: c.aggregation?.stats?.[0]?.stats?.unique_clicks || 0,
+          bounced: c.aggregation?.stats?.[0]?.stats?.bounces || 0,
+          unsubscribed: c.aggregation?.stats?.[0]?.stats?.unsubscribes || 0,
+          spamReports: c.aggregation?.stats?.[0]?.stats?.spam_reports || 0,
+          openRate: 0, clickRate: 0, bounceRate: 0, unsubscribeRate: 0,
+        }));
+        allCampaigns.push(...automations);
+      }
+      
+      if (singleResponse.ok) {
+        const singleData = await singleResponse.json();
+        const singleSends = (singleData.results || []).map((c: any) => ({
+          campaignId: c.id,
+          campaignName: c.name || 'Unnamed Single Send',
+          subject: '',
+          sentAt: c.aggregation?.stats?.[0]?.date,
+          _sortDate: c.aggregation?.stats?.[0]?.date || '',
+          totalSent: c.aggregation?.stats?.[0]?.stats?.requests || 0,
+          delivered: c.aggregation?.stats?.[0]?.stats?.delivered || 0,
+          opened: c.aggregation?.stats?.[0]?.stats?.unique_opens || 0,
+          clicked: c.aggregation?.stats?.[0]?.stats?.unique_clicks || 0,
+          bounced: c.aggregation?.stats?.[0]?.stats?.bounces || 0,
+          unsubscribed: c.aggregation?.stats?.[0]?.stats?.unsubscribes || 0,
+          spamReports: c.aggregation?.stats?.[0]?.stats?.spam_reports || 0,
+          openRate: 0, clickRate: 0, bounceRate: 0, unsubscribeRate: 0,
+        }));
+        allCampaigns.push(...singleSends);
+      }
+      
+      // Sort by date descending and take the most recent 'limit' campaigns
+      allCampaigns.sort((a, b) => {
+        const dateA = a._sortDate ? new Date(a._sortDate).getTime() : 0;
+        const dateB = b._sortDate ? new Date(b._sortDate).getTime() : 0;
+        return dateB - dateA;
       });
-      if (!response.ok) return [];
-      const data = await response.json();
-      return (data.results || []).map((c: any) => ({
-        campaignId: c.id,
-        campaignName: c.name || 'Unnamed Campaign',
-        subject: '',
-        sentAt: c.aggregation?.stats?.[0]?.date,
-        totalSent: c.aggregation?.stats?.[0]?.stats?.requests || 0,
-        delivered: c.aggregation?.stats?.[0]?.stats?.delivered || 0,
-        opened: c.aggregation?.stats?.[0]?.stats?.unique_opens || 0,
-        clicked: c.aggregation?.stats?.[0]?.stats?.unique_clicks || 0,
-        bounced: c.aggregation?.stats?.[0]?.stats?.bounces || 0,
-        unsubscribed: c.aggregation?.stats?.[0]?.stats?.unsubscribes || 0,
-        spamReports: c.aggregation?.stats?.[0]?.stats?.spam_reports || 0,
-        openRate: 0,
-        clickRate: 0,
-        bounceRate: 0,
-        unsubscribeRate: 0,
-      })).map((s: ESPCampaignStats) => ({
+      
+      // Calculate rates for all campaigns and remove sort helper
+      return allCampaigns.slice(0, limit).map(({ _sortDate, ...s }) => ({
         ...s,
         openRate: s.delivered > 0 ? (s.opened / s.delivered) * 100 : 0,
         clickRate: s.delivered > 0 ? (s.clicked / s.delivered) * 100 : 0,
@@ -276,29 +318,61 @@ const hubspotProvider: ESPProvider = {
   async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
     if (!credentials.apiKey) return [];
     try {
-      const response = await fetch(`https://api.hubapi.com/marketing-emails/v1/emails?limit=${limit}`, {
+      // Use v3 API with includeStats parameter
+      const response = await fetch(`https://api.hubapi.com/marketing/v3/emails?limit=${limit}&includeStats=true`, {
         headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
       });
       if (!response.ok) return [];
       const data = await response.json();
-      return (data.objects || []).map((e: any) => {
-        const stats = e.stats || {};
+      
+      // Get stats for these emails - v3 requires millisecond timestamps and repeated emailId params
+      const now = Date.now();
+      const yearAgo = now - (365 * 24 * 60 * 60 * 1000);
+      const emailIds = (data.results || []).map((e: any) => e.id).filter(Boolean);
+      
+      let statsMap: Record<string, any> = {};
+      if (emailIds.length > 0) {
+        // Build URL with repeated emailId parameters
+        const emailIdParams = emailIds.map((id: string) => `emailId=${id}`).join('&');
+        const statsResp = await fetch(
+          `https://api.hubapi.com/marketing/v3/emails/statistics/list?startTimestamp=${yearAgo}&endTimestamp=${now}&${emailIdParams}`,
+          { headers: { 'Authorization': `Bearer ${credentials.apiKey}` } }
+        );
+        if (statsResp.ok) {
+          const statsData = await statsResp.json();
+          (statsData.results || []).forEach((s: any) => {
+            statsMap[s.emailId] = s;
+          });
+        }
+      }
+      
+      return (data.results || []).map((e: any) => {
+        const stats = statsMap[e.id] || {};
+        const sent = stats.counters?.sent || e.stats?.counters?.sent || 0;
+        const delivered = stats.counters?.delivered || e.stats?.counters?.delivered || sent;
+        const opened = stats.counters?.open || e.stats?.counters?.open || 0;
+        const clicked = stats.counters?.click || e.stats?.counters?.click || 0;
+        const bounced = stats.counters?.bounce || e.stats?.counters?.bounce || 0;
+        // HubSpot v3 uses 'unsubscribe' (not 'unsubscribed')
+        const unsubscribed = stats.counters?.unsubscribe || e.stats?.counters?.unsubscribe || 0;
+        const spamReports = stats.counters?.spamreport || e.stats?.counters?.spamreport || 0;
+        
         return {
           campaignId: e.id?.toString() || '',
           campaignName: e.name || 'Untitled',
           subject: e.subject,
           sentAt: e.publishDate ? new Date(e.publishDate).toISOString() : undefined,
-          totalSent: stats.counters?.sent || 0,
-          delivered: stats.counters?.delivered || 0,
-          opened: stats.counters?.open || 0,
-          clicked: stats.counters?.click || 0,
-          bounced: stats.counters?.bounce || 0,
-          unsubscribed: stats.counters?.unsubscribed || 0,
-          spamReports: stats.counters?.spamreport || 0,
-          openRate: stats.ratios?.openratio ? stats.ratios.openratio * 100 : 0,
-          clickRate: stats.ratios?.clickratio ? stats.ratios.clickratio * 100 : 0,
-          bounceRate: stats.ratios?.bounceratio ? stats.ratios.bounceratio * 100 : 0,
-          unsubscribeRate: stats.ratios?.unsubscribedratio ? stats.ratios.unsubscribedratio * 100 : 0,
+          totalSent: sent,
+          delivered,
+          opened,
+          clicked,
+          bounced,
+          unsubscribed,
+          spamReports,
+          openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+          clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+          bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+          unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
         };
       });
     } catch {
@@ -949,8 +1023,68 @@ const keapProvider: ESPProvider = {
     }
   },
 
-  async fetchCampaignStats(): Promise<ESPCampaignStats[]> {
-    return [];
+  async fetchCampaignStats(credentials: ESPCredentials, limit = 10): Promise<ESPCampaignStats[]> {
+    if (!credentials.apiKey) return [];
+    try {
+      // Get list of emails first
+      const listResponse = await fetch(`https://api.infusionsoft.com/crm/rest/v1/emails?limit=${limit}`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      
+      if (!listResponse.ok) {
+        console.log('Keap emails list endpoint failed:', listResponse.status);
+        return [];
+      }
+      
+      const listData = await listResponse.json();
+      const emails = listData.emails || [];
+      
+      // Fetch detailed stats for each email
+      const results: ESPCampaignStats[] = [];
+      for (const email of emails.slice(0, limit)) {
+        try {
+          const statsResponse = await fetch(`https://api.infusionsoft.com/crm/rest/v1/emails/${email.id}`, {
+            headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+          });
+          
+          if (statsResponse.ok) {
+            const e = await statsResponse.json();
+            const sent = e.sent_count || e.sent_to_count || 0;
+            const delivered = sent;
+            const opened = e.opened_count || e.unique_opens || 0;
+            const clicked = e.clicked_count || e.unique_clicks || 0;
+            const bounced = e.bounced_count || e.bounce_count || 0;
+            const unsubscribed = e.unsubscribed_count || e.unsubscribe_count || 0;
+            const spamReports = e.complaint_count || e.spam_count || 0;
+            
+            results.push({
+              campaignId: e.id?.toString() || '',
+              campaignName: e.subject || e.name || 'Untitled Email',
+              subject: e.subject,
+              sentAt: e.sent_date || e.date_sent,
+              totalSent: sent,
+              delivered,
+              opened,
+              clicked,
+              bounced,
+              unsubscribed,
+              spamReports,
+              openRate: sent > 0 ? (opened / sent) * 100 : 0,
+              clickRate: sent > 0 ? (clicked / sent) * 100 : 0,
+              bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+              unsubscribeRate: sent > 0 ? (unsubscribed / sent) * 100 : 0,
+            });
+          }
+        } catch {
+          // Skip emails that fail to fetch stats
+        }
+      }
+      
+      return results;
+    } catch (error) {
+      console.error('Keap fetchCampaignStats error:', error);
+      return [];
+    }
   },
 
   async sendEmail(): Promise<SendEmailResult> {
