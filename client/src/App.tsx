@@ -77,6 +77,7 @@ import { SendTimeOptimizer } from './components/SendTimeOptimizer';
 import { EmailBuilder } from './components/EmailBuilder';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { ESPStatsDashboard } from './components/ESPStatsDashboard';
+import { DeliverabilityIntelligence } from './components/DeliverabilityIntelligence';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
 import { 
   getHistory, 
@@ -94,7 +95,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -117,7 +118,7 @@ import type {
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
-type IntegrationsSubView = 'esp' | 'stats' | null;
+type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -1724,13 +1725,22 @@ function AppContent() {
         <ESPStatsDashboard onAnalyzeSubject={handleAnalyzeSubject} />
       )}
 
+      {integrationsSubView === 'intelligence' && (
+        <DeliverabilityIntelligence 
+          connections={espConnections.map(c => ({ 
+            provider: c.provider, 
+            isConnected: c.connected || false 
+          }))} 
+        />
+      )}
+
       {!integrationsSubView && (
         <div className="space-y-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">Integrations</h2>
             <p className="text-muted-foreground">Connect your email service providers and view campaign stats</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('esp')} data-testid="card-integrations-esp">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
@@ -1750,6 +1760,17 @@ function AppContent() {
                 <div>
                   <h3 className="font-semibold text-foreground">Campaign Stats</h3>
                   <p className="text-sm text-muted-foreground">Analyze ESP performance metrics</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('intelligence')} data-testid="card-integrations-intelligence">
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
+                  <Activity className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Trend Intelligence</h3>
+                  <p className="text-sm text-muted-foreground">Advanced deliverability insights</p>
                 </div>
               </CardContent>
             </Card>

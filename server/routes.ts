@@ -1743,6 +1743,239 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // Deliverability Intelligence Routes (Scale-tier only)
+  // ============================================
+
+  const { deliverabilityIntelligence } = await import('./services/deliverabilityIntelligence');
+
+  app.get('/api/deliverability/provider-health', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for deliverability intelligence features' });
+      }
+
+      const healthPanels = await deliverabilityIntelligence.getProviderHealthPanels(userId);
+      res.json(healthPanels);
+    } catch (error) {
+      console.error('Provider health error:', error);
+      res.status(500).json({ error: 'Failed to fetch provider health' });
+    }
+  });
+
+  app.get('/api/deliverability/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const unreadOnly = req.query.unread === 'true';
+      
+      const alerts = await storage.getDeliverabilityAlerts(userId, unreadOnly);
+      res.json(alerts);
+    } catch (error) {
+      console.error('Alerts fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch alerts' });
+    }
+  });
+
+  app.patch('/api/deliverability/alerts/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      await storage.markAlertRead(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Mark alert read error:', error);
+      res.status(500).json({ error: 'Failed to mark alert as read' });
+    }
+  });
+
+  app.patch('/api/deliverability/alerts/:id/dismiss', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      await storage.dismissAlert(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Dismiss alert error:', error);
+      res.status(500).json({ error: 'Failed to dismiss alert' });
+    }
+  });
+
+  app.post('/api/deliverability/risk-score', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for risk scoring' });
+      }
+
+      const { provider, subject, estimatedVolume } = req.body;
+      
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const riskAssessment = await deliverabilityIntelligence.calculateRiskScore(
+        userId,
+        providerValidation.data,
+        subject,
+        estimatedVolume
+      );
+
+      await storage.saveCampaignRiskScore({
+        userId,
+        provider: providerValidation.data,
+        subject,
+        estimatedVolume,
+        overallRisk: riskAssessment.overallRisk,
+        riskScore: riskAssessment.riskScore,
+        riskFactors: riskAssessment.riskFactors,
+        predictedOpenRate: Math.round(riskAssessment.predictions.openRate * 100),
+        predictedBounceRate: Math.round(riskAssessment.predictions.bounceRate * 100),
+        predictedComplaintRate: Math.round(riskAssessment.predictions.complaintRate * 10000),
+      });
+
+      res.json(riskAssessment);
+    } catch (error) {
+      console.error('Risk score error:', error);
+      res.status(500).json({ error: 'Failed to calculate risk score' });
+    }
+  });
+
+  app.post('/api/deliverability/compare', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for campaign comparison' });
+      }
+
+      const { campaignId1, campaignId2 } = req.body;
+      
+      if (!campaignId1 || !campaignId2) {
+        return res.status(400).json({ error: 'Two campaign IDs required for comparison' });
+      }
+
+      const comparison = await deliverabilityIntelligence.compareCampaigns(
+        userId,
+        campaignId1,
+        campaignId2
+      );
+
+      res.json(comparison);
+    } catch (error: any) {
+      console.error('Campaign comparison error:', error);
+      res.status(500).json({ error: error.message || 'Failed to compare campaigns' });
+    }
+  });
+
+  app.get('/api/deliverability/campaign-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const provider = req.query.provider as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const history = await storage.getCampaignHistory(userId, provider, limit);
+      res.json(history);
+    } catch (error) {
+      console.error('Campaign history error:', error);
+      res.status(500).json({ error: 'Failed to fetch campaign history' });
+    }
+  });
+
+  app.get('/api/deliverability/baselines', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const provider = req.query.provider as string | undefined;
+      
+      const baselines = await storage.getBaselines(userId, provider);
+      res.json(baselines);
+    } catch (error) {
+      console.error('Baselines fetch error:', error);
+      res.status(500).json({ error: 'Failed to fetch baselines' });
+    }
+  });
+
+  app.get('/api/deliverability/template-health', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for template health tracking' });
+      }
+
+      const templates = await storage.getTemplateHealth(userId);
+      res.json(templates);
+    } catch (error) {
+      console.error('Template health error:', error);
+      res.status(500).json({ error: 'Failed to fetch template health' });
+    }
+  });
+
+  app.get('/api/deliverability/frequency-tracking', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for frequency tracking' });
+      }
+
+      const provider = req.query.provider as string | undefined;
+      const tracking = await storage.getSendFrequencyTracking(userId, provider);
+      res.json(tracking);
+    } catch (error) {
+      console.error('Frequency tracking error:', error);
+      res.status(500).json({ error: 'Failed to fetch frequency tracking' });
+    }
+  });
+
+  app.post('/api/deliverability/sync', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { provider } = req.body;
+      
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
+      if (!connection || !connection.isConnected) {
+        return res.status(404).json({ error: 'ESP connection not found' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
+      };
+
+      const stats = await fetchESPStats(providerValidation.data, credentials);
+      
+      if (stats.campaigns && stats.campaigns.length > 0) {
+        await deliverabilityIntelligence.syncCampaignHistory(
+          userId, 
+          providerValidation.data, 
+          stats.campaigns
+        );
+      }
+
+      res.json({ success: true, campaignsSynced: stats.campaigns?.length || 0 });
+    } catch (error) {
+      console.error('Deliverability sync error:', error);
+      res.status(500).json({ error: 'Failed to sync campaign data' });
+    }
+  });
+
   // Contact form endpoint
   app.post('/api/contact', async (req, res) => {
     try {

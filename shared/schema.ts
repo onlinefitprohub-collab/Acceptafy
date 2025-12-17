@@ -751,3 +751,225 @@ export const insertContactMessageSchema = createInsertSchema(contactMessages).om
   status: true,
   createdAt: true,
 });
+
+// ============================================
+// ESP Deliverability Intelligence Tables
+// ============================================
+
+// Historical campaign data for trend analysis
+export const espCampaignHistory = pgTable("esp_campaign_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  campaignId: varchar("campaign_id").notNull(),
+  campaignName: varchar("campaign_name"),
+  subject: text("subject"),
+  sentAt: timestamp("sent_at"),
+  totalSent: integer("total_sent").default(0),
+  delivered: integer("delivered").default(0),
+  opened: integer("opened").default(0),
+  clicked: integer("clicked").default(0),
+  bounced: integer("bounced").default(0),
+  unsubscribed: integer("unsubscribed").default(0),
+  spamReports: integer("spam_reports").default(0),
+  openRate: integer("open_rate").default(0), // Stored as percentage * 100
+  clickRate: integer("click_rate").default(0),
+  bounceRate: integer("bounce_rate").default(0),
+  unsubscribeRate: integer("unsubscribe_rate").default(0),
+  // Provider-specific domain stats (JSON for flexibility)
+  domainStats: jsonb("domain_stats"), // {gmail: {...}, outlook: {...}, yahoo: {...}}
+  syncedAt: timestamp("synced_at").defaultNow(),
+}, (table) => [
+  index("idx_campaign_history_user").on(table.userId),
+  index("idx_campaign_history_provider").on(table.userId, table.provider),
+  index("idx_campaign_history_sent").on(table.sentAt),
+]);
+
+export type ESPCampaignHistory = typeof espCampaignHistory.$inferSelect;
+export type InsertESPCampaignHistory = typeof espCampaignHistory.$inferInsert;
+
+// Baseline metrics calculated from historical data (30-day rolling averages)
+export const espBaselines = pgTable("esp_baselines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  domain: varchar("domain"), // null = aggregate, 'gmail.com', 'outlook.com', etc.
+  // Baseline metrics (30-day averages)
+  avgOpenRate: integer("avg_open_rate").default(0), // * 100 for precision
+  avgClickRate: integer("avg_click_rate").default(0),
+  avgBounceRate: integer("avg_bounce_rate").default(0),
+  avgComplaintRate: integer("avg_complaint_rate").default(0),
+  avgUnsubscribeRate: integer("avg_unsubscribe_rate").default(0),
+  avgDeliveryRate: integer("avg_delivery_rate").default(0),
+  // Variance thresholds for alerts
+  openRateStdDev: integer("open_rate_std_dev").default(0),
+  bounceRateStdDev: integer("bounce_rate_std_dev").default(0),
+  // Volume baselines
+  avgCampaignVolume: integer("avg_campaign_volume").default(0),
+  avgSendsPerWeek: integer("avg_sends_per_week").default(0),
+  // Tracking
+  campaignsAnalyzed: integer("campaigns_analyzed").default(0),
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_baselines_user_provider").on(table.userId, table.provider),
+]);
+
+export type ESPBaseline = typeof espBaselines.$inferSelect;
+export type InsertESPBaseline = typeof espBaselines.$inferInsert;
+
+// Deliverability alerts when metrics deviate from baseline
+export const deliverabilityAlerts = pgTable("deliverability_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  alertType: varchar("alert_type").notNull(), // 'bounce_spike', 'complaint_spike', 'engagement_drop', 'deferral_increase'
+  severity: varchar("severity").notNull(), // 'info', 'warning', 'critical'
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  metric: varchar("metric"), // 'openRate', 'bounceRate', etc.
+  currentValue: integer("current_value"),
+  baselineValue: integer("baseline_value"),
+  deviationFactor: integer("deviation_factor"), // How many times baseline (e.g., 300 = 3x)
+  domain: varchar("domain"), // Which provider domain affected (gmail.com, etc.)
+  campaignId: varchar("campaign_id"),
+  isRead: boolean("is_read").default(false),
+  isDismissed: boolean("is_dismissed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_alerts_user").on(table.userId),
+  index("idx_alerts_unread").on(table.userId, table.isRead),
+]);
+
+export type DeliverabilityAlert = typeof deliverabilityAlerts.$inferSelect;
+export type InsertDeliverabilityAlert = typeof deliverabilityAlerts.$inferInsert;
+
+// Pre-send risk scores for campaigns
+export const campaignRiskScores = pgTable("campaign_risk_scores", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider"),
+  // Campaign identifiers
+  subject: text("subject"),
+  templateName: varchar("template_name"),
+  segmentName: varchar("segment_name"),
+  estimatedVolume: integer("estimated_volume"),
+  // Risk assessment
+  overallRisk: varchar("overall_risk").notNull(), // 'low', 'medium', 'high'
+  riskScore: integer("risk_score").default(0), // 0-100
+  riskFactors: jsonb("risk_factors"), // Array of {factor, impact, recommendation}
+  // Predictions based on historical data
+  predictedOpenRate: integer("predicted_open_rate"),
+  predictedBounceRate: integer("predicted_bounce_rate"),
+  predictedComplaintRate: integer("predicted_complaint_rate"),
+  // Comparison to baseline
+  volumeVsBaseline: integer("volume_vs_baseline"), // Percentage difference
+  frequencyVsBaseline: integer("frequency_vs_baseline"),
+  // Metadata
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_risk_scores_user").on(table.userId),
+]);
+
+export type CampaignRiskScore = typeof campaignRiskScores.$inferSelect;
+export type InsertCampaignRiskScore = typeof campaignRiskScores.$inferInsert;
+
+// Template health tracking
+export const templateHealth = pgTable("template_health", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  templateId: varchar("template_id"),
+  templateName: varchar("template_name").notNull(),
+  provider: varchar("provider"),
+  // Performance metrics
+  timesUsed: integer("times_used").default(0),
+  avgOpenRate: integer("avg_open_rate").default(0),
+  avgClickRate: integer("avg_click_rate").default(0),
+  avgBounceRate: integer("avg_bounce_rate").default(0),
+  avgComplaintRate: integer("avg_complaint_rate").default(0),
+  // Domain-specific performance
+  gmailOpenRate: integer("gmail_open_rate"),
+  outlookOpenRate: integer("outlook_open_rate"),
+  yahooOpenRate: integer("yahoo_open_rate"),
+  // Health score
+  healthScore: integer("health_score").default(50), // 0-100
+  healthTrend: varchar("health_trend"), // 'improving', 'stable', 'declining'
+  lastUsedAt: timestamp("last_used_at"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_template_health_user").on(table.userId),
+]);
+
+export type TemplateHealth = typeof templateHealth.$inferSelect;
+export type InsertTemplateHealth = typeof templateHealth.$inferInsert;
+
+// Send frequency tracking for fatigue analysis
+export const sendFrequencyTracking = pgTable("send_frequency_tracking", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  segmentName: varchar("segment_name"),
+  // Weekly send patterns
+  sendsThisWeek: integer("sends_this_week").default(0),
+  sendsLastWeek: integer("sends_last_week").default(0),
+  avgSendsPerWeek: integer("avg_sends_per_week").default(0),
+  // Engagement vs frequency correlation
+  engagementAtCurrentFreq: integer("engagement_at_current_freq"),
+  optimalFrequency: integer("optimal_frequency"), // Recommended sends/week
+  frequencyRisk: varchar("frequency_risk"), // 'optimal', 'high', 'burnout'
+  // Fatigue indicators
+  unsubscribeTrend: varchar("unsubscribe_trend"), // 'stable', 'increasing', 'decreasing'
+  complaintTrend: varchar("complaint_trend"),
+  openRateTrend: varchar("open_rate_trend"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_frequency_user").on(table.userId),
+]);
+
+export type SendFrequencyTracking = typeof sendFrequencyTracking.$inferSelect;
+export type InsertSendFrequencyTracking = typeof sendFrequencyTracking.$inferInsert;
+
+// Zod schemas for API validation
+export const deliverabilityAlertSchema = z.object({
+  id: z.string(),
+  alertType: z.enum(['bounce_spike', 'complaint_spike', 'engagement_drop', 'deferral_increase', 'volume_spike', 'frequency_warning']),
+  severity: z.enum(['info', 'warning', 'critical']),
+  title: z.string(),
+  message: z.string(),
+  metric: z.string().optional(),
+  currentValue: z.number().optional(),
+  baselineValue: z.number().optional(),
+  deviationFactor: z.number().optional(),
+  domain: z.string().optional(),
+  campaignId: z.string().optional(),
+  isRead: z.boolean(),
+  createdAt: z.string(),
+});
+
+export type DeliverabilityAlertData = z.infer<typeof deliverabilityAlertSchema>;
+
+export const riskLevelSchema = z.enum(['low', 'medium', 'high']);
+export type RiskLevel = z.infer<typeof riskLevelSchema>;
+
+export const providerHealthSchema = z.object({
+  provider: z.string(),
+  domain: z.string(), // 'gmail.com', 'outlook.com', 'yahoo.com', 'aggregate'
+  metrics: z.object({
+    openRate: z.number(),
+    clickRate: z.number(),
+    bounceRate: z.number(),
+    complaintRate: z.number(),
+    deliveryRate: z.number(),
+  }),
+  baseline: z.object({
+    openRate: z.number(),
+    clickRate: z.number(),
+    bounceRate: z.number(),
+    complaintRate: z.number(),
+  }),
+  trend: z.enum(['improving', 'stable', 'declining']),
+  alerts: z.array(z.string()),
+});
+
+export type ProviderHealth = z.infer<typeof providerHealthSchema>;

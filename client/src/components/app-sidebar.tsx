@@ -30,6 +30,7 @@ import {
   BarChart3,
   Gift,
   Clock,
+  Activity,
   type LucideIcon
 } from 'lucide-react';
 
@@ -67,7 +68,7 @@ import { useGamification } from '@/hooks/use-gamification';
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
-type IntegrationsSubView = 'esp' | 'stats' | null;
+type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -477,6 +478,21 @@ export function AppSidebar({
                         >
                           <BarChart3 className="w-3 h-3" />
                           <span>Campaign Stats</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={integrationsSubView === 'intelligence'}
+                          onClick={() => {
+                            setActiveView('integrations');
+                            setIntegrationsSubView('intelligence');
+                            setToolsSubView(null);
+                            setDeliverabilitySubView(null);
+                          }}
+                          data-testid="nav-integrations-intelligence"
+                        >
+                          <Activity className="w-3 h-3" />
+                          <span>Trend Intelligence</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

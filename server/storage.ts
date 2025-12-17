@@ -10,6 +10,12 @@ import {
   contactMessages,
   passwordResetTokens,
   adminNotes,
+  espCampaignHistory,
+  espBaselines,
+  deliverabilityAlerts,
+  campaignRiskScores,
+  templateHealth,
+  sendFrequencyTracking,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -34,6 +40,18 @@ import {
   type PasswordResetToken,
   type AdminNote,
   type InsertAdminNote,
+  type ESPCampaignHistory,
+  type InsertESPCampaignHistory,
+  type ESPBaseline,
+  type InsertESPBaseline,
+  type DeliverabilityAlert,
+  type InsertDeliverabilityAlert,
+  type CampaignRiskScore,
+  type InsertCampaignRiskScore,
+  type TemplateHealth,
+  type InsertTemplateHealth,
+  type SendFrequencyTracking,
+  type InsertSendFrequencyTracking,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -149,6 +167,22 @@ export interface IStorage {
   // Admin Notes
   getAdminNotes(userId: string): Promise<AdminNote[]>;
   createAdminNote(note: InsertAdminNote): Promise<AdminNote>;
+  
+  // Deliverability Intelligence
+  getCampaignHistory(userId: string, provider?: string, limit?: number): Promise<ESPCampaignHistory[]>;
+  saveCampaignHistory(campaign: InsertESPCampaignHistory): Promise<ESPCampaignHistory>;
+  getBaselines(userId: string, provider?: string): Promise<ESPBaseline[]>;
+  upsertBaseline(baseline: InsertESPBaseline): Promise<ESPBaseline>;
+  getDeliverabilityAlerts(userId: string, unreadOnly?: boolean): Promise<DeliverabilityAlert[]>;
+  createDeliverabilityAlert(alert: InsertDeliverabilityAlert): Promise<DeliverabilityAlert>;
+  markAlertRead(alertId: string, userId: string): Promise<boolean>;
+  dismissAlert(alertId: string, userId: string): Promise<boolean>;
+  getCampaignRiskScores(userId: string, limit?: number): Promise<CampaignRiskScore[]>;
+  saveCampaignRiskScore(score: InsertCampaignRiskScore): Promise<CampaignRiskScore>;
+  getTemplateHealth(userId: string): Promise<TemplateHealth[]>;
+  upsertTemplateHealth(health: InsertTemplateHealth): Promise<TemplateHealth>;
+  getSendFrequencyTracking(userId: string, provider?: string): Promise<SendFrequencyTracking[]>;
+  upsertSendFrequencyTracking(tracking: InsertSendFrequencyTracking): Promise<SendFrequencyTracking>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1415,6 +1449,169 @@ export class DatabaseStorage implements IStorage {
         suggestedAction,
       };
     });
+  }
+
+  // ==========================================
+  // Deliverability Intelligence Methods
+  // ==========================================
+
+  async getCampaignHistory(userId: string, provider?: string, limit: number = 50): Promise<ESPCampaignHistory[]> {
+    if (provider) {
+      return db
+        .select()
+        .from(espCampaignHistory)
+        .where(and(eq(espCampaignHistory.userId, userId), eq(espCampaignHistory.provider, provider)))
+        .orderBy(desc(espCampaignHistory.sentAt))
+        .limit(limit);
+    }
+    return db
+      .select()
+      .from(espCampaignHistory)
+      .where(eq(espCampaignHistory.userId, userId))
+      .orderBy(desc(espCampaignHistory.sentAt))
+      .limit(limit);
+  }
+
+  async saveCampaignHistory(campaign: InsertESPCampaignHistory): Promise<ESPCampaignHistory> {
+    const [result] = await db
+      .insert(espCampaignHistory)
+      .values(campaign)
+      .onConflictDoUpdate({
+        target: [espCampaignHistory.userId, espCampaignHistory.campaignId],
+        set: {
+          ...campaign,
+          syncedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async getBaselines(userId: string, provider?: string): Promise<ESPBaseline[]> {
+    if (provider) {
+      return db
+        .select()
+        .from(espBaselines)
+        .where(and(eq(espBaselines.userId, userId), eq(espBaselines.provider, provider)));
+    }
+    return db.select().from(espBaselines).where(eq(espBaselines.userId, userId));
+  }
+
+  async upsertBaseline(baseline: InsertESPBaseline): Promise<ESPBaseline> {
+    const [result] = await db
+      .insert(espBaselines)
+      .values(baseline)
+      .onConflictDoUpdate({
+        target: [espBaselines.userId, espBaselines.provider],
+        set: {
+          ...baseline,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async getDeliverabilityAlerts(userId: string, unreadOnly: boolean = false): Promise<DeliverabilityAlert[]> {
+    if (unreadOnly) {
+      return db
+        .select()
+        .from(deliverabilityAlerts)
+        .where(and(
+          eq(deliverabilityAlerts.userId, userId),
+          eq(deliverabilityAlerts.isRead, false),
+          eq(deliverabilityAlerts.isDismissed, false)
+        ))
+        .orderBy(desc(deliverabilityAlerts.createdAt));
+    }
+    return db
+      .select()
+      .from(deliverabilityAlerts)
+      .where(and(eq(deliverabilityAlerts.userId, userId), eq(deliverabilityAlerts.isDismissed, false)))
+      .orderBy(desc(deliverabilityAlerts.createdAt));
+  }
+
+  async createDeliverabilityAlert(alert: InsertDeliverabilityAlert): Promise<DeliverabilityAlert> {
+    const [result] = await db.insert(deliverabilityAlerts).values(alert).returning();
+    return result;
+  }
+
+  async markAlertRead(alertId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .update(deliverabilityAlerts)
+      .set({ isRead: true })
+      .where(and(eq(deliverabilityAlerts.id, alertId), eq(deliverabilityAlerts.userId, userId)));
+    return true;
+  }
+
+  async dismissAlert(alertId: string, userId: string): Promise<boolean> {
+    const result = await db
+      .update(deliverabilityAlerts)
+      .set({ isDismissed: true })
+      .where(and(eq(deliverabilityAlerts.id, alertId), eq(deliverabilityAlerts.userId, userId)));
+    return true;
+  }
+
+  async getCampaignRiskScores(userId: string, limit: number = 20): Promise<CampaignRiskScore[]> {
+    return db
+      .select()
+      .from(campaignRiskScores)
+      .where(eq(campaignRiskScores.userId, userId))
+      .orderBy(desc(campaignRiskScores.createdAt))
+      .limit(limit);
+  }
+
+  async saveCampaignRiskScore(score: InsertCampaignRiskScore): Promise<CampaignRiskScore> {
+    const [result] = await db.insert(campaignRiskScores).values(score).returning();
+    return result;
+  }
+
+  async getTemplateHealth(userId: string): Promise<TemplateHealth[]> {
+    return db
+      .select()
+      .from(templateHealth)
+      .where(eq(templateHealth.userId, userId))
+      .orderBy(desc(templateHealth.healthScore));
+  }
+
+  async upsertTemplateHealth(health: InsertTemplateHealth): Promise<TemplateHealth> {
+    const [result] = await db
+      .insert(templateHealth)
+      .values(health)
+      .onConflictDoUpdate({
+        target: [templateHealth.userId, templateHealth.templateName],
+        set: {
+          ...health,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
+  }
+
+  async getSendFrequencyTracking(userId: string, provider?: string): Promise<SendFrequencyTracking[]> {
+    if (provider) {
+      return db
+        .select()
+        .from(sendFrequencyTracking)
+        .where(and(eq(sendFrequencyTracking.userId, userId), eq(sendFrequencyTracking.provider, provider)));
+    }
+    return db.select().from(sendFrequencyTracking).where(eq(sendFrequencyTracking.userId, userId));
+  }
+
+  async upsertSendFrequencyTracking(tracking: InsertSendFrequencyTracking): Promise<SendFrequencyTracking> {
+    const [result] = await db
+      .insert(sendFrequencyTracking)
+      .values(tracking)
+      .onConflictDoUpdate({
+        target: [sendFrequencyTracking.userId, sendFrequencyTracking.provider],
+        set: {
+          ...tracking,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return result;
   }
 }
 
