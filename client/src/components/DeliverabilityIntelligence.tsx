@@ -196,12 +196,16 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
       const response = await apiRequest('POST', '/api/deliverability/sync', { provider });
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data, provider) => {
       toast({
         title: 'Sync Complete',
         description: `Synced ${data.campaignsSynced} campaigns for trend analysis.`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/deliverability'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/provider-health'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/campaign-history', provider] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/template-health'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/frequency-tracking', provider] });
     },
     onError: () => {
       toast({
