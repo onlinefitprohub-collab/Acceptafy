@@ -606,7 +606,7 @@ export default function Landing() {
                 icon: Zap, 
                 step: "3", 
                 title: "Improve & Send", 
-                description: "Apply 1-click fixes, use smart rewrites, then ship with confidence.",
+                description: "Apply 1-click fixes, use smart rewrites, then send with confidence.",
                 color: "from-purple-500 to-pink-500"
               }
             ].map((item, index) => {
