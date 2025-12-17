@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, jsonb, index, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, jsonb, index, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -783,6 +783,7 @@ export const espCampaignHistory = pgTable("esp_campaign_history", {
   index("idx_campaign_history_user").on(table.userId),
   index("idx_campaign_history_provider").on(table.userId, table.provider),
   index("idx_campaign_history_sent").on(table.sentAt),
+  uniqueIndex("idx_campaign_history_unique").on(table.userId, table.campaignId),
 ]);
 
 export type ESPCampaignHistory = typeof espCampaignHistory.$inferSelect;
