@@ -1876,10 +1876,10 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/deliverability/campaign-history', isAuthenticated, async (req: any, res) => {
+  app.get('/api/deliverability/campaign-history/:provider?', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const provider = req.query.provider as string | undefined;
+      const provider = req.params.provider || req.query.provider as string | undefined;
       const limit = parseInt(req.query.limit as string) || 50;
       
       const history = await storage.getCampaignHistory(userId, provider, limit);
