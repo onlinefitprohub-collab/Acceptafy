@@ -1913,7 +1913,17 @@ export async function registerRoutes(
       }
 
       const templates = await storage.getTemplateHealth(userId);
-      res.json(templates);
+      const formattedTemplates = templates.map(t => ({
+        templateId: t.templateId || t.id,
+        templateName: t.templateName,
+        timesUsed: t.timesUsed || 0,
+        avgOpenRate: (t.avgOpenRate || 0) / 100,
+        avgClickRate: (t.avgClickRate || 0) / 100,
+        avgBounceRate: (t.avgBounceRate || 0) / 100,
+        trend: (t.healthTrend as 'improving' | 'stable' | 'declining') || 'stable',
+        lastUsed: t.lastUsedAt?.toISOString(),
+      }));
+      res.json(formattedTemplates);
     } catch (error) {
       console.error('Template health error:', error);
       res.status(500).json({ error: 'Failed to fetch template health' });
@@ -1930,8 +1940,94 @@ export async function registerRoutes(
       }
 
       const provider = req.query.provider as string | undefined;
-      const tracking = await storage.getSendFrequencyTracking(userId, provider);
-      res.json(tracking);
+      if (!provider) {
+        return res.json(null);
+      }
+
+      const trackingRecords = await storage.getSendFrequencyTracking(userId, provider);
+      const campaignHistory = await storage.getCampaignHistory(userId, provider as any, 30);
+      
+      if (trackingRecords.length === 0 && campaignHistory.length === 0) {
+        return res.json(null);
+      }
+
+      const tracking = trackingRecords[0];
+      
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const sendsThisWeek = campaignHistory.filter(
+        c => c.sentAt && new Date(c.sentAt) >= weekAgo
+      ).length;
+
+      const dayBreakdown: Record<string, { count: number; openRates: number[] }> = {
+        Sunday: { count: 0, openRates: [] },
+        Monday: { count: 0, openRates: [] },
+        Tuesday: { count: 0, openRates: [] },
+        Wednesday: { count: 0, openRates: [] },
+        Thursday: { count: 0, openRates: [] },
+        Friday: { count: 0, openRates: [] },
+        Saturday: { count: 0, openRates: [] },
+      };
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+      for (const campaign of campaignHistory) {
+        if (campaign.sentAt) {
+          const dayName = dayNames[new Date(campaign.sentAt).getDay()];
+          dayBreakdown[dayName].count++;
+          if (campaign.openRate) {
+            dayBreakdown[dayName].openRates.push(campaign.openRate / 100);
+          }
+        }
+      }
+
+      const dayOfWeekBreakdown = dayNames.map(day => ({
+        day,
+        count: dayBreakdown[day].count,
+        performance: dayBreakdown[day].openRates.length > 0
+          ? dayBreakdown[day].openRates.reduce((a, b) => a + b, 0) / dayBreakdown[day].openRates.length
+          : 0,
+      }));
+
+      const recommendations: string[] = [];
+      const currentSendsPerWeek = sendsThisWeek;
+      const baselineSendsPerWeek = tracking?.avgSendsPerWeek || 3;
+      
+      let fatigueRisk: 'low' | 'medium' | 'high' = 'low';
+      if (currentSendsPerWeek > baselineSendsPerWeek * 2) {
+        fatigueRisk = 'high';
+        recommendations.push('Consider reducing send frequency to prevent subscriber fatigue');
+      } else if (currentSendsPerWeek > baselineSendsPerWeek * 1.5) {
+        fatigueRisk = 'medium';
+        recommendations.push('Monitor engagement closely - your send frequency is above average');
+      }
+      
+      if (tracking?.unsubscribeTrend === 'increasing') {
+        recommendations.push('Unsubscribe rates are increasing - review content quality and targeting');
+      }
+      if (tracking?.openRateTrend === 'decreasing') {
+        recommendations.push('Open rates are declining - consider A/B testing subject lines');
+      }
+
+      const bestDays = [...dayOfWeekBreakdown]
+        .filter(d => d.count > 0)
+        .sort((a, b) => b.performance - a.performance)
+        .slice(0, 2);
+      
+      const optimalSendTimes = bestDays.map(d => d.day);
+      if (optimalSendTimes.length === 0) {
+        optimalSendTimes.push('Tuesday', 'Thursday');
+      }
+
+      const response = {
+        currentSendsPerWeek,
+        baselineSendsPerWeek,
+        fatigueRisk,
+        recommendations: recommendations.length > 0 ? recommendations : ['Send frequency looks healthy - keep up the good work!'],
+        optimalSendTimes,
+        dayOfWeekBreakdown,
+      };
+
+      res.json(response);
     } catch (error) {
       console.error('Frequency tracking error:', error);
       res.status(500).json({ error: 'Failed to fetch frequency tracking' });

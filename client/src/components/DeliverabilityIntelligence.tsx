@@ -39,6 +39,11 @@ import {
   ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
+  GitCompare,
+  FileText,
+  Calendar,
+  Gauge,
+  Info,
 } from 'lucide-react';
 import {
   Tooltip,
@@ -114,6 +119,39 @@ interface CampaignHistory {
   provider: string;
 }
 
+interface CampaignComparison {
+  campaign1: CampaignHistory;
+  campaign2: CampaignHistory;
+  differences: Array<{
+    metric: string;
+    value1: number;
+    value2: number;
+    change: number;
+    impact: string;
+  }>;
+  insights: string[];
+}
+
+interface TemplateHealth {
+  templateId: string;
+  templateName: string;
+  timesUsed: number;
+  avgOpenRate: number;
+  avgClickRate: number;
+  avgBounceRate: number;
+  trend: 'improving' | 'stable' | 'declining';
+  lastUsed?: string;
+}
+
+interface FrequencyInsights {
+  currentSendsPerWeek: number;
+  baselineSendsPerWeek: number;
+  fatigueRisk: 'low' | 'medium' | 'high';
+  recommendations: string[];
+  optimalSendTimes: string[];
+  dayOfWeekBreakdown: Array<{ day: string; count: number; performance: number }>;
+}
+
 interface DeliverabilityIntelligenceProps {
   connections: Array<{ provider: string; isConnected: boolean }>;
 }
@@ -141,6 +179,16 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
   const { data: campaignHistory, isLoading: loadingHistory } = useQuery<CampaignHistory[]>({
     queryKey: ['/api/deliverability/campaign-history', selectedProvider],
     enabled: connectedProviders.length > 0,
+  });
+
+  const { data: templateHealth, isLoading: loadingTemplates } = useQuery<TemplateHealth[]>({
+    queryKey: ['/api/deliverability/template-health'],
+    enabled: connectedProviders.length > 0,
+  });
+
+  const { data: frequencyInsights, isLoading: loadingFrequency } = useQuery<FrequencyInsights>({
+    queryKey: ['/api/deliverability/frequency-tracking', selectedProvider],
+    enabled: connectedProviders.length > 0 && !!selectedProvider,
   });
 
   const syncMutation = useMutation({
@@ -193,6 +241,20 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
     },
     onSuccess: () => {
       refetchAlerts();
+    },
+  });
+
+  const compareMutation = useMutation({
+    mutationFn: async (data: { campaignId1: string; campaignId2: string }) => {
+      const response = await apiRequest('POST', '/api/deliverability/compare', data);
+      return response.json() as Promise<CampaignComparison>;
+    },
+    onError: () => {
+      toast({
+        title: 'Comparison Failed',
+        description: 'Could not compare campaigns.',
+        variant: 'destructive',
+      });
     },
   });
 
@@ -618,6 +680,324 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
           </CardContent>
         </Card>
       </div>
+
+      <Accordion type="single" collapsible className="space-y-2">
+        <AccordionItem value="compare" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <GitCompare className="w-5 h-5" />
+              <span>Campaign Comparison</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Compare two campaigns to identify what changed and understand performance differences.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>First Campaign</Label>
+                  <Select value={compareId1} onValueChange={setCompareId1}>
+                    <SelectTrigger data-testid="select-compare-campaign-1">
+                      <SelectValue placeholder="Select campaign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaignHistory?.map(c => (
+                        <SelectItem key={c.campaignId} value={c.campaignId}>
+                          {c.campaignName || c.subject || c.campaignId}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Second Campaign</Label>
+                  <Select value={compareId2} onValueChange={setCompareId2}>
+                    <SelectTrigger data-testid="select-compare-campaign-2">
+                      <SelectValue placeholder="Select campaign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaignHistory?.filter(c => c.campaignId !== compareId1).map(c => (
+                        <SelectItem key={c.campaignId} value={c.campaignId}>
+                          {c.campaignName || c.subject || c.campaignId}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <Button
+                onClick={() => compareMutation.mutate({ campaignId1: compareId1, campaignId2: compareId2 })}
+                disabled={!compareId1 || !compareId2 || compareMutation.isPending}
+                data-testid="button-compare-campaigns"
+              >
+                {compareMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <GitCompare className="w-4 h-4 mr-2" />
+                )}
+                Compare Campaigns
+              </Button>
+
+              {compareMutation.data && (
+                <div className="mt-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">{compareMutation.data.campaign1.campaignName || 'Campaign 1'}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {compareMutation.data.campaign1.sentAt ? new Date(compareMutation.data.campaign1.sentAt).toLocaleDateString() : 'No date'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-sm space-y-1">
+                        <p>Sent: {compareMutation.data.campaign1.totalSent.toLocaleString()}</p>
+                        <p>Open: {(compareMutation.data.campaign1.openRate / 100).toFixed(1)}%</p>
+                        <p>Click: {(compareMutation.data.campaign1.clickRate / 100).toFixed(1)}%</p>
+                        <p>Bounce: {(compareMutation.data.campaign1.bounceRate / 100).toFixed(1)}%</p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">{compareMutation.data.campaign2.campaignName || 'Campaign 2'}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {compareMutation.data.campaign2.sentAt ? new Date(compareMutation.data.campaign2.sentAt).toLocaleDateString() : 'No date'}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-sm space-y-1">
+                        <p>Sent: {compareMutation.data.campaign2.totalSent.toLocaleString()}</p>
+                        <p>Open: {(compareMutation.data.campaign2.openRate / 100).toFixed(1)}%</p>
+                        <p>Click: {(compareMutation.data.campaign2.clickRate / 100).toFixed(1)}%</p>
+                        <p>Bounce: {(compareMutation.data.campaign2.bounceRate / 100).toFixed(1)}%</p>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {compareMutation.data.differences.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Metric Changes</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        {compareMutation.data.differences.map((diff, idx) => (
+                          <div key={idx} className="p-3 rounded-lg border text-center">
+                            <p className="text-xs text-muted-foreground mb-1">{diff.metric}</p>
+                            <p className={`font-medium ${
+                              diff.impact === 'positive' ? 'text-green-500' : 
+                              diff.impact === 'negative' ? 'text-red-500' : 'text-muted-foreground'
+                            }`}>
+                              {diff.change > 0 ? '+' : ''}{diff.change.toFixed(1)}%
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {compareMutation.data.insights.length > 0 && (
+                    <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                      <h4 className="font-medium text-sm flex items-center gap-2">
+                        <Info className="w-4 h-4" />
+                        Insights
+                      </h4>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        {compareMutation.data.insights.map((insight, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <ChevronRight className="w-4 h-4 mt-0.5 shrink-0" />
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="templates" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              <span>Template Health</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            {loadingTemplates ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16" />
+                <Skeleton className="h-16" />
+              </div>
+            ) : templateHealth && templateHealth.length > 0 ? (
+              <div className="space-y-2">
+                {templateHealth.map((template) => (
+                  <div
+                    key={template.templateId}
+                    className="p-3 rounded-lg border flex items-center justify-between"
+                    data-testid={`template-health-${template.templateId}`}
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{template.templateName}</p>
+                        <div className="flex items-center gap-1">
+                          {getTrendIcon(template.trend)}
+                          <span className="text-xs text-muted-foreground">{template.trend}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Used {template.timesUsed} times
+                        {template.lastUsed && ` • Last used ${new Date(template.lastUsed).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                    <div className="flex gap-4 text-sm">
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="text-green-500 font-medium">{template.avgOpenRate.toFixed(1)}%</span>
+                        </TooltipTrigger>
+                        <TooltipContent>Avg Open Rate</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className="text-blue-500 font-medium">{template.avgClickRate.toFixed(1)}%</span>
+                        </TooltipTrigger>
+                        <TooltipContent>Avg Click Rate</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span className={`font-medium ${template.avgBounceRate > 3 ? 'text-red-500' : 'text-muted-foreground'}`}>
+                            {template.avgBounceRate.toFixed(1)}%
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>Avg Bounce Rate</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">
+                  No template data yet. Save and reuse templates to track their performance.
+                </p>
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="frequency" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              <span>Frequency & Fatigue Insights</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            {!selectedProvider ? (
+              <div className="py-6 text-center">
+                <Gauge className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">
+                  Select an ESP provider above to view frequency insights.
+                </p>
+              </div>
+            ) : loadingFrequency ? (
+              <div className="space-y-2">
+                <Skeleton className="h-24" />
+                <Skeleton className="h-32" />
+              </div>
+            ) : frequencyInsights ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="pt-4 text-center">
+                      <p className="text-2xl font-bold">{frequencyInsights.currentSendsPerWeek}</p>
+                      <p className="text-xs text-muted-foreground">Sends This Week</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4 text-center">
+                      <p className="text-2xl font-bold">{frequencyInsights.baselineSendsPerWeek}</p>
+                      <p className="text-xs text-muted-foreground">Baseline Per Week</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-4 text-center">
+                      <Badge variant={
+                        frequencyInsights.fatigueRisk === 'high' ? 'destructive' :
+                        frequencyInsights.fatigueRisk === 'medium' ? 'secondary' : 'outline'
+                      } className="text-base">
+                        {frequencyInsights.fatigueRisk.toUpperCase()}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1">Fatigue Risk</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {frequencyInsights.dayOfWeekBreakdown && frequencyInsights.dayOfWeekBreakdown.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Day Performance</h4>
+                    <div className="flex gap-1">
+                      {frequencyInsights.dayOfWeekBreakdown.map((day) => (
+                        <Tooltip key={day.day}>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="flex-1 h-12 rounded-md flex items-end justify-center pb-1"
+                              style={{
+                                backgroundColor: `hsl(var(--primary) / ${Math.min(day.performance / 100, 1)})`,
+                              }}
+                            >
+                              <span className="text-xs font-medium text-primary-foreground">
+                                {day.day.slice(0, 3)}
+                              </span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            {day.day}: {day.count} sends, {day.performance.toFixed(0)}% performance
+                          </TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {frequencyInsights.recommendations.length > 0 && (
+                  <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                    <h4 className="font-medium text-sm flex items-center gap-2">
+                      <Target className="w-4 h-4" />
+                      Recommendations
+                    </h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {frequencyInsights.recommendations.map((rec, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-green-500" />
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {frequencyInsights.optimalSendTimes.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-sm text-muted-foreground">Optimal times:</span>
+                    {frequencyInsights.optimalSendTimes.map((time, idx) => (
+                      <Badge key={idx} variant="secondary">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {time}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-6 text-center">
+                <Calendar className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground text-sm">
+                  No frequency data yet. Sync campaign data to analyze send patterns.
+                </p>
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
