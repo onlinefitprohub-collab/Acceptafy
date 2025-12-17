@@ -1930,7 +1930,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/deliverability/frequency-tracking', isAuthenticated, async (req: any, res) => {
+  app.get('/api/deliverability/frequency-tracking/:provider?', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -1939,7 +1939,7 @@ export async function registerRoutes(
         return res.status(403).json({ error: 'Scale tier required for frequency tracking' });
       }
 
-      const provider = req.query.provider as string | undefined;
+      const provider = req.params.provider || req.query.provider as string | undefined;
       if (!provider) {
         return res.json(null);
       }
