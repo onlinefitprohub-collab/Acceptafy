@@ -2,6 +2,8 @@ import { useState, useEffect, useId } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +37,10 @@ import {
   Copy,
   ExternalLink,
   Calendar,
-  Send
+  Send,
+  Plus,
+  Trash2,
+  Save
 } from 'lucide-react';
 import {
   Tooltip,
@@ -612,6 +617,34 @@ interface ESPStatsDashboardProps {
   onAnalyzeSubject?: (subject: string) => void;
 }
 
+const HIGHLEVEL_MANUAL_CAMPAIGNS_KEY = 'highlevel_manual_campaigns';
+
+interface ManualCampaignForm {
+  campaignName: string;
+  subject: string;
+  sentAt: string;
+  totalSent: string;
+  delivered: string;
+  opened: string;
+  clicked: string;
+  bounced: string;
+  unsubscribed: string;
+  spamReports: string;
+}
+
+const emptyManualCampaignForm: ManualCampaignForm = {
+  campaignName: '',
+  subject: '',
+  sentAt: '',
+  totalSent: '',
+  delivered: '',
+  opened: '',
+  clicked: '',
+  bounced: '',
+  unsubscribed: '',
+  spamReports: '',
+};
+
 export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -623,6 +656,91 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(true);
   const [selectedCampaign, setSelectedCampaign] = useState<{ campaign: ESPCampaignStats; provider: string } | null>(null);
+  const [showManualEntryForm, setShowManualEntryForm] = useState(false);
+  const [manualCampaignForm, setManualCampaignForm] = useState<ManualCampaignForm>(emptyManualCampaignForm);
+  const [manualCampaigns, setManualCampaigns] = useState<ESPCampaignStats[]>([]);
+
+  // Load manual campaigns from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(HIGHLEVEL_MANUAL_CAMPAIGNS_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as ESPCampaignStats[];
+        setManualCampaigns(parsed);
+      }
+    } catch (e) {
+      // Ignore parse errors
+    }
+  }, []);
+
+  const saveManualCampaign = () => {
+    const sent = parseInt(manualCampaignForm.totalSent) || 0;
+    const delivered = parseInt(manualCampaignForm.delivered) || sent;
+    const opened = parseInt(manualCampaignForm.opened) || 0;
+    const clicked = parseInt(manualCampaignForm.clicked) || 0;
+    const bounced = parseInt(manualCampaignForm.bounced) || 0;
+    const unsubscribed = parseInt(manualCampaignForm.unsubscribed) || 0;
+    const spamReports = parseInt(manualCampaignForm.spamReports) || 0;
+
+    if (!manualCampaignForm.campaignName.trim()) {
+      toast({
+        title: "Campaign name required",
+        description: "Please enter a name for this campaign",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (sent <= 0) {
+      toast({
+        title: "Invalid sent count",
+        description: "Please enter the number of emails sent",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newCampaign: ESPCampaignStats = {
+      campaignId: `hl-manual-${Date.now()}`,
+      campaignName: manualCampaignForm.campaignName.trim(),
+      subject: manualCampaignForm.subject.trim() || undefined,
+      sentAt: manualCampaignForm.sentAt || new Date().toISOString(),
+      totalSent: sent,
+      delivered,
+      opened,
+      clicked,
+      bounced,
+      unsubscribed,
+      spamReports,
+      openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
+      clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+      bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+      unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+    };
+
+    const updatedCampaigns = [...manualCampaigns, newCampaign];
+    setManualCampaigns(updatedCampaigns);
+    localStorage.setItem(HIGHLEVEL_MANUAL_CAMPAIGNS_KEY, JSON.stringify(updatedCampaigns));
+    
+    setManualCampaignForm(emptyManualCampaignForm);
+    setShowManualEntryForm(false);
+    
+    toast({
+      title: "Campaign added!",
+      description: `"${newCampaign.campaignName}" has been added to your stats`,
+    });
+  };
+
+  const deleteManualCampaign = (campaignId: string) => {
+    const updatedCampaigns = manualCampaigns.filter(c => c.campaignId !== campaignId);
+    setManualCampaigns(updatedCampaigns);
+    localStorage.setItem(HIGHLEVEL_MANUAL_CAMPAIGNS_KEY, JSON.stringify(updatedCampaigns));
+    
+    toast({
+      title: "Campaign removed",
+      description: "The campaign has been removed from your stats",
+    });
+  };
 
   const handleCopyToGrader = (subject: string) => {
     setSelectedCampaign(null);
@@ -881,6 +999,11 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
         allCampaigns.push({ campaign, provider: p.provider });
       });
     }
+  });
+
+  // Add manual HighLevel campaigns to the list
+  manualCampaigns.forEach(campaign => {
+    allCampaigns.push({ campaign, provider: 'highlevel' });
   });
 
   allCampaigns.sort((a, b) => {
@@ -1287,30 +1410,229 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                   <CardTitle className="text-base flex items-center justify-between gap-2">
                     <span>{ESP_PROVIDER_NAMES[providerStats.provider] || providerStats.provider}</span>
                     <Badge variant="secondary" className="text-xs" data-testid={`badge-campaigns-${providerStats.provider}`}>
-                      {providerStats.stats?.campaigns.length || 0} campaigns
+                      {providerStats.provider === 'highlevel' 
+                        ? manualCampaigns.length 
+                        : (providerStats.stats?.campaigns.length || 0)} campaigns
                     </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {providerStats.provider === 'highlevel' && (providerStats.stats?.campaigns.length || 0) === 0 ? (
-                    <div className="text-center py-4 space-y-3">
-                      <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
-                        <AlertTriangle className="w-6 h-6 text-amber-400" />
+                  {providerStats.provider === 'highlevel' ? (
+                    <div className="space-y-4">
+                      {/* Manual campaigns stats if any */}
+                      {manualCampaigns.length > 0 && (
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-muted-foreground text-xs">Sent</p>
+                            <p className="font-medium">{formatNumber(manualCampaigns.reduce((sum, c) => sum + c.totalSent, 0))}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">Delivered</p>
+                            <p className="font-medium">{formatNumber(manualCampaigns.reduce((sum, c) => sum + c.delivered, 0))}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">Open Rate</p>
+                            <p className={`font-medium ${getRateColor(manualCampaigns.reduce((sum, c) => sum + c.openRate, 0) / manualCampaigns.length, 'open')}`}>
+                              {(manualCampaigns.reduce((sum, c) => sum + c.openRate, 0) / manualCampaigns.length).toFixed(1)}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground text-xs">Click Rate</p>
+                            <p className={`font-medium ${getRateColor(manualCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / manualCampaigns.length, 'click')}`}>
+                              {(manualCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / manualCampaigns.length).toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Info about API limitation */}
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs text-amber-400 font-medium">No API Analytics</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Add campaigns manually from your HighLevel dashboard.
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-foreground">
-                          Analytics Not Available
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          HighLevel does not provide campaign statistics through their API.
-                        </p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50 text-left">
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">What you can do:</span>
-                          {' '}Use HighLevel for email sending and CRM sync. View your campaign statistics directly in your HighLevel dashboard.
-                        </p>
-                      </div>
+
+                      {/* Manual entry form */}
+                      {showManualEntryForm ? (
+                        <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-white/10">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">Add Campaign Stats</p>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => setShowManualEntryForm(false)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs">Campaign Name *</Label>
+                              <Input 
+                                placeholder="e.g., Black Friday Sale"
+                                value={manualCampaignForm.campaignName}
+                                onChange={(e) => setManualCampaignForm(prev => ({ ...prev, campaignName: e.target.value }))}
+                                className="h-8 text-sm"
+                                data-testid="input-campaign-name"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Subject Line</Label>
+                              <Input 
+                                placeholder="e.g., Don't miss 50% off!"
+                                value={manualCampaignForm.subject}
+                                onChange={(e) => setManualCampaignForm(prev => ({ ...prev, subject: e.target.value }))}
+                                className="h-8 text-sm"
+                                data-testid="input-subject"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Emails Sent *</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="1000"
+                                  value={manualCampaignForm.totalSent}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, totalSent: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-total-sent"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Delivered</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="980"
+                                  value={manualCampaignForm.delivered}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, delivered: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-delivered"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Opened</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="245"
+                                  value={manualCampaignForm.opened}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, opened: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-opened"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Clicked</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="50"
+                                  value={manualCampaignForm.clicked}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, clicked: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-clicked"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-xs">Bounced</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="20"
+                                  value={manualCampaignForm.bounced}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, bounced: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-bounced"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Unsubs</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="5"
+                                  value={manualCampaignForm.unsubscribed}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, unsubscribed: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-unsubscribed"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Spam</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="0"
+                                  value={manualCampaignForm.spamReports}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, spamReports: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-spam-reports"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <Button 
+                            onClick={saveManualCampaign}
+                            className="w-full gap-2"
+                            size="sm"
+                            data-testid="button-save-campaign"
+                          >
+                            <Save className="w-3 h-3" />
+                            Save Campaign
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button 
+                          onClick={() => setShowManualEntryForm(true)}
+                          variant="outline"
+                          className="w-full gap-2"
+                          size="sm"
+                          data-testid="button-add-manual-campaign"
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add Campaign Stats
+                        </Button>
+                      )}
+
+                      {/* List of manual campaigns */}
+                      {manualCampaigns.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground font-medium">Your Campaigns ({manualCampaigns.length})</p>
+                          <div className="space-y-1 max-h-40 overflow-y-auto">
+                            {manualCampaigns.map(campaign => (
+                              <div 
+                                key={campaign.campaignId}
+                                className="flex items-center justify-between p-2 rounded-md bg-white/5 hover-elevate group"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-medium truncate">{campaign.campaignName}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {campaign.openRate.toFixed(1)}% open · {campaign.clickRate.toFixed(1)}% click
+                                  </p>
+                                </div>
+                                <Button 
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => deleteManualCampaign(campaign.campaignId)}
+                                  data-testid={`button-delete-campaign-${campaign.campaignId}`}
+                                >
+                                  <Trash2 className="w-3 h-3 text-destructive" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       <a 
                         href="https://app.gohighlevel.com" 
                         target="_blank" 

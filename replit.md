@@ -130,9 +130,13 @@ Preferred communication style: Simple, everyday language.
   - XP (3): 1,000 to 10,000 XP earned
 - All achievements have corresponding unlock conditions in checkAndUnlockAchievements function
 
-**HighLevel ESP Integration (Limited Support)**:
+**HighLevel ESP Integration (Limited Support with Manual Entry)**:
 - HighLevel marked as "Limited Support" with visual badge indicator
 - Campaign analytics not available through HighLevel's API (platform limitation)
-- Removed non-functional CSV upload feature
+- Added manual campaign stats entry feature for HighLevel users
+  - Users can manually enter campaign name, subject line, sent/delivered/opened/clicked counts
+  - Automatically calculates open rate, click rate, bounce rate, unsubscribe rate
+  - Data persisted to localStorage for future sessions
+  - Manual campaigns appear in Recent Campaigns list and contribute to analytics
 - Clear user messaging explaining the limitation and suggesting to use HighLevel's native dashboard
 - Email sending and CRM sync features remain available
