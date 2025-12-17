@@ -1287,28 +1287,40 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground text-xs">Sent</p>
-                      <p className="font-medium">{formatNumber(providerStats.stats?.totals.totalSent || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Delivered</p>
-                      <p className="font-medium">{formatNumber(providerStats.stats?.totals.totalDelivered || 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Open Rate</p>
-                      <p className={`font-medium ${getRateColor(providerStats.stats?.totals.avgOpenRate || 0, 'open')}`}>
-                        {(providerStats.stats?.totals.avgOpenRate || 0).toFixed(1)}%
+                  {providerStats.provider === 'highlevel' && (providerStats.stats?.campaigns.length || 0) === 0 ? (
+                    <div className="text-center py-4 space-y-2">
+                      <AlertTriangle className="w-8 h-8 mx-auto text-yellow-500/70" />
+                      <p className="text-sm text-muted-foreground">
+                        HighLevel doesn't offer email stats through their API yet.
+                      </p>
+                      <p className="text-xs text-muted-foreground/70">
+                        This is a platform limitation. View your stats directly in HighLevel's dashboard under Marketing &gt; Emails.
                       </p>
                     </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Click Rate</p>
-                      <p className={`font-medium ${getRateColor(providerStats.stats?.totals.avgClickRate || 0, 'click')}`}>
-                        {(providerStats.stats?.totals.avgClickRate || 0).toFixed(1)}%
-                      </p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-muted-foreground text-xs">Sent</p>
+                        <p className="font-medium">{formatNumber(providerStats.stats?.totals.totalSent || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Delivered</p>
+                        <p className="font-medium">{formatNumber(providerStats.stats?.totals.totalDelivered || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Open Rate</p>
+                        <p className={`font-medium ${getRateColor(providerStats.stats?.totals.avgOpenRate || 0, 'open')}`}>
+                          {(providerStats.stats?.totals.avgOpenRate || 0).toFixed(1)}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground text-xs">Click Rate</p>
+                        <p className={`font-medium ${getRateColor(providerStats.stats?.totals.avgClickRate || 0, 'click')}`}>
+                          {(providerStats.stats?.totals.avgClickRate || 0).toFixed(1)}%
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                   {providerStats.stats?.lastSyncAt && (
                     <p className="text-xs text-muted-foreground" data-testid={`text-last-sync-${providerStats.provider}`}>
                       Last synced: {formatDate(providerStats.stats.lastSyncAt)}
