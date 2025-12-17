@@ -41,6 +41,8 @@ interface ESPProviderInfo {
   docsUrl: string;
   fields: { key: string; label: string; placeholder: string; type?: string }[];
   apiKeyHelp: string;
+  limitedSupport?: boolean;
+  limitedSupportReason?: string;
 }
 
 const ESP_PROVIDERS: ESPProviderInfo[] = [
@@ -65,13 +67,15 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     description: 'All-in-one CRM and marketing automation',
     color: 'green',
     gradient: 'from-green-500 to-emerald-500',
-    features: ['Email Sending', 'Campaign Stats', 'CRM Sync'],
+    features: ['Email Sending', 'CRM Sync'],
     authType: 'api_key',
     docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
     fields: [
       { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
     ],
-    apiKeyHelp: 'Go to Settings > Business Profile > scroll down to "API Key". Copy your Location API Key. For Agency access, use Settings > Company > API Keys.'
+    apiKeyHelp: 'Go to Settings > Business Profile > scroll down to "API Key". Copy your Location API Key. For Agency access, use Settings > Company > API Keys.',
+    limitedSupport: true,
+    limitedSupportReason: 'Campaign analytics not available via API'
   },
   {
     id: 'sendgrid',
@@ -344,12 +348,27 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                       </CardDescription>
                     </div>
                   </div>
-                  {connection?.connected && (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30" data-testid={`status-connected-${provider.id}`}>
-                      <Check className="w-3 h-3 mr-1" />
-                      Connected
-                    </Badge>
-                  )}
+                  <div className="flex flex-col items-end gap-1">
+                    {connection?.connected && (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30" data-testid={`status-connected-${provider.id}`}>
+                        <Check className="w-3 h-3 mr-1" />
+                        Connected
+                      </Badge>
+                    )}
+                    {provider.limitedSupport && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30" data-testid={`badge-limited-${provider.id}`}>
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Limited
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" className="max-w-xs text-sm">
+                          <p>{provider.limitedSupportReason || 'Some features are not available for this provider'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
 

@@ -737,7 +737,6 @@ const highlevelProvider: ESPProvider = {
           }
         });
         
-        console.log(`HighLevel ${endpoint.name} endpoint:`, response.status);
         
         if (response.ok) {
           const data = await response.json();
@@ -765,7 +764,6 @@ const highlevelProvider: ESPProvider = {
         // 403 means the token is valid but doesn't have access to this endpoint
         // This is OK - continue trying other endpoints, or accept with limited permissions
         if (response.status === 403) {
-          console.log(`HighLevel ${endpoint.name} returned 403 - token valid but limited permissions`);
           // If this is our first 403, the token IS valid - just limited access
           // Continue to try other endpoints, but note the token works
           continue;
@@ -785,7 +783,6 @@ const highlevelProvider: ESPProvider = {
       // Accept the connection anyway - some features may be limited
       if (credentials.apiKey.startsWith('pit-')) {
         // Private Integration Token format - accept it since 403 means it's valid
-        console.log('Accepting HighLevel Private Integration Token with limited permissions');
         return { accountName: 'HighLevel Account (Limited Access)', isValid: true };
       }
 
@@ -833,7 +830,6 @@ const highlevelProvider: ESPProvider = {
       for (const endpoint of endpoints) {
         if (!endpoint) continue;
         
-        console.log(`HighLevel trying endpoint: ${endpoint}`);
         const resp = await fetch(endpoint, {
           headers: { 
             'Authorization': `Bearer ${credentials.apiKey}`,
@@ -842,11 +838,9 @@ const highlevelProvider: ESPProvider = {
           }
         });
         
-        console.log(`HighLevel ${endpoint} response:`, resp.status);
         
         if (resp.ok) {
           const data = await resp.json();
-          console.log('HighLevel campaign data:', JSON.stringify(data).slice(0, 500));
           
           // Parse campaigns from response
           const campaigns = data.campaigns || data.emails || data.data || data.messages || [];
@@ -883,11 +877,6 @@ const highlevelProvider: ESPProvider = {
         }
       }
 
-      // For PITs with limited permissions, return empty but log the issue
-      if (isPIT) {
-        console.log('HighLevel PIT: No campaign stats available - token may need Email Marketing permissions');
-      }
-      
       return [];
     } catch (error) {
       console.error('HighLevel fetchCampaignStats error:', error);

@@ -129,3 +129,10 @@ Preferred communication style: Simple, everyday language.
   - Levels (5): Level 5 to 25
   - XP (3): 1,000 to 10,000 XP earned
 - All achievements have corresponding unlock conditions in checkAndUnlockAchievements function
+
+**HighLevel ESP Integration (Limited Support)**:
+- HighLevel marked as "Limited Support" with visual badge indicator
+- Campaign analytics not available through HighLevel's API (platform limitation)
+- Removed non-functional CSV upload feature
+- Clear user messaging explaining the limitation and suggesting to use HighLevel's native dashboard
+- Email sending and CRM sync features remain available

@@ -1,5 +1,4 @@
 import { useState, useEffect, useId } from 'react';
-import Papa from 'papaparse';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,9 +35,7 @@ import {
   Copy,
   ExternalLink,
   Calendar,
-  Send,
-  Upload,
-  HelpCircle
+  Send
 } from 'lucide-react';
 import {
   Tooltip,
@@ -642,170 +639,6 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
         variant: "destructive",
       });
     }
-  };
-
-  const handleHighLevelCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      transformHeader: (header: string) => header.toLowerCase().trim(),
-      complete: (results) => {
-        try {
-          const rows = results.data as Record<string, string>[];
-          
-          if (rows.length === 0) {
-            toast({
-              title: "Invalid CSV",
-              description: "The CSV file appears to be empty or has no data rows",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          const campaigns: ESPCampaignStats[] = [];
-
-          rows.forEach((row, index) => {
-            const findValue = (keys: string[]): string => {
-              for (const key of keys) {
-                const normalizedKey = key.toLowerCase();
-                for (const rowKey of Object.keys(row)) {
-                  if (rowKey.toLowerCase() === normalizedKey && row[rowKey]) {
-                    return row[rowKey];
-                  }
-                }
-              }
-              return '';
-            };
-
-            const parseNum = (keys: string[]): number => {
-              const val = findValue(keys);
-              return parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
-            };
-
-            const parseRate = (keys: string[]): number => {
-              const val = findValue(keys);
-              return parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
-            };
-
-            const sent = parseNum(['sent', 'total sent', 'emails sent', 'recipients', 'total']);
-            const delivered = parseNum(['delivered', 'total delivered']) || sent;
-            const opened = parseNum(['opened', 'opens', 'unique opens', 'total opens']);
-            const clicked = parseNum(['clicked', 'clicks', 'unique clicks', 'total clicks']);
-            const bounced = parseNum(['bounced', 'bounces', 'hard bounces', 'soft bounces']);
-            const unsubscribed = parseNum(['unsubscribed', 'unsubscribes', 'unsubs']);
-            const spamReports = parseNum(['spam', 'spam reports', 'complaints', 'spam complaints']);
-
-            campaigns.push({
-              campaignId: `hl-csv-${index + 1}`,
-              campaignName: findValue(['name', 'campaign name', 'campaign', 'email name']) || findValue(['subject']) || `Campaign ${index + 1}`,
-              subject: findValue(['subject', 'subject line', 'email subject']),
-              sentAt: findValue(['date', 'sent date', 'sent at', 'created', 'send date']) || undefined,
-              totalSent: sent,
-              delivered,
-              opened,
-              clicked,
-              bounced,
-              unsubscribed,
-              spamReports,
-              openRate: delivered > 0 ? parseRate(['open rate', 'openrate']) || (opened / delivered) * 100 : 0,
-              clickRate: delivered > 0 ? parseRate(['click rate', 'clickrate', 'ctr']) || (clicked / delivered) * 100 : 0,
-              bounceRate: sent > 0 ? parseRate(['bounce rate', 'bouncerate']) || (bounced / sent) * 100 : 0,
-              unsubscribeRate: delivered > 0 ? parseRate(['unsubscribe rate', 'unsub rate']) || (unsubscribed / delivered) * 100 : 0,
-            });
-          });
-
-          if (campaigns.length === 0) {
-            toast({
-              title: "No campaigns found",
-              description: "Could not parse any campaign data from the CSV",
-              variant: "destructive",
-            });
-            return;
-          }
-
-          const totals = {
-            totalCampaigns: campaigns.length,
-            totalSent: campaigns.reduce((sum, c) => sum + c.totalSent, 0),
-            totalDelivered: campaigns.reduce((sum, c) => sum + c.delivered, 0),
-            totalOpened: campaigns.reduce((sum, c) => sum + c.opened, 0),
-            totalClicked: campaigns.reduce((sum, c) => sum + c.clicked, 0),
-            avgOpenRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.openRate, 0) / campaigns.length : 0,
-            avgClickRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.clickRate, 0) / campaigns.length : 0,
-            avgBounceRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.bounceRate, 0) / campaigns.length : 0,
-          };
-
-          setStats(prev => {
-            if (!prev) {
-              return {
-                providers: [{
-                  provider: 'highlevel',
-                  stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() },
-                  error: null
-                }],
-                combinedStats: { campaigns, totals }
-              };
-            }
-
-            const updatedProviders = prev.providers.map(p => 
-              p.provider === 'highlevel' 
-                ? { ...p, stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() }, error: null }
-                : p
-            );
-
-            if (!updatedProviders.find(p => p.provider === 'highlevel')) {
-              updatedProviders.push({
-                provider: 'highlevel',
-                stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() },
-                error: null
-              });
-            }
-
-            const allCampaigns = updatedProviders.flatMap(p => p.stats?.campaigns || []);
-            const combinedTotals = {
-              totalCampaigns: allCampaigns.length,
-              totalSent: allCampaigns.reduce((sum, c) => sum + c.totalSent, 0),
-              totalDelivered: allCampaigns.reduce((sum, c) => sum + c.delivered, 0),
-              totalOpened: allCampaigns.reduce((sum, c) => sum + c.opened, 0),
-              totalClicked: allCampaigns.reduce((sum, c) => sum + c.clicked, 0),
-              avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
-              avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
-              avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
-            };
-
-            return {
-              ...prev,
-              providers: updatedProviders,
-              combinedStats: { campaigns: allCampaigns, totals: combinedTotals }
-            };
-          });
-
-          toast({
-            title: "CSV imported successfully!",
-            description: `Imported ${campaigns.length} campaign${campaigns.length !== 1 ? 's' : ''} from HighLevel`,
-          });
-        } catch (err) {
-          console.error('CSV parsing error:', err);
-          toast({
-            title: "Failed to parse CSV",
-            description: "Please ensure the file is a valid CSV with campaign data",
-            variant: "destructive",
-          });
-        }
-      },
-      error: (error) => {
-        console.error('Papa Parse error:', error);
-        toast({
-          title: "Failed to read file",
-          description: error.message || "There was an error reading the CSV file",
-          variant: "destructive",
-        });
-      }
-    });
-
-    event.target.value = '';
   };
 
   const isScaleMember = user?.subscriptionTier === 'scale';
@@ -1461,52 +1294,32 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                 <CardContent className="space-y-3">
                   {providerStats.provider === 'highlevel' && (providerStats.stats?.campaigns.length || 0) === 0 ? (
                     <div className="text-center py-4 space-y-3">
-                      <AlertTriangle className="w-8 h-8 mx-auto text-yellow-500/70" />
-                      <p className="text-sm text-muted-foreground">
-                        HighLevel doesn't offer email stats through their API yet.
-                      </p>
-                      <p className="text-xs text-muted-foreground/70">
-                        This is a platform limitation. You can import your stats manually using CSV.
-                      </p>
-                      <div className="flex items-center justify-center gap-2 pt-2">
-                        <label htmlFor="highlevel-csv-upload">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="cursor-pointer gap-2"
-                            asChild
-                          >
-                            <span>
-                              <Upload className="w-4 h-4" />
-                              Upload CSV
-                            </span>
-                          </Button>
-                          <input 
-                            id="highlevel-csv-upload"
-                            type="file"
-                            accept=".csv"
-                            className="hidden"
-                            onChange={handleHighLevelCsvUpload}
-                            data-testid="input-highlevel-csv"
-                          />
-                        </label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-[280px] text-left">
-                            <p className="font-medium mb-1">How to export from HighLevel:</p>
-                            <ol className="text-xs space-y-1 list-decimal list-inside">
-                              <li>Go to Marketing → Emails</li>
-                              <li>Select your campaign</li>
-                              <li>Click the "..." menu → Export</li>
-                              <li>Choose CSV format and download</li>
-                            </ol>
-                          </TooltipContent>
-                        </Tooltip>
+                      <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 flex items-center justify-center">
+                        <AlertTriangle className="w-6 h-6 text-amber-400" />
                       </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Analytics Not Available
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          HighLevel does not provide campaign statistics through their API.
+                        </p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50 text-left">
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">What you can do:</span>
+                          {' '}Use HighLevel for email sending and CRM sync. View your campaign statistics directly in your HighLevel dashboard.
+                        </p>
+                      </div>
+                      <a 
+                        href="https://app.gohighlevel.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Open HighLevel Dashboard
+                      </a>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 text-sm">
