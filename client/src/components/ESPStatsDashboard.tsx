@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from 'react';
+import Papa from 'papaparse';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -641,6 +642,170 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
         variant: "destructive",
       });
     }
+  };
+
+  const handleHighLevelCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      transformHeader: (header: string) => header.toLowerCase().trim(),
+      complete: (results) => {
+        try {
+          const rows = results.data as Record<string, string>[];
+          
+          if (rows.length === 0) {
+            toast({
+              title: "Invalid CSV",
+              description: "The CSV file appears to be empty or has no data rows",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const campaigns: ESPCampaignStats[] = [];
+
+          rows.forEach((row, index) => {
+            const findValue = (keys: string[]): string => {
+              for (const key of keys) {
+                const normalizedKey = key.toLowerCase();
+                for (const rowKey of Object.keys(row)) {
+                  if (rowKey.toLowerCase() === normalizedKey && row[rowKey]) {
+                    return row[rowKey];
+                  }
+                }
+              }
+              return '';
+            };
+
+            const parseNum = (keys: string[]): number => {
+              const val = findValue(keys);
+              return parseInt(val.replace(/[^0-9]/g, ''), 10) || 0;
+            };
+
+            const parseRate = (keys: string[]): number => {
+              const val = findValue(keys);
+              return parseFloat(val.replace(/[^0-9.]/g, '')) || 0;
+            };
+
+            const sent = parseNum(['sent', 'total sent', 'emails sent', 'recipients', 'total']);
+            const delivered = parseNum(['delivered', 'total delivered']) || sent;
+            const opened = parseNum(['opened', 'opens', 'unique opens', 'total opens']);
+            const clicked = parseNum(['clicked', 'clicks', 'unique clicks', 'total clicks']);
+            const bounced = parseNum(['bounced', 'bounces', 'hard bounces', 'soft bounces']);
+            const unsubscribed = parseNum(['unsubscribed', 'unsubscribes', 'unsubs']);
+            const spamReports = parseNum(['spam', 'spam reports', 'complaints', 'spam complaints']);
+
+            campaigns.push({
+              campaignId: `hl-csv-${index + 1}`,
+              campaignName: findValue(['name', 'campaign name', 'campaign', 'email name']) || findValue(['subject']) || `Campaign ${index + 1}`,
+              subject: findValue(['subject', 'subject line', 'email subject']),
+              sentAt: findValue(['date', 'sent date', 'sent at', 'created', 'send date']) || undefined,
+              totalSent: sent,
+              delivered,
+              opened,
+              clicked,
+              bounced,
+              unsubscribed,
+              spamReports,
+              openRate: delivered > 0 ? parseRate(['open rate', 'openrate']) || (opened / delivered) * 100 : 0,
+              clickRate: delivered > 0 ? parseRate(['click rate', 'clickrate', 'ctr']) || (clicked / delivered) * 100 : 0,
+              bounceRate: sent > 0 ? parseRate(['bounce rate', 'bouncerate']) || (bounced / sent) * 100 : 0,
+              unsubscribeRate: delivered > 0 ? parseRate(['unsubscribe rate', 'unsub rate']) || (unsubscribed / delivered) * 100 : 0,
+            });
+          });
+
+          if (campaigns.length === 0) {
+            toast({
+              title: "No campaigns found",
+              description: "Could not parse any campaign data from the CSV",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const totals = {
+            totalCampaigns: campaigns.length,
+            totalSent: campaigns.reduce((sum, c) => sum + c.totalSent, 0),
+            totalDelivered: campaigns.reduce((sum, c) => sum + c.delivered, 0),
+            totalOpened: campaigns.reduce((sum, c) => sum + c.opened, 0),
+            totalClicked: campaigns.reduce((sum, c) => sum + c.clicked, 0),
+            avgOpenRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.openRate, 0) / campaigns.length : 0,
+            avgClickRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.clickRate, 0) / campaigns.length : 0,
+            avgBounceRate: campaigns.length > 0 ? campaigns.reduce((sum, c) => sum + c.bounceRate, 0) / campaigns.length : 0,
+          };
+
+          setStats(prev => {
+            if (!prev) {
+              return {
+                providers: [{
+                  provider: 'highlevel',
+                  stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() },
+                  error: null
+                }],
+                combinedStats: { campaigns, totals }
+              };
+            }
+
+            const updatedProviders = prev.providers.map(p => 
+              p.provider === 'highlevel' 
+                ? { ...p, stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() }, error: null }
+                : p
+            );
+
+            if (!updatedProviders.find(p => p.provider === 'highlevel')) {
+              updatedProviders.push({
+                provider: 'highlevel',
+                stats: { provider: 'highlevel', campaigns, totals, lastSyncAt: new Date().toISOString() },
+                error: null
+              });
+            }
+
+            const allCampaigns = updatedProviders.flatMap(p => p.stats?.campaigns || []);
+            const combinedTotals = {
+              totalCampaigns: allCampaigns.length,
+              totalSent: allCampaigns.reduce((sum, c) => sum + c.totalSent, 0),
+              totalDelivered: allCampaigns.reduce((sum, c) => sum + c.delivered, 0),
+              totalOpened: allCampaigns.reduce((sum, c) => sum + c.opened, 0),
+              totalClicked: allCampaigns.reduce((sum, c) => sum + c.clicked, 0),
+              avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
+              avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
+              avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
+            };
+
+            return {
+              ...prev,
+              providers: updatedProviders,
+              combinedStats: { campaigns: allCampaigns, totals: combinedTotals }
+            };
+          });
+
+          toast({
+            title: "CSV imported successfully!",
+            description: `Imported ${campaigns.length} campaign${campaigns.length !== 1 ? 's' : ''} from HighLevel`,
+          });
+        } catch (err) {
+          console.error('CSV parsing error:', err);
+          toast({
+            title: "Failed to parse CSV",
+            description: "Please ensure the file is a valid CSV with campaign data",
+            variant: "destructive",
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Papa Parse error:', error);
+        toast({
+          title: "Failed to read file",
+          description: error.message || "There was an error reading the CSV file",
+          variant: "destructive",
+        });
+      }
+    });
+
+    event.target.value = '';
   };
 
   const isScaleMember = user?.subscriptionTier === 'scale';
@@ -1321,6 +1486,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                             type="file"
                             accept=".csv"
                             className="hidden"
+                            onChange={handleHighLevelCsvUpload}
                             data-testid="input-highlevel-csv"
                           />
                         </label>
