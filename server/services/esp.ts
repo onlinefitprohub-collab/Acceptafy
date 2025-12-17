@@ -30,10 +30,20 @@ export interface SendEmailResult {
   error?: string;
 }
 
+export interface CampaignContentResult {
+  success: boolean;
+  subject?: string;
+  htmlContent?: string;
+  textContent?: string;
+  previewText?: string;
+  error?: string;
+}
+
 export interface ESPProvider {
   validateCredentials(credentials: ESPCredentials): Promise<ESPAccountInfo>;
   fetchCampaignStats(credentials: ESPCredentials, limit?: number): Promise<ESPCampaignStats[]>;
   sendEmail(credentials: ESPCredentials, request: SendEmailRequest): Promise<SendEmailResult>;
+  fetchCampaignContent?(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult>;
 }
 
 const sendgridProvider: ESPProvider = {
@@ -165,6 +175,30 @@ const sendgridProvider: ESPProvider = {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  },
+
+  async fetchCampaignContent(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult> {
+    if (!credentials.apiKey) {
+      return { success: false, error: 'API key is required' };
+    }
+    try {
+      const response = await fetch(`https://api.sendgrid.com/v3/marketing/singlesends/${campaignId}`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      if (!response.ok) {
+        return { success: false, error: 'Campaign not found or API error' };
+      }
+      const data = await response.json();
+      return {
+        success: true,
+        subject: data.email_config?.subject,
+        htmlContent: data.email_config?.html_content,
+        textContent: data.email_config?.plain_content,
+        previewText: data.email_config?.custom_unsubscribe_url,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -232,6 +266,29 @@ const mailchimpProvider: ESPProvider = {
 
   async sendEmail(credentials: ESPCredentials, request: SendEmailRequest): Promise<SendEmailResult> {
     return { success: false, error: 'Mailchimp requires campaign-based sending. Use their campaign API instead.' };
+  },
+
+  async fetchCampaignContent(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult> {
+    if (!credentials.apiKey) {
+      return { success: false, error: 'API key is required' };
+    }
+    const dc = credentials.apiKey.split('-').pop() || 'us1';
+    try {
+      const response = await fetch(`https://${dc}.api.mailchimp.com/3.0/campaigns/${campaignId}/content`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      if (!response.ok) {
+        return { success: false, error: 'Campaign not found or API error' };
+      }
+      const data = await response.json();
+      return {
+        success: true,
+        htmlContent: data.html,
+        textContent: data.plain_text,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -382,6 +439,61 @@ const hubspotProvider: ESPProvider = {
 
   async sendEmail(): Promise<SendEmailResult> {
     return { success: false, error: 'HubSpot requires workflow-based sending.' };
+  },
+
+  async fetchCampaignContent(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult> {
+    if (!credentials.apiKey) {
+      return { success: false, error: 'API key is required' };
+    }
+    try {
+      // HubSpot v3: fetch email with content included using includeDetails parameter
+      const emailResp = await fetch(`https://api.hubapi.com/marketing/v3/emails/${campaignId}?includeDetails=true&archived=false`, {
+        headers: { 
+          'Authorization': `Bearer ${credentials.apiKey}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!emailResp.ok) {
+        return { success: false, error: 'Email not found or API error' };
+      }
+      const emailData = await emailResp.json();
+      
+      // HubSpot stores content in various locations depending on email type
+      let htmlContent = emailData.content?.html || 
+                        emailData.primaryRichTextModuleHtml || 
+                        emailData.htmlBody || '';
+      let textContent = emailData.content?.plainText || emailData.textBody || '';
+      
+      // If no content in main response, try fetching the rendered content
+      if (!htmlContent) {
+        try {
+          const contentResp = await fetch(`https://api.hubapi.com/marketing/v3/emails/${campaignId}/content?archived=false`, {
+            headers: { 
+              'Authorization': `Bearer ${credentials.apiKey}`,
+              'Accept': 'application/json'
+            }
+          });
+          if (contentResp.ok) {
+            const contentData = await contentResp.json();
+            htmlContent = contentData.html || contentData.body || contentData.content || '';
+            textContent = contentData.plainText || textContent;
+          }
+        } catch {
+          // Content endpoint may not exist for all email types
+        }
+      }
+      
+      return {
+        success: true,
+        subject: emailData.subject,
+        htmlContent,
+        textContent,
+        previewText: emailData.previewText,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -562,6 +674,80 @@ const klaviyoProvider: ESPProvider = {
 
   async sendEmail(): Promise<SendEmailResult> {
     return { success: false, error: 'Klaviyo requires flow-based or campaign-based sending.' };
+  },
+
+  async fetchCampaignContent(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult> {
+    if (!credentials.apiKey) {
+      return { success: false, error: 'API key is required' };
+    }
+    try {
+      // Klaviyo 2024 revision: get campaign with message relationship
+      const campaignResp = await fetch(`https://a.klaviyo.com/api/campaigns/${campaignId}/?include=campaign-messages`, {
+        headers: { 
+          'Authorization': `Klaviyo-API-Key ${credentials.apiKey}`,
+          'revision': '2024-10-15',
+          'Accept': 'application/json'
+        }
+      });
+      if (!campaignResp.ok) {
+        return { success: false, error: 'Campaign not found or API error' };
+      }
+      
+      const campaignData = await campaignResp.json();
+      const campaign = campaignData.data?.attributes || {};
+      
+      // Look for included messages in the response
+      const includedMessages = campaignData.included || [];
+      let htmlContent = '';
+      let textContent = '';
+      let subject = campaign.name || '';
+      let previewText = '';
+      
+      // Get content from included messages
+      for (const item of includedMessages) {
+        if (item.type === 'campaign-message') {
+          const msgAttrs = item.attributes || {};
+          if (msgAttrs.content) {
+            htmlContent = msgAttrs.content.html_body || msgAttrs.content.html || htmlContent;
+            textContent = msgAttrs.content.text_body || msgAttrs.content.text || textContent;
+          }
+          subject = msgAttrs.subject || subject;
+          previewText = msgAttrs.preview_text || previewText;
+          break; // Take first message
+        }
+      }
+      
+      // Fallback: try campaign-messages endpoint directly
+      if (!htmlContent) {
+        const msgResp = await fetch(`https://a.klaviyo.com/api/campaign-messages/?filter=equals(campaign.id,"${campaignId}")`, {
+          headers: { 
+            'Authorization': `Klaviyo-API-Key ${credentials.apiKey}`,
+            'revision': '2024-10-15',
+            'Accept': 'application/json'
+          }
+        });
+        if (msgResp.ok) {
+          const msgData = await msgResp.json();
+          const message = msgData.data?.[0]?.attributes || {};
+          if (message.content) {
+            htmlContent = message.content.html_body || message.content.html || '';
+            textContent = message.content.text_body || message.content.text || '';
+          }
+          subject = message.subject || subject;
+          previewText = message.preview_text || previewText;
+        }
+      }
+      
+      return {
+        success: true,
+        subject,
+        htmlContent,
+        textContent,
+        previewText,
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -986,6 +1172,51 @@ const ontraportProvider: ESPProvider = {
 
   async sendEmail(): Promise<SendEmailResult> {
     return { success: false, error: 'Ontraport requires sequence-based sending.' };
+  },
+
+  async fetchCampaignContent(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult> {
+    if (!credentials.apiKey || !credentials.appId) {
+      return { success: false, error: 'API key and App ID are required' };
+    }
+    try {
+      // Ontraport: Use Message endpoint with encode=0 to get raw content
+      const response = await fetch(`https://api.ontraport.com/1/Message?id=${campaignId}&encode=0`, {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        return { success: false, error: 'Message not found or API error' };
+      }
+      const data = await response.json();
+      const message = data.data || {};
+      
+      // Ontraport stores HTML in message_body, content, or email_message
+      let htmlContent = message.message_body || message.email_message || message.content || message.body || '';
+      
+      // Handle case where content might still be encoded
+      if (htmlContent && typeof htmlContent === 'string' && htmlContent.includes('%')) {
+        try {
+          // Only decode if it looks like URL encoding
+          if (/%[0-9A-Fa-f]{2}/.test(htmlContent)) {
+            htmlContent = decodeURIComponent(htmlContent);
+          }
+        } catch {
+          // Keep original if decoding fails
+        }
+      }
+      
+      return {
+        success: true,
+        subject: message.subject || message.alias || message.name,
+        htmlContent,
+        textContent: message.plaintext || message.text_body || '',
+      };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
   }
 };
 
@@ -1160,4 +1391,19 @@ export async function sendEmailViaESP(
 ): Promise<SendEmailResult> {
   const espProvider = getESPProvider(provider);
   return espProvider.sendEmail(credentials, request);
+}
+
+export async function fetchESPCampaignContent(
+  provider: ESPProviderType,
+  credentials: ESPCredentials,
+  campaignId: string
+): Promise<CampaignContentResult> {
+  const espProvider = getESPProvider(provider);
+  if (!espProvider.fetchCampaignContent) {
+    return { 
+      success: false, 
+      error: `${provider} does not support fetching email content` 
+    };
+  }
+  return espProvider.fetchCampaignContent(credentials, campaignId);
 }

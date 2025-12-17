@@ -1711,6 +1711,38 @@ export async function registerRoutes(
     }
   });
 
+  // Get campaign content for email analysis
+  app.get('/api/esp/:provider/campaign/:campaignId/content', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { provider, campaignId } = req.params;
+
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
+      if (!connection || !connection.isConnected) {
+        return res.status(404).json({ error: 'ESP connection not found or not active' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
+      };
+
+      const { fetchESPCampaignContent } = await import('./services/esp');
+      const result = await fetchESPCampaignContent(providerValidation.data, credentials, campaignId);
+
+      res.json(result);
+    } catch (error) {
+      console.error('ESP campaign content error:', error);
+      res.status(500).json({ success: false, error: 'Failed to fetch campaign content' });
+    }
+  });
+
   // Contact form endpoint
   app.post('/api/contact', async (req, res) => {
     try {

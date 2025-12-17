@@ -140,3 +140,13 @@ Preferred communication style: Simple, everyday language.
   - Manual campaigns appear in Recent Campaigns list and contribute to analytics
 - Clear user messaging explaining the limitation and suggesting to use HighLevel's native dashboard
 - Email sending and CRM sync features remain available
+
+**Email Body Analysis Feature**:
+- Added "Analyze Full Email Body" button to CampaignDetailModal
+- `fetchCampaignContent` method added to ESPProvider interface (optional method)
+- Backend route `GET /api/esp/:provider/campaign/:campaignId/content` for fetching email content
+- Supported ESPs for content fetching: SendGrid, Mailchimp, HubSpot, Klaviyo, Ontraport
+- Content fetched on-demand to avoid bloating payloads and respect API rate limits
+- HTML content is converted to text and passed to the email grader
+- Manual HighLevel campaigns show informative message that content isn't available
+- Unsupported ESPs display a message indicating the limitation

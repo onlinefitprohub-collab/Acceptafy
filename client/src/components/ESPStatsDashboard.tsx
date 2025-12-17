@@ -459,17 +459,23 @@ function CampaignDetailModal({
   provider, 
   isOpen, 
   onClose,
-  onCopyToGrader 
+  onCopyToGrader,
+  onAnalyzeFullEmail
 }: { 
   campaign: ESPCampaignStats | null; 
   provider: string;
   isOpen: boolean;
   onClose: () => void;
   onCopyToGrader: (subject: string) => void;
+  onAnalyzeFullEmail: (provider: string, campaignId: string) => void;
 }) {
   const { toast } = useToast();
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
   
   if (!campaign) return null;
+  
+  const isManualCampaign = campaign.campaignId.startsWith('hl-manual-');
+  const supportsContent = ['sendgrid', 'mailchimp', 'hubspot', 'klaviyo', 'ontraport'].includes(provider);
   
   const copySubject = () => {
     if (campaign.subject) {
@@ -478,6 +484,31 @@ function CampaignDetailModal({
         title: "Copied!",
         description: "Subject line copied to clipboard",
       });
+    }
+  };
+
+  const handleAnalyzeFullEmail = async () => {
+    if (isManualCampaign) {
+      toast({
+        title: "Not Available",
+        description: "Email body is not available for manually entered campaigns",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!supportsContent) {
+      toast({
+        title: "Not Supported",
+        description: `${ESP_PROVIDER_NAMES[provider] || provider} doesn't support fetching email content`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoadingContent(true);
+    try {
+      onAnalyzeFullEmail(provider, campaign.campaignId);
+    } finally {
+      setIsLoadingContent(false);
     }
   };
   
@@ -582,21 +613,66 @@ function CampaignDetailModal({
             </div>
           </div>
           
-          {campaign.subject && (
-            <div className="pt-4 border-t border-white/10">
-              <Button 
-                onClick={() => onCopyToGrader(campaign.subject || '')}
-                className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                data-testid="button-copy-to-grader"
-              >
-                <Sparkles className="w-4 h-4" />
-                Analyze Subject Line in Email Grader
-              </Button>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                Opens the email grader with your subject line pre-filled
-              </p>
-            </div>
-          )}
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            {campaign.subject && (
+              <div>
+                <Button 
+                  onClick={() => onCopyToGrader(campaign.subject || '')}
+                  className="w-full gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  data-testid="button-copy-to-grader"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Analyze Subject Line in Email Grader
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Opens the email grader with your subject line pre-filled
+                </p>
+              </div>
+            )}
+            
+            {supportsContent && !isManualCampaign && (
+              <div>
+                <Button 
+                  onClick={handleAnalyzeFullEmail}
+                  variant="outline"
+                  className="w-full gap-2"
+                  disabled={isLoadingContent}
+                  data-testid="button-analyze-full-email"
+                >
+                  {isLoadingContent ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading Email Content...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-4 h-4" />
+                      Analyze Full Email Body
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Fetches the email content from your ESP and analyzes it
+                </p>
+              </div>
+            )}
+
+            {isManualCampaign && (
+              <div className="p-3 rounded-lg bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Email body analysis is not available for manually entered campaigns
+                </p>
+              </div>
+            )}
+
+            {!supportsContent && !isManualCampaign && (
+              <div className="p-3 rounded-lg bg-muted/50 text-center">
+                <p className="text-xs text-muted-foreground">
+                  Email body analysis is not yet supported for {ESP_PROVIDER_NAMES[provider] || provider}
+                </p>
+              </div>
+            )}
+          </div>
           
           {!campaign.subject && (
             <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
@@ -754,6 +830,107 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
       toast({
         title: "No subject line",
         description: "This campaign doesn't have a subject line to analyze",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAnalyzeFullEmail = async (provider: string, campaignId: string) => {
+    try {
+      const response = await fetch(`/api/esp/${provider}/campaign/${campaignId}/content`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        toast({
+          title: "Content Not Available",
+          description: "Could not fetch email content from your ESP",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const data = await response.json();
+      
+      // Check for explicit failure
+      if (data.success === false) {
+        toast({
+          title: "Content Not Available",
+          description: data.error || "Could not fetch email content from your ESP",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check if we have actual content
+      const htmlContent = data.htmlContent || '';
+      const textContentFromResponse = data.textContent || '';
+      
+      if (!htmlContent && !textContentFromResponse) {
+        toast({
+          title: "No Email Content Found",
+          description: "This campaign doesn't have email body content available in your ESP",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Extract text content from HTML for grading, using DOMParser for safe extraction
+      let textContent = textContentFromResponse;
+      if (!textContent && htmlContent) {
+        try {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlContent, 'text/html');
+          
+          // Remove script, style, and other non-content elements
+          const elementsToRemove = doc.querySelectorAll('script, style, noscript, svg, head, meta, link');
+          elementsToRemove.forEach(el => el.remove());
+          
+          // Get text content preserving paragraph structure
+          const bodyContent = doc.body?.textContent || doc.documentElement?.textContent || '';
+          // Normalize whitespace: collapse multiple spaces/newlines but preserve paragraph breaks
+          textContent = bodyContent
+            .replace(/\s+/g, ' ')
+            .replace(/\s*\n\s*/g, '\n')
+            .trim();
+        } catch {
+          // Fallback to simple regex approach
+          const cleanHtml = htmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+            .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = cleanHtml;
+          textContent = tempDiv.textContent || tempDiv.innerText || '';
+        }
+      }
+      
+      // Check if extracted content is meaningful
+      const cleanedText = textContent.trim();
+      if (!cleanedText || cleanedText.length < 10) {
+        toast({
+          title: "Insufficient Content",
+          description: "The email content retrieved is too short to analyze",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Build full email content for analysis
+      const subject = data.subject || selectedCampaign?.campaign?.subject || '';
+      const fullContent = subject ? `Subject: ${subject}\n\n${cleanedText}` : cleanedText;
+      
+      setSelectedCampaign(null);
+      
+      if (onAnalyzeSubject) {
+        onAnalyzeSubject(fullContent);
+        toast({
+          title: "Email content loaded!",
+          description: "Opening the email grader with your full email",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to load content",
+        description: "There was an error fetching the email content",
         variant: "destructive",
       });
     }
@@ -1718,6 +1895,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
         isOpen={!!selectedCampaign}
         onClose={() => setSelectedCampaign(null)}
         onCopyToGrader={handleCopyToGrader}
+        onAnalyzeFullEmail={handleAnalyzeFullEmail}
       />
     </div>
   );
