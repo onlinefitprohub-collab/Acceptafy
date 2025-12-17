@@ -35,8 +35,15 @@ import {
   Copy,
   ExternalLink,
   Calendar,
-  Send
+  Send,
+  Upload,
+  HelpCircle
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ESPCampaignStats {
   campaignId: string;
@@ -1288,14 +1295,52 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                 </CardHeader>
                 <CardContent className="space-y-3">
                   {providerStats.provider === 'highlevel' && (providerStats.stats?.campaigns.length || 0) === 0 ? (
-                    <div className="text-center py-4 space-y-2">
+                    <div className="text-center py-4 space-y-3">
                       <AlertTriangle className="w-8 h-8 mx-auto text-yellow-500/70" />
                       <p className="text-sm text-muted-foreground">
                         HighLevel doesn't offer email stats through their API yet.
                       </p>
                       <p className="text-xs text-muted-foreground/70">
-                        This is a platform limitation. View your stats directly in HighLevel's dashboard under Marketing &gt; Emails.
+                        This is a platform limitation. You can import your stats manually using CSV.
                       </p>
+                      <div className="flex items-center justify-center gap-2 pt-2">
+                        <label htmlFor="highlevel-csv-upload">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="cursor-pointer gap-2"
+                            asChild
+                          >
+                            <span>
+                              <Upload className="w-4 h-4" />
+                              Upload CSV
+                            </span>
+                          </Button>
+                          <input 
+                            id="highlevel-csv-upload"
+                            type="file"
+                            accept=".csv"
+                            className="hidden"
+                            data-testid="input-highlevel-csv"
+                          />
+                        </label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[280px] text-left">
+                            <p className="font-medium mb-1">How to export from HighLevel:</p>
+                            <ol className="text-xs space-y-1 list-decimal list-inside">
+                              <li>Go to Marketing → Emails</li>
+                              <li>Select your campaign</li>
+                              <li>Click the "..." menu → Export</li>
+                              <li>Choose CSV format and download</li>
+                            </ol>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 gap-3 text-sm">
