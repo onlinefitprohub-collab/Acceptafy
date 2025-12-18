@@ -168,7 +168,7 @@ export function AppSidebar({
                       <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                         <Wand2 className="w-4 h-4" />
                       </div>
-                      <span className="font-medium">AI Tools</span>
+                      <span className="font-medium">Smart Tools</span>
                       <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${toolsOpen ? 'rotate-180' : ''}`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>

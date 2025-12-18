@@ -791,7 +791,7 @@ function AppContent() {
   const renderToolsView = () => (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">AI Tools</h2>
+        <h2 className="text-2xl font-bold text-foreground">Smart Tools</h2>
         <p className="text-muted-foreground">Powerful tools to optimize your emails</p>
       </div>
 
@@ -2267,7 +2267,7 @@ function AppContent() {
                   {activeView === 'dashboard' && 'Dashboard'}
                   {activeView === 'grader' && 'Email Grader'}
                   {activeView === 'history' && 'History'}
-                  {activeView === 'tools' && 'AI Tools'}
+                  {activeView === 'tools' && 'Smart Tools'}
                   {activeView === 'deliverability' && 'Deliverability Tools'}
                   {activeView === 'integrations' && 'Integrations'}
                   {activeView === 'account' && 'Account Settings'}
