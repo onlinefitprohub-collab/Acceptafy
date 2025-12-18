@@ -66,7 +66,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'calendar' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'calendar' | 'funnel' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
@@ -341,6 +341,19 @@ export function AppSidebar({
                         >
                           <Calendar className="w-3 h-3" />
                           <span>Content Calendar</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'funnel'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('funnel');
+                          }}
+                          data-testid="nav-tools-funnel"
+                        >
+                          <BarChart3 className="w-3 h-3" />
+                          <span>Campaign Funnel</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

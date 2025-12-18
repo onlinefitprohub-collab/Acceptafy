@@ -75,6 +75,7 @@ import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { SendTimeOptimizer } from './components/SendTimeOptimizer';
 import { EmailBuilder } from './components/EmailBuilder';
+import { CampaignFunnelVisualization } from './components/CampaignFunnelVisualization';
 import { ContentCalendar } from './components/ContentCalendar';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { ESPStatsDashboard } from './components/ESPStatsDashboard';
@@ -1434,6 +1435,10 @@ function AppContent() {
 
       {toolsSubView === 'calendar' && (
         <ContentCalendar />
+      )}
+
+      {toolsSubView === 'funnel' && (
+        <CampaignFunnelVisualization />
       )}
 
       {!toolsSubView && (

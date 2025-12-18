@@ -1069,6 +1069,123 @@ export async function registerRoutes(
     }
   });
 
+  // Campaign Funnel Analysis
+  app.post('/api/funnel/analyze', optionalAuth, async (req: any, res) => {
+    try {
+      const { campaign, stages, dropOffAnalysis } = req.body;
+      
+      if (!campaign || !stages || !dropOffAnalysis) {
+        return res.status(400).json({ error: 'Campaign data, stages, and drop-off analysis are required' });
+      }
+      
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey: process.env.AI_INTEGRATIONS_GOOGLE_GEMINI_API_KEY });
+      
+      const prompt = `You are an email marketing expert. Analyze this campaign funnel data and provide actionable recommendations.
+
+Campaign: ${campaign.name}
+Subject: ${campaign.subject}
+
+Funnel Metrics:
+- Sent: ${campaign.sent}
+- Delivered: ${campaign.delivered} (${((campaign.delivered / campaign.sent) * 100).toFixed(1)}% delivery rate)
+- Opened: ${campaign.opened} (${((campaign.opened / campaign.delivered) * 100).toFixed(1)}% open rate)
+- Clicked: ${campaign.clicked} (${((campaign.clicked / campaign.opened) * 100).toFixed(1)}% click rate)
+
+Drop-off Analysis:
+${dropOffAnalysis.map((d: any) => `- ${d.stage}: ${d.dropOffRate.toFixed(1)}% drop-off (${d.severity} severity)`).join('\n')}
+
+Provide 3-4 specific, actionable recommendations to improve this campaign's funnel performance. For each recommendation, identify:
+1. The stage it addresses (Sent → Delivered, Delivered → Opened, or Opened → Clicked)
+2. The specific issue identified
+3. A detailed, actionable recommendation
+4. The expected impact (high, medium, or low)
+
+Return your response as a JSON object with this exact structure:
+{
+  "recommendations": [
+    {
+      "stage": "Stage name",
+      "issue": "Brief description of the problem",
+      "recommendation": "Detailed actionable recommendation",
+      "impact": "high" | "medium" | "low"
+    }
+  ],
+  "overallAssessment": "Brief overall assessment of the campaign",
+  "priorityAction": "The single most important action to take"
+}`;
+
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash-001',
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        });
+        
+        const text = response.text ?? '';
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        
+        if (jsonMatch) {
+          const result = JSON.parse(jsonMatch[0]);
+          return res.json(result);
+        }
+      } catch (aiError) {
+        console.error('AI analysis error:', aiError);
+      }
+      
+      // Fallback recommendations based on the data
+      const recommendations = [];
+      
+      const deliveryRate = campaign.sent > 0 ? (campaign.delivered / campaign.sent) * 100 : 0;
+      const openRate = campaign.delivered > 0 ? (campaign.opened / campaign.delivered) * 100 : 0;
+      const clickRate = campaign.opened > 0 ? (campaign.clicked / campaign.opened) * 100 : 0;
+      
+      if (deliveryRate < 97) {
+        recommendations.push({
+          stage: 'Sent → Delivered',
+          issue: `Low delivery rate (${deliveryRate.toFixed(1)}%)`,
+          recommendation: 'Clean your email list to remove invalid addresses. Verify SPF, DKIM, and DMARC records are properly configured. Consider using a dedicated IP with good reputation.',
+          impact: 'high'
+        });
+      }
+      
+      if (openRate < 25) {
+        recommendations.push({
+          stage: 'Delivered → Opened',
+          issue: `Open rate below industry average (${openRate.toFixed(1)}%)`,
+          recommendation: 'A/B test subject lines with different approaches: curiosity-driven, benefit-focused, or personalized. Optimize send timing based on your audience\'s engagement patterns.',
+          impact: 'high'
+        });
+      }
+      
+      if (clickRate < 20) {
+        recommendations.push({
+          stage: 'Opened → Clicked',
+          issue: `Click-through rate needs improvement (${clickRate.toFixed(1)}%)`,
+          recommendation: 'Make CTAs more prominent with contrasting button colors. Place primary CTA above the fold. Use action-oriented language and create urgency.',
+          impact: 'medium'
+        });
+      }
+      
+      if (recommendations.length === 0) {
+        recommendations.push({
+          stage: 'Overall',
+          issue: 'Campaign performing well',
+          recommendation: 'Continue monitoring metrics and run incremental A/B tests to maintain strong performance.',
+          impact: 'low'
+        });
+      }
+      
+      res.json({
+        recommendations,
+        overallAssessment: `Campaign metrics: ${deliveryRate.toFixed(1)}% delivery, ${openRate.toFixed(1)}% opens, ${clickRate.toFixed(1)}% clicks.`,
+        priorityAction: recommendations[0]?.recommendation || 'Continue monitoring performance.'
+      });
+    } catch (error) {
+      console.error('Funnel analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze funnel' });
+    }
+  });
+
   // Email Templates API
   app.get('/api/templates', isAuthenticated, async (req: any, res) => {
     try {
