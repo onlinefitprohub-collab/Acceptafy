@@ -189,3 +189,16 @@ Preferred communication style: Simple, everyday language.
   - Priority action and overall assessment summaries
 - Sample data for demonstration with note to connect ESP for real data
 - Navigation: Accessible via Tools > Campaign Funnel in sidebar
+
+**Daily Rate Limiting System (Anti-Abuse)**:
+- New database table: `daily_usage_counters` for tracking per-day usage with YYYY-MM-DD date column
+- Daily limits added to SUBSCRIPTION_LIMITS alongside monthly limits:
+  - Starter: 2 grades/day, 1 rewrite/day, 1 followup/day, 1 deliverability check/day
+  - Pro: 50 grades/day, 50 rewrites/day, 50 followups/day, 50 deliverability checks/day
+  - Scale: 150 grades/day, 150 rewrites/day, 150 followups/day, 150 deliverability checks/day
+- Automatic date rollover: Counters reset at midnight UTC when counter.date !== today
+- Storage methods: getDailyUsageCounter, createDailyUsageCounter, getOrCreateDailyUsageCounter, checkDailyUsageLimit, checkBothUsageLimits, incrementBothUsages
+- API enforcement: checkAndIncrementUsage checks both daily and monthly limits before allowing requests
+- Error responses distinguish between "Daily limit reached" and "Monthly limit reached"
+- Frontend: Account.tsx displays both daily and monthly usage with dual progress bars
+- API: /api/usage now returns dailyUsage object alongside monthly usage
