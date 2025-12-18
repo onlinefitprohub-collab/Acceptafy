@@ -101,17 +101,24 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
         onChange({ target: { value: e.target.value } });
     }, [onChange]);
 
+    const sharedStyles = {
+        fontSize: '14px',
+        lineHeight: '1.5',
+        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        padding: '8px 12px',
+        whiteSpace: 'pre-wrap' as const,
+        wordWrap: 'break-word' as const,
+        overflowWrap: 'break-word' as const,
+        letterSpacing: 'normal',
+        wordSpacing: 'normal',
+    };
+
     return (
         <div className={`relative ${className || ''}`}>
             <div
                 ref={highlightRef}
-                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent text-base md:text-sm leading-normal px-3 py-2 rounded-md border border-transparent box-border"
-                style={{
-                    whiteSpace: 'pre-wrap',
-                    wordWrap: 'break-word',
-                    overflowWrap: 'break-word',
-                    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-                }}
+                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent rounded-md border border-transparent box-border"
+                style={sharedStyles}
                 aria-hidden="true"
                 dangerouslySetInnerHTML={{ __html: getHighlightedHtml() }}
             />
@@ -122,8 +129,9 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
                 onScroll={handleScroll}
                 placeholder={placeholder}
                 disabled={disabled}
-                className="relative bg-transparent resize-none w-full h-full leading-normal"
+                className="relative bg-transparent resize-none w-full h-full"
                 style={{
+                    ...sharedStyles,
                     caretColor: 'currentColor',
                 }}
                 data-testid="textarea-email-body"
