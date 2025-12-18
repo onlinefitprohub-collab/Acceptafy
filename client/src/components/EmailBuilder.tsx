@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { EmailTemplateLibrary, type EmailTemplateData } from './EmailTemplateLibrary';
 import { 
   Type, 
   Image, 
@@ -21,7 +24,9 @@ import {
   Mail,
   Columns,
   List,
-  Quote
+  Quote,
+  LayoutTemplate,
+  Sparkles
 } from 'lucide-react';
 
 type BlockType = 'text' | 'heading' | 'image' | 'button' | 'divider' | 'spacer' | 'columns' | 'list' | 'quote';
@@ -410,12 +415,125 @@ function EmailPreview({ blocks }: { blocks: EmailBlock[] }) {
   );
 }
 
+function parseTemplateToBlocks(template: EmailTemplateData): EmailBlock[] {
+  const blocks: EmailBlock[] = [];
+  const body = template.body;
+  const lines = body.split('\n');
+  let currentText = '';
+  let listItems: string[] = [];
+  let inList = false;
+  
+  const flushText = () => {
+    if (currentText.trim()) {
+      blocks.push({
+        id: generateId(),
+        type: 'text',
+        content: { text: currentText.trim() },
+      });
+      currentText = '';
+    }
+  };
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      blocks.push({
+        id: generateId(),
+        type: 'list',
+        content: { items: listItems.join('\n') },
+      });
+      listItems = [];
+      inList = false;
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    if (line.startsWith('# ')) {
+      flushText();
+      flushList();
+      blocks.push({
+        id: generateId(),
+        type: 'heading',
+        content: { text: line.slice(2), size: 'h1' },
+      });
+    } else if (line.startsWith('## ')) {
+      flushText();
+      flushList();
+      blocks.push({
+        id: generateId(),
+        type: 'heading',
+        content: { text: line.slice(3), size: 'h2' },
+      });
+    } else if (line.startsWith('### ')) {
+      flushText();
+      flushList();
+      blocks.push({
+        id: generateId(),
+        type: 'heading',
+        content: { text: line.slice(4), size: 'h3' },
+      });
+    } else if (line === '---') {
+      flushText();
+      flushList();
+      blocks.push({
+        id: generateId(),
+        type: 'divider',
+        content: { style: 'solid', color: '#e5e7eb' },
+      });
+    } else if (line.startsWith('> ')) {
+      flushText();
+      flushList();
+      blocks.push({
+        id: generateId(),
+        type: 'quote',
+        content: { text: line.slice(2), author: '' },
+      });
+    } else if (line.match(/^\[.+→\]$/)) {
+      flushText();
+      flushList();
+      const buttonText = line.slice(1, -1).replace(' →', '').trim();
+      blocks.push({
+        id: generateId(),
+        type: 'button',
+        content: { text: buttonText, url: '#', color: '#9333ea', textColor: '#ffffff' },
+      });
+    } else if (line.match(/^[-*•]\s+/)) {
+      flushText();
+      inList = true;
+      const itemText = line.replace(/^[-*•]\s+/, '');
+      listItems.push(itemText);
+    } else if (line.match(/^\d+\.\s+/)) {
+      flushText();
+      inList = true;
+      const itemText = line.replace(/^\d+\.\s+/, '');
+      listItems.push(itemText);
+    } else {
+      if (inList) {
+        flushList();
+      }
+      currentText += line + '\n';
+    }
+  }
+  
+  flushText();
+  flushList();
+  return blocks;
+}
+
 export function EmailBuilder() {
   const [blocks, setBlocks] = useState<EmailBlock[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [showHtml, setShowHtml] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [dragOverBlockId, setDragOverBlockId] = useState<string | null>(null);
+
+  const handleSelectTemplate = useCallback((template: EmailTemplateData) => {
+    const newBlocks = parseTemplateToBlocks(template);
+    setBlocks(newBlocks);
+    setShowTemplates(false);
+  }, []);
 
   const handleDragStart = useCallback((e: DragEvent<HTMLDivElement>, id: string) => {
     setDraggedBlockId(id);
@@ -601,12 +719,21 @@ export function EmailBuilder() {
 
   return (
     <div className="space-y-6" data-testid="email-builder">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Email Builder</h2>
           <p className="text-muted-foreground">Drag and drop blocks to create your email</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            onClick={() => setShowTemplates(true)}
+            className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30"
+            data-testid="button-open-templates"
+          >
+            <LayoutTemplate className="h-4 w-4 mr-2" />
+            Use Template
+          </Button>
           <Button
             variant={showPreview ? "default" : "outline"}
             onClick={() => { setShowPreview(!showPreview); setShowHtml(false); }}
@@ -625,6 +752,23 @@ export function EmailBuilder() {
           </Button>
         </div>
       </div>
+
+      <Dialog open={showTemplates} onOpenChange={setShowTemplates}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              Email Template Library
+            </DialogTitle>
+            <DialogDescription>
+              Choose a pre-designed template to get started quickly
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh]">
+            <EmailTemplateLibrary onSelectTemplate={handleSelectTemplate} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">

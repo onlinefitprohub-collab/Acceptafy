@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { FileText, Plus, Trash2, Download, Loader2, Edit2 } from 'lucide-react';
+import { FileText, Plus, Trash2, Download, Loader2, Edit2, Sparkles, FolderOpen } from 'lucide-react';
+import { EmailTemplateLibrary, type EmailTemplateData } from './EmailTemplateLibrary';
 import type { EmailTemplate } from '@shared/schema';
 
 interface EmailTemplatesProps {
@@ -133,6 +135,11 @@ export function EmailTemplates({
     return 'bg-red-500/20 text-red-400 border-red-500/30';
   };
 
+  const handleSelectPreDesigned = (template: EmailTemplateData) => {
+    onLoadTemplate(template.subject, template.previewText, template.body);
+    toast({ title: 'Template loaded', description: `"${template.name}" has been loaded into the editor.` });
+  };
+
   return (
     <Card className="h-full flex flex-col" data-testid="card-email-templates">
       <CardHeader className="border-b border-border/50 pb-4">
@@ -143,7 +150,7 @@ export function EmailTemplates({
             </div>
             <div>
               <CardTitle className="text-lg">Email Templates</CardTitle>
-              <CardDescription>Save and reuse your best emails</CardDescription>
+              <CardDescription>Pre-designed and custom templates</CardDescription>
             </div>
           </div>
           <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
@@ -186,89 +193,113 @@ export function EmailTemplates({
         </div>
       </CardHeader>
       <CardContent className="flex-1 overflow-hidden p-0">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+        <Tabs defaultValue="predesigned" className="h-full flex flex-col">
+          <div className="px-4 pt-4">
+            <TabsList className="w-full">
+              <TabsTrigger value="predesigned" className="flex-1 gap-1" data-testid="tab-predesigned">
+                <Sparkles className="h-4 w-4" />
+                Pre-designed
+              </TabsTrigger>
+              <TabsTrigger value="my-templates" className="flex-1 gap-1" data-testid="tab-my-templates">
+                <FolderOpen className="h-4 w-4" />
+                My Templates
+                {templates.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">{templates.length}</Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
           </div>
-        ) : templates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-center p-6" data-testid="text-templates-empty">
-            <FileText className="w-12 h-12 text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground mb-2">No templates yet</p>
-            <p className="text-sm text-muted-foreground/70">
-              Write an email and click "Save Current" to create your first template.
-            </p>
-          </div>
-        ) : (
-          <ScrollArea className="h-[400px]">
-            <div className="p-4 space-y-3">
-              {templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="group p-4 rounded-lg border border-border/50 hover-elevate transition-all"
-                  data-testid={`template-item-${template.id}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-medium truncate" data-testid={`text-template-name-${template.id}`}>{template.name}</h4>
-                        {template.lastGrade && (
-                          <Badge variant="outline" className={`text-xs ${getGradeColor(template.lastGrade)}`} data-testid={`badge-template-grade-${template.id}`}>
-                            {template.lastGrade}
-                          </Badge>
-                        )}
-                        {template.lastScore !== null && template.lastScore !== undefined && (
-                          <Badge variant="secondary" className="text-xs" data-testid={`badge-template-score-${template.id}`}>
-                            Score: {template.lastScore}
-                          </Badge>
-                        )}
+
+          <TabsContent value="predesigned" className="flex-1 overflow-hidden mt-0 p-4">
+            <EmailTemplateLibrary onSelectTemplate={handleSelectPreDesigned} />
+          </TabsContent>
+
+          <TabsContent value="my-templates" className="flex-1 overflow-hidden mt-0">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : templates.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-center p-6" data-testid="text-templates-empty">
+                <FileText className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground mb-2">No saved templates yet</p>
+                <p className="text-sm text-muted-foreground/70">
+                  Write an email and click "Save Current" to create your first template.
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[400px]">
+                <div className="p-4 space-y-3">
+                  {templates.map((template) => (
+                    <div
+                      key={template.id}
+                      className="group p-4 rounded-lg border border-border/50 hover-elevate transition-all"
+                      data-testid={`template-item-${template.id}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-medium truncate" data-testid={`text-template-name-${template.id}`}>{template.name}</h4>
+                            {template.lastGrade && (
+                              <Badge variant="outline" className={`text-xs ${getGradeColor(template.lastGrade)}`} data-testid={`badge-template-grade-${template.id}`}>
+                                {template.lastGrade}
+                              </Badge>
+                            )}
+                            {template.lastScore !== null && template.lastScore !== undefined && (
+                              <Badge variant="secondary" className="text-xs" data-testid={`badge-template-score-${template.id}`}>
+                                Score: {template.lastScore}
+                              </Badge>
+                            )}
+                          </div>
+                          {template.subject && (
+                            <p className="text-sm text-muted-foreground mt-1 truncate" data-testid={`text-template-subject-${template.id}`}>
+                              Subject: {template.subject}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2" data-testid={`text-template-body-${template.id}`}>
+                            {template.body?.substring(0, 100)}...
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleLoadTemplate(template)}
+                            title="Load template"
+                            data-testid={`button-load-template-${template.id}`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleUpdateTemplate(template)}
+                            disabled={updateMutation.isPending}
+                            title="Update with current email"
+                            data-testid={`button-update-template-${template.id}`}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => handleDeleteTemplate(template)}
+                            disabled={deleteMutation.isPending}
+                            title="Delete template"
+                            className="text-red-500 hover:text-red-600"
+                            data-testid={`button-delete-template-${template.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                      {template.subject && (
-                        <p className="text-sm text-muted-foreground mt-1 truncate" data-testid={`text-template-subject-${template.id}`}>
-                          Subject: {template.subject}
-                        </p>
-                      )}
-                      <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2" data-testid={`text-template-body-${template.id}`}>
-                        {template.body?.substring(0, 100)}...
-                      </p>
                     </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleLoadTemplate(template)}
-                        title="Load template"
-                        data-testid={`button-load-template-${template.id}`}
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleUpdateTemplate(template)}
-                        disabled={updateMutation.isPending}
-                        title="Update with current email"
-                        data-testid={`button-update-template-${template.id}`}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => handleDeleteTemplate(template)}
-                        disabled={deleteMutation.isPending}
-                        title="Delete template"
-                        className="text-red-500 hover:text-red-600"
-                        data-testid={`button-delete-template-${template.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
+              </ScrollArea>
+            )}
+          </TabsContent>
+        </Tabs>
       </CardContent>
     </Card>
   );
