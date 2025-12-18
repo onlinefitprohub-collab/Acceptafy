@@ -2336,7 +2336,7 @@ function AppContent() {
                       <Sparkles className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">AI-Improved Version</CardTitle>
+                      <CardTitle className="text-lg">Acceptafy Improved Version</CardTitle>
                       <CardDescription>Ready to apply to your email</CardDescription>
                     </div>
                   </div>
