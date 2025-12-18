@@ -370,17 +370,56 @@ export class DatabaseStorage implements IStorage {
     const [counter] = await db
       .select()
       .from(dailyUsageCounters)
-      .where(
-        and(
-          eq(dailyUsageCounters.userId, userId),
-          eq(dailyUsageCounters.date, today)
-        )
-      );
+      .where(eq(dailyUsageCounters.userId, userId))
+      .orderBy(desc(dailyUsageCounters.date))
+      .limit(1);
+    
+    // If counter exists but is from a previous day, reset it
+    if (counter && counter.date !== today) {
+      const [updated] = await db
+        .update(dailyUsageCounters)
+        .set({
+          date: today,
+          gradeCount: 0,
+          rewriteCount: 0,
+          followupCount: 0,
+          deliverabilityChecks: 0,
+        })
+        .where(eq(dailyUsageCounters.id, counter.id))
+        .returning();
+      return updated;
+    }
+    
     return counter;
   }
 
   async createDailyUsageCounter(userId: string): Promise<DailyUsageCounter> {
     const today = new Date().toISOString().split('T')[0];
+    
+    // First check if there's an existing counter for this user (from any day)
+    const [existing] = await db
+      .select()
+      .from(dailyUsageCounters)
+      .where(eq(dailyUsageCounters.userId, userId))
+      .limit(1);
+    
+    // If exists but from previous day, reset it
+    if (existing) {
+      const [updated] = await db
+        .update(dailyUsageCounters)
+        .set({
+          date: today,
+          gradeCount: 0,
+          rewriteCount: 0,
+          followupCount: 0,
+          deliverabilityChecks: 0,
+        })
+        .where(eq(dailyUsageCounters.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    // Create new counter
     const [counter] = await db
       .insert(dailyUsageCounters)
       .values({
@@ -423,15 +462,22 @@ export class DatabaseStorage implements IStorage {
 
     const limit = limits[fieldToDailyLimit[field]] as number;
     
-    let counter = await this.getDailyUsageCounter(userId);
-    if (!counter) {
-      counter = await this.createDailyUsageCounter(userId);
-    }
+    // Always ensure counter exists for today (this handles day rollover)
+    let counter = await this.getOrCreateDailyUsageCounter(userId);
 
     const current = counter[field] || 0;
     const allowed = limit === -1 || current < limit;
 
     return { allowed, current, limit };
+  }
+
+  // Helper method that ensures we always have a valid daily counter for today
+  async getOrCreateDailyUsageCounter(userId: string): Promise<DailyUsageCounter> {
+    let counter = await this.getDailyUsageCounter(userId);
+    if (!counter) {
+      counter = await this.createDailyUsageCounter(userId);
+    }
+    return counter;
   }
 
   async checkBothUsageLimits(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{
