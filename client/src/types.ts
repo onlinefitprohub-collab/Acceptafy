@@ -5,12 +5,15 @@ export interface SectionGrade {
 }
 
 export interface SpamTrigger {
-  word: string;
+  word?: string;
+  phrase?: string;
   reason: string;
-  suggestions: string[];
-  suggestion: string;
+  suggestions?: string[];
+  alternatives?: string[];
+  suggestion?: string;
+  bestReplacement?: string;
   severity: 'High' | 'Medium' | 'Low';
-  rephraseExamples: string[];
+  rephraseExamples?: string[];
 }
 
 export interface StructuralFinding {
