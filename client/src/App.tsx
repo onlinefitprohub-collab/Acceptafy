@@ -1005,6 +1005,58 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {history.length > 0 && (
+              <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20">
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Select Original Email
+                </label>
+                <select
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  data-testid="select-followup-email"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) return;
+                    const item = history.find(h => h.id === value);
+                    if (item) {
+                      const subject = item.content.variations?.[0]?.subject || '';
+                      const previewText = item.content.variations?.[0]?.previewText || '';
+                      const emailBody = item.content.body || '';
+                      
+                      setVariations([{ subject, previewText }]);
+                      setBody(emailBody);
+                      setResult(item.result);
+                      toast({
+                        title: 'Email Selected',
+                        description: `Selected "${subject || 'Untitled'}" for follow-up`,
+                      });
+                    }
+                  }}
+                >
+                  <option value="">Select an email to follow up on...</option>
+                  {history.map((item) => {
+                    const subject = item.content?.variations?.[0]?.subject || 'No subject';
+                    const truncatedSubject = subject.length > 50 ? subject.slice(0, 50) + '...' : subject;
+                    const date = new Date(item.timestamp).toLocaleDateString();
+                    return (
+                      <option 
+                        key={item.id} 
+                        value={item.id}
+                        data-testid={`select-followup-email-${item.id}`}
+                      >
+                        {truncatedSubject} ({date})
+                      </option>
+                    );
+                  })}
+                </select>
+                {(variations[0]?.subject || body) && (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Currently selected: {variations[0]?.subject || 'Untitled email'}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-2">
               {['reminder', 'discount', 'query', 'sequence'].map((goal) => (
                 <Button
