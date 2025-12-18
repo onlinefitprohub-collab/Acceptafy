@@ -14,23 +14,23 @@ const getSeverityStyles = (severity: 'High' | 'Medium' | 'Low'): { pill: string;
   switch (severity) {
     case 'High':
       return {
-        pill: 'bg-red-500/20 text-red-300 border-red-500/50',
+        pill: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-300 dark:border-red-500/50',
         dot: 'bg-red-400'
       };
     case 'Medium':
       return {
-        pill: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50',
+        pill: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-500/50',
         dot: 'bg-yellow-400'
       };
     case 'Low':
       return {
-        pill: 'bg-sky-500/20 text-sky-300 border-sky-500/50',
+        pill: 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-500/50',
         dot: 'bg-sky-400'
       };
     default:
       return {
-        pill: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
-        dot: 'bg-gray-400'
+        pill: 'bg-muted text-muted-foreground border-border',
+        dot: 'bg-muted-foreground'
       };
   }
 };
@@ -108,7 +108,7 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
   };
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg" data-testid="structural-analysis-card">
+    <div className="bg-card border border-border rounded-2xl shadow-lg" data-testid="structural-analysis-card">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -117,28 +117,28 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
         data-testid="button-expand-structural-analysis"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><StructuralIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Formatting & Style Analysis</h3>
+          <span className="text-purple-600 dark:text-purple-400"><StructuralIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Formatting & Style Analysis</h3>
           <InfoTooltip text="Checks for stylistic issues like excessive capitalization or punctuation that can make your email look unprofessional and trigger spam filters." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
 
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
            <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="border-t border-white/10 pt-4 mt-4 space-y-4">
+            <div className="border-t border-border pt-4 mt-4 space-y-4">
               {structuralFindings.map((finding, index) => {
                 const severityStyles = getSeverityStyles(finding.severity);
                 const currentRewrite = rewriteState[index];
                 return (
-                  <div key={index} className="bg-white/5 p-4 rounded-lg border border-white/10" data-testid={`structural-finding-${index}`}>
+                  <div key={index} className="bg-muted p-4 rounded-lg border border-border" data-testid={`structural-finding-${index}`}>
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex items-center gap-3">
-                          <span className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-900/50 border border-white/10 text-purple-400">
+                          <span className="flex items-center justify-center w-10 h-10 rounded-full bg-muted border border-border text-purple-600 dark:text-purple-400">
                               {getFindingIcon(finding.type)}
                           </span>
-                          <h4 className="text-lg sm:text-xl font-bold text-purple-300">{finding.type}</h4>
+                          <h4 className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-300">{finding.type}</h4>
                       </div>
                       <div className={`inline-flex items-center gap-2 text-sm font-semibold px-3 py-1 border rounded-full ${severityStyles.pill}`}>
                         <span className={`w-2 h-2 rounded-full ${severityStyles.dot}`}></span>
@@ -146,28 +146,28 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
                       </div>
                     </div>
                     
-                    <div className="space-y-3 border-t border-white/10 pt-4">
+                    <div className="space-y-3 border-t border-border pt-4">
                       <div>
-                        <h5 className="font-semibold text-gray-200 mb-1">Finding</h5>
-                        <p className="text-gray-400 text-sm italic">"{finding.summary}"</p>
+                        <h5 className="font-semibold text-foreground mb-1">Finding</h5>
+                        <p className="text-muted-foreground text-sm italic">"{finding.summary}"</p>
                       </div>
                       <div>
-                        <h5 className="font-semibold text-gray-200 mb-1">Why it's a flag</h5>
-                        <p className="text-gray-400 text-sm leading-relaxed">{finding.feedback}</p>
+                        <h5 className="font-semibold text-foreground mb-1">Why it's a flag</h5>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{finding.feedback}</p>
                       </div>
                       <div>
-                        <h5 className="font-semibold text-gray-200 mb-1">Suggestion</h5>
-                        <p className="text-gray-400 text-sm leading-relaxed">{finding.suggestion}</p>
+                        <h5 className="font-semibold text-foreground mb-1">Suggestion</h5>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{finding.suggestion}</p>
                       </div>
                       
                       {finding.type === 'Sentence Structure' && finding.originalText && (
-                        <div className="pt-3 border-t border-white/10">
+                        <div className="pt-3 border-t border-border">
                             {!currentRewrite ? (
-                                <div className="p-3 bg-gray-900/40 rounded-lg border-l-4 border-purple-500/60">
-                                    <p className="text-sm text-gray-400 italic mb-3">"{finding.originalText}"</p>
+                                <div className="p-3 bg-muted rounded-lg border-l-4 border-purple-500/60">
+                                    <p className="text-sm text-muted-foreground italic mb-3">"{finding.originalText}"</p>
                                     <button 
                                         onClick={() => handleRewriteClick(finding.originalText, index)} 
-                                        className="flex items-center gap-2 px-3 py-1 text-sm font-semibold text-purple-300 bg-purple-500/20 rounded-full hover:bg-purple-500/30 transition-colors"
+                                        className="flex items-center gap-2 px-3 py-1 text-sm font-semibold text-purple-600 dark:text-purple-300 bg-purple-500/20 rounded-full hover:bg-purple-500/30 transition-colors"
                                         data-testid={`button-rewrite-${index}`}
                                     >
                                         <RewriteIcon className="w-4 h-4" />
@@ -177,24 +177,24 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
                             ) : (
                                 <div>
                                     {currentRewrite.isRewriting && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-400">
-                                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <div className="w-4 h-4 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
                                             <span>Rewriting sentence...</span>
                                         </div>
                                     )}
                                     {currentRewrite.error && <p className="text-sm text-red-500">{currentRewrite.error}</p>}
                                     {currentRewrite.rewrittenText && (
-                                        <div className="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-white/10">
-                                            <p className="text-sm text-gray-500 italic line-through">Original: "{finding.originalText}"</p>
+                                        <div className="space-y-3 p-3 bg-muted rounded-lg border border-border">
+                                            <p className="text-sm text-muted-foreground italic line-through">Original: "{finding.originalText}"</p>
                                             <div>
-                                              <p className="text-sm text-gray-300 font-semibold mb-1">Suggestion:</p>
-                                              <p className="text-sm text-green-300 italic">"{currentRewrite.rewrittenText}"</p>
+                                              <p className="text-sm text-foreground font-semibold mb-1">Suggestion:</p>
+                                              <p className="text-sm text-green-600 dark:text-green-300 italic">"{currentRewrite.rewrittenText}"</p>
                                             </div>
 
                                             <div className="h-6">
                                                 {currentRewrite.isGrading && (
-                                                    <div className="flex items-center gap-2 text-xs text-gray-400 animate-pulse">
-                                                        <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                                                        <div className="w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin"></div>
                                                         <span>Analyzing fix...</span>
                                                     </div>
                                                 )}
@@ -209,7 +209,7 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
                                                 )}
                                             </div>
                                             
-                                            <div className="flex gap-2 pt-2 border-t border-white/10">
+                                            <div className="flex gap-2 pt-2 border-t border-border">
                                                 <button 
                                                     onClick={() => handleAccept(finding.originalText, currentRewrite.rewrittenText!, index)} 
                                                     className="px-3 py-1 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded"
@@ -219,7 +219,7 @@ export const StructuralAnalysisCard: React.FC<StructuralAnalysisCardProps> = ({ 
                                                 </button>
                                                 <button 
                                                     onClick={() => handleCancel(index)} 
-                                                    className="px-3 py-1 text-xs font-bold text-white bg-gray-600 hover:bg-gray-700 rounded"
+                                                    className="px-3 py-1 text-xs font-bold text-foreground bg-muted hover:bg-muted-foreground/20 rounded border border-border"
                                                     data-testid={`button-cancel-rewrite-${index}`}
                                                 >
                                                     Cancel

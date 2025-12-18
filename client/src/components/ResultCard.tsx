@@ -33,7 +33,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ title, icon, gradeData, 
   const uniqueId = `feedback-${title.replace(/\s+/g, '-')}`;
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -43,8 +43,8 @@ export const ResultCard: React.FC<ResultCardProps> = ({ title, icon, gradeData, 
         data-testid={`button-expand-${title.toLowerCase().replace(/\s+/g, '-')}`}
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400">{icon}</span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">{title}</h3>
+          <span className="text-purple-600 dark:text-purple-400">{icon}</span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">{title}</h3>
           <InfoTooltip text={tooltipText} />
         </div>
         <div className="flex items-center gap-4">
@@ -56,20 +56,20 @@ export const ResultCard: React.FC<ResultCardProps> = ({ title, icon, gradeData, 
                 <div className={`h-2 rounded-full ${color}`} style={{ width: `${percent}%` }}></div>
             </div>
           </div>
-          <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+          <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
         </div>
       </button>
 
-      <p className="text-gray-400 italic my-4" data-testid={`text-summary-${title.toLowerCase().replace(/\s+/g, '-')}`}>"{gradeData.summary}"</p>
+      <p className="text-muted-foreground italic my-4" data-testid={`text-summary-${title.toLowerCase().replace(/\s+/g, '-')}`}>"{gradeData.summary}"</p>
 
       <div
         id={uniqueId}
         className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
       >
         <div className="overflow-hidden">
-          <div className="border-t border-white/10 pt-4">
-            <h4 className="font-semibold text-gray-300 mb-2">Detailed Feedback:</h4>
-            <ul className="space-y-2 list-disc list-inside text-gray-300">
+          <div className="border-t border-border pt-4">
+            <h4 className="font-semibold text-foreground mb-2">Detailed Feedback:</h4>
+            <ul className="space-y-2 list-disc list-inside text-muted-foreground">
               {(gradeData.feedback || []).map((item, index) => (
                 <li key={index} className="leading-relaxed">{item}</li>
               ))}

@@ -13,31 +13,31 @@ const getSeverityStyles = (severity: 'High' | 'Medium' | 'Low'): { pill: string;
   switch (severity) {
     case 'High':
       return {
-        pill: 'bg-red-500/20 text-red-300 border-red-500/50',
+        pill: 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-300 dark:border-red-500/50',
         dot: 'bg-red-400',
-        border: 'border-red-500/50',
-        text: 'text-red-300'
+        border: 'border-red-300 dark:border-red-500/50',
+        text: 'text-red-700 dark:text-red-300'
       };
     case 'Medium':
       return {
-        pill: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50',
+        pill: 'bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-300 dark:border-yellow-500/50',
         dot: 'bg-yellow-400',
-        border: 'border-yellow-500/50',
-        text: 'text-yellow-300'
+        border: 'border-yellow-300 dark:border-yellow-500/50',
+        text: 'text-yellow-700 dark:text-yellow-300'
       };
     case 'Low':
       return {
-        pill: 'bg-sky-500/20 text-sky-300 border-sky-500/50',
+        pill: 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-500/50',
         dot: 'bg-sky-400',
-        border: 'border-sky-500/50',
-        text: 'text-sky-300'
+        border: 'border-sky-300 dark:border-sky-500/50',
+        text: 'text-sky-700 dark:text-sky-300'
       };
     default:
       return {
-        pill: 'bg-gray-500/20 text-gray-300 border-gray-500/50',
-        dot: 'bg-gray-400',
-        border: 'border-gray-500/50',
-        text: 'text-gray-300'
+        pill: 'bg-muted text-muted-foreground border-border',
+        dot: 'bg-muted-foreground',
+        border: 'border-border',
+        text: 'text-muted-foreground'
       };
   }
 };
@@ -52,50 +52,50 @@ const TriggerGroup: React.FC<{
     const styles = getSeverityStyles(severity);
 
     return (
-        <div className={`bg-white/5 rounded-lg border ${styles.border}`}>
+        <div className={`bg-card rounded-lg border ${styles.border}`}>
             <button
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex justify-between items-center text-left p-3 sm:p-4 hover:bg-white/5 transition-colors"
+                className="w-full flex justify-between items-center text-left p-3 sm:p-4 hover:bg-muted transition-colors"
                 data-testid={`button-expand-${severity.toLowerCase()}-triggers`}
             >
                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-gray-900/50 border ${styles.border}`}>
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-muted border ${styles.border}`}>
                         <span className={`w-3 h-3 rounded-full ${styles.dot}`}></span>
                     </div>
                     <h4 className={`text-base sm:text-lg font-bold ${styles.text}`}>{severity} Severity Triggers</h4>
                 </div>
                 <div className="flex items-center gap-3">
-                    <span className="text-sm px-2.5 py-1 bg-gray-900/50 text-gray-400 rounded-md font-medium">{triggers.length} {triggers.length === 1 ? 'issue' : 'issues'}</span>
-                    <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                    <span className="text-sm px-2.5 py-1 bg-muted text-muted-foreground rounded-md font-medium">{triggers.length} {triggers.length === 1 ? 'issue' : 'issues'}</span>
+                    <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
                 </div>
             </button>
             <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                 <div className="overflow-hidden">
-                    <div className="p-3 sm:p-4 border-t border-white/10 space-y-4">
+                    <div className="p-3 sm:p-4 border-t border-border space-y-4">
                         {triggers.map((trigger, index) => (
-                            <div key={index} className="bg-gray-900/50 p-4 rounded-lg border border-white/10" data-testid={`spam-trigger-${index}`}>
-                                <h4 className="text-lg sm:text-xl font-bold text-purple-300 mb-2">"{trigger.word}"</h4>
+                            <div key={index} className="bg-muted p-4 rounded-lg border border-border" data-testid={`spam-trigger-${index}`}>
+                                <h4 className="text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-300 mb-2">"{trigger.word}"</h4>
                                 
-                                <div className="grid md:grid-cols-2 gap-x-6 gap-y-4 border-t border-white/10 pt-4">
+                                <div className="grid md:grid-cols-2 gap-x-6 gap-y-4 border-t border-border pt-4">
                                 <div>
-                                    <h5 className="font-semibold text-gray-200 mb-2">Why it's a flag</h5>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{trigger.reason}</p>
+                                    <h5 className="font-semibold text-foreground mb-2">Why it's a flag</h5>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">{trigger.reason}</p>
                                 </div>
                                 
                                 <div>
-                                    <h5 className="font-semibold text-gray-200 mb-2">What to use instead</h5>
-                                    <div className="flex items-start gap-2 p-2 rounded-md bg-gray-900/50 border border-white/10 mb-3">
-                                        <InfoIcon className="w-4 h-4 text-purple-400 flex-shrink-0 mt-0.5" />
-                                        <p className="text-xs text-gray-400 leading-relaxed">
-                                            Clicking a suggestion will replace "<strong className="text-gray-300">{trigger.word}</strong>" everywhere in your subject, preview, and body text.
+                                    <h5 className="font-semibold text-foreground mb-2">What to use instead</h5>
+                                    <div className="flex items-start gap-2 p-2 rounded-md bg-muted border border-border mb-3">
+                                        <InfoIcon className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Clicking a suggestion will replace "<strong className="text-foreground">{trigger.word}</strong>" everywhere in your subject, preview, and body text.
                                         </p>
                                     </div>
                                     <div className="flex flex-wrap gap-2 items-center">
                                     {trigger.suggestion && (
                                         <button
                                         onClick={() => onSuggestionClick(trigger.word, trigger.suggestion)}
-                                        className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors cursor-pointer"
+                                        className="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors cursor-pointer"
                                         title={`Replace "${trigger.word}" with "${trigger.suggestion}"`}
                                         data-testid={`button-suggestion-primary-${index}`}
                                         >
@@ -106,7 +106,7 @@ const TriggerGroup: React.FC<{
                                         <button
                                         key={sIndex}
                                         onClick={() => onSuggestionClick(trigger.word, suggestion)}
-                                        className="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium hover:bg-gray-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-colors cursor-pointer"
+                                        className="bg-muted-foreground/20 text-foreground px-3 py-1 rounded-full text-sm font-medium hover:bg-muted-foreground/30 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors cursor-pointer"
                                         title={`Replace "${trigger.word}" with "${suggestion}"`}
                                         data-testid={`button-suggestion-${index}-${sIndex}`}
                                         >
@@ -116,7 +116,7 @@ const TriggerGroup: React.FC<{
                                     {trigger.suggestion && (
                                         <button
                                         onClick={() => onQuickFix(trigger.word, trigger.suggestion)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-purple-300 bg-purple-500/20 rounded-full hover:bg-purple-500/30 transition-colors"
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-purple-600 dark:text-purple-300 bg-purple-500/20 rounded-full hover:bg-purple-500/30 transition-colors"
                                         title={`Automatically replace "${trigger.word}" with "${trigger.suggestion}" and re-grade`}
                                         data-testid={`button-quickfix-${index}`}
                                         >
@@ -128,10 +128,10 @@ const TriggerGroup: React.FC<{
                                 </div>
                                 {trigger.rephraseExamples && trigger.rephraseExamples.length > 0 && (
                                     <div className="md:col-span-2 mt-2">
-                                        <h5 className="font-semibold text-gray-200 mb-2">Rephrasing Examples</h5>
+                                        <h5 className="font-semibold text-foreground mb-2">Rephrasing Examples</h5>
                                         <ul className="space-y-2">
                                             {trigger.rephraseExamples.map((example, exIndex) => (
-                                                <li key={exIndex} className="text-sm text-gray-400 italic bg-gray-900/50 p-3 rounded-md border-l-4 border-purple-500 flex items-start">
+                                                <li key={exIndex} className="text-sm text-muted-foreground italic bg-muted p-3 rounded-md border-l-4 border-purple-500 flex items-start">
                                                 <CtaIcon />
                                                 <span className="ml-2 flex-1">{example}</span>
                                                 </li>
@@ -162,7 +162,7 @@ export const SpamAnalysisCard: React.FC<SpamAnalysisCardProps> = ({ spamTriggers
   const severityOrder: SpamTrigger['severity'][] = ['High', 'Medium', 'Low'];
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg" data-testid="spam-analysis-card">
+    <div className="bg-card border border-border rounded-2xl shadow-lg" data-testid="spam-analysis-card">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -171,21 +171,21 @@ export const SpamAnalysisCard: React.FC<SpamAnalysisCardProps> = ({ spamTriggers
         data-testid="button-expand-spam-analysis"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><SpamIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Spam Trigger Analysis</h3>
+          <span className="text-purple-600 dark:text-purple-400"><SpamIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Spam Trigger Analysis</h3>
           <InfoTooltip text="Scans your email for words and phrases known to be flagged by spam filters. Avoiding these increases the chance of landing in the primary inbox." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
 
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="pt-4 mt-4 border-t border-white/10">
+            <div className="pt-4 mt-4 border-t border-border">
               {spamTriggers.length === 0 ? (
-                <div className="text-center py-8 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <p className="text-lg font-semibold text-green-300">Great news!</p>
-                  <p className="text-gray-300">No common spam trigger words were found in your copy.</p>
+                <div className="text-center py-8 bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/20 rounded-lg">
+                  <p className="text-lg font-semibold text-green-700 dark:text-green-300">Great news!</p>
+                  <p className="text-muted-foreground">No common spam trigger words were found in your copy.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
