@@ -422,32 +422,79 @@ function CampaignRow({
       </div>
       
       <div className="flex flex-wrap gap-4 md:gap-6 text-sm">
-        <div className="flex items-center gap-1.5" data-testid={`metric-sent-${campaign.campaignId}`}>
-          <Mail className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{formatNumber(campaign.totalSent)}</span>
-          <span className="text-muted-foreground text-xs">sent</span>
-        </div>
-        <div className="flex items-center gap-1.5" data-testid={`metric-open-rate-${campaign.campaignId}`}>
-          <Eye className="w-4 h-4 text-muted-foreground" />
-          <span className={`font-medium ${getRateColor(campaign.openRate, 'open')}`}>
-            {campaign.openRate.toFixed(1)}%
-          </span>
-          <span className="text-muted-foreground text-xs">opens</span>
-        </div>
-        <div className="flex items-center gap-1.5" data-testid={`metric-click-rate-${campaign.campaignId}`}>
-          <MousePointerClick className="w-4 h-4 text-muted-foreground" />
-          <span className={`font-medium ${getRateColor(campaign.clickRate, 'click')}`}>
-            {campaign.clickRate.toFixed(1)}%
-          </span>
-          <span className="text-muted-foreground text-xs">clicks</span>
-        </div>
-        <div className="flex items-center gap-1.5" data-testid={`metric-bounce-rate-${campaign.campaignId}`}>
-          <AlertTriangle className="w-4 h-4 text-muted-foreground" />
-          <span className={`font-medium ${getRateColor(campaign.bounceRate, 'bounce')}`}>
-            {campaign.bounceRate.toFixed(1)}%
-          </span>
-          <span className="text-muted-foreground text-xs">bounces</span>
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-help" data-testid={`metric-sent-${campaign.campaignId}`}>
+              <Mail className="w-4 h-4 text-muted-foreground" />
+              <span className="font-medium">{formatNumber(campaign.totalSent)}</span>
+              <span className="text-muted-foreground text-xs">sent</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px]">
+            <p className="font-medium">Emails Sent</p>
+            <p className="text-xs text-muted-foreground">Total number of emails sent in this campaign</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-help" data-testid={`metric-open-rate-${campaign.campaignId}`}>
+              <Eye className="w-4 h-4 text-muted-foreground" />
+              <span className={`font-medium ${getRateColor(campaign.openRate, 'open')}`}>
+                {campaign.openRate.toFixed(1)}%
+              </span>
+              <span className="text-muted-foreground text-xs">opens</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[220px]">
+            <p className="font-medium">Open Rate</p>
+            <p className="text-xs text-muted-foreground mb-1">Percentage of recipients who opened your email</p>
+            <div className="text-xs space-y-0.5 pt-1 border-t border-border">
+              <p><span className="text-green-400">25%+</span> = Excellent</p>
+              <p><span className="text-yellow-400">15-25%</span> = Average</p>
+              <p><span className="text-red-400">&lt;15%</span> = Needs work</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-help" data-testid={`metric-click-rate-${campaign.campaignId}`}>
+              <MousePointerClick className="w-4 h-4 text-muted-foreground" />
+              <span className={`font-medium ${getRateColor(campaign.clickRate, 'click')}`}>
+                {campaign.clickRate.toFixed(1)}%
+              </span>
+              <span className="text-muted-foreground text-xs">clicks</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[220px]">
+            <p className="font-medium">Click Rate</p>
+            <p className="text-xs text-muted-foreground mb-1">Percentage of recipients who clicked a link</p>
+            <div className="text-xs space-y-0.5 pt-1 border-t border-border">
+              <p><span className="text-green-400">3%+</span> = Excellent</p>
+              <p><span className="text-yellow-400">1.5-3%</span> = Average</p>
+              <p><span className="text-red-400">&lt;1.5%</span> = Needs work</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-help" data-testid={`metric-bounce-rate-${campaign.campaignId}`}>
+              <AlertTriangle className="w-4 h-4 text-muted-foreground" />
+              <span className={`font-medium ${getRateColor(campaign.bounceRate, 'bounce')}`}>
+                {campaign.bounceRate.toFixed(1)}%
+              </span>
+              <span className="text-muted-foreground text-xs">bounces</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[220px]">
+            <p className="font-medium">Bounce Rate</p>
+            <p className="text-xs text-muted-foreground mb-1">Percentage of emails that couldn't be delivered</p>
+            <div className="text-xs space-y-0.5 pt-1 border-t border-border">
+              <p><span className="text-green-400">&lt;1%</span> = Excellent</p>
+              <p><span className="text-yellow-400">1-3%</span> = Average</p>
+              <p><span className="text-red-400">3%+</span> = Clean your list</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </button>
   );
@@ -1860,8 +1907,23 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                 <BarChart3 className="w-5 h-5 text-purple-400" />
                 Recent Campaigns
               </CardTitle>
-              <CardDescription>
-                Performance breakdown for your {allCampaigns.length} most recent campaigns
+              <CardDescription className="flex flex-col gap-2">
+                <span>Performance breakdown for your {allCampaigns.length} most recent campaigns</span>
+                <span className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-green-400" />
+                    <span>Excellent</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-400" />
+                    <span>Average</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                    <span>Needs work</span>
+                  </span>
+                  <span className="text-muted-foreground ml-1">(Hover metrics for details)</span>
+                </span>
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
