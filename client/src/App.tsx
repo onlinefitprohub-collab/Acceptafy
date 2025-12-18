@@ -1037,22 +1037,31 @@ function AppContent() {
                   {history.map((item) => {
                     const subject = item.content?.variations?.[0]?.subject || 'No subject';
                     const truncatedSubject = subject.length > 50 ? subject.slice(0, 50) + '...' : subject;
-                    const date = new Date(item.timestamp).toLocaleDateString();
+                    const formattedDate = item.date ? new Date(item.date).toLocaleDateString() : '';
                     return (
                       <option 
                         key={item.id} 
                         value={item.id}
                         data-testid={`select-followup-email-${item.id}`}
                       >
-                        {truncatedSubject} ({date})
+                        {truncatedSubject}{formattedDate ? ` (${formattedDate})` : ''}
                       </option>
                     );
                   })}
                 </select>
                 {(variations[0]?.subject || body) && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Currently selected: {variations[0]?.subject || 'Untitled email'}
-                  </p>
+                  <div className="mt-3 p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Subject:</span>
+                      <p className="text-sm text-foreground">{variations[0]?.subject || 'No subject'}</p>
+                    </div>
+                    {body && (
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Body Preview:</span>
+                        <p className="text-sm text-muted-foreground line-clamp-3">{body}</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
