@@ -1,11 +1,33 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Shield, Copy, Check } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Shield, Copy, Check, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { SpamCheckResult, HistoryItem } from '../types';
+
+const escapeHtml = (text: string): string => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+const escapeRegExp = (string: string): string => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+const getSeverityHighlightColor = (severity: 'High' | 'Medium' | 'Low'): string => {
+  switch (severity) {
+    case 'High': return 'rgba(239, 68, 68, 0.4)';
+    case 'Medium': return 'rgba(234, 179, 8, 0.4)';
+    case 'Low': return 'rgba(59, 130, 246, 0.4)';
+    default: return 'transparent';
+  }
+};
 
 interface SpamCheckerProps {
   history?: HistoryItem[];
@@ -95,6 +117,45 @@ export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
     ? result.inboxProbability 
     : 50;
   const triggers = result?.triggers || [];
+
+  const highlightedHtml = useMemo(() => {
+    const fullText = [subject, previewText, body].filter(Boolean).join('\n\n---\n\n');
+    if (!fullText || !triggers || triggers.length === 0) {
+      return escapeHtml(fullText).replace(/\n/g, '<br>');
+    }
+
+    const triggerMap = new Map<string, { word: string; severity: 'High' | 'Medium' | 'Low' }>();
+    triggers.forEach(trigger => {
+      triggerMap.set(trigger.word.toLowerCase(), { 
+        word: trigger.word, 
+        severity: trigger.severity as 'High' | 'Medium' | 'Low' 
+      });
+    });
+
+    const wordsToMatch = triggers.map(t => escapeRegExp(t.word));
+    const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
+
+    const parts: string[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(fullText)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(escapeHtml(fullText.substring(lastIndex, match.index)));
+      }
+      const matchedWord = match[0];
+      const trigger = triggerMap.get(matchedWord.toLowerCase());
+      const bgColor = trigger ? getSeverityHighlightColor(trigger.severity) : 'transparent';
+      parts.push(`<mark style="background-color: ${bgColor}; color: inherit; padding: 2px 4px; border-radius: 3px;">${escapeHtml(matchedWord)}</mark>`);
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < fullText.length) {
+      parts.push(escapeHtml(fullText.substring(lastIndex)));
+    }
+
+    return parts.join('').replace(/\n/g, '<br>');
+  }, [subject, previewText, body, triggers]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -276,6 +337,31 @@ export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
               </div>
             </CardContent>
           </Card>
+
+          {triggers.length > 0 && (
+            <Card className="bg-card/50">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  <CardTitle className="text-base">Email Preview with Highlighted Triggers</CardTitle>
+                </div>
+                <CardDescription className="text-xs">
+                  <span className="inline-flex items-center gap-2">
+                    <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: 'rgba(239, 68, 68, 0.4)' }} /> High
+                    <span className="inline-block w-3 h-3 rounded ml-2" style={{ backgroundColor: 'rgba(234, 179, 8, 0.4)' }} /> Medium
+                    <span className="inline-block w-3 h-3 rounded ml-2" style={{ backgroundColor: 'rgba(59, 130, 246, 0.4)' }} /> Low
+                  </span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="p-4 rounded-lg bg-muted/50 border border-border text-sm text-foreground leading-relaxed max-h-64 overflow-y-auto"
+                  dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+                  data-testid="spam-highlighted-preview"
+                />
+              </CardContent>
+            </Card>
+          )}
 
           {triggers.length > 0 && (
             <div className="space-y-3">
