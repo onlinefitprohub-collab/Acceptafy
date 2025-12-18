@@ -1571,7 +1571,7 @@ function AppContent() {
       )}
 
       {toolsSubView === 'spam' && (
-        <SpamChecker />
+        <SpamChecker history={history} />
       )}
 
       {toolsSubView === 'sentiment' && (

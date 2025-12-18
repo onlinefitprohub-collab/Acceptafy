@@ -5,9 +5,13 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Shield, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { SpamCheckResult } from '../types';
+import type { SpamCheckResult, HistoryItem } from '../types';
 
-export const SpamChecker: React.FC = () => {
+interface SpamCheckerProps {
+  history?: HistoryItem[];
+}
+
+export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
   const { toast } = useToast();
   const [subject, setSubject] = useState('');
   const [previewText, setPreviewText] = useState('');
@@ -107,6 +111,67 @@ export const SpamChecker: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {history.length > 0 && (
+            <div className="p-4 rounded-lg bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20">
+              <label className="text-sm font-medium text-foreground mb-2 block">
+                Load from Previous Email
+              </label>
+              <select
+                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                data-testid="select-spam-email"
+                defaultValue=""
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) return;
+                  const item = history.find(h => h.id === value);
+                  if (item) {
+                    const subjectLine = item.content.variations?.[0]?.subject || '';
+                    const preview = item.content.variations?.[0]?.previewText || '';
+                    const emailBody = item.content.body || '';
+                    
+                    setSubject(subjectLine);
+                    setPreviewText(preview);
+                    setBody(emailBody);
+                    toast({
+                      title: 'Email Loaded',
+                      description: `Loaded "${subjectLine || 'Untitled'}" for spam checking`,
+                    });
+                  }
+                }}
+              >
+                <option value="">Select an email to check...</option>
+                {history.map((item) => {
+                  const subjectLine = item.content?.variations?.[0]?.subject || 'No subject';
+                  const truncatedSubject = subjectLine.length > 50 ? subjectLine.slice(0, 50) + '...' : subjectLine;
+                  const formattedDate = item.date ? new Date(item.date).toLocaleDateString() : '';
+                  return (
+                    <option 
+                      key={item.id} 
+                      value={item.id}
+                      data-testid={`select-spam-email-${item.id}`}
+                    >
+                      {truncatedSubject}{formattedDate ? ` (${formattedDate})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+              {(subject || body) && (
+                <div className="mt-3 p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Subject:</span>
+                    <p className="text-sm text-foreground">{subject || 'No subject'}</p>
+                  </div>
+                  {body && (
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Body Preview:</span>
+                      <p className="text-sm text-muted-foreground line-clamp-3">{body}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Subject Line (optional)</label>
