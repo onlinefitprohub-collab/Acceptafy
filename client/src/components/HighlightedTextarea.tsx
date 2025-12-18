@@ -51,15 +51,20 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
             return escapeHtml(textValue).replace(/\n/g, '<br>') + '<br>';
         }
 
-        const triggerMap = new Map<string, SpamTrigger>();
-        spamTriggers.forEach(trigger => {
-            triggerMap.set(trigger.word.toLowerCase(), trigger);
-        });
-
-        const wordsToMatch = spamTriggers.map(t => escapeRegExp(t.word));
-        if (wordsToMatch.length === 0) {
+        // Get the word/phrase from each trigger, filter out empty ones
+        const getWord = (t: SpamTrigger) => (t.word || t.phrase || '').trim();
+        const validTriggers = spamTriggers.filter(t => getWord(t).length > 0);
+        
+        if (validTriggers.length === 0) {
             return escapeHtml(textValue).replace(/\n/g, '<br>') + '<br>';
         }
+
+        const triggerMap = new Map<string, SpamTrigger>();
+        validTriggers.forEach(trigger => {
+            triggerMap.set(getWord(trigger).toLowerCase(), trigger);
+        });
+
+        const wordsToMatch = validTriggers.map(t => escapeRegExp(getWord(t)));
         
         const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
         
