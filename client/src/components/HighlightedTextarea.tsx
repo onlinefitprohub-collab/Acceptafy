@@ -1,6 +1,8 @@
-import { useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { SpamTrigger } from '../types';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { AlertTriangle } from 'lucide-react';
 
 interface HighlightedTextareaProps {
     value: string;
@@ -11,26 +13,14 @@ interface HighlightedTextareaProps {
     disabled?: boolean;
 }
 
-const getSeverityColor = (severity: 'High' | 'Medium' | 'Low'): string => {
+const getSeverityStyles = (severity: 'High' | 'Medium' | 'Low') => {
     switch (severity) {
-        case 'High': return 'rgba(239, 68, 68, 0.4)';
-        case 'Medium': return 'rgba(234, 179, 8, 0.4)';
-        case 'Low': return 'rgba(59, 130, 246, 0.4)';
-        default: return 'transparent';
+        case 'High': return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-300 dark:border-red-700';
+        case 'Medium': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700';
+        case 'Low': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700';
+        default: return 'bg-muted text-muted-foreground';
     }
 };
-
-const escapeRegExp = (string: string) => {
-    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-};
-
-const escapeHtml = (unsafe: string) => 
-    unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
 
 export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
     value,
@@ -40,102 +30,42 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
     placeholder,
     disabled,
 }) => {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const highlightRef = useRef<HTMLDivElement>(null);
-
-    const getHighlightedHtml = useCallback(() => {
-        const textValue = String(value || '');
-        if (!textValue) return '&nbsp;';
-        
-        if (!spamTriggers || spamTriggers.length === 0) {
-            return escapeHtml(textValue).replace(/\n/g, '<br>') + '<br>';
-        }
-
-        // Get the word/phrase from each trigger, filter out empty ones
-        const getWord = (t: SpamTrigger) => (t.word || t.phrase || '').trim();
-        const validTriggers = spamTriggers.filter(t => getWord(t).length > 0);
-        
-        if (validTriggers.length === 0) {
-            return escapeHtml(textValue).replace(/\n/g, '<br>') + '<br>';
-        }
-
-        const triggerMap = new Map<string, SpamTrigger>();
-        validTriggers.forEach(trigger => {
-            triggerMap.set(getWord(trigger).toLowerCase(), trigger);
-        });
-
-        const wordsToMatch = validTriggers.map(t => escapeRegExp(getWord(t)));
-        
-        const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
-        
-        const parts: string[] = [];
-        let lastIndex = 0;
-        let match;
-
-        while ((match = regex.exec(textValue)) !== null) {
-            if (match.index > lastIndex) {
-                parts.push(escapeHtml(textValue.substring(lastIndex, match.index)));
-            }
-            const matchedWord = match[0];
-            const trigger = triggerMap.get(matchedWord.toLowerCase());
-            const bgColor = trigger ? getSeverityColor(trigger.severity) : 'transparent';
-            parts.push(`<mark style="background-color: ${bgColor}; color: inherit; padding: 0; margin: 0; border-radius: 2px; box-decoration-break: clone;">${escapeHtml(matchedWord)}</mark>`);
-            lastIndex = regex.lastIndex;
-        }
-
-        if (lastIndex < textValue.length) {
-            parts.push(escapeHtml(textValue.substring(lastIndex)));
-        }
-        
-        return parts.join('').replace(/\n/g, '<br>') + '<br>';
-    }, [value, spamTriggers]);
-
-    const handleScroll = useCallback(() => {
-        if (textareaRef.current && highlightRef.current) {
-            highlightRef.current.scrollTop = textareaRef.current.scrollTop;
-            highlightRef.current.scrollLeft = textareaRef.current.scrollLeft;
-        }
-    }, []);
-
     const handleChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
         onChange({ target: { value: e.target.value } });
     }, [onChange]);
 
-    const sharedStyles = {
-        fontSize: '14px',
-        lineHeight: '1.5',
-        fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-        padding: '8px 12px',
-        whiteSpace: 'pre-wrap' as const,
-        wordWrap: 'break-word' as const,
-        overflowWrap: 'break-word' as const,
-        letterSpacing: 'normal',
-        wordSpacing: 'normal',
-    };
+    // Get valid triggers with word/phrase
+    const getWord = (t: SpamTrigger) => (t.word || t.phrase || '').trim();
+    const validTriggers = spamTriggers?.filter(t => getWord(t).length > 0) || [];
 
     return (
-        <div className={`relative ${className || ''}`}>
-            <div
-                ref={highlightRef}
-                className="absolute inset-0 overflow-hidden pointer-events-none text-transparent rounded-md border border-transparent box-border"
-                style={sharedStyles}
-                aria-hidden="true"
-                dangerouslySetInnerHTML={{ __html: getHighlightedHtml() }}
-            />
+        <div className={`space-y-2 ${className || ''}`}>
             <Textarea
-                ref={textareaRef}
                 value={value}
                 onChange={handleChange}
-                onScroll={handleScroll}
                 placeholder={placeholder}
                 disabled={disabled}
-                className="relative bg-transparent resize-none w-full h-full"
-                style={{
-                    ...sharedStyles,
-                    caretColor: 'currentColor',
-                }}
+                className="resize-none w-full h-full min-h-[200px]"
                 data-testid="textarea-email-body"
             />
+            {validTriggers.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Spam triggers found:</span>
+                    </div>
+                    {validTriggers.map((trigger, index) => (
+                        <Badge 
+                            key={index} 
+                            variant="outline"
+                            className={`${getSeverityStyles(trigger.severity)} border`}
+                            title={trigger.reason}
+                        >
+                            {getWord(trigger)}
+                        </Badge>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
