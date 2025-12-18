@@ -1148,12 +1148,20 @@ Return your response as a JSON object with this exact structure:
         });
       }
       
-      if (openRate < 25) {
+      // Industry average open rate is ~20%
+      if (openRate < 15) {
         recommendations.push({
           stage: 'Delivered → Opened',
-          issue: `Open rate below industry average (${openRate.toFixed(1)}%)`,
+          issue: `Open rate below industry average (${openRate.toFixed(1)}% vs ~20% average)`,
           recommendation: 'A/B test subject lines with different approaches: curiosity-driven, benefit-focused, or personalized. Optimize send timing based on your audience\'s engagement patterns.',
           impact: 'high'
+        });
+      } else if (openRate < 20) {
+        recommendations.push({
+          stage: 'Delivered → Opened',
+          issue: `Open rate near industry average (${openRate.toFixed(1)}%)`,
+          recommendation: 'Your open rate is close to industry standards. Consider A/B testing subject lines and send times to push above 20%.',
+          impact: 'medium'
         });
       }
       
