@@ -438,7 +438,7 @@ function AppContent() {
       previewText: v.previewText.replace(regex, replacement)
     })));
     
-    setSpamTriggers(prev => prev.filter(t => t.word.toLowerCase() !== word.toLowerCase()));
+    setSpamTriggers(prev => prev.filter(t => (t.word || t.phrase || '').toLowerCase() !== word.toLowerCase()));
   };
 
   const handleSuggestionClick = (triggerWord: string, suggestion: string) => {
