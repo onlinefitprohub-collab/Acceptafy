@@ -684,7 +684,7 @@ export function EmailTemplateLibrary({ onSelectTemplate }: EmailTemplateLibraryP
       </ScrollArea>
 
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5" />
@@ -695,7 +695,7 @@ export function EmailTemplateLibrary({ onSelectTemplate }: EmailTemplateLibraryP
             </DialogDescription>
           </DialogHeader>
           {previewTemplate && (
-            <div className="space-y-4">
+            <div className="flex-1 flex flex-col min-h-0 space-y-4">
               <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
                 <div className="text-sm">
                   <span className="font-medium">Subject:</span>{' '}
@@ -706,23 +706,28 @@ export function EmailTemplateLibrary({ onSelectTemplate }: EmailTemplateLibraryP
                   <span className="text-muted-foreground">{previewTemplate.previewText}</span>
                 </div>
               </div>
-              <ScrollArea className="h-[300px] rounded-lg border bg-background p-4">
+              <ScrollArea className="flex-1 min-h-[200px] max-h-[300px] rounded-lg border bg-background p-4">
                 <pre className="whitespace-pre-wrap text-sm font-sans">{previewTemplate.body}</pre>
               </ScrollArea>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
-                  Close
-                </Button>
-                <Button onClick={() => {
-                  onSelectTemplate(previewTemplate);
-                  setPreviewTemplate(null);
-                }}>
-                  <Check className="h-4 w-4 mr-1" />
-                  Use This Template
-                </Button>
-              </div>
             </div>
           )}
+          <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => setPreviewTemplate(null)} data-testid="button-close-preview">
+              Close
+            </Button>
+            <Button 
+              onClick={() => {
+                if (previewTemplate) {
+                  onSelectTemplate(previewTemplate);
+                  setPreviewTemplate(null);
+                }
+              }}
+              data-testid="button-use-template"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Use This Template
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,7 +20,8 @@ import {
   Loader2,
   Info,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  Link2Off
 } from 'lucide-react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -45,6 +46,7 @@ interface CampaignData {
   clicked: number;
   bounced?: number;
   unsubscribed?: number;
+  provider?: string;
 }
 
 interface DropOffAnalysis {
@@ -61,9 +63,56 @@ interface AIRecommendation {
   impact: 'high' | 'medium' | 'low';
 }
 
-const mockCampaigns: CampaignData[] = [
+interface ESPCampaignStats {
+  campaignId: string;
+  campaignName: string;
+  subject?: string;
+  sentAt?: string;
+  totalSent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  unsubscribed: number;
+  spamReports: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  unsubscribeRate: number;
+}
+
+interface ESPStatsResponse {
+  providers: Array<{
+    provider: string;
+    stats: {
+      campaigns: ESPCampaignStats[];
+    } | null;
+    error: string | null;
+  }>;
+  combinedStats: {
+    campaigns: ESPCampaignStats[];
+  } | null;
+}
+
+function transformESPCampaignToFunnelData(campaign: ESPCampaignStats, provider: string): CampaignData {
+  return {
+    id: campaign.campaignId,
+    name: campaign.campaignName,
+    subject: campaign.subject || '',
+    sentAt: campaign.sentAt || '',
+    sent: campaign.totalSent,
+    delivered: campaign.delivered,
+    opened: campaign.opened,
+    clicked: campaign.clicked,
+    bounced: campaign.bounced,
+    unsubscribed: campaign.unsubscribed,
+    provider
+  };
+}
+
+const sampleCampaigns: CampaignData[] = [
   {
-    id: '1',
+    id: 'sample-1',
     name: 'Spring Sale Announcement',
     subject: 'Don\'t Miss Our Spring Sale - 30% Off Everything!',
     sentAt: '2024-03-15',
@@ -75,7 +124,7 @@ const mockCampaigns: CampaignData[] = [
     unsubscribed: 15
   },
   {
-    id: '2',
+    id: 'sample-2',
     name: 'Product Launch Newsletter',
     subject: 'Introducing Our New Product Line',
     sentAt: '2024-03-10',
@@ -87,7 +136,7 @@ const mockCampaigns: CampaignData[] = [
     unsubscribed: 25
   },
   {
-    id: '3',
+    id: 'sample-3',
     name: 'Customer Appreciation Event',
     subject: 'You\'re Invited: Exclusive VIP Event',
     sentAt: '2024-03-05',
@@ -99,7 +148,7 @@ const mockCampaigns: CampaignData[] = [
     unsubscribed: 8
   },
   {
-    id: '4',
+    id: 'sample-4',
     name: 'Weekly Tips Newsletter',
     subject: '5 Tips to Boost Your Productivity',
     sentAt: '2024-03-01',
@@ -333,23 +382,53 @@ function ComparisonChart({ campaigns, selectedIds }: { campaigns: CampaignData[]
 }
 
 export function CampaignFunnelVisualization() {
-  const [selectedCampaign, setSelectedCampaign] = useState<string>(mockCampaigns[0].id);
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('');
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('funnel');
   
+  // Fetch real campaigns from connected ESPs
+  const { data: espStatsData, isLoading: isLoadingESP, error: espError } = useQuery<ESPStatsResponse>({
+    queryKey: ['/api/esp/stats'],
+  });
+  
+  // Transform ESP data to campaign list
+  const campaigns = useMemo(() => {
+    if (espStatsData?.combinedStats?.campaigns?.length) {
+      const espCampaigns: CampaignData[] = [];
+      
+      // Get campaigns from each provider
+      espStatsData.providers.forEach(providerData => {
+        if (providerData.stats?.campaigns) {
+          providerData.stats.campaigns.forEach(c => {
+            espCampaigns.push(transformESPCampaignToFunnelData(c, providerData.provider));
+          });
+        }
+      });
+      
+      return espCampaigns.length > 0 ? espCampaigns : sampleCampaigns;
+    }
+    return sampleCampaigns;
+  }, [espStatsData]);
+  
+  const isUsingRealData = useMemo(() => {
+    return espStatsData?.combinedStats?.campaigns && espStatsData.combinedStats.campaigns.length > 0;
+  }, [espStatsData]);
+  
+  // Set initial campaign selection once campaigns load
+  useEffect(() => {
+    if (campaigns.length > 0 && !selectedCampaign) {
+      setSelectedCampaign(campaigns[0].id);
+    }
+  }, [campaigns, selectedCampaign]);
+  
   const campaign = useMemo(() => 
-    mockCampaigns.find(c => c.id === selectedCampaign) || mockCampaigns[0],
-    [selectedCampaign]
+    campaigns.find(c => c.id === selectedCampaign) || campaigns[0],
+    [selectedCampaign, campaigns]
   );
   
-  const stages = useMemo(() => getStages(campaign), [campaign]);
-  const dropOffAnalysis = useMemo(() => getDropOffAnalysis(campaign), [campaign]);
-  
-  const { data: aiRecommendations, isLoading: isLoadingAI, refetch: refetchAI } = useQuery({
-    queryKey: ['/api/funnel/recommendations', selectedCampaign],
-    enabled: false
-  });
+  const stages = useMemo(() => campaign ? getStages(campaign) : [], [campaign]);
+  const dropOffAnalysis = useMemo(() => campaign ? getDropOffAnalysis(campaign) : [], [campaign]);
   
   const analyzeWithAIMutation = useMutation({
     mutationFn: async () => {
@@ -373,7 +452,7 @@ export function CampaignFunnelVisualization() {
     );
   };
   
-  const overallClickThroughRate = campaign.sent > 0 
+  const overallClickThroughRate = campaign?.sent > 0 
     ? (campaign.clicked / campaign.sent) * 100 
     : 0;
   
@@ -408,29 +487,66 @@ export function CampaignFunnelVisualization() {
         
         {!compareMode ? (
           <>
+            {isLoadingESP ? (
+              <Card>
+                <CardContent className="p-8 flex flex-col items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-4" />
+                  <p className="text-muted-foreground">Loading campaigns from your connected ESPs...</p>
+                </CardContent>
+              </Card>
+            ) : !campaign ? (
+              <Card>
+                <CardContent className="p-8 flex flex-col items-center justify-center text-center">
+                  <Link2Off className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No Campaigns Found</h3>
+                  <p className="text-muted-foreground mb-4">Connect your ESP in Integrations to analyze your campaigns</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg">Select Campaign</CardTitle>
-                    <Badge variant="outline" className="text-xs">Sample Data</Badge>
+                    {isUsingRealData ? (
+                      <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">Live ESP Data</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">Sample Data</Badge>
+                    )}
                   </div>
-                  <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-                    <SelectTrigger className="w-[280px]" data-testid="select-campaign">
-                      <SelectValue placeholder="Select a campaign" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockCampaigns.map(c => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/esp/stats'] })}
+                      data-testid="button-refresh-campaigns"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Refresh
+                    </Button>
+                    <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+                      <SelectTrigger className="w-[280px]" data-testid="select-campaign">
+                        <SelectValue placeholder="Select a campaign" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {campaigns.map(c => (
+                          <SelectItem key={c.id} value={c.id}>
+                            <div className="flex items-center gap-2">
+                              {c.name}
+                              {c.provider && <Badge variant="outline" className="text-xs ml-1">{c.provider}</Badge>}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <CardDescription className="mt-2">
-                  Connect your ESP in Integrations to see real campaign data
-                </CardDescription>
+                {!isUsingRealData && (
+                  <CardDescription className="mt-2">
+                    Connect your ESP in Integrations to see real campaign data
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-4 gap-4 mb-6">
@@ -647,18 +763,27 @@ export function CampaignFunnelVisualization() {
                 </Card>
               </TabsContent>
             </Tabs>
+              </>
+            )}
           </>
         ) : (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Campaign Comparison</CardTitle>
-              <CardDescription>
-                Select up to 4 campaigns to compare their performance metrics
-              </CardDescription>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <CardTitle className="text-lg">Campaign Comparison</CardTitle>
+                  <CardDescription>
+                    Select up to 4 campaigns to compare their performance metrics
+                  </CardDescription>
+                </div>
+                {isUsingRealData && (
+                  <Badge className="text-xs bg-green-500/10 text-green-600 border-green-500/20">Live ESP Data</Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4 mb-6">
-                {mockCampaigns.map(c => (
+                {campaigns.map(c => (
                   <div 
                     key={c.id}
                     className={`p-4 rounded-lg border cursor-pointer transition-all ${
@@ -670,7 +795,10 @@ export function CampaignFunnelVisualization() {
                     data-testid={`card-campaign-compare-${c.id}`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-foreground">{c.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{c.name}</span>
+                        {c.provider && <Badge variant="outline" className="text-xs">{c.provider}</Badge>}
+                      </div>
                       {selectedForComparison.includes(c.id) && (
                         <CheckCircle className="w-5 h-5 text-purple-500" />
                       )}
@@ -684,7 +812,7 @@ export function CampaignFunnelVisualization() {
                 ))}
               </div>
               
-              <ComparisonChart campaigns={mockCampaigns} selectedIds={selectedForComparison} />
+              <ComparisonChart campaigns={campaigns} selectedIds={selectedForComparison} />
             </CardContent>
           </Card>
         )}
