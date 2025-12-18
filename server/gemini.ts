@@ -701,7 +701,12 @@ For each variation, predict the open rate (15-45% range) based on industry bench
     }
   });
   const data = JSON.parse(res.text || '{}');
-  return data.variations || [];
+  // Fix AI sometimes returning decimals (0.32) instead of percentages (32)
+  const variations = data.variations || [];
+  return variations.map((v: SubjectVariation) => ({
+    ...v,
+    predictedOpenRate: v.predictedOpenRate < 1 ? Math.round(v.predictedOpenRate * 100) : Math.round(v.predictedOpenRate)
+  }));
 };
 
 export const generateOptimizationRoadmap = async (
