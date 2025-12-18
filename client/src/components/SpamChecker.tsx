@@ -126,13 +126,19 @@ export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
 
     const triggerMap = new Map<string, { word: string; severity: 'High' | 'Medium' | 'Low' }>();
     triggers.forEach(trigger => {
-      triggerMap.set(trigger.word.toLowerCase(), { 
-        word: trigger.word, 
-        severity: trigger.severity as 'High' | 'Medium' | 'Low' 
-      });
+      const word = trigger.word || trigger.phrase || '';
+      if (word) {
+        triggerMap.set(word.toLowerCase(), { 
+          word: word, 
+          severity: trigger.severity as 'High' | 'Medium' | 'Low' 
+        });
+      }
     });
 
-    const wordsToMatch = triggers.map(t => escapeRegExp(t.word));
+    const wordsToMatch = triggers.map(t => escapeRegExp(t.word || t.phrase || '')).filter(Boolean);
+    if (wordsToMatch.length === 0) {
+      return escapeHtml(fullText).replace(/\n/g, '<br>');
+    }
     const regex = new RegExp(`\\b(${wordsToMatch.join('|')})\\b`, 'gi');
 
     const parts: string[] = [];
@@ -371,11 +377,11 @@ export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
               </h3>
               
               {triggers.map((trigger, i) => {
-                const word = trigger.word || 'Unknown';
+                const word = trigger.word || trigger.phrase || 'Unknown';
                 const reason = trigger.reason || 'May trigger spam filters';
                 const severity = trigger.severity || 'Medium';
-                const suggestion = trigger.suggestion || 'Consider rephrasing';
-                const suggestions = trigger.suggestions || [];
+                const suggestion = trigger.suggestion || trigger.bestReplacement || 'Consider rephrasing';
+                const suggestions = trigger.suggestions || trigger.alternatives || [];
                 const rephraseExamples = trigger.rephraseExamples || [];
                 
                 return (
