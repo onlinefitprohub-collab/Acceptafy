@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -126,6 +128,7 @@ export function ListHealthDashboard({ connections }: ListHealthDashboardProps) {
   const [selectedProvider, setSelectedProvider] = useState<string>(
     connections.find(c => c.isConnected)?.provider || ''
   );
+  const [hideEmptyLists, setHideEmptyLists] = useState(true);
 
   const connectedProviders = connections.filter(c => c.isConnected);
 
@@ -189,7 +192,11 @@ export function ListHealthDashboard({ connections }: ListHealthDashboardProps) {
       ) : dashboardData ? (
         <>
           <SummaryCards summary={dashboardData.summary} />
-          <ListsTable lists={dashboardData.lists} />
+          <ListsTable 
+            lists={dashboardData.lists} 
+            hideEmptyLists={hideEmptyLists}
+            onToggleHideEmpty={setHideEmptyLists}
+          />
         </>
       ) : (
         <Card>
@@ -306,7 +313,21 @@ function SummaryCards({ summary }: { summary: ListHealthSummary }) {
   );
 }
 
-function ListsTable({ lists }: { lists: ListHealthData[] }) {
+function ListsTable({ 
+  lists, 
+  hideEmptyLists, 
+  onToggleHideEmpty 
+}: { 
+  lists: ListHealthData[];
+  hideEmptyLists: boolean;
+  onToggleHideEmpty: (value: boolean) => void;
+}) {
+  const filteredLists = hideEmptyLists 
+    ? lists.filter(list => list.totalSubscribers > 0)
+    : lists;
+  
+  const emptyListCount = lists.filter(list => list.totalSubscribers === 0).length;
+
   if (lists.length === 0) {
     return null;
   }
@@ -314,20 +335,44 @@ function ListsTable({ lists }: { lists: ListHealthData[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Lists Overview
-        </CardTitle>
-        <CardDescription>
-          Individual list performance and health metrics
-        </CardDescription>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Lists Overview
+            </CardTitle>
+            <CardDescription>
+              Individual list performance and health metrics
+            </CardDescription>
+          </div>
+          {emptyListCount > 0 && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id="hide-empty"
+                checked={hideEmptyLists}
+                onCheckedChange={onToggleHideEmpty}
+                data-testid="switch-hide-empty-lists"
+              />
+              <Label htmlFor="hide-empty" className="text-sm cursor-pointer">
+                Hide empty lists ({emptyListCount})
+              </Label>
+            </div>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {lists.map((list) => (
-            <ListRow key={list.listId} list={list} />
-          ))}
-        </div>
+        {filteredLists.length === 0 ? (
+          <div className="text-center py-6 text-muted-foreground">
+            <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>All lists are empty. Toggle the switch above to show them.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredLists.map((list) => (
+              <ListRow key={list.listId} list={list} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
