@@ -471,12 +471,19 @@ export async function registerRoutes(
         counter = await storage.createOrResetUsageCounter(userId);
       }
 
+      // Get daily usage as well
+      let dailyCounter = await storage.getDailyUsageCounter(userId);
+      if (!dailyCounter) {
+        dailyCounter = await storage.createDailyUsageCounter(userId);
+      }
+
       const tier = normalizeTier(user?.subscriptionTier);
       const { SUBSCRIPTION_LIMITS } = await import("@shared/schema");
       const limits = SUBSCRIPTION_LIMITS[tier];
 
       res.json({
         usage: counter,
+        dailyUsage: dailyCounter,
         limits,
         tier
       });
@@ -708,19 +715,30 @@ export async function registerRoutes(
       }
     }
     
-    const { allowed, current, limit } = await storage.checkUsageLimit(userId, field);
+    // Check both daily and monthly limits
+    const usageLimits = await storage.checkBothUsageLimits(userId, field);
     
-    if (!allowed) {
-      res.status(403).json({ 
-        error: 'Usage limit reached',
-        message: `You've reached your monthly limit of ${limit}. Upgrade your plan for more.`,
-        current,
-        limit
-      });
+    if (!usageLimits.allowed) {
+      if (usageLimits.reason === 'daily') {
+        res.status(403).json({ 
+          error: 'Daily limit reached',
+          message: `You've reached your daily limit of ${usageLimits.daily.limit}. Your daily limit will reset at midnight UTC.`,
+          daily: usageLimits.daily,
+          monthly: usageLimits.monthly
+        });
+      } else {
+        res.status(403).json({ 
+          error: 'Monthly limit reached',
+          message: `You've reached your monthly limit of ${usageLimits.monthly.limit}. Upgrade your plan for more.`,
+          daily: usageLimits.daily,
+          monthly: usageLimits.monthly
+        });
+      }
       return false;
     }
     
-    await storage.incrementUsage(userId, field);
+    // Increment both daily and monthly counters
+    await storage.incrementBothUsages(userId, field);
     return true;
   }
 

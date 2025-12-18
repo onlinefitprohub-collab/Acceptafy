@@ -54,11 +54,21 @@ interface UsageData {
     periodStart: string;
     periodEnd: string;
   };
+  dailyUsage?: {
+    gradeCount: number;
+    rewriteCount: number;
+    followupCount: number;
+    deliverabilityChecks: number;
+  };
   limits: {
     gradesPerMonth: number;
     rewritesPerMonth: number;
     followupsPerMonth: number;
     deliverabilityChecksPerMonth: number;
+    gradesPerDay: number;
+    rewritesPerDay: number;
+    followupsPerDay: number;
+    deliverabilityChecksPerDay: number;
     historyLimit: number;
   };
   tier: string;
@@ -243,24 +253,32 @@ export default function Account() {
       label: "Email Grades",
       current: usageData.usage.gradeCount,
       limit: usageData.limits.gradesPerMonth,
+      dailyCurrent: usageData.dailyUsage?.gradeCount ?? 0,
+      dailyLimit: usageData.limits.gradesPerDay,
       icon: Mail,
     },
     {
       label: "AI Rewrites",
       current: usageData.usage.rewriteCount,
       limit: usageData.limits.rewritesPerMonth,
+      dailyCurrent: usageData.dailyUsage?.rewriteCount ?? 0,
+      dailyLimit: usageData.limits.rewritesPerDay,
       icon: Zap,
     },
     {
       label: "Follow-ups",
       current: usageData.usage.followupCount,
       limit: usageData.limits.followupsPerMonth,
+      dailyCurrent: usageData.dailyUsage?.followupCount ?? 0,
+      dailyLimit: usageData.limits.followupsPerDay,
       icon: Mail,
     },
     {
       label: "Deliverability Checks",
       current: usageData.usage.deliverabilityChecks,
       limit: usageData.limits.deliverabilityChecksPerMonth,
+      dailyCurrent: usageData.dailyUsage?.deliverabilityChecks ?? 0,
+      dailyLimit: usageData.limits.deliverabilityChecksPerDay,
       icon: Shield,
     },
   ] : [];
@@ -396,11 +414,11 @@ export default function Account() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5" />
-                This Month's Usage
+                Usage Limits
               </CardTitle>
               {usageData && (
                 <CardDescription>
-                  Resets on {new Date(usageData.usage.periodEnd).toLocaleDateString()}
+                  Monthly resets on {new Date(usageData.usage.periodEnd).toLocaleDateString()} • Daily resets at midnight UTC
                 </CardDescription>
               )}
             </CardHeader>
@@ -410,27 +428,46 @@ export default function Account() {
                   <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {usageItems.map((item, index) => {
                     const Icon = item.icon;
-                    const percentage = (item.current / item.limit) * 100;
-                    const isNearLimit = percentage > 80;
+                    const monthlyPercentage = (item.current / item.limit) * 100;
+                    const dailyPercentage = item.dailyLimit === -1 ? 0 : ((item.dailyCurrent ?? 0) / item.dailyLimit) * 100;
+                    const isMonthlyNearLimit = monthlyPercentage > 80;
+                    const isDailyNearLimit = dailyPercentage > 80;
 
                     return (
-                      <div key={index} data-testid={`usage-item-${index}`}>
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">{item.label}</span>
-                          </div>
-                          <span className={`text-sm ${isNearLimit ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
-                            {item.current} / {item.limit}
-                          </span>
+                      <div key={index} data-testid={`usage-item-${index}`} className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">{item.label}</span>
                         </div>
-                        <Progress 
-                          value={Math.min(percentage, 100)} 
-                          className={`h-2 ${isNearLimit ? '[&>div]:bg-orange-500' : ''}`}
-                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-muted-foreground">Monthly</span>
+                              <span className={`text-xs ${isMonthlyNearLimit ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
+                                {item.current} / {item.limit}
+                              </span>
+                            </div>
+                            <Progress 
+                              value={Math.min(monthlyPercentage, 100)} 
+                              className={`h-1.5 ${isMonthlyNearLimit ? '[&>div]:bg-orange-500' : ''}`}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-muted-foreground">Daily</span>
+                              <span className={`text-xs ${isDailyNearLimit ? 'text-orange-500 font-medium' : 'text-muted-foreground'}`}>
+                                {item.dailyCurrent ?? 0} / {item.dailyLimit === -1 ? '∞' : item.dailyLimit}
+                              </span>
+                            </div>
+                            <Progress 
+                              value={item.dailyLimit === -1 ? 0 : Math.min(dailyPercentage, 100)} 
+                              className={`h-1.5 ${isDailyNearLimit ? '[&>div]:bg-orange-500' : ''}`}
+                            />
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
