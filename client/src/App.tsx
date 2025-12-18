@@ -1399,7 +1399,67 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {!body.trim() && (
+            {history.length > 0 && (
+              <div className="p-4 rounded-lg bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20">
+                <label className="text-sm font-medium text-foreground mb-2 block">
+                  Load from Previous Email
+                </label>
+                <select
+                  className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  data-testid="select-tone-email"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (!value) return;
+                    const item = history.find(h => h.id === value);
+                    if (item) {
+                      const subject = item.content.variations?.[0]?.subject || '';
+                      const previewText = item.content.variations?.[0]?.previewText || '';
+                      const emailBody = item.content.body || '';
+                      
+                      setVariations([{ subject, previewText }]);
+                      setBody(emailBody);
+                      toast({
+                        title: 'Email Loaded',
+                        description: `Loaded "${subject || 'Untitled'}" for tone rewriting`,
+                      });
+                    }
+                  }}
+                >
+                  <option value="">Select an email to rewrite...</option>
+                  {history.map((item) => {
+                    const subject = item.content?.variations?.[0]?.subject || 'No subject';
+                    const truncatedSubject = subject.length > 50 ? subject.slice(0, 50) + '...' : subject;
+                    const formattedDate = item.date ? new Date(item.date).toLocaleDateString() : '';
+                    return (
+                      <option 
+                        key={item.id} 
+                        value={item.id}
+                        data-testid={`select-tone-email-${item.id}`}
+                      >
+                        {truncatedSubject}{formattedDate ? ` (${formattedDate})` : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+                {(variations[0]?.subject || body) && (
+                  <div className="mt-3 p-3 rounded-lg bg-background/50 border border-border/50 space-y-2">
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Subject:</span>
+                      <p className="text-sm text-foreground">{variations[0]?.subject || 'No subject'}</p>
+                    </div>
+                    {body && (
+                      <div>
+                        <span className="text-xs font-medium text-muted-foreground">Body Preview:</span>
+                        <p className="text-sm text-muted-foreground line-clamp-3">{body}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!body.trim() && !history.length && (
               <Card className="bg-muted/50 border-dashed">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground mb-3">
