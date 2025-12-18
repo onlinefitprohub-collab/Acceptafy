@@ -47,8 +47,8 @@ const TabButton: React.FC<{
                     ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-lg shadow-orange-500/30 ring-2 ring-orange-400/50' 
                     : 'bg-purple-600 text-white shadow-md'
                 : highlighted
-                    ? 'text-amber-400 hover:bg-amber-500/20 ring-1 ring-amber-500/30'
-                    : 'text-gray-300 hover:bg-white/10'
+                    ? 'text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 ring-1 ring-amber-500/30'
+                    : 'text-muted-foreground hover:bg-muted'
         }`}
         data-testid={`tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
@@ -140,7 +140,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({
 
   return (
     <div className="space-y-6" data-testid="results-tabs">
-        <div className="flex flex-col sm:flex-row items-center gap-2 border border-white/10 p-1.5 rounded-lg bg-white/5 w-full overflow-x-auto">
+        <div className="flex flex-col sm:flex-row items-center gap-2 border border-border p-1.5 rounded-lg bg-card w-full overflow-x-auto">
             <TabButton label="Priority Fixes" icon={<Zap className="w-5 h-5" />} isActive={activeTab === 'fixes'} onClick={() => setActiveTab('fixes')} highlighted />
             <TabButton label="Core Analysis" icon={<ChecklistIcon />} isActive={activeTab === 'core'} onClick={() => setActiveTab('core')} />
             <TabButton label="Deliverability Risks" icon={<SpamIcon className="w-5 h-5" />} isActive={activeTab === 'risks'} onClick={() => setActiveTab('risks')} />

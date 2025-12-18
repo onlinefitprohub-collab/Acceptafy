@@ -28,7 +28,7 @@ export const LinkAnalysisCard: React.FC<LinkAnalysisCardProps> = ({ linkFindings
   }
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg" data-testid="link-analysis-card">
+    <div className="bg-card border border-border rounded-2xl shadow-lg" data-testid="link-analysis-card">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -37,31 +37,31 @@ export const LinkAnalysisCard: React.FC<LinkAnalysisCardProps> = ({ linkFindings
         data-testid="button-expand-link-analysis"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><LinkIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Link & Reputation Analysis</h3>
+          <span className="text-purple-600 dark:text-purple-400"><LinkIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Link & Reputation Analysis</h3>
           <InfoTooltip text="Checks all links in your email for issues that can harm deliverability, such as the use of public URL shorteners or non-descriptive anchor text." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
       
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="border-t border-white/10 pt-4 mt-4 space-y-4">
+            <div className="border-t border-border pt-4 mt-4 space-y-4">
               {linkFindings.map((finding, index) => (
-                <div key={index} className="bg-white/5 p-4 rounded-lg border border-white/10" data-testid={`link-finding-${index}`}>
+                <div key={index} className="bg-muted p-4 rounded-lg border border-border" data-testid={`link-finding-${index}`}>
                   <div className="flex items-start gap-4">
                     <div className="mt-1">{getStatusIcon(finding.status)}</div>
                     <div className="flex-1">
-                      <p className="font-semibold text-gray-300 break-all">
+                      <p className="font-semibold text-foreground break-all">
                         {finding.anchorText}
                       </p>
-                      <p className="text-xs text-purple-400 break-all">{finding.url}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400 break-all">{finding.url}</p>
 
-                      <div className="mt-3 border-t border-white/10 pt-3">
-                          <p className="text-sm text-gray-400"><span className="font-semibold text-gray-300">Reason:</span> {finding.reason}</p>
+                      <div className="mt-3 border-t border-border pt-3">
+                          <p className="text-sm text-muted-foreground"><span className="font-semibold text-foreground">Reason:</span> {finding.reason}</p>
                           {finding.suggestion && (
-                              <p className="text-sm text-gray-400 mt-1"><span className="font-semibold text-gray-300">Suggestion:</span> {finding.suggestion}</p>
+                              <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold text-foreground">Suggestion:</span> {finding.suggestion}</p>
                           )}
                       </div>
                     </div>

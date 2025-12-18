@@ -23,14 +23,14 @@ export const ReplyAbilityCard: React.FC<ReplyAbilityCardProps> = ({
   const offset = circumference - (analysis.score / 100) * circumference;
 
   const getColor = (score: number) => {
-    if (score > 75) return 'stroke-green-400 text-green-300';
-    if (score > 40) return 'stroke-yellow-400 text-yellow-300';
-    return 'stroke-red-400 text-red-300';
+    if (score > 75) return 'stroke-green-400 text-green-600 dark:text-green-300';
+    if (score > 40) return 'stroke-yellow-400 text-yellow-600 dark:text-yellow-300';
+    return 'stroke-red-400 text-red-600 dark:text-red-300';
   };
   const colorClasses = getColor(analysis.score);
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300 h-full flex flex-col" data-testid="reply-ability-card">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-lg transition-all duration-300 h-full flex flex-col" data-testid="reply-ability-card">
         <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
@@ -40,18 +40,18 @@ export const ReplyAbilityCard: React.FC<ReplyAbilityCardProps> = ({
             data-testid="button-expand-reply-ability"
         >
             <div className="flex items-center gap-3">
-                <span className="text-purple-400"><ReplyIcon /></span>
-                <h3 className="text-lg sm:text-xl font-semibold text-white">Reply-Ability Score</h3>
+                <span className="text-purple-600 dark:text-purple-400"><ReplyIcon /></span>
+                <h3 className="text-lg sm:text-xl font-semibold text-foreground">Reply-Ability Score</h3>
                 <InfoTooltip text="Predicts how likely your email is to get a reply. Replies are a strong positive signal to inbox providers, significantly improving your sender reputation." />
             </div>
-            <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
         </button>
         
         <div className="flex-grow flex flex-col md:flex-row items-center gap-4 mt-4">
             <div className="flex-shrink-0">
                 <div className="relative w-20 h-20">
                     <svg className="w-full h-full" viewBox="0 0 60 60">
-                        <circle className="stroke-current text-gray-900/50" strokeWidth="4" fill="transparent" r="28" cx="30" cy="30" />
+                        <circle className="stroke-current text-muted" strokeWidth="4" fill="transparent" r="28" cx="30" cy="30" />
                         <circle
                             className={`transition-all duration-1000 ease-in-out ${colorClasses}`}
                             strokeWidth="4"
@@ -71,26 +71,26 @@ export const ReplyAbilityCard: React.FC<ReplyAbilityCardProps> = ({
                 </div>
             </div>
             <div className="flex-1 text-center md:text-left">
-                <p className="text-gray-400 italic text-sm">"{analysis.summary}"</p>
+                <p className="text-muted-foreground italic text-sm">"{analysis.summary}"</p>
             </div>
         </div>
 
         <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
             <div className="overflow-hidden">
-                <div className="border-t border-white/10 pt-4 mt-4">
-                    <h4 className="font-semibold text-gray-300 mb-2">How to improve:</h4>
-                    <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
+                <div className="border-t border-border pt-4 mt-4">
+                    <h4 className="font-semibold text-foreground mb-2">How to improve:</h4>
+                    <ul className="space-y-1.5 list-disc list-inside text-muted-foreground text-sm">
                         {(analysis.feedback || []).map((item, index) => (
                             <li key={index}>{item}</li>
                         ))}
                     </ul>
 
-                    <div className="mt-4 pt-4 border-t border-white/10">
+                    <div className="mt-4 pt-4 border-t border-border">
                         {!generatedPs ? (
                             <button
                                 onClick={onGeneratePs}
                                 disabled={isGeneratingPs}
-                                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-purple-300 bg-purple-500/20 rounded-lg hover:bg-purple-500/30 transition-colors disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-semibold text-purple-600 dark:text-purple-300 bg-purple-500/20 rounded-lg hover:bg-purple-500/30 transition-colors disabled:opacity-50"
                                 data-testid="button-generate-ps"
                             >
                                 {isGeneratingPs ? (
@@ -106,8 +106,8 @@ export const ReplyAbilityCard: React.FC<ReplyAbilityCardProps> = ({
                                 )}
                             </button>
                         ) : (
-                            <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10 space-y-2 animate-fade-in">
-                                <p className="text-sm text-green-300 italic" data-testid="text-generated-ps">"{generatedPs}"</p>
+                            <div className="p-3 bg-muted rounded-lg border border-border space-y-2 animate-fade-in">
+                                <p className="text-sm text-green-600 dark:text-green-300 italic" data-testid="text-generated-ps">"{generatedPs}"</p>
                                 <div className="flex justify-end">
                                     <button 
                                         onClick={onAppendPs}

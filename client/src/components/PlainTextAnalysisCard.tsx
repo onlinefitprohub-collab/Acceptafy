@@ -18,7 +18,7 @@ export const PlainTextAnalysisCard: React.FC<PlainTextAnalysisCardProps> = ({ an
   const colorClass = getColor(analysis.readabilityScore);
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg" data-testid="plain-text-analysis-card">
+    <div className="bg-card border border-border rounded-2xl shadow-lg" data-testid="plain-text-analysis-card">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -27,27 +27,27 @@ export const PlainTextAnalysisCard: React.FC<PlainTextAnalysisCardProps> = ({ an
         data-testid="button-expand-plain-text"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><PlainTextIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Plain-Text Analysis</h3>
+          <span className="text-purple-600 dark:text-purple-400"><PlainTextIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Plain-Text Analysis</h3>
           <InfoTooltip text="A clean plain-text version is crucial for deliverability and accessibility. This analysis ensures it's readable and properly formatted." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
 
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="border-t border-white/10 pt-4 mt-4 space-y-4">
+            <div className="border-t border-border pt-4 mt-4 space-y-4">
               <div>
-                <h4 className="font-semibold text-gray-300 mb-1">Readability Score: {analysis.readabilityScore}/100</h4>
-                <div className="w-full bg-gray-900/50 rounded-full h-2.5 border border-white/10">
+                <h4 className="font-semibold text-foreground mb-1">Readability Score: {analysis.readabilityScore}/100</h4>
+                <div className="w-full bg-muted rounded-full h-2.5 border border-border">
                     <div className={`${colorClass} h-2 rounded-full m-px`} style={{ width: `calc(${analysis.readabilityScore}% - 2px)` }}></div>
                 </div>
               </div>
 
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Feedback:</h4>
-                <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
+                <h4 className="font-semibold text-foreground mb-2">Feedback:</h4>
+                <ul className="space-y-1.5 list-disc list-inside text-muted-foreground text-sm">
                     {(analysis.feedback || []).map((item, index) => (
                         <li key={index}>{item}</li>
                     ))}
@@ -55,8 +55,8 @@ export const PlainTextAnalysisCard: React.FC<PlainTextAnalysisCardProps> = ({ an
               </div>
               
               <div>
-                <h4 className="font-semibold text-gray-300 mb-2">Preview</h4>
-                <div className="p-3 bg-gray-900/50 rounded-lg text-gray-300 border border-white/10 h-48 overflow-y-auto whitespace-pre-wrap font-sans text-sm" data-testid="text-plain-preview">
+                <h4 className="font-semibold text-foreground mb-2">Preview</h4>
+                <div className="p-3 bg-muted rounded-lg text-foreground border border-border h-48 overflow-y-auto whitespace-pre-wrap font-sans text-sm" data-testid="text-plain-preview">
                     {analysis.plainTextVersion}
                 </div>
               </div>

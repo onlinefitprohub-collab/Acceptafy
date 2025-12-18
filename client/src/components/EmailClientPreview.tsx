@@ -20,7 +20,7 @@ const ClientTab: React.FC<{
   return (
     <button
       onClick={() => onClick(client)}
-      className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${isActive ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+      className={`flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-md transition-colors ${isActive ? 'bg-purple-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}
       data-testid={`button-client-${client}`}
     >
       {children}
@@ -97,17 +97,17 @@ const AppleMailPreview: React.FC<{ subject: string, previewText: string, body: s
 );
 
 const DarkModeToggle: React.FC<{ isDark: boolean; setIsDark: (isDark: boolean) => void }> = ({ isDark, setIsDark }) => (
-    <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
+    <div className="flex items-center gap-2 p-1 rounded-lg bg-muted border border-border">
         <button
             onClick={() => setIsDark(false)}
-            className={`px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${!isDark ? 'bg-white/10 text-gray-200' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${!isDark ? 'bg-background text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             data-testid="button-preview-light"
         >
             <SunIcon className="w-4 h-4" /> Light
         </button>
         <button
             onClick={() => setIsDark(true)}
-            className={`px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${isDark ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`px-3 py-1 text-sm rounded-md flex items-center gap-2 transition-colors ${isDark ? 'bg-purple-600 text-white' : 'text-muted-foreground hover:text-foreground'}`}
             data-testid="button-preview-dark"
         >
             <MoonIcon className="w-4 h-4" /> Dark
@@ -141,7 +141,7 @@ export const EmailClientPreview: React.FC<EmailClientPreviewProps> = ({ result, 
   };
 
   return (
-    <div className="mt-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-lg" data-testid="email-client-preview">
+    <div className="mt-8 bg-card border border-border rounded-2xl shadow-lg" data-testid="email-client-preview">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -150,20 +150,20 @@ export const EmailClientPreview: React.FC<EmailClientPreviewProps> = ({ result, 
         data-testid="button-expand-email-preview"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><MonitorIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Email Client Preview</h3>
+          <span className="text-purple-600 dark:text-purple-400"><MonitorIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Email Client Preview</h3>
           <InfoTooltip text="Simulates how your email will appear in popular inboxes like Gmail and Outlook. This helps catch formatting issues before you send." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
 
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-            <div className="border-t border-white/10 pt-4 mt-4">
-              <p className="text-sm text-gray-400 mb-4">See how your email will look in popular inboxes. Note: This is a simulation for formatting and may not be pixel-perfect.</p>
+            <div className="border-t border-border pt-4 mt-4">
+              <p className="text-sm text-muted-foreground mb-4">See how your email will look in popular inboxes. Note: This is a simulation for formatting and may not be pixel-perfect.</p>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2 border border-white/10 p-1 rounded-lg bg-white/5 w-full sm:w-auto">
+                <div className="flex items-center gap-2 border border-border p-1 rounded-lg bg-muted w-full sm:w-auto">
                     <ClientTab client="gmail" activeClient={activeClient} onClick={setActiveClient}>
                         <GmailIcon className="w-4 h-4" /> Gmail
                     </ClientTab>

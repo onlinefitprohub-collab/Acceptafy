@@ -13,14 +13,14 @@ export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> =
   const offset = circumference - (scoreData.score / 100) * circumference;
 
   const getColor = (score: number) => {
-    if (score > 75) return 'stroke-green-400 text-green-300';
-    if (score > 40) return 'stroke-yellow-400 text-yellow-300';
-    return 'stroke-red-400 text-red-300';
+    if (score > 75) return 'stroke-green-400 text-green-600 dark:text-green-300';
+    if (score > 40) return 'stroke-yellow-400 text-yellow-600 dark:text-yellow-300';
+    return 'stroke-red-400 text-red-600 dark:text-red-300';
   };
   const colorClasses = getColor(scoreData.score);
 
   return (
-    <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg h-full flex flex-col" data-testid="personalization-score-card">
+    <div className="bg-card border border-border rounded-2xl p-4 sm:p-6 shadow-lg h-full flex flex-col" data-testid="personalization-score-card">
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -30,11 +30,11 @@ export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> =
         data-testid="button-expand-personalization"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-400"><PersonalizationIcon /></span>
-          <h3 className="text-lg sm:text-xl font-semibold text-white">Personalization & Authenticity</h3>
+          <span className="text-purple-600 dark:text-purple-400"><PersonalizationIcon /></span>
+          <h3 className="text-lg sm:text-xl font-semibold text-foreground">Personalization & Authenticity</h3>
           <InfoTooltip text="Scores how personalized and human your email feels. High scores indicate the email feels like a 1-to-1 conversation, which boosts engagement and deliverability." />
         </div>
-        <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
       </button>
 
       <div className="flex-grow flex flex-col md:flex-row items-center gap-4 mt-4">
@@ -42,7 +42,7 @@ export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> =
           <div className="relative w-20 h-20">
             <svg className="w-full h-full" viewBox="0 0 60 60">
               <circle
-                className="stroke-current text-gray-900/50"
+                className="stroke-current text-muted"
                 strokeWidth="4"
                 fill="transparent"
                 r="28"
@@ -68,15 +68,15 @@ export const PersonalizationScoreCard: React.FC<PersonalizationScoreCardProps> =
           </div>
         </div>
         <div className="flex-1 text-center md:text-left">
-          <p className="text-gray-400 italic text-sm">"{scoreData.summary}"</p>
+          <p className="text-muted-foreground italic text-sm">"{scoreData.summary}"</p>
         </div>
       </div>
 
       <div className={`grid transition-all duration-500 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
-          <div className="border-t border-white/10 pt-4 mt-4">
-              <h4 className="font-semibold text-gray-300 mb-2">Detailed Feedback:</h4>
-              <ul className="space-y-1.5 list-disc list-inside text-gray-300 text-sm">
+          <div className="border-t border-border pt-4 mt-4">
+              <h4 className="font-semibold text-foreground mb-2">Detailed Feedback:</h4>
+              <ul className="space-y-1.5 list-disc list-inside text-muted-foreground text-sm">
                 {(scoreData.feedback || []).map((item, index) => (
                   <li key={index} className="leading-relaxed">{item}</li>
                 ))}
