@@ -121,12 +121,18 @@ export type CompetitorAnalysis = typeof competitorAnalyses.$inferSelect;
 export type InsertCompetitorAnalysis = typeof competitorAnalyses.$inferInsert;
 
 // Subscription tier limits - designed to prevent abuse while providing value
+// Daily limits prevent burst abuse while monthly limits cap total usage
 export const SUBSCRIPTION_LIMITS = {
   starter: {
     gradesPerMonth: 3,
     rewritesPerMonth: 3,
     followupsPerMonth: 20,
     deliverabilityChecksPerMonth: 10,
+    // Daily limits (same as monthly for starter since limits are very low)
+    gradesPerDay: 3,
+    rewritesPerDay: 3,
+    followupsPerDay: 20,
+    deliverabilityChecksPerDay: 10,
     historyLimit: 30,
     advancedSpamAnalysis: false,
     whitelabelReports: false,
@@ -136,6 +142,11 @@ export const SUBSCRIPTION_LIMITS = {
     rewritesPerMonth: 300,
     followupsPerMonth: 150,
     deliverabilityChecksPerMonth: 100,
+    // Daily limits (~10% of monthly to spread usage across the month)
+    gradesPerDay: 50,
+    rewritesPerDay: 25,
+    followupsPerDay: 15,
+    deliverabilityChecksPerDay: 10,
     historyLimit: 5000,
     advancedSpamAnalysis: true,
     whitelabelReports: false,
@@ -145,6 +156,11 @@ export const SUBSCRIPTION_LIMITS = {
     rewritesPerMonth: 1200,
     followupsPerMonth: 600,
     deliverabilityChecksPerMonth: 400,
+    // Daily limits (~6% of monthly - more flexibility for high-volume users)
+    gradesPerDay: 150,
+    rewritesPerDay: 75,
+    followupsPerDay: 40,
+    deliverabilityChecksPerDay: 25,
     historyLimit: 50000,
     advancedSpamAnalysis: true,
     whitelabelReports: true,
