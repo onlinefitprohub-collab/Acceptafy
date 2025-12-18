@@ -163,3 +163,29 @@ Preferred communication style: Simple, everyday language.
   - Summary cards: total subscribers, health score with progress bar, engagement metrics, list hygiene stats
   - Lists table: individual list rows with health scores, trends, growth rates, engagement tiers
 - ESP support for list health: SendGrid, Mailchimp, Klaviyo, Ontraport (via `fetchListHealth` method)
+
+**Content Calendar (Phase 2)**:
+- New database schema: `scheduledCampaigns` table for campaign scheduling and tracking
+  - Fields: name, subject, body, scheduledDate, status, ESP provider, target lists
+  - Metrics tracking: sent, delivered, opened, clicked counts
+  - Status management: draft, scheduled, sent, cancelled
+- Backend: Full CRUD routes for scheduled campaigns (`/api/scheduled-campaigns/*`)
+- Frontend component: `ContentCalendar.tsx` with month/week toggle views
+  - Calendar grid with scheduled campaigns displayed as events
+  - Create/edit campaign dialogs with ESP integration fields
+  - Drag-and-drop rescheduling for campaign events
+  - Status indicators and color coding by campaign status
+- Navigation: Accessible via Tools > Content Calendar in sidebar
+
+**Campaign Funnel Visualization (Phase 3)**:
+- New component: `CampaignFunnelVisualization.tsx` for campaign analytics
+  - Funnel chart: Visual Sent → Delivered → Opened → Clicked flow
+  - Metrics cards: Real-time display of campaign statistics
+  - Drop-off analysis: Stage-by-stage conversion tracking with severity indicators
+  - Compare mode: Side-by-side comparison of up to 4 campaigns
+- AI-powered analysis: `/api/funnel/analyze` endpoint
+  - Gemini-powered campaign optimization recommendations
+  - Fallback rule-based recommendations when AI unavailable
+  - Priority action and overall assessment summaries
+- Sample data for demonstration with note to connect ESP for real data
+- Navigation: Accessible via Tools > Campaign Funnel in sidebar
