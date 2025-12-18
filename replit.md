@@ -202,3 +202,13 @@ Preferred communication style: Simple, everyday language.
 - Error responses distinguish between "Daily limit reached" and "Monthly limit reached"
 - Frontend: Account.tsx displays both daily and monthly usage with dual progress bars
 - API: /api/usage now returns dailyUsage object alongside monthly usage
+
+**Import from ESP Feature**:
+- Added "Import from ESP" button to Email Grader card header
+- Modal workflow: Select connected ESP → View campaigns → Import campaign content
+- Fetches campaigns from `/api/esp/stats/:provider` endpoint
+- Retrieves campaign content via `/api/esp/:provider/campaign/:campaignId/content`
+- Populates subject line and email body into grader input fields
+- Preserves existing variations when importing (updates first variation only)
+- Supported ESPs: SendGrid, Mailchimp, HubSpot, Klaviyo, Ontraport
+- Error handling for missing content, disconnected ESPs, and API failures
