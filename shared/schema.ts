@@ -51,6 +51,20 @@ export const usageCounters = pgTable("usage_counters", {
 export type UsageCounter = typeof usageCounters.$inferSelect;
 export type InsertUsageCounter = typeof usageCounters.$inferInsert;
 
+// Daily usage tracking table (resets each day to prevent burst abuse)
+export const dailyUsageCounters = pgTable("daily_usage_counters", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  date: varchar("date").notNull(), // YYYY-MM-DD format for easy comparison
+  gradeCount: integer("grade_count").default(0),
+  rewriteCount: integer("rewrite_count").default(0),
+  followupCount: integer("followup_count").default(0),
+  deliverabilityChecks: integer("deliverability_checks").default(0),
+});
+
+export type DailyUsageCounter = typeof dailyUsageCounters.$inferSelect;
+export type InsertDailyUsageCounter = typeof dailyUsageCounters.$inferInsert;
+
 // Email analyses history table (replaces localStorage)
 export const emailAnalyses = pgTable("email_analyses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

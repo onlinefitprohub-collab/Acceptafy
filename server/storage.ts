@@ -1,6 +1,7 @@
 import {
   users,
   usageCounters,
+  dailyUsageCounters,
   emailAnalyses,
   userGamification,
   emailTemplates,
@@ -22,6 +23,8 @@ import {
   type UpsertUser,
   type UsageCounter,
   type InsertUsageCounter,
+  type DailyUsageCounter,
+  type InsertDailyUsageCounter,
   type EmailAnalysis,
   type InsertEmailAnalysis,
   type UserGamification,
@@ -78,6 +81,19 @@ export interface IStorage {
   createOrResetUsageCounter(userId: string): Promise<UsageCounter>;
   incrementUsage(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<UsageCounter>;
   checkUsageLimit(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{ allowed: boolean; current: number; limit: number }>;
+  
+  // Daily usage tracking (anti-abuse)
+  getDailyUsageCounter(userId: string): Promise<DailyUsageCounter | undefined>;
+  createDailyUsageCounter(userId: string): Promise<DailyUsageCounter>;
+  incrementDailyUsage(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<DailyUsageCounter>;
+  checkDailyUsageLimit(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{ allowed: boolean; current: number; limit: number }>;
+  checkBothUsageLimits(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{
+    allowed: boolean;
+    monthly: { current: number; limit: number };
+    daily: { current: number; limit: number };
+    reason?: 'monthly' | 'daily';
+  }>;
+  incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void>;
   
   getEmailAnalyses(userId: string, limit?: number): Promise<EmailAnalysis[]>;
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
@@ -325,17 +341,17 @@ export class DatabaseStorage implements IStorage {
 
   async checkUsageLimit(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{ allowed: boolean; current: number; limit: number }> {
     const user = await this.getUser(userId);
-    const tier = (user?.subscriptionTier || 'free') as SubscriptionTier;
-    const limits = SUBSCRIPTION_LIMITS[tier];
+    const tier = (user?.subscriptionTier || 'starter') as SubscriptionTier;
+    const limits = SUBSCRIPTION_LIMITS[tier] || SUBSCRIPTION_LIMITS.starter;
     
-    const fieldToLimit: Record<string, keyof typeof limits> = {
+    const fieldToLimit: Record<string, 'gradesPerMonth' | 'rewritesPerMonth' | 'followupsPerMonth' | 'deliverabilityChecksPerMonth'> = {
       gradeCount: 'gradesPerMonth',
       rewriteCount: 'rewritesPerMonth',
       followupCount: 'followupsPerMonth',
       deliverabilityChecks: 'deliverabilityChecksPerMonth',
     };
 
-    const limit = limits[fieldToLimit[field]];
+    const limit = limits[fieldToLimit[field]] as number;
     
     let counter = await this.getUsageCounter(userId);
     if (!counter) {
@@ -346,6 +362,109 @@ export class DatabaseStorage implements IStorage {
     const allowed = limit === -1 || current < limit;
 
     return { allowed, current, limit };
+  }
+
+  // Daily usage tracking methods
+  async getDailyUsageCounter(userId: string): Promise<DailyUsageCounter | undefined> {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const [counter] = await db
+      .select()
+      .from(dailyUsageCounters)
+      .where(
+        and(
+          eq(dailyUsageCounters.userId, userId),
+          eq(dailyUsageCounters.date, today)
+        )
+      );
+    return counter;
+  }
+
+  async createDailyUsageCounter(userId: string): Promise<DailyUsageCounter> {
+    const today = new Date().toISOString().split('T')[0];
+    const [counter] = await db
+      .insert(dailyUsageCounters)
+      .values({
+        userId,
+        date: today,
+        gradeCount: 0,
+        rewriteCount: 0,
+        followupCount: 0,
+        deliverabilityChecks: 0,
+      })
+      .returning();
+    return counter;
+  }
+
+  async incrementDailyUsage(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<DailyUsageCounter> {
+    let counter = await this.getDailyUsageCounter(userId);
+    if (!counter) {
+      counter = await this.createDailyUsageCounter(userId);
+    }
+
+    const [updated] = await db
+      .update(dailyUsageCounters)
+      .set({ [field]: sql`${dailyUsageCounters[field]} + 1` })
+      .where(eq(dailyUsageCounters.id, counter.id))
+      .returning();
+    return updated;
+  }
+
+  async checkDailyUsageLimit(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{ allowed: boolean; current: number; limit: number }> {
+    const user = await this.getUser(userId);
+    const tier = (user?.subscriptionTier || 'starter') as SubscriptionTier;
+    const limits = SUBSCRIPTION_LIMITS[tier] || SUBSCRIPTION_LIMITS.starter;
+    
+    const fieldToDailyLimit: Record<string, 'gradesPerDay' | 'rewritesPerDay' | 'followupsPerDay' | 'deliverabilityChecksPerDay'> = {
+      gradeCount: 'gradesPerDay',
+      rewriteCount: 'rewritesPerDay',
+      followupCount: 'followupsPerDay',
+      deliverabilityChecks: 'deliverabilityChecksPerDay',
+    };
+
+    const limit = limits[fieldToDailyLimit[field]] as number;
+    
+    let counter = await this.getDailyUsageCounter(userId);
+    if (!counter) {
+      counter = await this.createDailyUsageCounter(userId);
+    }
+
+    const current = counter[field] || 0;
+    const allowed = limit === -1 || current < limit;
+
+    return { allowed, current, limit };
+  }
+
+  async checkBothUsageLimits(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<{
+    allowed: boolean;
+    monthly: { current: number; limit: number };
+    daily: { current: number; limit: number };
+    reason?: 'monthly' | 'daily';
+  }> {
+    const monthly = await this.checkUsageLimit(userId, field);
+    const daily = await this.checkDailyUsageLimit(userId, field);
+    
+    let allowed = true;
+    let reason: 'monthly' | 'daily' | undefined;
+    
+    if (!monthly.allowed) {
+      allowed = false;
+      reason = 'monthly';
+    } else if (!daily.allowed) {
+      allowed = false;
+      reason = 'daily';
+    }
+
+    return {
+      allowed,
+      monthly: { current: monthly.current, limit: monthly.limit },
+      daily: { current: daily.current, limit: daily.limit },
+      reason,
+    };
+  }
+
+  async incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void> {
+    await this.incrementUsage(userId, field);
+    await this.incrementDailyUsage(userId, field);
   }
 
   async getEmailAnalyses(userId: string, limit: number = 50): Promise<EmailAnalysis[]> {
