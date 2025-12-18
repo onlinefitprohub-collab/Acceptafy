@@ -66,7 +66,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | null;
+type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'calendar' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
 type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
@@ -328,6 +328,19 @@ export function AppSidebar({
                         >
                           <Mail className="w-3 h-3" />
                           <span>Email Builder</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={toolsSubView === 'calendar'}
+                          onClick={() => {
+                            setActiveView('tools');
+                            setToolsSubView('calendar');
+                          }}
+                          data-testid="nav-tools-calendar"
+                        >
+                          <Calendar className="w-3 h-3" />
+                          <span>Content Calendar</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

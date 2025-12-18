@@ -17,6 +17,7 @@ import {
   templateHealth,
   sendFrequencyTracking,
   listHealthSnapshots,
+  scheduledCampaigns,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -55,6 +56,8 @@ import {
   type InsertSendFrequencyTracking,
   type ListHealthSnapshot,
   type InsertListHealthSnapshot,
+  type ScheduledCampaign,
+  type InsertScheduledCampaign,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -192,6 +195,13 @@ export interface IStorage {
   getLatestListHealthSnapshot(userId: string, provider: string, listId: string): Promise<ListHealthSnapshot | undefined>;
   saveListHealthSnapshot(snapshot: InsertListHealthSnapshot): Promise<ListHealthSnapshot>;
   getListHealthHistory(userId: string, listId: string, limit?: number): Promise<ListHealthSnapshot[]>;
+  
+  // Scheduled Campaigns / Content Calendar
+  getScheduledCampaigns(userId: string, startDate?: Date, endDate?: Date): Promise<ScheduledCampaign[]>;
+  getScheduledCampaign(id: string, userId: string): Promise<ScheduledCampaign | undefined>;
+  createScheduledCampaign(campaign: InsertScheduledCampaign): Promise<ScheduledCampaign>;
+  updateScheduledCampaign(id: string, userId: string, updates: Partial<ScheduledCampaign>): Promise<ScheduledCampaign | undefined>;
+  deleteScheduledCampaign(id: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1664,6 +1674,58 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(listHealthSnapshots.userId, userId), eq(listHealthSnapshots.listId, listId)))
       .orderBy(desc(listHealthSnapshots.snapshotAt))
       .limit(limit);
+  }
+
+  // Scheduled Campaigns / Content Calendar
+  async getScheduledCampaigns(userId: string, startDate?: Date, endDate?: Date): Promise<ScheduledCampaign[]> {
+    let query = db.select().from(scheduledCampaigns).where(eq(scheduledCampaigns.userId, userId));
+    
+    if (startDate && endDate) {
+      return db
+        .select()
+        .from(scheduledCampaigns)
+        .where(and(
+          eq(scheduledCampaigns.userId, userId),
+          gte(scheduledCampaigns.scheduledDate, startDate),
+          lte(scheduledCampaigns.scheduledDate, endDate)
+        ))
+        .orderBy(scheduledCampaigns.scheduledDate);
+    }
+    
+    return db
+      .select()
+      .from(scheduledCampaigns)
+      .where(eq(scheduledCampaigns.userId, userId))
+      .orderBy(scheduledCampaigns.scheduledDate);
+  }
+
+  async getScheduledCampaign(id: string, userId: string): Promise<ScheduledCampaign | undefined> {
+    const [result] = await db
+      .select()
+      .from(scheduledCampaigns)
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)));
+    return result;
+  }
+
+  async createScheduledCampaign(campaign: InsertScheduledCampaign): Promise<ScheduledCampaign> {
+    const [result] = await db.insert(scheduledCampaigns).values(campaign).returning();
+    return result;
+  }
+
+  async updateScheduledCampaign(id: string, userId: string, updates: Partial<ScheduledCampaign>): Promise<ScheduledCampaign | undefined> {
+    const [result] = await db
+      .update(scheduledCampaigns)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)))
+      .returning();
+    return result;
+  }
+
+  async deleteScheduledCampaign(id: string, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(scheduledCampaigns)
+      .where(and(eq(scheduledCampaigns.id, id), eq(scheduledCampaigns.userId, userId)));
+    return true;
   }
 }
 
