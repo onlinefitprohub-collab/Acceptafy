@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail, Building2, FileType } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail, Building2, FileType, Download, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Variation {
   subject: string;
@@ -60,6 +62,21 @@ interface EmailInputProps {
 const SUBJECT_CHAR_LIMIT = 100;
 const PREVIEW_CHAR_LIMIT = 250;
 
+interface ESPConnection {
+  provider: string;
+  isConnected: boolean;
+  accountEmail?: string;
+}
+
+interface Campaign {
+  campaignId: string;
+  campaignName: string;
+  subject?: string;
+  sentAt?: string;
+  sent?: number;
+  openRate?: number;
+}
+
 export const EmailInput: React.FC<EmailInputProps> = ({
   variations,
   setVariations,
@@ -74,6 +91,14 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   setEmailType,
 }) => {
   const [openVariations, setOpenVariations] = useState<Set<number>>(new Set());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [espConnections, setEspConnections] = useState<ESPConnection[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isLoadingESPs, setIsLoadingESPs] = useState(false);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  const [isImportingContent, setIsImportingContent] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setOpenVariations(new Set(variations.map((_, i) => i)));
@@ -118,18 +143,163 @@ export const EmailInput: React.FC<EmailInputProps> = ({
     });
   };
 
+  const openImportModal = async () => {
+    setIsImportModalOpen(true);
+    setSelectedProvider(null);
+    setCampaigns([]);
+    setIsLoadingESPs(true);
+    
+    try {
+      const response = await fetch('/api/esp/connections', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        const connected = data.filter((c: ESPConnection) => c.isConnected);
+        setEspConnections(connected);
+      }
+    } catch (error) {
+      console.error('Failed to fetch ESP connections:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your ESP connections',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingESPs(false);
+    }
+  };
+
+  const selectProvider = async (provider: string) => {
+    setSelectedProvider(provider);
+    setIsLoadingCampaigns(true);
+    setCampaigns([]);
+    
+    try {
+      const response = await fetch(`/api/esp/stats/${provider}?limit=20`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        const campaignsList = data.campaigns || data.stats?.campaigns || [];
+        if (Array.isArray(campaignsList)) {
+          setCampaigns(campaignsList);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch campaigns:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load campaigns from this ESP',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  };
+
+  const importCampaign = async (campaign: Campaign) => {
+    if (!selectedProvider) return;
+    
+    setIsImportingContent(campaign.campaignId);
+    
+    try {
+      const response = await fetch(`/api/esp/${selectedProvider}/campaign/${campaign.campaignId}/content`, { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.htmlContent || data.textContent) {
+          const textContent = data.textContent || stripHtml(data.htmlContent);
+          setBody(textContent);
+          
+          if (campaign.subject || data.subject) {
+            const newSubject = campaign.subject || data.subject || '';
+            const newPreviewText = data.previewText || '';
+            setVariations(prev => {
+              const updated = [...prev];
+              if (updated.length > 0) {
+                updated[0] = { subject: newSubject, previewText: newPreviewText };
+              } else {
+                updated.push({ subject: newSubject, previewText: newPreviewText });
+              }
+              return updated;
+            });
+          }
+          
+          setIsImportModalOpen(false);
+          toast({
+            title: 'Email Imported',
+            description: `"${campaign.campaignName}" has been loaded into the grader`,
+          });
+        } else {
+          toast({
+            title: 'No Content Available',
+            description: 'This campaign does not have accessible email content',
+            variant: 'destructive',
+          });
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          title: 'Import Failed',
+          description: errorData.error || 'Could not fetch campaign content',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to import campaign:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to import campaign content',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsImportingContent(null);
+    }
+  };
+
+  const stripHtml = (html: string): string => {
+    if (typeof document !== 'undefined') {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      return tempDiv.textContent || tempDiv.innerText || '';
+    }
+    return html.replace(/<[^>]*>/g, '');
+  };
+
+  const getProviderLabel = (provider: string) => {
+    const labels: Record<string, string> = {
+      sendgrid: 'SendGrid',
+      mailchimp: 'Mailchimp',
+      hubspot: 'HubSpot',
+      klaviyo: 'Klaviyo',
+      ontraport: 'Ontraport',
+      highlevel: 'HighLevel',
+    };
+    return labels[provider] || provider;
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
       <Card className="card-lift">
         <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-              <Mail className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>Email Content</CardTitle>
+                <CardDescription>Enter your email to analyze</CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle>Email Content</CardTitle>
-              <CardDescription>Enter your email to analyze</CardDescription>
-            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={openImportModal}
+              disabled={isLoading}
+              data-testid="button-import-from-esp"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Import from ESP
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -340,6 +510,139 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           </Button>
         </CardContent>
       </Card>
+
+      <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5" />
+              Import Email from ESP
+            </DialogTitle>
+            <DialogDescription>
+              Select a connected ESP and choose a campaign to import into the grader
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto space-y-4 py-4">
+            {isLoadingESPs ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Loading your ESPs...</span>
+              </div>
+            ) : espConnections.length === 0 ? (
+              <div className="text-center py-8 space-y-4">
+                <AlertCircle className="w-12 h-12 mx-auto text-muted-foreground" />
+                <div>
+                  <p className="text-lg font-medium">No ESPs Connected</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Connect an ESP in the Deliverability section to import campaigns
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsImportModalOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            ) : !selectedProvider ? (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">Select an ESP:</p>
+                <div className="grid gap-2">
+                  {espConnections.map((esp) => (
+                    <button
+                      key={esp.provider}
+                      type="button"
+                      onClick={() => selectProvider(esp.provider)}
+                      className="flex items-center justify-between p-4 rounded-lg border border-border bg-card hover-elevate transition-all"
+                      data-testid={`button-select-esp-${esp.provider}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <div className="text-left">
+                          <p className="font-medium">{getProviderLabel(esp.provider)}</p>
+                          {esp.accountEmail && (
+                            <p className="text-xs text-muted-foreground">{esp.accountEmail}</p>
+                          )}
+                        </div>
+                      </div>
+                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedProvider(null)}
+                  >
+                    <ChevronDown className="w-4 h-4 mr-1 rotate-90" />
+                    Back to ESPs
+                  </Button>
+                  <Badge variant="secondary">{getProviderLabel(selectedProvider)}</Badge>
+                </div>
+
+                {isLoadingCampaigns ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">Loading campaigns...</span>
+                  </div>
+                ) : campaigns.length === 0 ? (
+                  <div className="text-center py-8 space-y-2">
+                    <AlertCircle className="w-10 h-10 mx-auto text-muted-foreground" />
+                    <p className="text-muted-foreground">No campaigns found</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-[400px] overflow-auto">
+                    <p className="text-sm text-muted-foreground">
+                      Select a campaign to import ({campaigns.length} available):
+                    </p>
+                    {campaigns.map((campaign) => (
+                      <button
+                        key={campaign.campaignId}
+                        type="button"
+                        onClick={() => importCampaign(campaign)}
+                        disabled={isImportingContent === campaign.campaignId}
+                        className="w-full flex items-center justify-between p-4 rounded-lg border border-border bg-card hover-elevate transition-all disabled:opacity-50"
+                        data-testid={`button-import-campaign-${campaign.campaignId}`}
+                      >
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="font-medium truncate">{campaign.campaignName}</p>
+                          {campaign.subject && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              Subject: {campaign.subject}
+                            </p>
+                          )}
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                            {campaign.sentAt && (
+                              <span>Sent: {new Date(campaign.sentAt).toLocaleDateString()}</span>
+                            )}
+                            {campaign.sent !== undefined && (
+                              <span>{campaign.sent.toLocaleString()} sent</span>
+                            )}
+                            {campaign.openRate !== undefined && (
+                              <span>{campaign.openRate.toFixed(1)}% opened</span>
+                            )}
+                          </div>
+                        </div>
+                        {isImportingContent === campaign.campaignId ? (
+                          <Loader2 className="w-5 h-5 animate-spin ml-3 shrink-0" />
+                        ) : (
+                          <Download className="w-5 h-5 ml-3 shrink-0 text-muted-foreground" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 };
