@@ -931,6 +931,43 @@ export const sendFrequencyTracking = pgTable("send_frequency_tracking", {
 export type SendFrequencyTracking = typeof sendFrequencyTracking.$inferSelect;
 export type InsertSendFrequencyTracking = typeof sendFrequencyTracking.$inferInsert;
 
+// List health snapshots for tracking subscriber list metrics over time
+export const listHealthSnapshots = pgTable("list_health_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  listId: varchar("list_id").notNull(),
+  listName: varchar("list_name"),
+  // Subscriber counts
+  totalSubscribers: integer("total_subscribers").default(0),
+  activeSubscribers: integer("active_subscribers").default(0),
+  unsubscribedCount: integer("unsubscribed_count").default(0),
+  bouncedCount: integer("bounced_count").default(0),
+  complaintsCount: integer("complaints_count").default(0),
+  // Engagement metrics (stored as percentage * 100)
+  avgOpenRate: integer("avg_open_rate").default(0),
+  avgClickRate: integer("avg_click_rate").default(0),
+  // Growth metrics
+  growthRate: integer("growth_rate").default(0), // Net change since last snapshot
+  subscribersAdded: integer("subscribers_added").default(0),
+  subscribersLost: integer("subscribers_lost").default(0),
+  // Health scoring
+  healthScore: integer("health_score").default(50), // 0-100
+  healthTrend: varchar("health_trend"), // 'improving', 'stable', 'declining'
+  engagementTier: varchar("engagement_tier"), // 'high', 'medium', 'low'
+  // Timestamps
+  lastCampaignSent: timestamp("last_campaign_sent"),
+  snapshotAt: timestamp("snapshot_at").defaultNow(),
+}, (table) => [
+  index("idx_list_health_user").on(table.userId),
+  index("idx_list_health_provider").on(table.userId, table.provider),
+  index("idx_list_health_list").on(table.userId, table.listId),
+  index("idx_list_health_date").on(table.snapshotAt),
+]);
+
+export type ListHealthSnapshot = typeof listHealthSnapshots.$inferSelect;
+export type InsertListHealthSnapshot = typeof listHealthSnapshots.$inferInsert;
+
 // Zod schemas for API validation
 export const deliverabilityAlertSchema = z.object({
   id: z.string(),

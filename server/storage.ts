@@ -16,6 +16,7 @@ import {
   campaignRiskScores,
   templateHealth,
   sendFrequencyTracking,
+  listHealthSnapshots,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -52,6 +53,8 @@ import {
   type InsertTemplateHealth,
   type SendFrequencyTracking,
   type InsertSendFrequencyTracking,
+  type ListHealthSnapshot,
+  type InsertListHealthSnapshot,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -183,6 +186,12 @@ export interface IStorage {
   upsertTemplateHealth(health: InsertTemplateHealth): Promise<TemplateHealth>;
   getSendFrequencyTracking(userId: string, provider?: string): Promise<SendFrequencyTracking[]>;
   upsertSendFrequencyTracking(tracking: InsertSendFrequencyTracking): Promise<SendFrequencyTracking>;
+  
+  // List Health Snapshots
+  getListHealthSnapshots(userId: string, provider?: string): Promise<ListHealthSnapshot[]>;
+  getLatestListHealthSnapshot(userId: string, provider: string, listId: string): Promise<ListHealthSnapshot | undefined>;
+  saveListHealthSnapshot(snapshot: InsertListHealthSnapshot): Promise<ListHealthSnapshot>;
+  getListHealthHistory(userId: string, listId: string, limit?: number): Promise<ListHealthSnapshot[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1612,6 +1621,49 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return result;
+  }
+
+  async getListHealthSnapshots(userId: string, provider?: string): Promise<ListHealthSnapshot[]> {
+    if (provider) {
+      return db
+        .select()
+        .from(listHealthSnapshots)
+        .where(and(eq(listHealthSnapshots.userId, userId), eq(listHealthSnapshots.provider, provider)))
+        .orderBy(desc(listHealthSnapshots.snapshotAt));
+    }
+    return db
+      .select()
+      .from(listHealthSnapshots)
+      .where(eq(listHealthSnapshots.userId, userId))
+      .orderBy(desc(listHealthSnapshots.snapshotAt));
+  }
+
+  async getLatestListHealthSnapshot(userId: string, provider: string, listId: string): Promise<ListHealthSnapshot | undefined> {
+    const [result] = await db
+      .select()
+      .from(listHealthSnapshots)
+      .where(and(
+        eq(listHealthSnapshots.userId, userId),
+        eq(listHealthSnapshots.provider, provider),
+        eq(listHealthSnapshots.listId, listId)
+      ))
+      .orderBy(desc(listHealthSnapshots.snapshotAt))
+      .limit(1);
+    return result;
+  }
+
+  async saveListHealthSnapshot(snapshot: InsertListHealthSnapshot): Promise<ListHealthSnapshot> {
+    const [result] = await db.insert(listHealthSnapshots).values(snapshot).returning();
+    return result;
+  }
+
+  async getListHealthHistory(userId: string, listId: string, limit: number = 30): Promise<ListHealthSnapshot[]> {
+    return db
+      .select()
+      .from(listHealthSnapshots)
+      .where(and(eq(listHealthSnapshots.userId, userId), eq(listHealthSnapshots.listId, listId)))
+      .orderBy(desc(listHealthSnapshots.snapshotAt))
+      .limit(limit);
   }
 }
 

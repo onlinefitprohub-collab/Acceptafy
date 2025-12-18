@@ -2072,6 +2072,68 @@ export async function registerRoutes(
     }
   });
 
+  // ============================================
+  // List Health Dashboard Routes (Scale-tier only)
+  // ============================================
+
+  const { getListHealthDashboard, getListHealthHistory: getListHistory } = await import('./services/listHealthService');
+
+  app.get('/api/list-health/:provider', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for list health dashboard' });
+      }
+
+      const { provider } = req.params;
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const dashboardData = await getListHealthDashboard(userId, providerValidation.data);
+      
+      if (!dashboardData) {
+        return res.status(404).json({ error: 'No list health data available for this provider' });
+      }
+
+      res.json(dashboardData);
+    } catch (error) {
+      console.error('List health dashboard error:', error);
+      res.status(500).json({ error: 'Failed to fetch list health data' });
+    }
+  });
+
+  app.get('/api/list-health/:provider/:listId/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (normalizeTier(user?.subscriptionTier) !== 'scale') {
+        return res.status(403).json({ error: 'Scale tier required for list health history' });
+      }
+
+      const { provider, listId } = req.params;
+      
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+      
+      const limit = parseInt(req.query.limit as string) || 30;
+
+      const history = await getListHistory(userId, listId, limit);
+      
+      const filteredHistory = history.filter(h => h.provider === providerValidation.data);
+      res.json(filteredHistory);
+    } catch (error) {
+      console.error('List health history error:', error);
+      res.status(500).json({ error: 'Failed to fetch list health history' });
+    }
+  });
+
   // Contact form endpoint
   app.post('/api/contact', async (req, res) => {
     try {

@@ -43,7 +43,9 @@ import {
   Calendar,
   Gauge,
   Info,
+  Users,
 } from 'lucide-react';
+import { ListHealthDashboard } from './ListHealthDashboard';
 import {
   Tooltip,
   TooltipContent,
@@ -912,6 +914,18 @@ export function DeliverabilityIntelligence({ connections }: DeliverabilityIntell
                 </p>
               </div>
             )}
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="list-health" className="border rounded-lg">
+          <AccordionTrigger className="px-4 hover:no-underline">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              <span>List Health Dashboard</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-4 pb-4">
+            <ListHealthDashboard connections={connections} />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

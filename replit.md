@@ -150,3 +150,16 @@ Preferred communication style: Simple, everyday language.
 - HTML content is converted to text and passed to the email grader
 - Manual HighLevel campaigns show informative message that content isn't available
 - Unsupported ESPs display a message indicating the limitation
+
+**List Health Dashboard (Scale-tier only, Phase 1)**:
+- New database schema: `listHealthSnapshots` table for tracking subscriber list metrics over time
+- Backend service: `listHealthService.ts` with engagement scoring algorithm
+  - Health score (0-100) calculated from open rate, click rate, bounce rate, complaint rate, unsubscribe rate
+  - Engagement tier classification: high (25%+ engagement score), medium (12-25%), low (<12%)
+  - Health trend detection: improving, stable, declining (based on 5-point score changes)
+  - Growth rate tracking: percentage change in subscriber count between snapshots
+- API routes: `GET /api/list-health/:provider` and `GET /api/list-health/:provider/:listId/history`
+- Frontend component: `ListHealthDashboard.tsx` integrated into DeliverabilityIntelligence accordion
+  - Summary cards: total subscribers, health score with progress bar, engagement metrics, list hygiene stats
+  - Lists table: individual list rows with health scores, trends, growth rates, engagement tiers
+- ESP support for list health: SendGrid, Mailchimp, Klaviyo, Ontraport (via `fetchListHealth` method)

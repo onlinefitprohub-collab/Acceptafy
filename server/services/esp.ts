@@ -39,11 +39,34 @@ export interface CampaignContentResult {
   error?: string;
 }
 
+export interface ListHealthData {
+  listId: string;
+  listName: string;
+  totalSubscribers: number;
+  activeSubscribers: number;
+  unsubscribedCount: number;
+  bouncedCount: number;
+  complaintsCount: number;
+  avgOpenRate: number;
+  avgClickRate: number;
+  growthRate?: number;
+  lastCampaignSent?: string;
+  createdAt?: string;
+}
+
+export interface ListHealthResult {
+  success: boolean;
+  lists: ListHealthData[];
+  totalContacts: number;
+  error?: string;
+}
+
 export interface ESPProvider {
   validateCredentials(credentials: ESPCredentials): Promise<ESPAccountInfo>;
   fetchCampaignStats(credentials: ESPCredentials, limit?: number): Promise<ESPCampaignStats[]>;
   sendEmail(credentials: ESPCredentials, request: SendEmailRequest): Promise<SendEmailResult>;
   fetchCampaignContent?(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult>;
+  fetchListHealth?(credentials: ESPCredentials): Promise<ListHealthResult>;
 }
 
 const sendgridProvider: ESPProvider = {
@@ -199,6 +222,49 @@ const sendgridProvider: ESPProvider = {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  },
+
+  async fetchListHealth(credentials: ESPCredentials): Promise<ListHealthResult> {
+    if (!credentials.apiKey) {
+      return { success: false, lists: [], totalContacts: 0, error: 'API key is required' };
+    }
+    try {
+      // Get contact count
+      const countResp = await fetch('https://api.sendgrid.com/v3/marketing/contacts/count', {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      let totalContacts = 0;
+      if (countResp.ok) {
+        const countData = await countResp.json();
+        totalContacts = countData.contact_count || 0;
+      }
+
+      // Get lists
+      const listsResp = await fetch('https://api.sendgrid.com/v3/marketing/lists?page_size=100', {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      
+      if (!listsResp.ok) {
+        return { success: false, lists: [], totalContacts, error: 'Failed to fetch lists' };
+      }
+      
+      const listsData = await listsResp.json();
+      const lists: ListHealthData[] = (listsData.result || []).map((list: any) => ({
+        listId: list.id,
+        listName: list.name || 'Unnamed List',
+        totalSubscribers: list.contact_count || 0,
+        activeSubscribers: list.contact_count || 0,
+        unsubscribedCount: 0,
+        bouncedCount: 0,
+        complaintsCount: 0,
+        avgOpenRate: 0,
+        avgClickRate: 0,
+      }));
+
+      return { success: true, lists, totalContacts };
+    } catch (error: any) {
+      return { success: false, lists: [], totalContacts: 0, error: error.message };
+    }
   }
 };
 
@@ -288,6 +354,44 @@ const mailchimpProvider: ESPProvider = {
       };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  },
+
+  async fetchListHealth(credentials: ESPCredentials): Promise<ListHealthResult> {
+    if (!credentials.apiKey) {
+      return { success: false, lists: [], totalContacts: 0, error: 'API key is required' };
+    }
+    const dc = credentials.apiKey.split('-').pop() || 'us1';
+    try {
+      const response = await fetch(`https://${dc}.api.mailchimp.com/3.0/lists?count=100&include_total_contacts=true`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      
+      if (!response.ok) {
+        return { success: false, lists: [], totalContacts: 0, error: 'Failed to fetch lists' };
+      }
+      
+      const data = await response.json();
+      const totalContacts = data.total_items || 0;
+      
+      const lists: ListHealthData[] = (data.lists || []).map((list: any) => ({
+        listId: list.id,
+        listName: list.name || 'Unnamed List',
+        totalSubscribers: list.stats?.member_count || 0,
+        activeSubscribers: list.stats?.member_count || 0,
+        unsubscribedCount: list.stats?.unsubscribe_count || 0,
+        bouncedCount: (list.stats?.hard_bounce_count || 0) + (list.stats?.soft_bounce_count || 0),
+        complaintsCount: list.stats?.abuse_count || 0,
+        avgOpenRate: (list.stats?.open_rate || 0) * 100,
+        avgClickRate: (list.stats?.click_rate || 0) * 100,
+        growthRate: list.stats?.member_count_since_send,
+        lastCampaignSent: list.stats?.campaign_last_sent,
+        createdAt: list.date_created,
+      }));
+
+      return { success: true, lists, totalContacts };
+    } catch (error: any) {
+      return { success: false, lists: [], totalContacts: 0, error: error.message };
     }
   }
 };
@@ -747,6 +851,53 @@ const klaviyoProvider: ESPProvider = {
       };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  },
+
+  async fetchListHealth(credentials: ESPCredentials): Promise<ListHealthResult> {
+    if (!credentials.apiKey) {
+      return { success: false, lists: [], totalContacts: 0, error: 'API key is required' };
+    }
+    try {
+      // Fetch lists from Klaviyo
+      const listsResp = await fetch('https://a.klaviyo.com/api/lists', {
+        headers: { 
+          'Authorization': `Klaviyo-API-Key ${credentials.apiKey}`,
+          'revision': '2024-10-15',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!listsResp.ok) {
+        return { success: false, lists: [], totalContacts: 0, error: 'Failed to fetch lists' };
+      }
+      
+      const listsData = await listsResp.json();
+      let totalContacts = 0;
+      
+      // Process lists - Klaviyo lists don't have inline stats, we just get basic info
+      const lists: ListHealthData[] = (listsData.data || []).map((list: any) => {
+        const attrs = list.attributes || {};
+        return {
+          listId: list.id,
+          listName: attrs.name || 'Unnamed List',
+          totalSubscribers: attrs.profile_count || 0,
+          activeSubscribers: attrs.profile_count || 0,
+          unsubscribedCount: 0,
+          bouncedCount: 0,
+          complaintsCount: 0,
+          avgOpenRate: 0,
+          avgClickRate: 0,
+          createdAt: attrs.created,
+        };
+      });
+      
+      // Sum up total contacts
+      totalContacts = lists.reduce((sum, l) => sum + l.totalSubscribers, 0);
+
+      return { success: true, lists, totalContacts };
+    } catch (error: any) {
+      return { success: false, lists: [], totalContacts: 0, error: error.message };
     }
   }
 };
@@ -1217,6 +1368,74 @@ const ontraportProvider: ESPProvider = {
     } catch (error: any) {
       return { success: false, error: error.message };
     }
+  },
+
+  async fetchListHealth(credentials: ESPCredentials): Promise<ListHealthResult> {
+    if (!credentials.apiKey || !credentials.appId) {
+      return { success: false, lists: [], totalContacts: 0, error: 'API key and App ID are required' };
+    }
+    try {
+      // Get total contact count from Ontraport
+      const countResp = await fetch('https://api.ontraport.com/1/Contacts/getInfo', {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId
+        }
+      });
+      
+      let totalContacts = 0;
+      if (countResp.ok) {
+        const countData = await countResp.json();
+        totalContacts = parseInt(countData.data?.count) || 0;
+      }
+
+      // Get groups (segments) - Ontraport uses groups for segmentation
+      const groupsResp = await fetch('https://api.ontraport.com/1/Groups?objectID=0', {
+        headers: { 
+          'Api-Key': credentials.apiKey,
+          'Api-Appid': credentials.appId
+        }
+      });
+      
+      const lists: ListHealthData[] = [];
+      if (groupsResp.ok) {
+        const groupsData = await groupsResp.json();
+        const groups = groupsData.data || [];
+        
+        for (const group of groups.slice(0, 20)) {
+          lists.push({
+            listId: group.id?.toString() || '',
+            listName: group.name || 'Unnamed Group',
+            totalSubscribers: parseInt(group.count) || 0,
+            activeSubscribers: parseInt(group.count) || 0,
+            unsubscribedCount: 0,
+            bouncedCount: 0,
+            complaintsCount: 0,
+            avgOpenRate: 0,
+            avgClickRate: 0,
+          });
+        }
+      }
+
+      // If no groups, create a default "All Contacts" entry
+      if (lists.length === 0) {
+        lists.push({
+          listId: 'all',
+          listName: 'All Contacts',
+          totalSubscribers: totalContacts,
+          activeSubscribers: totalContacts,
+          unsubscribedCount: 0,
+          bouncedCount: 0,
+          complaintsCount: 0,
+          avgOpenRate: 0,
+          avgClickRate: 0,
+        });
+      }
+
+      return { success: true, lists, totalContacts };
+    } catch (error: any) {
+      return { success: false, lists: [], totalContacts: 0, error: error.message };
+    }
   }
 };
 
@@ -1406,4 +1625,20 @@ export async function fetchESPCampaignContent(
     };
   }
   return espProvider.fetchCampaignContent(credentials, campaignId);
+}
+
+export async function fetchESPListHealth(
+  provider: ESPProviderType,
+  credentials: ESPCredentials
+): Promise<ListHealthResult> {
+  const espProvider = getESPProvider(provider);
+  if (!espProvider.fetchListHealth) {
+    return { 
+      success: false, 
+      lists: [],
+      totalContacts: 0,
+      error: `${provider} does not support list health data` 
+    };
+  }
+  return espProvider.fetchListHealth(credentials);
 }
