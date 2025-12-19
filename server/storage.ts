@@ -773,14 +773,16 @@ export class DatabaseStorage implements IStorage {
     recentSignups: number;
   }> {
     const allUsers = await db.select().from(users);
-    const totalUsers = allUsers.length;
+    // Exclude admin accounts from stats
+    const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
+    const totalUsers = nonAdminUsers.length;
     
-    const activeSubscriptions = allUsers.filter(
+    const activeSubscriptions = nonAdminUsers.filter(
       u => u.subscriptionStatus === 'active' && u.subscriptionTier && u.subscriptionTier !== 'starter'
     ).length;
     
     const tierCounts: Record<string, number> = {};
-    for (const user of allUsers) {
+    for (const user of nonAdminUsers) {
       const tier = user.subscriptionTier || 'starter';
       tierCounts[tier] = (tierCounts[tier] || 0) + 1;
     }
@@ -791,7 +793,7 @@ export class DatabaseStorage implements IStorage {
     
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentSignups = allUsers.filter(
+    const recentSignups = nonAdminUsers.filter(
       u => u.createdAt && u.createdAt > sevenDaysAgo
     ).length;
     
@@ -812,6 +814,9 @@ export class DatabaseStorage implements IStorage {
     activeUsers30d: number;
   }> {
     const allUsers = await db.select().from(users);
+    // Exclude admin accounts from business metrics
+    const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
+    const nonAdminUserIds = new Set(nonAdminUsers.map(u => u.id));
     
     // MRR calculation based on subscription tiers (pro = $59/mo, scale = $149/mo)
     const tierPrices: Record<string, number> = {
@@ -823,7 +828,7 @@ export class DatabaseStorage implements IStorage {
     let mrr = 0;
     const subscriptionCounts: Record<string, { count: number; revenue: number }> = {};
     
-    for (const user of allUsers) {
+    for (const user of nonAdminUsers) {
       const tier = user.subscriptionTier || 'starter';
       const price = tierPrices[tier] || 0;
       
@@ -856,7 +861,7 @@ export class DatabaseStorage implements IStorage {
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekEnd.getDate() + 7);
       
-      const count = allUsers.filter(u => {
+      const count = nonAdminUsers.filter(u => {
         if (!u.createdAt) return false;
         const created = new Date(u.createdAt);
         return created >= weekStart && created < weekEnd;
@@ -870,7 +875,7 @@ export class DatabaseStorage implements IStorage {
     
     // Churn rate: canceled paid users / (active + canceled paid users)
     // Only count users who have or had a paid subscription (pro or scale)
-    const paidTierUsers = allUsers.filter(u => 
+    const paidTierUsers = nonAdminUsers.filter(u => 
       u.subscriptionTier && 
       u.subscriptionTier !== 'starter' && 
       (u.subscriptionStatus === 'active' || u.subscriptionStatus === 'canceled')
@@ -878,12 +883,13 @@ export class DatabaseStorage implements IStorage {
     const canceledPaidUsers = paidTierUsers.filter(u => u.subscriptionStatus === 'canceled');
     const churnRate = paidTierUsers.length > 0 ? (canceledPaidUsers.length / paidTierUsers.length) * 100 : 0;
     
-    // Active users in last 30 days
+    // Active users in last 30 days (excluding admins)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const allGamification = await db.select().from(userGamification);
     const activeUsers30d = allGamification.filter(g => {
       if (!g.lastActiveDate) return false;
+      if (!nonAdminUserIds.has(g.userId)) return false; // Exclude admins
       return new Date(g.lastActiveDate) >= thirtyDaysAgo;
     }).length;
     
