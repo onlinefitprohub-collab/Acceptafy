@@ -1859,13 +1859,15 @@ export class DatabaseStorage implements IStorage {
     downgradeImpact: number;
   }> {
     const allUsers = await db.select().from(users);
+    // Exclude admin accounts from revenue calculations
+    const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
     const tierPrices: Record<string, number> = { pro: 59, scale: 149, starter: 0 };
     
     let currentMRR = 0;
     const revenueByTier: Record<string, number> = { starter: 0, pro: 0, scale: 0 };
     let paidUserCount = 0;
     
-    for (const user of allUsers) {
+    for (const user of nonAdminUsers) {
       const tier = user.subscriptionTier || 'starter';
       const price = tierPrices[tier] || 0;
       
@@ -1887,7 +1889,7 @@ export class DatabaseStorage implements IStorage {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
       
-      const usersAtTime = allUsers.filter(u => {
+      const usersAtTime = nonAdminUsers.filter(u => {
         if (!u.createdAt) return false;
         return u.createdAt <= monthStart && 
                u.subscriptionStatus === 'active' && 
@@ -1935,26 +1937,39 @@ export class DatabaseStorage implements IStorage {
     featureCorrelation: { feature: string; upgradeLikelihood: number }[];
   }> {
     const allUsers = await db.select().from(users);
+    // Exclude admin accounts from conversion metrics
+    const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
     const allUsage = await db.select().from(usageCounters);
     
-    const starterUsers = allUsers.filter(u => (u.subscriptionTier || 'starter') === 'starter').length;
-    const proUsers = allUsers.filter(u => u.subscriptionTier === 'pro').length;
-    const scaleUsers = allUsers.filter(u => u.subscriptionTier === 'scale').length;
+    const starterUsers = nonAdminUsers.filter(u => (u.subscriptionTier || 'starter') === 'starter').length;
+    const proUsers = nonAdminUsers.filter(u => u.subscriptionTier === 'pro').length;
+    const scaleUsers = nonAdminUsers.filter(u => u.subscriptionTier === 'scale').length;
     const totalPaid = proUsers + scaleUsers;
     
     const freeToProRate = starterUsers > 0 ? (totalPaid / (starterUsers + totalPaid)) * 100 : 0;
     const proToScaleRate = proUsers > 0 ? (scaleUsers / (proUsers + scaleUsers)) * 100 : 0;
     
+    // Generate monthly conversions from real user data (based on createdAt and tier)
     const monthlyConversions: { date: string; upgrades: number; downgrades: number }[] = [];
     for (let i = 5; i >= 0; i--) {
       const monthStart = new Date();
       monthStart.setMonth(monthStart.getMonth() - i);
       monthStart.setDate(1);
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      
+      // Count users who became paid in this month
+      const upgrades = nonAdminUsers.filter(u => {
+        if (!u.createdAt) return false;
+        const created = new Date(u.createdAt);
+        return created >= monthStart && created < monthEnd && 
+               (u.subscriptionTier === 'pro' || u.subscriptionTier === 'scale');
+      }).length;
       
       monthlyConversions.push({
         date: monthStart.toISOString().split('T')[0].substring(0, 7),
-        upgrades: Math.floor(Math.random() * 10) + 2,
-        downgrades: Math.floor(Math.random() * 3),
+        upgrades,
+        downgrades: 0, // Would need subscription history table to track actual downgrades
       });
     }
     
@@ -1972,7 +1987,7 @@ export class DatabaseStorage implements IStorage {
     let gradesUpgrades = 0, rewritesUpgrades = 0, followupsUpgrades = 0, delivUpgrades = 0;
     let gradeUsers = 0, rewriteUsers = 0, followupUsers = 0, delivUsers = 0;
     
-    for (const user of allUsers) {
+    for (const user of nonAdminUsers) {
       const usage = usageByUser.get(user.id);
       if (!usage) continue;
       
@@ -2057,17 +2072,62 @@ export class DatabaseStorage implements IStorage {
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
     
+    // Calculate rewrite effectiveness from actual data
+    // Look for analyses where score improved after rewrite (based on user pattern)
+    const userScores = new Map<string, number[]>();
+    for (const analysis of allAnalyses) {
+      if (analysis.userId && analysis.score !== null) {
+        const scores = userScores.get(analysis.userId) || [];
+        scores.push(analysis.score);
+        userScores.set(analysis.userId, scores);
+      }
+    }
+    
+    let beforeTotal = 0, afterTotal = 0, usersWithMultiple = 0;
+    Array.from(userScores.values()).forEach(scores => {
+      if (scores.length >= 2) {
+        beforeTotal += scores[scores.length - 1]; // Oldest (first analysis)
+        afterTotal += scores[0]; // Newest (most recent)
+        usersWithMultiple++;
+      }
+    });
+    
+    const avgBefore = usersWithMultiple > 0 ? Math.round(beforeTotal / usersWithMultiple) : 0;
+    const avgAfter = usersWithMultiple > 0 ? Math.round(afterTotal / usersWithMultiple) : 0;
+    const improvement = avgBefore > 0 ? Math.round(((avgAfter - avgBefore) / avgBefore) * 100) : 0;
+    
+    // Calculate grade distribution from actual analyses
+    const gradeCount: Record<string, { first: number; repeat: number }> = {
+      'A': { first: 0, repeat: 0 }, 'B': { first: 0, repeat: 0 }, 'C': { first: 0, repeat: 0 },
+      'D': { first: 0, repeat: 0 }, 'F': { first: 0, repeat: 0 }
+    };
+    const userAnalysisCounts = new Map<string, number>();
+    
+    for (const analysis of allAnalyses) {
+      if (!analysis.userId) continue;
+      const count = (userAnalysisCounts.get(analysis.userId) || 0) + 1;
+      userAnalysisCounts.set(analysis.userId, count);
+      
+      const result = analysis.result as any;
+      const grade = result?.grade || (analysis.score !== null ? (
+        analysis.score >= 90 ? 'A' : analysis.score >= 80 ? 'B' : analysis.score >= 70 ? 'C' : analysis.score >= 60 ? 'D' : 'F'
+      ) : null);
+      
+      if (grade && gradeCount[grade]) {
+        if (count === 1) gradeCount[grade].first++;
+        else gradeCount[grade].repeat++;
+      }
+    }
+    
     return {
       avgScoreOverTime,
-      rewriteEffectiveness: { before: 62, after: 78, improvement: 26 },
+      rewriteEffectiveness: { before: avgBefore, after: avgAfter, improvement: Math.max(0, improvement) },
       commonIssues,
-      gradeImprovement: [
-        { grade: 'A', firstTimeCount: 15, repeatCount: 35 },
-        { grade: 'B', firstTimeCount: 25, repeatCount: 30 },
-        { grade: 'C', firstTimeCount: 35, repeatCount: 20 },
-        { grade: 'D', firstTimeCount: 15, repeatCount: 10 },
-        { grade: 'F', firstTimeCount: 10, repeatCount: 5 },
-      ],
+      gradeImprovement: Object.entries(gradeCount).map(([grade, counts]) => ({
+        grade,
+        firstTimeCount: counts.first,
+        repeatCount: counts.repeat,
+      })),
     };
   }
 
@@ -2096,10 +2156,23 @@ export class DatabaseStorage implements IStorage {
       .sort((a, b) => a.date.localeCompare(b.date))
       .slice(-30);
     
+    // Calculate peak usage times from actual usage data (using period start times)
+    const hourlyRequests = new Map<number, number>();
+    for (const usage of allUsage) {
+      if (!usage.periodStart) continue;
+      const hour = usage.periodStart.getHours();
+      const total = (usage.gradeCount || 0) + (usage.rewriteCount || 0) + (usage.followupCount || 0) + (usage.deliverabilityChecks || 0);
+      hourlyRequests.set(hour, (hourlyRequests.get(hour) || 0) + total);
+    }
+    
     const peakUsageTimes = Array.from({ length: 24 }, (_, hour) => ({
       hour,
-      requests: Math.floor(Math.random() * 100) + (hour >= 9 && hour <= 17 ? 50 : 10),
+      requests: hourlyRequests.get(hour) || 0,
     }));
+    
+    // Exclude admin accounts from limit tracking
+    const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
+    const nonAdminUserMap = new Map(nonAdminUsers.map(u => [u.id, u]));
     
     const limitHitUsers: { userId: string; email: string; tier: string; feature: string; usage: number; limit: number }[] = [];
     const tierLimits: Record<string, Record<string, number>> = {
@@ -2109,7 +2182,7 @@ export class DatabaseStorage implements IStorage {
     };
     
     for (const usage of allUsage) {
-      const user = userMap.get(usage.userId);
+      const user = nonAdminUserMap.get(usage.userId);
       if (!user) continue;
       
       const tier = user.subscriptionTier || 'starter';
