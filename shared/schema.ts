@@ -998,6 +998,89 @@ export const listHealthSnapshots = pgTable("list_health_snapshots", {
 export type ListHealthSnapshot = typeof listHealthSnapshots.$inferSelect;
 export type InsertListHealthSnapshot = typeof listHealthSnapshots.$inferInsert;
 
+// Admin emails sent to users
+export const adminEmails = pgTable("admin_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  recipientUserId: varchar("recipient_user_id").references(() => users.id), // null for bulk emails
+  recipientEmail: varchar("recipient_email").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  emailType: varchar("email_type").notNull(), // 'individual', 'bulk', 'announcement'
+  segment: varchar("segment"), // 'all', 'starter', 'pro', 'scale', 'at-risk', etc.
+  status: varchar("status").default("sent"), // 'sent', 'failed', 'pending'
+  sentAt: timestamp("sent_at").defaultNow(),
+}, (table) => [
+  index("idx_admin_emails_admin").on(table.adminId),
+  index("idx_admin_emails_recipient").on(table.recipientUserId),
+]);
+
+export type AdminEmail = typeof adminEmails.$inferSelect;
+export type InsertAdminEmail = typeof adminEmails.$inferInsert;
+
+// In-app announcements for users
+export const announcements = pgTable("announcements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  title: varchar("title").notNull(),
+  message: text("message").notNull(),
+  type: varchar("type").default("info"), // 'info', 'feature', 'maintenance', 'urgent'
+  targetAudience: varchar("target_audience").default("all"), // 'all', 'starter', 'pro', 'scale'
+  isActive: boolean("is_active").default(true),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_announcements_active").on(table.isActive),
+]);
+
+export type Announcement = typeof announcements.$inferSelect;
+export type InsertAnnouncement = typeof announcements.$inferInsert;
+
+// User announcement read status
+export const announcementReads = pgTable("announcement_reads", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  announcementId: varchar("announcement_id").notNull().references(() => announcements.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  readAt: timestamp("read_at").defaultNow(),
+}, (table) => [
+  index("idx_announcement_reads_user").on(table.userId),
+  uniqueIndex("idx_announcement_reads_unique").on(table.announcementId, table.userId),
+]);
+
+export type AnnouncementRead = typeof announcementReads.$inferSelect;
+export type InsertAnnouncementRead = typeof announcementReads.$inferInsert;
+
+// User activity log for admin visibility
+export const userActivityLogs = pgTable("user_activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  action: varchar("action").notNull(), // 'grade', 'rewrite', 'login', 'upgrade', 'esp_connect', etc.
+  details: jsonb("details"), // Additional context
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_activity_user").on(table.userId),
+  index("idx_activity_date").on(table.createdAt),
+]);
+
+export type UserActivityLog = typeof userActivityLogs.$inferSelect;
+export type InsertUserActivityLog = typeof userActivityLogs.$inferInsert;
+
+// Admin activity log for audit trail
+export const adminActivityLogs = pgTable("admin_activity_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  action: varchar("action").notNull(), // 'email_sent', 'user_deactivated', 'tier_changed', etc.
+  targetUserId: varchar("target_user_id").references(() => users.id),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_admin_activity_admin").on(table.adminId),
+  index("idx_admin_activity_date").on(table.createdAt),
+]);
+
+export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
+export type InsertAdminActivityLog = typeof adminActivityLogs.$inferInsert;
+
 // Zod schemas for API validation
 export const deliverabilityAlertSchema = z.object({
   id: z.string(),

@@ -214,6 +214,75 @@ interface AtRiskUser {
   suggestedAction: string;
 }
 
+interface RevenueAnalytics {
+  lifetimeRevenue: number;
+  arpu: number;
+  mrrTrend: { date: string; mrr: number }[];
+  revenueByTier: { tier: string; revenue: number; percentage: number }[];
+  projectedRevenue: number;
+  upgradeRevenue: number;
+  downgradeImpact: number;
+}
+
+interface ConversionFunnel {
+  freeToProRate: number;
+  proToScaleRate: number;
+  avgTimeToUpgrade: number;
+  conversionsBySource: { source: string; count: number; rate: number }[];
+  monthlyConversions: { date: string; upgrades: number; downgrades: number }[];
+  featureCorrelation: { feature: string; upgradeLikelihood: number }[];
+}
+
+interface QualityMetrics {
+  avgScoreOverTime: { date: string; avgScore: number; count: number }[];
+  rewriteEffectiveness: { before: number; after: number; improvement: number };
+  commonIssues: { issue: string; count: number; percentage: number }[];
+  gradeImprovement: { grade: string; firstTimeCount: number; repeatCount: number }[];
+}
+
+interface SystemHealth {
+  apiUsageTrend: { date: string; requests: number }[];
+  peakUsageTimes: { hour: number; requests: number }[];
+  errorRate: number;
+  avgResponseTime: number;
+  activeConnections: number;
+  limitHitUsers: { userId: string; email: string; tier: string; feature: string; usage: number; limit: number }[];
+}
+
+interface Announcement {
+  id: string;
+  adminId: string;
+  title: string;
+  message: string;
+  type: string;
+  targetAudience: string;
+  isActive: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+interface AdminEmail {
+  id: string;
+  adminId: string;
+  recipientUserId: string | null;
+  recipientEmail: string;
+  subject: string;
+  body: string;
+  emailType: string;
+  segment: string | null;
+  status: string;
+  sentAt: string;
+}
+
+interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  createdAt: string;
+}
+
 interface DateRangeAnalytics {
   userMetrics: {
     newUsers: number;
@@ -258,6 +327,14 @@ export default function Admin() {
   const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
   const [resetLink, setResetLink] = useState("");
   const [dateRange, setDateRange] = useState<string>("30d");
+  
+  // Email sending state
+  const [showSendEmailDialog, setShowSendEmailDialog] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [emailSegment, setEmailSegment] = useState<string>("all");
+  const [isBulkEmail, setIsBulkEmail] = useState(false);
   
   // Custom date range state
   const getDefaultCustomDates = () => {
@@ -377,6 +454,41 @@ export default function Admin() {
     enabled: isAdmin,
   });
 
+  const { data: revenueAnalytics, isLoading: revenueLoading } = useQuery<RevenueAnalytics>({
+    queryKey: ["/api/admin/revenue-analytics"],
+    enabled: isAdmin,
+  });
+
+  const { data: conversionFunnel, isLoading: funnelLoading } = useQuery<ConversionFunnel>({
+    queryKey: ["/api/admin/conversion-funnel"],
+    enabled: isAdmin,
+  });
+
+  const { data: qualityMetrics, isLoading: qualityLoading } = useQuery<QualityMetrics>({
+    queryKey: ["/api/admin/quality-metrics"],
+    enabled: isAdmin,
+  });
+
+  const { data: systemHealth, isLoading: healthLoading } = useQuery<SystemHealth>({
+    queryKey: ["/api/admin/system-health"],
+    enabled: isAdmin,
+  });
+
+  const { data: announcements, isLoading: announcementsLoading } = useQuery<Announcement[]>({
+    queryKey: ["/api/admin/announcements"],
+    enabled: isAdmin,
+  });
+
+  const { data: adminEmails, isLoading: emailsLoading } = useQuery<AdminEmail[]>({
+    queryKey: ["/api/admin/emails"],
+    enabled: isAdmin,
+  });
+
+  const { data: contactMessages, isLoading: messagesLoading } = useQuery<ContactMessage[]>({
+    queryKey: ["/api/admin/contact-messages"],
+    enabled: isAdmin,
+  });
+
   const resetPasswordMutation = useMutation({
     mutationFn: async (userId: string) => {
       const res = await apiRequest("POST", `/api/admin/users/${userId}/reset-password`);
@@ -437,6 +549,46 @@ export default function Admin() {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to add note", variant: "destructive" });
+    },
+  });
+
+  const sendEmailMutation = useMutation({
+    mutationFn: async (data: { recipientEmail?: string; recipientUserId?: string; subject: string; body: string; segment?: string; isBulk: boolean }) => {
+      if (data.isBulk) {
+        const res = await apiRequest("POST", "/api/admin/send-bulk-email", {
+          segment: data.segment,
+          subject: data.subject,
+          body: data.body,
+        });
+        return res.json();
+      } else {
+        const res = await apiRequest("POST", "/api/admin/send-email", {
+          recipientEmail: data.recipientEmail,
+          recipientUserId: data.recipientUserId,
+          subject: data.subject,
+          body: data.body,
+        });
+        return res.json();
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/emails"] });
+      setShowSendEmailDialog(false);
+      setEmailRecipient("");
+      setEmailSubject("");
+      setEmailBody("");
+      setEmailSegment("all");
+      if (data.sentCount !== undefined) {
+        toast({ 
+          title: "Bulk email sent", 
+          description: `Sent to ${data.sentCount} users${data.failedCount > 0 ? `, ${data.failedCount} failed` : ''}` 
+        });
+      } else {
+        toast({ title: "Email sent", description: "Your message has been delivered" });
+      }
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to send email", variant: "destructive" });
     },
   });
 
@@ -1807,6 +1959,804 @@ export default function Admin() {
           )}
         </CardContent>
       </Card>
+
+      {/* Revenue & Business Analytics Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Revenue & Business Analytics</h2>
+        <p className="text-muted-foreground">
+          Detailed revenue metrics and business insights
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* MRR Trend Chart */}
+        <Card data-testid="mrr-trend-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              MRR Trend
+            </CardTitle>
+            <CardDescription>
+              Monthly recurring revenue over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {revenueLoading ? (
+              <div className="flex items-center justify-center h-[250px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : revenueAnalytics?.mrrTrend && revenueAnalytics.mrrTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={revenueAnalytics.mrrTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fill: 'currentColor' }}
+                    tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short' })}
+                  />
+                  <YAxis 
+                    tick={{ fill: 'currentColor' }}
+                    tickFormatter={(v) => `$${v}`}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-background border rounded-lg p-2 shadow-lg">
+                            <p className="text-sm font-medium">{new Date(label).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+                            <p className="text-sm text-primary">${(payload[0].value as number).toLocaleString()}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area type="monotone" dataKey="mrr" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
+                No MRR data available yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Revenue by Tier */}
+        <Card data-testid="revenue-by-tier-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Revenue by Tier
+            </CardTitle>
+            <CardDescription>
+              Monthly revenue breakdown by subscription tier
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {revenueLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-lg bg-muted/50 text-center">
+                    <div className="text-2xl font-bold text-primary">
+                      ${revenueAnalytics?.arpu?.toFixed(2) || '0.00'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">ARPU (Monthly)</div>
+                  </div>
+                  <div className="p-4 rounded-lg bg-muted/50 text-center">
+                    <div className="text-2xl font-bold text-green-500">
+                      ${revenueAnalytics?.projectedRevenue || 0}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Projected Next Month</div>
+                  </div>
+                </div>
+                {revenueAnalytics?.revenueByTier?.map((tier) => (
+                  <div key={tier.tier} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium capitalize">{tier.tier}</span>
+                      <span className="text-muted-foreground">${tier.revenue}/mo ({tier.percentage}%)</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full transition-all"
+                        style={{ 
+                          width: `${tier.percentage}%`,
+                          backgroundColor: TIER_COLORS[tier.tier] || '#64748b'
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Conversion Funnel Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Conversion Analytics</h2>
+        <p className="text-muted-foreground">
+          User upgrade patterns and feature correlation
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Conversion Rates */}
+        <Card data-testid="conversion-rates-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Conversion Rates
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {funnelLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-cyan-500/10 border border-purple-500/20">
+                  <div className="text-3xl font-bold">{conversionFunnel?.freeToProRate || 0}%</div>
+                  <div className="text-sm text-muted-foreground">Free → Paid Conversion</div>
+                </div>
+                <div className="p-4 rounded-lg bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20">
+                  <div className="text-3xl font-bold">{conversionFunnel?.proToScaleRate || 0}%</div>
+                  <div className="text-sm text-muted-foreground">Pro → Scale Upgrade</div>
+                </div>
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <div className="text-xl font-bold">{conversionFunnel?.avgTimeToUpgrade || 0} days</div>
+                  <div className="text-sm text-muted-foreground">Avg. Time to Upgrade</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Monthly Conversions Chart */}
+        <Card data-testid="monthly-conversions-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Monthly Upgrades & Downgrades
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {funnelLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : conversionFunnel?.monthlyConversions && conversionFunnel.monthlyConversions.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={conversionFunnel.monthlyConversions}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="date" tick={{ fill: 'currentColor', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'currentColor' }} />
+                  <Tooltip />
+                  <Bar dataKey="upgrades" fill="#22c55e" name="Upgrades" />
+                  <Bar dataKey="downgrades" fill="#ef4444" name="Downgrades" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No conversion data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Feature Correlation */}
+        <Card data-testid="feature-correlation-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Feature → Upgrade Correlation
+            </CardTitle>
+            <CardDescription>
+              Features that drive paid upgrades
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {funnelLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : conversionFunnel?.featureCorrelation && conversionFunnel.featureCorrelation.length > 0 ? (
+              <div className="space-y-3">
+                {conversionFunnel.featureCorrelation.map((item) => (
+                  <div key={item.feature} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{item.feature}</span>
+                      <Badge variant={item.upgradeLikelihood >= 50 ? 'default' : 'secondary'}>
+                        {item.upgradeLikelihood}%
+                      </Badge>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                        style={{ width: `${item.upgradeLikelihood}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No correlation data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quality Metrics Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Quality Metrics</h2>
+        <p className="text-muted-foreground">
+          Email analysis performance and improvement tracking
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Score Trend Over Time */}
+        <Card data-testid="score-trend-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Average Score Trend
+            </CardTitle>
+            <CardDescription>
+              Weekly average email scores across all users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {qualityLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : qualityMetrics?.avgScoreOverTime && qualityMetrics.avgScoreOverTime.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={qualityMetrics.avgScoreOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fill: 'currentColor', fontSize: 11 }}
+                    tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  />
+                  <YAxis tick={{ fill: 'currentColor' }} domain={[0, 100]} />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-background border rounded-lg p-2 shadow-lg">
+                            <p className="text-sm font-medium">{new Date(label).toLocaleDateString()}</p>
+                            <p className="text-sm">Score: {payload[0].value}</p>
+                            <p className="text-xs text-muted-foreground">{(payload[0].payload as any)?.count || 0} analyses</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area type="monotone" dataKey="avgScore" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No score data available
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Rewrite Effectiveness */}
+        <Card data-testid="rewrite-effectiveness-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Rewrite Effectiveness
+            </CardTitle>
+            <CardDescription>
+              Impact of AI rewrites on email scores
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {qualityLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div className="text-center flex-1">
+                    <div className="text-3xl font-bold text-muted-foreground">{qualityMetrics?.rewriteEffectiveness?.before || 0}</div>
+                    <div className="text-xs text-muted-foreground">Before Rewrite</div>
+                  </div>
+                  <div className="text-2xl text-muted-foreground">→</div>
+                  <div className="text-center flex-1">
+                    <div className="text-3xl font-bold text-green-500">{qualityMetrics?.rewriteEffectiveness?.after || 0}</div>
+                    <div className="text-xs text-muted-foreground">After Rewrite</div>
+                  </div>
+                </div>
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 text-center">
+                  <div className="text-2xl font-bold text-green-500">+{qualityMetrics?.rewriteEffectiveness?.improvement || 0}%</div>
+                  <div className="text-sm text-muted-foreground">Average Improvement</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Common Issues */}
+        <Card data-testid="common-issues-card" className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Common Issues Found
+            </CardTitle>
+            <CardDescription>
+              Most frequently detected problems in analyzed emails
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {qualityLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : qualityMetrics?.commonIssues && qualityMetrics.commonIssues.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {qualityMetrics.commonIssues.slice(0, 8).map((issue, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <span className="text-sm truncate flex-1 mr-2">{issue.issue}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary">{issue.count}</Badge>
+                      <span className="text-xs text-muted-foreground">{issue.percentage}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No issues data yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Health Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">System Health & Usage Limits</h2>
+        <p className="text-muted-foreground">
+          Monitor system performance and identify users approaching their limits
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* API Usage Trend */}
+        <Card data-testid="api-usage-trend-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              API Usage Trend
+            </CardTitle>
+            <CardDescription>
+              Daily API requests over the last 30 days
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : systemHealth?.apiUsageTrend && systemHealth.apiUsageTrend.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={systemHealth.apiUsageTrend}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fill: 'currentColor', fontSize: 11 }}
+                    tickFormatter={(d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                  />
+                  <YAxis tick={{ fill: 'currentColor' }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="requests" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} name="Requests" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No API usage data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Peak Usage Times */}
+        <Card data-testid="peak-usage-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Peak Usage Hours
+            </CardTitle>
+            <CardDescription>
+              Requests by hour of day (UTC)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <div className="flex items-center justify-center h-[200px]">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : systemHealth?.peakUsageTimes && systemHealth.peakUsageTimes.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={systemHealth.peakUsageTimes}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="hour" 
+                    tick={{ fill: 'currentColor', fontSize: 11 }}
+                    tickFormatter={(h) => `${h}:00`}
+                  />
+                  <YAxis tick={{ fill: 'currentColor' }} />
+                  <Tooltip formatter={(v, n) => [v, 'Requests']} labelFormatter={(h) => `${h}:00 UTC`} />
+                  <Bar dataKey="requests" fill="#06b6d4" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                No peak usage data
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* System Status */}
+        <Card data-testid="system-status-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              System Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                  <div className="text-2xl font-bold text-green-500">
+                    {(100 - (systemHealth?.errorRate || 0)).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Uptime</div>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <div className="text-2xl font-bold text-blue-500">
+                    {systemHealth?.avgResponseTime || 0}ms
+                  </div>
+                  <div className="text-xs text-muted-foreground">Avg Response</div>
+                </div>
+                <div className="p-4 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                  <div className="text-2xl font-bold text-purple-500">
+                    {systemHealth?.activeConnections || 0}
+                  </div>
+                  <div className="text-xs text-muted-foreground">ESP Connections</div>
+                </div>
+                <div className="p-4 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                  <div className="text-2xl font-bold text-orange-500">
+                    {(systemHealth?.errorRate || 0).toFixed(1)}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">Error Rate</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Users Near Limit */}
+        <Card data-testid="users-near-limit-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Users Near Limit (Upgrade Candidates)
+            </CardTitle>
+            <CardDescription>
+              Users at 80%+ of their usage limits - potential upgrade targets
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {healthLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : systemHealth?.limitHitUsers && systemHealth.limitHitUsers.length > 0 ? (
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-2">
+                  {systemHealth.limitHitUsers.slice(0, 10).map((item, idx) => (
+                    <div key={`${item.userId}-${item.feature}-${idx}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.email}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.feature}: {item.usage}/{item.limit}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={item.tier === 'starter' ? 'destructive' : 'secondary'} className="capitalize">
+                          {item.tier}
+                        </Badge>
+                        <span className={`text-sm font-bold ${item.usage >= item.limit ? 'text-red-500' : 'text-orange-500'}`}>
+                          {Math.round((item.usage / item.limit) * 100)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No users near their limits
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Communications Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Communications & Messages</h2>
+        <p className="text-muted-foreground">
+          Manage announcements and view contact messages
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Active Announcements */}
+        <Card data-testid="announcements-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5" />
+              Active Announcements
+            </CardTitle>
+            <CardDescription>
+              Current announcements shown to users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {announcementsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : announcements && announcements.length > 0 ? (
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-2">
+                  {announcements.slice(0, 5).map((announcement) => (
+                    <div 
+                      key={announcement.id} 
+                      className={`p-3 rounded-lg border ${announcement.isActive ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/50 border-muted'}`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm">{announcement.title}</span>
+                        <Badge variant={announcement.isActive ? 'default' : 'secondary'}>
+                          {announcement.isActive ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{announcement.message}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Badge variant="outline" className="text-xs">{announcement.type}</Badge>
+                        <Badge variant="outline" className="text-xs capitalize">{announcement.targetAudience}</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No announcements created
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Contact Messages */}
+        <Card data-testid="contact-messages-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Contact Messages
+            </CardTitle>
+            <CardDescription>
+              Recent messages from the contact form
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {messagesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : contactMessages && contactMessages.length > 0 ? (
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-2">
+                  {contactMessages.slice(0, 5).map((msg) => (
+                    <div key={msg.id} className="p-3 rounded-lg bg-muted/50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm">{msg.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(msg.createdAt), 'MMM d')}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{msg.email}</p>
+                      <p className="text-sm font-medium mt-1">{msg.subject}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{msg.message}</p>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No contact messages
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Admin Email Sender */}
+        <Card data-testid="send-email-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Send Admin Email
+            </CardTitle>
+            <CardDescription>
+              Send individual or bulk emails to users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Button
+                  variant={!isBulkEmail ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setIsBulkEmail(false)}
+                  data-testid="button-individual-email"
+                >
+                  Individual
+                </Button>
+                <Button
+                  variant={isBulkEmail ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setIsBulkEmail(true)}
+                  data-testid="button-bulk-email"
+                >
+                  Bulk Send
+                </Button>
+              </div>
+              
+              {isBulkEmail ? (
+                <Select value={emailSegment} onValueChange={setEmailSegment}>
+                  <SelectTrigger data-testid="select-email-segment">
+                    <SelectValue placeholder="Select audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Users</SelectItem>
+                    <SelectItem value="starter">Starter Users</SelectItem>
+                    <SelectItem value="pro">Pro Users</SelectItem>
+                    <SelectItem value="scale">Scale Users</SelectItem>
+                    <SelectItem value="paid">All Paid Users</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  placeholder="Recipient email"
+                  value={emailRecipient}
+                  onChange={(e) => setEmailRecipient(e.target.value)}
+                  data-testid="input-recipient-email"
+                />
+              )}
+              
+              <Input
+                placeholder="Subject"
+                value={emailSubject}
+                onChange={(e) => setEmailSubject(e.target.value)}
+                data-testid="input-email-subject"
+              />
+              
+              <Textarea
+                placeholder="Email body (HTML supported)"
+                value={emailBody}
+                onChange={(e) => setEmailBody(e.target.value)}
+                rows={4}
+                data-testid="input-email-body"
+              />
+              
+              <Button
+                className="w-full"
+                onClick={() => {
+                  sendEmailMutation.mutate({
+                    recipientEmail: isBulkEmail ? undefined : emailRecipient,
+                    subject: emailSubject,
+                    body: emailBody,
+                    segment: isBulkEmail ? emailSegment : undefined,
+                    isBulk: isBulkEmail,
+                  });
+                }}
+                disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
+                data-testid="button-send-email"
+              >
+                {sendEmailMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Mail className="h-4 w-4 mr-2" />
+                )}
+                {isBulkEmail ? 'Send Bulk Email' : 'Send Email'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Email History */}
+        <Card data-testid="email-history-card" className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Email History
+            </CardTitle>
+            <CardDescription>
+              Recently sent admin emails
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {emailsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : adminEmails && adminEmails.length > 0 ? (
+              <ScrollArea className="h-[200px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Sent</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {adminEmails.slice(0, 10).map((email) => (
+                      <TableRow key={email.id}>
+                        <TableCell className="font-medium text-sm">
+                          {email.emailType === 'bulk' ? (
+                            <Badge variant="secondary" className="capitalize">{email.segment || 'All'}</Badge>
+                          ) : (
+                            <span className="truncate max-w-[150px] block">{email.recipientEmail}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm truncate max-w-[200px]">{email.subject}</TableCell>
+                        <TableCell>
+                          <Badge variant={email.emailType === 'bulk' ? 'default' : 'outline'} className="text-xs">
+                            {email.emailType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {format(new Date(email.sentAt), 'MMM d, h:mm a')}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No emails sent yet
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* View Notes Dialog */}
       <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>

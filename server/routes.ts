@@ -1481,6 +1481,339 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Revenue Analytics
+  app.get('/api/admin/revenue-analytics', isAdmin, async (req: any, res) => {
+    try {
+      const analytics = await storage.getRevenueAnalytics();
+      res.json(analytics);
+    } catch (error) {
+      console.error('Admin revenue analytics error:', error);
+      res.status(500).json({ error: 'Failed to fetch revenue analytics' });
+    }
+  });
+
+  // Conversion Funnel Analytics
+  app.get('/api/admin/conversion-funnel', isAdmin, async (req: any, res) => {
+    try {
+      const funnel = await storage.getConversionFunnelAnalytics();
+      res.json(funnel);
+    } catch (error) {
+      console.error('Admin conversion funnel error:', error);
+      res.status(500).json({ error: 'Failed to fetch conversion funnel' });
+    }
+  });
+
+  // Quality Metrics
+  app.get('/api/admin/quality-metrics', isAdmin, async (req: any, res) => {
+    try {
+      const metrics = await storage.getQualityMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error('Admin quality metrics error:', error);
+      res.status(500).json({ error: 'Failed to fetch quality metrics' });
+    }
+  });
+
+  // System Health
+  app.get('/api/admin/system-health', isAdmin, async (req: any, res) => {
+    try {
+      const health = await storage.getSystemHealth();
+      res.json(health);
+    } catch (error) {
+      console.error('Admin system health error:', error);
+      res.status(500).json({ error: 'Failed to fetch system health' });
+    }
+  });
+
+  // Admin Email - Send to Individual User
+  app.post('/api/admin/send-email', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const { recipientUserId, recipientEmail, subject, body } = req.body;
+      
+      if (!recipientEmail || !subject || !body) {
+        return res.status(400).json({ error: 'recipientEmail, subject, and body are required' });
+      }
+
+      // Send email using Resend
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      await resend.emails.send({
+        from: 'Acceptafy <noreply@acceptafy.com>',
+        to: recipientEmail,
+        subject,
+        html: body,
+      });
+
+      // Log the email
+      const emailRecord = await storage.createAdminEmail({
+        adminId,
+        recipientUserId,
+        recipientEmail,
+        subject,
+        body,
+        emailType: 'individual',
+        status: 'sent',
+      });
+
+      // Log admin activity
+      await storage.logAdminActivity(adminId, 'email_sent', recipientUserId, { subject });
+
+      res.json({ success: true, emailId: emailRecord.id });
+    } catch (error) {
+      console.error('Admin send email error:', error);
+      res.status(500).json({ error: 'Failed to send email' });
+    }
+  });
+
+  // Admin Email - Bulk Send
+  app.post('/api/admin/send-bulk-email', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const { segment, subject, body } = req.body;
+      
+      if (!segment || !subject || !body) {
+        return res.status(400).json({ error: 'segment, subject, and body are required' });
+      }
+
+      // Get users based on segment
+      const allUsers = await storage.getAllUsersWithUsage();
+      let targetUsers = allUsers;
+      
+      if (segment === 'starter') {
+        targetUsers = allUsers.filter(u => (u.subscriptionTier || 'starter') === 'starter');
+      } else if (segment === 'pro') {
+        targetUsers = allUsers.filter(u => u.subscriptionTier === 'pro');
+      } else if (segment === 'scale') {
+        targetUsers = allUsers.filter(u => u.subscriptionTier === 'scale');
+      } else if (segment === 'paid') {
+        targetUsers = allUsers.filter(u => u.subscriptionTier === 'pro' || u.subscriptionTier === 'scale');
+      }
+      
+      // Filter to users with valid emails
+      const usersWithEmails = targetUsers.filter(u => u.email);
+
+      // Send emails using Resend
+      const { Resend } = await import('resend');
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (const user of usersWithEmails) {
+        try {
+          await resend.emails.send({
+            from: 'Acceptafy <noreply@acceptafy.com>',
+            to: user.email!,
+            subject,
+            html: body,
+          });
+          
+          await storage.createAdminEmail({
+            adminId,
+            recipientUserId: user.id,
+            recipientEmail: user.email!,
+            subject,
+            body,
+            emailType: 'bulk',
+            segment,
+            status: 'sent',
+          });
+          
+          sentCount++;
+        } catch (e) {
+          failedCount++;
+        }
+      }
+
+      // Log admin activity
+      await storage.logAdminActivity(adminId, 'bulk_email_sent', undefined, { 
+        segment, 
+        subject, 
+        sentCount, 
+        failedCount 
+      });
+
+      res.json({ success: true, sentCount, failedCount, totalTargeted: usersWithEmails.length });
+    } catch (error) {
+      console.error('Admin bulk email error:', error);
+      res.status(500).json({ error: 'Failed to send bulk email' });
+    }
+  });
+
+  // Get Admin Email History
+  app.get('/api/admin/emails', isAdmin, async (req: any, res) => {
+    try {
+      const emails = await storage.getAdminEmails();
+      res.json(emails);
+    } catch (error) {
+      console.error('Admin emails error:', error);
+      res.status(500).json({ error: 'Failed to fetch email history' });
+    }
+  });
+
+  // Announcements CRUD
+  app.get('/api/admin/announcements', isAdmin, async (req: any, res) => {
+    try {
+      const announcements = await storage.getAllAnnouncements();
+      res.json(announcements);
+    } catch (error) {
+      console.error('Admin announcements error:', error);
+      res.status(500).json({ error: 'Failed to fetch announcements' });
+    }
+  });
+
+  app.post('/api/admin/announcements', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const { title, message, type, targetAudience, expiresAt } = req.body;
+      
+      if (!title || !message) {
+        return res.status(400).json({ error: 'title and message are required' });
+      }
+
+      const announcement = await storage.createAnnouncement({
+        adminId,
+        title,
+        message,
+        type: type || 'info',
+        targetAudience: targetAudience || 'all',
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      });
+
+      await storage.logAdminActivity(adminId, 'announcement_created', undefined, { title });
+
+      res.json(announcement);
+    } catch (error) {
+      console.error('Admin create announcement error:', error);
+      res.status(500).json({ error: 'Failed to create announcement' });
+    }
+  });
+
+  app.patch('/api/admin/announcements/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { title, message, type, targetAudience, isActive, expiresAt } = req.body;
+
+      const announcement = await storage.updateAnnouncement(id, {
+        title,
+        message,
+        type,
+        targetAudience,
+        isActive,
+        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+      });
+
+      res.json(announcement);
+    } catch (error) {
+      console.error('Admin update announcement error:', error);
+      res.status(500).json({ error: 'Failed to update announcement' });
+    }
+  });
+
+  app.delete('/api/admin/announcements/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteAnnouncement(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Admin delete announcement error:', error);
+      res.status(500).json({ error: 'Failed to delete announcement' });
+    }
+  });
+
+  // User-facing announcements endpoint
+  app.get('/api/announcements', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      const announcements = await storage.getActiveAnnouncements(user?.subscriptionTier || 'starter');
+      res.json(announcements);
+    } catch (error) {
+      console.error('Announcements error:', error);
+      res.status(500).json({ error: 'Failed to fetch announcements' });
+    }
+  });
+
+  app.post('/api/announcements/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      await storage.markAnnouncementRead(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Mark announcement read error:', error);
+      res.status(500).json({ error: 'Failed to mark announcement as read' });
+    }
+  });
+
+  // Contact Messages Management
+  app.get('/api/admin/contact-messages', isAdmin, async (req: any, res) => {
+    try {
+      const messages = await storage.getContactMessages();
+      res.json(messages);
+    } catch (error) {
+      console.error('Admin contact messages error:', error);
+      res.status(500).json({ error: 'Failed to fetch contact messages' });
+    }
+  });
+
+  // User Activity Logs
+  app.get('/api/admin/users/:userId/activity', isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const activity = await storage.getUserActivityLogs(userId, 100);
+      res.json(activity);
+    } catch (error) {
+      console.error('Admin user activity error:', error);
+      res.status(500).json({ error: 'Failed to fetch user activity' });
+    }
+  });
+
+  // Admin Activity Log (Audit Trail)
+  app.get('/api/admin/activity-log', isAdmin, async (req: any, res) => {
+    try {
+      const activity = await storage.getAdminActivityLogs();
+      res.json(activity);
+    } catch (error) {
+      console.error('Admin activity log error:', error);
+      res.status(500).json({ error: 'Failed to fetch admin activity log' });
+    }
+  });
+
+  // Users Near Limit (Upgrade Candidates)
+  app.get('/api/admin/users-near-limit', isAdmin, async (req: any, res) => {
+    try {
+      const users = await storage.getUsersNearLimit();
+      res.json(users);
+    } catch (error) {
+      console.error('Admin users near limit error:', error);
+      res.status(500).json({ error: 'Failed to fetch users near limit' });
+    }
+  });
+
+  // Update User Tier (Admin action)
+  app.post('/api/admin/users/:userId/update-tier', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const { userId } = req.params;
+      const { tier } = req.body;
+      
+      if (!['starter', 'pro', 'scale'].includes(tier)) {
+        return res.status(400).json({ error: 'Invalid tier' });
+      }
+
+      const user = await storage.updateUserTier(userId, tier);
+      await storage.logAdminActivity(adminId, 'tier_changed', userId, { newTier: tier });
+
+      res.json(user);
+    } catch (error) {
+      console.error('Admin update tier error:', error);
+      res.status(500).json({ error: 'Failed to update user tier' });
+    }
+  });
+
   // Agency Branding endpoints (Scale tier only)
   app.get('/api/agency-branding', isAuthenticated, async (req: any, res) => {
     try {
