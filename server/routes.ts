@@ -1540,7 +1540,7 @@ Return your response as a JSON object with this exact structure:
       const resend = new Resend(process.env.RESEND_API_KEY);
       
       await resend.emails.send({
-        from: 'Acceptafy <noreply@acceptafy.com>',
+        from: 'Acceptafy <hello@updates.acceptafy.com>',
         to: recipientEmail,
         subject,
         html: body,
@@ -1604,7 +1604,7 @@ Return your response as a JSON object with this exact structure:
       for (const user of usersWithEmails) {
         try {
           await resend.emails.send({
-            from: 'Acceptafy <noreply@acceptafy.com>',
+            from: 'Acceptafy <hello@updates.acceptafy.com>',
             to: user.email!,
             subject,
             html: body,

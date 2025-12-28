@@ -234,7 +234,7 @@ export async function sendWelcomeEmail(toEmail: string): Promise<boolean> {
     const template = templates.welcome(toEmail);
     
     await client.emails.send({
-      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
       to: toEmail,
       subject: template.subject,
       html: template.html,
@@ -255,7 +255,7 @@ export async function sendPasswordResetEmail(toEmail: string, resetUrl: string):
     const template = templates.passwordReset(resetUrl);
     
     await client.emails.send({
-      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
       to: toEmail,
       subject: template.subject,
       html: template.html,
@@ -276,7 +276,7 @@ export async function sendAccountDeactivatedEmail(toEmail: string): Promise<bool
     const template = templates.accountDeactivated(toEmail);
     
     await client.emails.send({
-      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
       to: toEmail,
       subject: template.subject,
       html: template.html,
@@ -302,7 +302,7 @@ export async function sendUsageLimitWarningEmail(
     const template = templates.usageLimitWarning(toEmail, feature, current, limit);
     
     await client.emails.send({
-      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
       to: toEmail,
       subject: template.subject,
       html: template.html,
@@ -323,7 +323,7 @@ export async function sendPaymentFailedEmail(toEmail: string, amountDue: string)
     const template = templates.paymentFailed(toEmail, amountDue);
     
     await client.emails.send({
-      from: fromEmail || 'Acceptafy <noreply@acceptafy.com>',
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
       to: toEmail,
       subject: template.subject,
       html: template.html,
