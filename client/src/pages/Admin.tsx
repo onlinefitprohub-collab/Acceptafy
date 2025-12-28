@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   Select,
   SelectContent,
@@ -54,6 +55,10 @@ import {
   UserPlus,
   StickyNote,
   Eye,
+  EyeOff,
+  Pencil,
+  Trash2,
+  Plus,
   Download,
   Heart,
   Target,
@@ -364,6 +369,14 @@ export default function Admin() {
   const [emailSegment, setEmailSegment] = useState<string>("all");
   const [isBulkEmail, setIsBulkEmail] = useState(false);
   
+  // Announcement management state
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [announcementType, setAnnouncementType] = useState<string>("info");
+  const [announcementAudience, setAnnouncementAudience] = useState<string>("all");
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  
   // Custom date range state
   const getDefaultCustomDates = () => {
     const now = new Date();
@@ -617,6 +630,59 @@ export default function Admin() {
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Failed to send email", variant: "destructive" });
+    },
+  });
+
+  const createAnnouncementMutation = useMutation({
+    mutationFn: async (data: { title: string; message: string; type: string; targetAudience: string }) => {
+      const res = await apiRequest("POST", "/api/admin/announcements", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      setAnnouncementType("info");
+      setAnnouncementAudience("all");
+      toast({ title: "Announcement created", description: "Your announcement is now live" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to create announcement", variant: "destructive" });
+    },
+  });
+
+  const updateAnnouncementMutation = useMutation({
+    mutationFn: async (data: { id: string; title?: string; message?: string; type?: string; targetAudience?: string; isActive?: boolean }) => {
+      const { id, ...updates } = data;
+      const res = await apiRequest("PATCH", `/api/admin/announcements/${id}`, updates);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setEditingAnnouncement(null);
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+      setAnnouncementType("info");
+      setAnnouncementAudience("all");
+      toast({ title: "Announcement updated", description: "Changes have been saved" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to update announcement", variant: "destructive" });
+    },
+  });
+
+  const deleteAnnouncementMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/announcements/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/announcements"] });
+      setShowDeleteConfirm(null);
+      toast({ title: "Announcement deleted", description: "The announcement has been removed" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message || "Failed to delete announcement", variant: "destructive" });
     },
   });
 
@@ -2656,52 +2722,255 @@ export default function Admin() {
                 icon={<Mail className="w-5 h-5 text-sky-400" />}
                 description="Manage announcements and view contact messages"
               />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card data-testid="announcements-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5" />
-              Active Announcements
-            </CardTitle>
-            <CardDescription>
-              Current announcements shown to users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {announcementsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : announcements && announcements.length > 0 ? (
-              <ScrollArea className="h-[200px]">
-                <div className="space-y-2">
-                  {announcements.slice(0, 5).map((announcement) => (
-                    <div 
-                      key={announcement.id} 
-                      className={`p-3 rounded-lg border ${announcement.isActive ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/50 border-muted'}`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm">{announcement.title}</span>
-                        <Badge variant={announcement.isActive ? 'default' : 'secondary'}>
-                          {announcement.isActive ? 'Active' : 'Inactive'}
-                        </Badge>
+            {/* Create/Edit Announcement Card */}
+            <Card data-testid="create-announcement-card" className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Plus className="h-5 w-5" />
+                  {editingAnnouncement ? 'Edit Announcement' : 'Create Announcement'}
+                </CardTitle>
+                <CardDescription>
+                  {editingAnnouncement ? 'Update the announcement details' : 'Create a new announcement for users'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="announcement-title">Title</Label>
+                      <Input
+                        id="announcement-title"
+                        placeholder="Announcement title"
+                        value={announcementTitle}
+                        onChange={(e) => setAnnouncementTitle(e.target.value)}
+                        data-testid="input-announcement-title"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="announcement-type">Type</Label>
+                        <Select value={announcementType} onValueChange={setAnnouncementType}>
+                          <SelectTrigger id="announcement-type" data-testid="select-announcement-type">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="info">Info</SelectItem>
+                            <SelectItem value="success">Success</SelectItem>
+                            <SelectItem value="warning">Warning</SelectItem>
+                            <SelectItem value="update">Update</SelectItem>
+                            <SelectItem value="promo">Promo</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{announcement.message}</p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">{announcement.type}</Badge>
-                        <Badge variant="outline" className="text-xs capitalize">{announcement.targetAudience}</Badge>
+                      <div className="space-y-2">
+                        <Label htmlFor="announcement-audience">Audience</Label>
+                        <Select value={announcementAudience} onValueChange={setAnnouncementAudience}>
+                          <SelectTrigger id="announcement-audience" data-testid="select-announcement-audience">
+                            <SelectValue placeholder="Select audience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Users</SelectItem>
+                            <SelectItem value="starter">Starter Only</SelectItem>
+                            <SelectItem value="pro">Pro Only</SelectItem>
+                            <SelectItem value="scale">Scale Only</SelectItem>
+                            <SelectItem value="paid">All Paid Users</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="announcement-message">Message</Label>
+                    <Textarea
+                      id="announcement-message"
+                      placeholder="Write your announcement message..."
+                      value={announcementMessage}
+                      onChange={(e) => setAnnouncementMessage(e.target.value)}
+                      rows={3}
+                      data-testid="input-announcement-message"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    {editingAnnouncement ? (
+                      <>
+                        <Button
+                          onClick={() => {
+                            updateAnnouncementMutation.mutate({
+                              id: editingAnnouncement.id,
+                              title: announcementTitle,
+                              message: announcementMessage,
+                              type: announcementType,
+                              targetAudience: announcementAudience,
+                            });
+                          }}
+                          disabled={updateAnnouncementMutation.isPending || !announcementTitle || !announcementMessage}
+                          data-testid="button-update-announcement"
+                        >
+                          {updateAnnouncementMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                          Update Announcement
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setEditingAnnouncement(null);
+                            setAnnouncementTitle("");
+                            setAnnouncementMessage("");
+                            setAnnouncementType("info");
+                            setAnnouncementAudience("all");
+                          }}
+                          data-testid="button-cancel-edit"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        onClick={() => {
+                          createAnnouncementMutation.mutate({
+                            title: announcementTitle,
+                            message: announcementMessage,
+                            type: announcementType,
+                            targetAudience: announcementAudience,
+                          });
+                        }}
+                        disabled={createAnnouncementMutation.isPending || !announcementTitle || !announcementMessage}
+                        data-testid="button-create-announcement"
+                      >
+                        {createAnnouncementMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Announcement
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </ScrollArea>
-            ) : (
-              <div className="flex items-center justify-center py-8 text-muted-foreground">
-                No announcements created
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+
+            {/* Manage Announcements Card */}
+            <Card data-testid="manage-announcements-card" className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Lightbulb className="h-5 w-5" />
+                  Manage Announcements
+                </CardTitle>
+                <CardDescription>
+                  View, edit, toggle, and delete announcements
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {announcementsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : announcements && announcements.length > 0 ? (
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-3">
+                      {announcements.map((announcement) => (
+                        <div 
+                          key={announcement.id} 
+                          className={`p-4 rounded-lg border ${announcement.isActive ? 'bg-green-500/5 border-green-500/20' : 'bg-muted/50 border-muted'}`}
+                          data-testid={`announcement-item-${announcement.id}`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium">{announcement.title}</span>
+                                <Badge variant={announcement.isActive ? 'default' : 'secondary'} className="text-xs">
+                                  {announcement.isActive ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{announcement.message}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <Badge variant="outline" className="text-xs capitalize">{announcement.type}</Badge>
+                                <Badge variant="outline" className="text-xs capitalize">{announcement.targetAudience}</Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  Created {format(new Date(announcement.createdAt), 'MMM d, yyyy')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  updateAnnouncementMutation.mutate({
+                                    id: announcement.id,
+                                    isActive: !announcement.isActive,
+                                  });
+                                }}
+                                disabled={updateAnnouncementMutation.isPending}
+                                data-testid={`button-toggle-${announcement.id}`}
+                                title={announcement.isActive ? 'Deactivate' : 'Activate'}
+                              >
+                                {announcement.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingAnnouncement(announcement);
+                                  setAnnouncementTitle(announcement.title);
+                                  setAnnouncementMessage(announcement.message);
+                                  setAnnouncementType(announcement.type);
+                                  setAnnouncementAudience(announcement.targetAudience);
+                                }}
+                                data-testid={`button-edit-${announcement.id}`}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              {showDeleteConfirm === announcement.id ? (
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => deleteAnnouncementMutation.mutate(announcement.id)}
+                                    disabled={deleteAnnouncementMutation.isPending}
+                                    data-testid={`button-confirm-delete-${announcement.id}`}
+                                  >
+                                    {deleteAnnouncementMutation.isPending ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      'Delete'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setShowDeleteConfirm(null)}
+                                    data-testid={`button-cancel-delete-${announcement.id}`}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => setShowDeleteConfirm(announcement.id)}
+                                  data-testid={`button-delete-${announcement.id}`}
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Lightbulb className="h-8 w-8 mb-2 opacity-50" />
+                    <p>No announcements created yet</p>
+                    <p className="text-xs">Create your first announcement above</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* Contact Messages */}
         <Card data-testid="contact-messages-card">
