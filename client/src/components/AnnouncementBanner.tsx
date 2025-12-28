@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { X, Info, AlertTriangle, CheckCircle, Sparkles, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -134,9 +133,6 @@ export function AnnouncementBanner() {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Badge variant="outline" className="text-xs capitalize hidden sm:inline-flex">
-                  {announcement.type}
-                </Badge>
                 <Button
                   size="icon"
                   variant="ghost"
