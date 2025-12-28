@@ -30,6 +30,15 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  // Physical address fields for CAN-SPAM compliance and communication
+  addressLine1: varchar("address_line1"),
+  addressLine2: varchar("address_line2"),
+  city: varchar("city"),
+  stateProvince: varchar("state_province"),
+  postalCode: varchar("postal_code"),
+  country: varchar("country"),
+  companyName: varchar("company_name"),
+  phone: varchar("phone"),
 });
 
 export type UpsertUser = typeof users.$inferInsert;

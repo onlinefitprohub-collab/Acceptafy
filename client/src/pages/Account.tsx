@@ -32,6 +32,26 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { SUBSCRIPTION_LIMITS, PRICING } from "@shared/schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
+// Profile update schema
+const profileFormSchema = z.object({
+  firstName: z.string().max(100, "Maximum 100 characters").optional().or(z.literal('')),
+  lastName: z.string().max(100, "Maximum 100 characters").optional().or(z.literal('')),
+  companyName: z.string().max(200, "Maximum 200 characters").optional().or(z.literal('')),
+  phone: z.string().max(30, "Maximum 30 characters").optional().or(z.literal('')),
+  addressLine1: z.string().max(255, "Maximum 255 characters").optional().or(z.literal('')),
+  addressLine2: z.string().max(255, "Maximum 255 characters").optional().or(z.literal('')),
+  city: z.string().max(100, "Maximum 100 characters").optional().or(z.literal('')),
+  stateProvince: z.string().max(100, "Maximum 100 characters").optional().or(z.literal('')),
+  postalCode: z.string().max(20, "Maximum 20 characters").optional().or(z.literal('')),
+  country: z.string().max(100, "Maximum 100 characters").optional().or(z.literal('')),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface AgencyBranding {
   agencyName?: string;
@@ -102,6 +122,23 @@ export default function Account() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Profile form with react-hook-form
+  const profileForm = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      companyName: '',
+      phone: '',
+      addressLine1: '',
+      addressLine2: '',
+      city: '',
+      stateProvince: '',
+      postalCode: '',
+      country: '',
+    },
+  });
 
   const { data: usageData, isLoading: usageLoading } = useQuery<UsageData>({
     queryKey: ["/api/usage"],
@@ -201,6 +238,75 @@ export default function Account() {
       });
     },
   });
+  
+  // Fetch user profile for address data
+  interface UserProfile {
+    id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    city?: string;
+    stateProvince?: string;
+    postalCode?: string;
+    country?: string;
+    companyName?: string;
+    phone?: string;
+  }
+  
+  const { data: userProfile, isLoading: profileLoading } = useQuery<UserProfile>({
+    queryKey: ["/api/auth/user"],
+    enabled: !!user,
+  });
+  
+  // Update form when profile data loads
+  useEffect(() => {
+    if (userProfile) {
+      profileForm.reset({
+        firstName: userProfile.firstName || '',
+        lastName: userProfile.lastName || '',
+        addressLine1: userProfile.addressLine1 || '',
+        addressLine2: userProfile.addressLine2 || '',
+        city: userProfile.city || '',
+        stateProvince: userProfile.stateProvince || '',
+        postalCode: userProfile.postalCode || '',
+        country: userProfile.country || '',
+        companyName: userProfile.companyName || '',
+        phone: userProfile.phone || '',
+      });
+    }
+  }, [userProfile, profileForm]);
+  
+  const saveProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormValues) => {
+      const response = await apiRequest("PATCH", "/api/user/profile", data);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to update profile");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });
+      toast({
+        title: "Profile Updated",
+        description: "Your profile and address have been saved successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  const onProfileSubmit = (data: ProfileFormValues) => {
+    saveProfileMutation.mutate(data);
+  };
 
   const billingPortalMutation = useMutation({
     mutationFn: async () => {
@@ -476,6 +582,183 @@ export default function Account() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Profile & Address Card */}
+        <Card className="mt-6" data-testid="card-profile-address">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              Profile & Address
+            </CardTitle>
+            <CardDescription>
+              Update your personal information and mailing address
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {profileLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <FormField
+                      control={profileForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John" data-testid="input-first-name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Doe" data-testid="input-last-name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Acme Inc." data-testid="input-company-name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={profileForm.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input type="tel" placeholder="+1 (555) 123-4567" data-testid="input-phone" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h4 className="font-medium mb-4">Mailing Address</h4>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <FormField
+                        control={profileForm.control}
+                        name="addressLine1"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Street Address</FormLabel>
+                            <FormControl>
+                              <Input placeholder="123 Main Street" data-testid="input-address-line1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="addressLine2"
+                        render={({ field }) => (
+                          <FormItem className="md:col-span-2">
+                            <FormLabel>Apartment, Suite, etc. (optional)</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Suite 100" data-testid="input-address-line2" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="city"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>City</FormLabel>
+                            <FormControl>
+                              <Input placeholder="New York" data-testid="input-city" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="stateProvince"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>State / Province</FormLabel>
+                            <FormControl>
+                              <Input placeholder="NY" data-testid="input-state-province" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="postalCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Postal Code</FormLabel>
+                            <FormControl>
+                              <Input placeholder="10001" data-testid="input-postal-code" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={profileForm.control}
+                        name="country"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Country</FormLabel>
+                            <FormControl>
+                              <Input placeholder="United States" data-testid="input-country" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    disabled={saveProfileMutation.isPending}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    data-testid="button-save-profile"
+                  >
+                    {saveProfileMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Save className="w-4 h-4 mr-2" />
+                    )}
+                    Save Profile
+                  </Button>
+                </form>
+              </Form>
+            )}
+          </CardContent>
+        </Card>
 
         {user.isEmailPasswordUser && (
           <Card className="mt-6" data-testid="card-security">

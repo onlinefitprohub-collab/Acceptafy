@@ -282,6 +282,66 @@ export async function registerRoutes(
     }
   });
 
+  // Update user profile (including address fields)
+  const profileUpdateSchema = z.object({
+    firstName: z.string().max(100).optional(),
+    lastName: z.string().max(100).optional(),
+    addressLine1: z.string().max(255).optional(),
+    addressLine2: z.string().max(255).optional(),
+    city: z.string().max(100).optional(),
+    stateProvince: z.string().max(100).optional(),
+    postalCode: z.string().max(20).optional(),
+    country: z.string().max(100).optional(),
+    companyName: z.string().max(200).optional(),
+    phone: z.string().max(30).optional(),
+  });
+
+  app.patch('/api/user/profile', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Validate input with zod
+      const parseResult = profileUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: "Invalid profile data", 
+          errors: parseResult.error.flatten() 
+        });
+      }
+      
+      const validData = parseResult.data;
+
+      // Only update fields that were provided
+      const updates: Record<string, string | undefined | null> = {};
+      if (validData.firstName !== undefined) updates.firstName = validData.firstName || null;
+      if (validData.lastName !== undefined) updates.lastName = validData.lastName || null;
+      if (validData.addressLine1 !== undefined) updates.addressLine1 = validData.addressLine1 || null;
+      if (validData.addressLine2 !== undefined) updates.addressLine2 = validData.addressLine2 || null;
+      if (validData.city !== undefined) updates.city = validData.city || null;
+      if (validData.stateProvince !== undefined) updates.stateProvince = validData.stateProvince || null;
+      if (validData.postalCode !== undefined) updates.postalCode = validData.postalCode || null;
+      if (validData.country !== undefined) updates.country = validData.country || null;
+      if (validData.companyName !== undefined) updates.companyName = validData.companyName || null;
+      if (validData.phone !== undefined) updates.phone = validData.phone || null;
+
+      if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ message: "No fields to update" });
+      }
+
+      await storage.updateUser(userId, updates);
+      const updatedUser = await storage.getUser(userId);
+
+      res.json({ 
+        success: true, 
+        message: "Profile updated successfully",
+        user: updatedUser 
+      });
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Request password reset
   app.post('/api/auth/forgot-password', async (req, res) => {
     try {
@@ -1579,16 +1639,71 @@ Return your response as a JSON object with this exact structure:
 
       // Get users based on segment
       const allUsers = await storage.getAllUsersWithUsage();
-      let targetUsers = allUsers;
+      // Exclude admin accounts from all segments
+      const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
+      let targetUsers = nonAdminUsers;
       
+      // Tier-based segments
       if (segment === 'starter') {
-        targetUsers = allUsers.filter(u => (u.subscriptionTier || 'starter') === 'starter');
+        targetUsers = nonAdminUsers.filter(u => (u.subscriptionTier || 'starter') === 'starter');
       } else if (segment === 'pro') {
-        targetUsers = allUsers.filter(u => u.subscriptionTier === 'pro');
+        targetUsers = nonAdminUsers.filter(u => u.subscriptionTier === 'pro');
       } else if (segment === 'scale') {
-        targetUsers = allUsers.filter(u => u.subscriptionTier === 'scale');
+        targetUsers = nonAdminUsers.filter(u => u.subscriptionTier === 'scale');
       } else if (segment === 'paid') {
-        targetUsers = allUsers.filter(u => u.subscriptionTier === 'pro' || u.subscriptionTier === 'scale');
+        targetUsers = nonAdminUsers.filter(u => u.subscriptionTier === 'pro' || u.subscriptionTier === 'scale');
+      } 
+      // Advanced behavioral segments
+      else if (segment === 'approaching-limits') {
+        // Users at 80%+ of their monthly quota
+        const LIMITS: Record<string, number> = { starter: 3, pro: 600, scale: 2500 };
+        targetUsers = nonAdminUsers.filter(u => {
+          const tier = u.subscriptionTier || 'starter';
+          const limit = LIMITS[tier] || 3;
+          const usage = u.totalGrades || 0;
+          return usage >= limit * 0.8;
+        });
+      } else if (segment === 'inactive') {
+        // Users with no activity in 14+ days
+        const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+        targetUsers = nonAdminUsers.filter(u => {
+          if (!u.lastActiveDate) return true;
+          return new Date(u.lastActiveDate) < fourteenDaysAgo;
+        });
+      } else if (segment === 'power-users') {
+        // Users with 50+ grades total (high engagement)
+        targetUsers = nonAdminUsers.filter(u => (u.totalGrades || 0) >= 50);
+      } else if (segment === 'at-risk') {
+        // Users showing churn signals: paid users with declining activity
+        targetUsers = nonAdminUsers.filter(u => {
+          const isPaid = u.subscriptionTier === 'pro' || u.subscriptionTier === 'scale';
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          const isInactive = !u.lastActiveDate || new Date(u.lastActiveDate) < sevenDaysAgo;
+          return isPaid && isInactive;
+        });
+      } else if (segment === 'high-graders') {
+        // Active graders: 10+ grades this week
+        targetUsers = nonAdminUsers.filter(u => (u.totalGrades || 0) >= 10);
+      } else if (segment === 'high-rewriters') {
+        // Active rewriters: users who use rewrites
+        targetUsers = nonAdminUsers.filter(u => (u.totalRewrites || 0) >= 10);
+      } else if (segment === 'esp-connected') {
+        // Users with ESP connections - check for any ESP connections for each user
+        const usersWithEsp = new Set<string>();
+        for (const user of nonAdminUsers) {
+          const userConnections = await storage.getESPConnections(user.id);
+          if (userConnections && userConnections.length > 0) {
+            usersWithEsp.add(user.id);
+          }
+        }
+        targetUsers = nonAdminUsers.filter(u => usersWithEsp.has(u.id));
+      } else if (segment === 'new-signups') {
+        // New signups in last 7 days
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        targetUsers = nonAdminUsers.filter(u => {
+          if (!u.createdAt) return false;
+          return new Date(u.createdAt) >= sevenDaysAgo;
+        });
       }
       
       // Filter to users with valid emails

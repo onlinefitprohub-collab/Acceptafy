@@ -2878,6 +2878,14 @@ export default function Admin() {
                     <SelectItem value="pro">Pro Users</SelectItem>
                     <SelectItem value="scale">Scale Users</SelectItem>
                     <SelectItem value="paid">All Paid Users</SelectItem>
+                    <SelectItem value="approaching-limits">Approaching Usage Limits (80%+)</SelectItem>
+                    <SelectItem value="inactive">Inactive Users (14+ days)</SelectItem>
+                    <SelectItem value="power-users">Power Users (50+ grades/month)</SelectItem>
+                    <SelectItem value="at-risk">At-Risk (Churn Signals)</SelectItem>
+                    <SelectItem value="high-graders">Active Graders (10+ this week)</SelectItem>
+                    <SelectItem value="high-rewriters">Active Rewriters (10+ this week)</SelectItem>
+                    <SelectItem value="esp-connected">ESP Connected Users</SelectItem>
+                    <SelectItem value="new-signups">New Signups (7 days)</SelectItem>
                   </SelectContent>
                 </Select>
               ) : (
