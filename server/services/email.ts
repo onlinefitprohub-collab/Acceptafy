@@ -33,9 +33,11 @@ async function getCredentials() {
 
 async function getUncachableResendClient() {
   const { apiKey, fromEmail } = await getCredentials();
+  // Format the from email with display name "Acceptafy"
+  const formattedFromEmail = fromEmail ? `Acceptafy <${fromEmail}>` : null;
   return {
     client: new Resend(apiKey),
-    fromEmail
+    fromEmail: formattedFromEmail
   };
 }
 
