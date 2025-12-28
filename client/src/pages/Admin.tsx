@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -60,7 +60,12 @@ import {
   ChevronDown,
   CalendarDays,
   Lightbulb,
+  ChevronRight,
+  PanelLeftClose,
 } from "lucide-react";
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
@@ -312,9 +317,105 @@ const DATE_RANGE_OPTIONS = [
   { label: 'Custom range', value: 'custom', days: 0 },
 ];
 
+// CollapsibleSection wrapper component
+interface CollapsibleSectionProps {
+  id: AdminSection;
+  title: string;
+  icon: React.ReactNode;
+  description?: string;
+  children: React.ReactNode;
+  isOpen: boolean;
+  onToggle: () => void;
+  sectionRef?: React.RefObject<HTMLDivElement>;
+}
+
+function CollapsibleSection({ id, title, icon, description, children, isOpen, onToggle, sectionRef }: CollapsibleSectionProps) {
+  return (
+    <div ref={sectionRef} id={`section-${id}`} className="scroll-mt-4">
+      <Collapsible open={isOpen} onOpenChange={onToggle}>
+        <CollapsibleTrigger asChild>
+          <div className="flex items-center justify-between p-4 rounded-lg bg-card border cursor-pointer hover-elevate transition-all mb-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+                {icon}
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">{title}</h3>
+                {description && <p className="text-sm text-muted-foreground">{description}</p>}
+              </div>
+            </div>
+            <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 pb-6">
+          {children}
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  
+  // Sidebar state
+  const [activeSection, setActiveSection] = useState<AdminSection>('overview');
+  const [expandedSections, setExpandedSections] = useState<Record<AdminSection, boolean>>({
+    'overview': false,
+    'at-risk': false,
+    'users': false,
+    'business-metrics': false,
+    'charts': false,
+    'feature-adoption': false,
+    'revenue-analytics': false,
+    'conversion-funnel': false,
+    'content-intelligence': false,
+    'quality-metrics': false,
+    'esp-metrics': false,
+    'system-health': false,
+    'website-analytics': false,
+    'communications': false,
+  });
+  
+  // Section refs for scrolling
+  const sectionRefs = useRef<Record<AdminSection, HTMLDivElement | null>>({
+    'overview': null,
+    'at-risk': null,
+    'users': null,
+    'business-metrics': null,
+    'charts': null,
+    'feature-adoption': null,
+    'revenue-analytics': null,
+    'conversion-funnel': null,
+    'content-intelligence': null,
+    'quality-metrics': null,
+    'esp-metrics': null,
+    'system-health': null,
+    'website-analytics': null,
+    'communications': null,
+  });
+  
+  const handleSectionChange = (section: AdminSection) => {
+    setActiveSection(section);
+    setExpandedSections(prev => ({ ...prev, [section]: true }));
+    
+    // Scroll to section after state update
+    requestAnimationFrame(() => {
+      const ref = sectionRefs.current[section];
+      if (ref) {
+        ref.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  };
+  
+  const handleToggleSection = (section: AdminSection) => {
+    setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+  
+  const getExpandedSectionsSet = () => {
+    return new Set(Object.entries(expandedSections).filter(([_, v]) => v).map(([k]) => k as AdminSection));
+  };
   
   const [searchQuery, setSearchQuery] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
@@ -681,59 +782,79 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen p-6 lg:p-8 space-y-8" data-testid="admin-dashboard">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Admin Dashboard
-          </h1>
-          <p className="text-muted-foreground">
-            Manage users and monitor platform activity
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select value={dateRange} onValueChange={setDateRange}>
-            <SelectTrigger className="w-[180px]" data-testid="select-date-range">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Select range" />
-            </SelectTrigger>
-            <SelectContent>
-              {DATE_RANGE_OPTIONS.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {dateRange === 'custom' && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="date"
-                value={customStartDate}
-                onChange={(e) => setCustomStartDate(e.target.value)}
-                max={customEndDate}
-                className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
-                data-testid="input-custom-start-date"
-              />
-              <span className="text-muted-foreground">to</span>
-              <Input
-                type="date"
-                value={customEndDate}
-                onChange={(e) => setCustomEndDate(e.target.value)}
-                min={customStartDate}
-                className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
-                data-testid="input-custom-end-date"
-              />
-              {!isCustomDateValid && (
-                <span className="text-destructive text-sm">Invalid range</span>
+    <>
+    <SidebarProvider>
+      <AdminSidebar 
+        activeSection={activeSection}
+        onSectionChange={handleSectionChange}
+        expandedSections={getExpandedSectionsSet()}
+        onToggleSection={handleToggleSection}
+        atRiskCount={atRiskUsers?.length || 0}
+      />
+      <SidebarInset className="flex-1 overflow-auto">
+        <div className="p-6 lg:p-8 space-y-6" data-testid="admin-dashboard">
+          <header className="flex flex-wrap items-start justify-between gap-4 sticky top-0 bg-background/95 backdrop-blur-sm z-10 pb-4 -mt-6 pt-6 -mx-6 px-6 lg:-mx-8 lg:px-8">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger data-testid="button-sidebar-trigger" />
+              <div className="space-y-1">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-muted-foreground">Manage users and monitor platform activity</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={dateRange} onValueChange={setDateRange}>
+                <SelectTrigger className="w-[180px]" data-testid="select-date-range">
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Select range" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DATE_RANGE_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              {dateRange === 'custom' && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    max={customEndDate}
+                    className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
+                    data-testid="input-custom-start-date"
+                  />
+                  <span className="text-muted-foreground">to</span>
+                  <Input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    min={customStartDate}
+                    className={`w-[140px] ${!isCustomDateValid ? 'border-destructive' : ''}`}
+                    data-testid="input-custom-end-date"
+                  />
+                  {!isCustomDateValid && (
+                    <span className="text-destructive text-sm">Invalid range</span>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
+          </header>
 
-      {/* Insights & At-Risk Users Section */}
+          {/* At-Risk Users Section */}
+          <CollapsibleSection
+            id="at-risk"
+            title="At-Risk Users"
+            icon={<AlertTriangle className="w-5 h-5 text-orange-400" />}
+            description="Users needing attention based on usage patterns"
+            isOpen={expandedSections['at-risk']}
+            onToggle={() => handleToggleSection('at-risk')}
+            sectionRef={{ current: sectionRefs.current['at-risk'] } as React.RefObject<HTMLDivElement>}
+          >
       {atRiskUsers && atRiskUsers.length > 0 && (
         <Card className="border-orange-500/30 bg-orange-500/5" data-testid="at-risk-users-card">
           <CardHeader>
@@ -771,9 +892,20 @@ export default function Admin() {
           </CardContent>
         </Card>
       )}
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="stat-total-users">
+          {/* Overview Section */}
+          <CollapsibleSection
+            id="overview"
+            title="Overview Stats"
+            icon={<BarChart3 className="w-5 h-5 text-purple-400" />}
+            description="Quick platform metrics"
+            isOpen={expandedSections['overview']}
+            onToggle={() => handleToggleSection('overview')}
+            sectionRef={{ current: sectionRefs.current['overview'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card data-testid="stat-total-users">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -827,12 +959,22 @@ export default function Admin() {
               <div className="text-2xl font-bold">{stats?.recentSignups || 0}</div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      {/* Business Metrics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="stat-mrr">
+          {/* Business Metrics Section */}
+          <CollapsibleSection
+            id="business-metrics"
+            title="Business Metrics"
+            icon={<DollarSign className="w-5 h-5 text-green-400" />}
+            description="Revenue and subscription analytics"
+            isOpen={expandedSections['business-metrics']}
+            onToggle={() => handleToggleSection('business-metrics')}
+            sectionRef={{ current: sectionRefs.current['business-metrics'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card data-testid="stat-mrr">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
@@ -892,12 +1034,22 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card data-testid="user-growth-chart">
+          {/* Charts Section */}
+          <CollapsibleSection
+            id="charts"
+            title="Growth Charts"
+            icon={<TrendingUp className="w-5 h-5 text-indigo-400" />}
+            description="User growth and subscription breakdown"
+            isOpen={expandedSections['charts']}
+            onToggle={() => handleToggleSection('charts')}
+            sectionRef={{ current: sectionRefs.current['charts'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="user-growth-chart">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -1031,12 +1183,22 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      {/* ESP Metrics Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card data-testid="stat-esp-connections">
+          {/* ESP Metrics Section */}
+          <CollapsibleSection
+            id="esp-metrics"
+            title="ESP Metrics"
+            icon={<Link2 className="w-5 h-5 text-cyan-400" />}
+            description="Email service provider connections and usage"
+            isOpen={expandedSections['esp-metrics']}
+            onToggle={() => handleToggleSection('esp-metrics')}
+            sectionRef={{ current: sectionRefs.current['esp-metrics'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card data-testid="stat-esp-connections">
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total ESP Connections</CardTitle>
             <Link2 className="h-4 w-4 text-muted-foreground" />
@@ -1101,11 +1263,22 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <Card className="lg:col-span-3" data-testid="users-table-card">
+          {/* Users Section */}
+          <CollapsibleSection
+            id="users"
+            title="User Management"
+            icon={<Users className="w-5 h-5 text-blue-400" />}
+            description="Search, filter, and manage all registered users"
+            isOpen={expandedSections['users']}
+            onToggle={() => handleToggleSection('users')}
+            sectionRef={{ current: sectionRefs.current['users'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <Card className="lg:col-span-3" data-testid="users-table-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
@@ -1395,20 +1568,18 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
 
-      {/* User Health & Retention Analytics */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">User Health & Retention</h2>
-        <p className="text-muted-foreground">
-          Monitor user engagement and identify at-risk accounts
-        </p>
-      </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-bold">User Health & Retention</h3>
+              <p className="text-muted-foreground">
+                Monitor user engagement and identify at-risk accounts
+              </p>
+            </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* User Health Score Distribution */}
-        <Card data-testid="health-score-card">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="health-score-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Heart className="h-5 w-5" />
@@ -1545,19 +1716,22 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      {/* Content Intelligence Analytics Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Content Intelligence</h2>
-        <p className="text-muted-foreground">
-          Insights from analyzed emails across the platform
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card data-testid="grade-distribution-chart">
+          {/* Content Intelligence Analytics Section */}
+          <CollapsibleSection
+            id="content-intelligence"
+            title="Content Intelligence"
+            icon={<FileText className="w-5 h-5 text-pink-400" />}
+            description="Insights from analyzed emails across the platform"
+            isOpen={expandedSections['content-intelligence']}
+            onToggle={() => handleToggleSection('content-intelligence')}
+            sectionRef={{ current: sectionRefs.current['content-intelligence'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="grade-distribution-chart">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
@@ -1760,16 +1934,20 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Feature Adoption Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Feature Adoption</h2>
-        <p className="text-muted-foreground">
-          Track which features are used most and usage trends over time
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card data-testid="feature-usage-chart">
+          {/* Feature Adoption Section */}
+          <CollapsibleSection
+            id="feature-adoption"
+            title="Feature Adoption"
+            icon={<Zap className="w-5 h-5 text-yellow-400" />}
+            description="Track which features are used most and usage trends"
+            isOpen={expandedSections['feature-adoption']}
+            onToggle={() => handleToggleSection('feature-adoption')}
+            sectionRef={{ current: sectionRefs.current['feature-adoption'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="feature-usage-chart">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
@@ -1960,17 +2138,20 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* Revenue & Business Analytics Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Revenue & Business Analytics</h2>
-        <p className="text-muted-foreground">
-          Detailed revenue metrics and business insights
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* MRR Trend Chart */}
-        <Card data-testid="mrr-trend-card">
+          {/* Revenue & Business Analytics Section */}
+          <CollapsibleSection
+            id="revenue-analytics"
+            title="Revenue & Business Analytics"
+            icon={<DollarSign className="w-5 h-5 text-emerald-400" />}
+            description="Detailed revenue metrics and business insights"
+            isOpen={expandedSections['revenue-analytics']}
+            onToggle={() => handleToggleSection('revenue-analytics')}
+            sectionRef={{ current: sectionRefs.current['revenue-analytics'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="mrr-trend-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -2077,17 +2258,20 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Conversion Funnel Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Conversion Analytics</h2>
-        <p className="text-muted-foreground">
-          User upgrade patterns and feature correlation
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Conversion Rates */}
-        <Card data-testid="conversion-rates-card">
+          {/* Conversion Funnel Section */}
+          <CollapsibleSection
+            id="conversion-funnel"
+            title="Conversion Analytics"
+            icon={<Target className="w-5 h-5 text-rose-400" />}
+            description="User upgrade patterns and feature correlation"
+            isOpen={expandedSections['conversion-funnel']}
+            onToggle={() => handleToggleSection('conversion-funnel')}
+            sectionRef={{ current: sectionRefs.current['conversion-funnel'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card data-testid="conversion-rates-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Target className="h-5 w-5" />
@@ -2194,17 +2378,20 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Quality Metrics Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Quality Metrics</h2>
-        <p className="text-muted-foreground">
-          Email analysis performance and improvement tracking
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Score Trend Over Time */}
-        <Card data-testid="score-trend-card">
+          {/* Quality Metrics Section */}
+          <CollapsibleSection
+            id="quality-metrics"
+            title="Quality Metrics"
+            icon={<Activity className="w-5 h-5 text-teal-400" />}
+            description="Email analysis performance and improvement tracking"
+            isOpen={expandedSections['quality-metrics']}
+            onToggle={() => handleToggleSection('quality-metrics')}
+            sectionRef={{ current: sectionRefs.current['quality-metrics'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="score-trend-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -2329,17 +2516,20 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* System Health Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">System Health & Usage Limits</h2>
-        <p className="text-muted-foreground">
-          Monitor system performance and identify users approaching their limits
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* API Usage Trend */}
-        <Card data-testid="api-usage-trend-card">
+          {/* System Health Section */}
+          <CollapsibleSection
+            id="system-health"
+            title="System Health & Usage Limits"
+            icon={<Activity className="w-5 h-5 text-orange-400" />}
+            description="Monitor system performance and identify users approaching limits"
+            isOpen={expandedSections['system-health']}
+            onToggle={() => handleToggleSection('system-health')}
+            sectionRef={{ current: sectionRefs.current['system-health'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="api-usage-trend-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
@@ -2506,15 +2696,19 @@ export default function Admin() {
         </Card>
       </div>
 
-      {/* Website Analytics Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Website Analytics</h2>
-        <p className="text-muted-foreground">
-          Live visitor data from Google Analytics
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <Card data-testid="website-analytics-card">
+          {/* Website Analytics Section */}
+          <CollapsibleSection
+            id="website-analytics"
+            title="Website Analytics"
+            icon={<BarChart3 className="w-5 h-5 text-violet-400" />}
+            description="Live visitor data from Google Analytics"
+            isOpen={expandedSections['website-analytics']}
+            onToggle={() => handleToggleSection('website-analytics')}
+            sectionRef={{ current: sectionRefs.current['website-analytics'] } as React.RefObject<HTMLDivElement>}
+          >
+            <Card data-testid="website-analytics-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -2540,17 +2734,20 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* Communications Section */}
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Communications & Messages</h2>
-        <p className="text-muted-foreground">
-          Manage announcements and view contact messages
-        </p>
-      </div>
+          </CollapsibleSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Active Announcements */}
-        <Card data-testid="announcements-card">
+          {/* Communications Section */}
+          <CollapsibleSection
+            id="communications"
+            title="Communications & Messages"
+            icon={<Mail className="w-5 h-5 text-sky-400" />}
+            description="Manage announcements and view contact messages"
+            isOpen={expandedSections['communications']}
+            onToggle={() => handleToggleSection('communications')}
+            sectionRef={{ current: sectionRefs.current['communications'] } as React.RefObject<HTMLDivElement>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card data-testid="announcements-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Lightbulb className="h-5 w-5" />
@@ -2789,11 +2986,16 @@ export default function Admin() {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
+              </Card>
+            </div>
+          </CollapsibleSection>
 
-      {/* View Notes Dialog */}
-      <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
+
+    {/* View Notes Dialog */}
+    <Dialog open={showNotesDialog} onOpenChange={setShowNotesDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Admin Notes</DialogTitle>
@@ -2899,6 +3101,6 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }
