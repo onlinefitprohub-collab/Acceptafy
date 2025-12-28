@@ -2506,6 +2506,40 @@ export default function Admin() {
         </Card>
       </div>
 
+      {/* Website Analytics Section */}
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold">Website Analytics</h2>
+        <p className="text-muted-foreground">
+          Live visitor data from Google Analytics
+        </p>
+      </div>
+
+      <Card data-testid="website-analytics-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Google Analytics Dashboard
+          </CardTitle>
+          <CardDescription>
+            Real-time website traffic, user behavior, and engagement metrics
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full overflow-hidden rounded-lg border">
+            <iframe 
+              data-testid="iframe-website-analytics"
+              width="100%" 
+              height="2125" 
+              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/kIV1C" 
+              frameBorder="0" 
+              style={{ border: 0 }} 
+              allowFullScreen 
+              sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Communications Section */}
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Communications & Messages</h2>
