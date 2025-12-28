@@ -54,21 +54,16 @@ export type AdminSection =
 interface AdminSidebarProps {
   activeSection: AdminSection;
   onSectionChange: (section: AdminSection) => void;
-  expandedSections: Set<AdminSection>;
-  onToggleSection: (section: AdminSection) => void;
   atRiskCount?: number;
 }
 
 export function AdminSidebar({ 
   activeSection, 
   onSectionChange,
-  expandedSections,
-  onToggleSection,
   atRiskCount = 0,
 }: AdminSidebarProps) {
   const handleSectionClick = (section: AdminSection) => {
     onSectionChange(section);
-    onToggleSection(section);
   };
 
   return (
