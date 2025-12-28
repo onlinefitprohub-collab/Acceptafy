@@ -682,6 +682,7 @@ export default function Admin() {
       toast({ title: "Announcement deleted", description: "The announcement has been removed" });
     },
     onError: (error: any) => {
+      setShowDeleteConfirm(null);
       toast({ title: "Error", description: error.message || "Failed to delete announcement", variant: "destructive" });
     },
   });

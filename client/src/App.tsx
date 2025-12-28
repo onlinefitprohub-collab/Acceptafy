@@ -80,6 +80,7 @@ import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { ESPStatsDashboard } from './components/ESPStatsDashboard';
 import { DeliverabilityIntelligence } from './components/DeliverabilityIntelligence';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
+import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -2435,6 +2436,7 @@ function AppContent() {
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
+          <AnnouncementBanner />
           <PaymentWarningBanner />
           <header className="flex flex-col border-b border-border/50 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
             <div className="flex items-center justify-between h-14 px-4">
