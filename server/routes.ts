@@ -3022,11 +3022,10 @@ Return your response as a JSON object with this exact structure:
       }
       
       const user = await storage.getUser(userId);
-      const tier = user?.subscriptionTier || 'starter';
+      const tier = (user?.subscriptionTier || 'starter') as keyof typeof SUBSCRIPTION_LIMITS;
       const domains = await storage.getMonitoredDomains(userId);
       
-      const tierLimits = { starter: 3, pro: 15, scale: 50 };
-      const limit = tierLimits[tier as keyof typeof tierLimits] || 3;
+      const limit = SUBSCRIPTION_LIMITS[tier]?.monitoredDomains || 3;
       
       if (domains.length >= limit) {
         return res.status(403).json({ 
@@ -3067,8 +3066,19 @@ Return your response as a JSON object with this exact structure:
       const { checkFrequency, alertsEnabled } = req.body;
       
       const updates: any = {};
-      if (checkFrequency !== undefined) updates.checkFrequency = checkFrequency;
-      if (alertsEnabled !== undefined) updates.alertsEnabled = alertsEnabled;
+      if (checkFrequency !== undefined) {
+        const validFrequencies = ['daily', 'weekly', 'manual'];
+        if (!validFrequencies.includes(checkFrequency)) {
+          return res.status(400).json({ message: 'Invalid check frequency. Must be daily, weekly, or manual.' });
+        }
+        updates.checkFrequency = checkFrequency;
+      }
+      if (alertsEnabled !== undefined) {
+        if (typeof alertsEnabled !== 'boolean') {
+          return res.status(400).json({ message: 'alertsEnabled must be a boolean.' });
+        }
+        updates.alertsEnabled = alertsEnabled;
+      }
       
       const result = await storage.updateMonitoredDomain(id, userId, updates);
       if (!result) {
