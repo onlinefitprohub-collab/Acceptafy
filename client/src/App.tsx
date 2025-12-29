@@ -104,6 +104,7 @@ import { EmailPreviewTool } from './components/EmailPreviewTool';
 import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { SenderScoreEstimator } from './components/SenderScoreEstimator';
+import { BlacklistMonitor } from './components/BlacklistMonitor';
 import { EmailTemplates } from './components/EmailTemplates';
 import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
@@ -130,7 +131,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -152,7 +153,7 @@ import type {
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
-type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | null;
 type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1813,6 +1814,10 @@ function AppContent() {
         <SenderScoreEstimator />
       )}
 
+      {deliverabilitySubView === 'blacklist' && (
+        <BlacklistMonitor />
+      )}
+
       {!deliverabilitySubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('dns')}>
@@ -1878,9 +1883,22 @@ function AppContent() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-foreground">Sender Score Estimator</h3>
-                  <Badge className="bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">Analyze your authentication, list hygiene, and sending practices to estimate sender reputation</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('blacklist')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500 to-red-600">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Blacklist Monitor</h3>
+                  <Badge className="bg-gradient-to-r from-rose-500 to-red-600 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Check if your sending domain or IP is on major email blacklists (Spamhaus, Barracuda, etc.)</p>
               </div>
             </CardContent>
           </Card>
