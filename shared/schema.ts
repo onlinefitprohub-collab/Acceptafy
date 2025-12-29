@@ -1134,3 +1134,64 @@ export const providerHealthSchema = z.object({
 
 export type ProviderHealth = z.infer<typeof providerHealthSchema>;
 
+// Blacklist Monitor - Saved domains for ongoing monitoring
+export const monitoredDomains = pgTable("monitored_domains", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  domain: varchar("domain").notNull(),
+  type: varchar("type").notNull().default("domain"), // 'domain' or 'ip'
+  lastCheckedAt: timestamp("last_checked_at"),
+  lastStatus: varchar("last_status"), // 'clean', 'listed', 'error'
+  listedCount: integer("listed_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_monitored_domains_user").on(table.userId),
+]);
+
+export type MonitoredDomain = typeof monitoredDomains.$inferSelect;
+export type InsertMonitoredDomain = typeof monitoredDomains.$inferInsert;
+export const insertMonitoredDomainSchema = createInsertSchema(monitoredDomains).omit({ id: true, createdAt: true, lastCheckedAt: true, lastStatus: true, listedCount: true });
+
+// Blacklist check history
+export const blacklistCheckHistory = pgTable("blacklist_check_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  domain: varchar("domain").notNull(),
+  type: varchar("type").notNull().default("domain"), // 'domain' or 'ip'
+  totalBlacklists: integer("total_blacklists").notNull(),
+  listedOn: integer("listed_on").default(0),
+  cleanOn: integer("clean_on").default(0),
+  results: jsonb("results").notNull(), // Array of { blacklist, listed, error? }
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_blacklist_history_user").on(table.userId),
+  index("idx_blacklist_history_domain").on(table.domain),
+]);
+
+export type BlacklistCheckHistory = typeof blacklistCheckHistory.$inferSelect;
+export type InsertBlacklistCheckHistory = typeof blacklistCheckHistory.$inferInsert;
+
+// Blacklist result type for API responses
+export const blacklistResultSchema = z.object({
+  blacklist: z.string(),
+  name: z.string(),
+  listed: z.boolean(),
+  error: z.string().optional(),
+  delistUrl: z.string().optional(),
+});
+
+export type BlacklistResult = z.infer<typeof blacklistResultSchema>;
+
+export const blacklistCheckResponseSchema = z.object({
+  domain: z.string(),
+  type: z.enum(['domain', 'ip']),
+  checkedAt: z.string(),
+  totalBlacklists: z.number(),
+  listedOn: z.number(),
+  cleanOn: z.number(),
+  status: z.enum(['clean', 'listed', 'error']),
+  results: z.array(blacklistResultSchema),
+});
+
+export type BlacklistCheckResponse = z.infer<typeof blacklistCheckResponseSchema>;
+

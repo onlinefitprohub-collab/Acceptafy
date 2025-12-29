@@ -23,6 +23,8 @@ import {
   announcementReads,
   userActivityLogs,
   adminActivityLogs,
+  monitoredDomains,
+  blacklistCheckHistory,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -73,6 +75,10 @@ import {
   type InsertUserActivityLog,
   type AdminActivityLog,
   type InsertAdminActivityLog,
+  type MonitoredDomain,
+  type InsertMonitoredDomain,
+  type BlacklistCheckHistory,
+  type InsertBlacklistCheckHistory,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -224,6 +230,15 @@ export interface IStorage {
   saveListHealthSnapshot(snapshot: InsertListHealthSnapshot): Promise<ListHealthSnapshot>;
   getListHealthHistory(userId: string, listId: string, limit?: number): Promise<ListHealthSnapshot[]>;
   
+  // Blacklist Monitoring
+  getMonitoredDomains(userId: string): Promise<MonitoredDomain[]>;
+  getMonitoredDomain(userId: string, domain: string): Promise<MonitoredDomain | undefined>;
+  createMonitoredDomain(data: InsertMonitoredDomain): Promise<MonitoredDomain>;
+  updateMonitoredDomain(id: string, userId: string, updates: Partial<MonitoredDomain>): Promise<MonitoredDomain | undefined>;
+  deleteMonitoredDomain(id: string, userId: string): Promise<boolean>;
+  
+  saveBlacklistCheck(data: InsertBlacklistCheckHistory): Promise<BlacklistCheckHistory>;
+  getBlacklistCheckHistory(userId: string, domain?: string, limit?: number): Promise<BlacklistCheckHistory[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2400,6 +2415,67 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return result;
+  }
+
+  // ========== BLACKLIST MONITORING METHODS ==========
+
+  async getMonitoredDomains(userId: string): Promise<MonitoredDomain[]> {
+    return db
+      .select()
+      .from(monitoredDomains)
+      .where(eq(monitoredDomains.userId, userId))
+      .orderBy(desc(monitoredDomains.createdAt));
+  }
+
+  async getMonitoredDomain(userId: string, domain: string): Promise<MonitoredDomain | undefined> {
+    const [result] = await db
+      .select()
+      .from(monitoredDomains)
+      .where(and(eq(monitoredDomains.userId, userId), eq(monitoredDomains.domain, domain)));
+    return result;
+  }
+
+  async createMonitoredDomain(data: InsertMonitoredDomain): Promise<MonitoredDomain> {
+    const [result] = await db.insert(monitoredDomains).values(data).returning();
+    return result;
+  }
+
+  async updateMonitoredDomain(id: string, userId: string, updates: Partial<MonitoredDomain>): Promise<MonitoredDomain | undefined> {
+    const [result] = await db
+      .update(monitoredDomains)
+      .set(updates)
+      .where(and(eq(monitoredDomains.id, id), eq(monitoredDomains.userId, userId)))
+      .returning();
+    return result;
+  }
+
+  async deleteMonitoredDomain(id: string, userId: string): Promise<boolean> {
+    await db
+      .delete(monitoredDomains)
+      .where(and(eq(monitoredDomains.id, id), eq(monitoredDomains.userId, userId)));
+    return true;
+  }
+
+  async saveBlacklistCheck(data: InsertBlacklistCheckHistory): Promise<BlacklistCheckHistory> {
+    const [result] = await db.insert(blacklistCheckHistory).values(data).returning();
+    return result;
+  }
+
+  async getBlacklistCheckHistory(userId: string, domain?: string, limit: number = 20): Promise<BlacklistCheckHistory[]> {
+    if (domain) {
+      return db
+        .select()
+        .from(blacklistCheckHistory)
+        .where(and(eq(blacklistCheckHistory.userId, userId), eq(blacklistCheckHistory.domain, domain)))
+        .orderBy(desc(blacklistCheckHistory.createdAt))
+        .limit(limit);
+    }
+    return db
+      .select()
+      .from(blacklistCheckHistory)
+      .where(eq(blacklistCheckHistory.userId, userId))
+      .orderBy(desc(blacklistCheckHistory.createdAt))
+      .limit(limit);
   }
 }
 
