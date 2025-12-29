@@ -1,0 +1,21 @@
+# Robots.txt for Acceptafy
+# https://acceptafy.com
+
+User-agent: *
+Allow: /
+Allow: /pricing
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+
+# Disallow authenticated/private routes
+Disallow: /account
+Disallow: /admin
+Disallow: /reset-password
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://acceptafy.com/sitemap.xml
+
+# Crawl-delay for politeness
+Crawl-delay: 1

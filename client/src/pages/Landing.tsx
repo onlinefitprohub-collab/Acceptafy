@@ -398,6 +398,7 @@ export default function Landing() {
         </div>
       </header>
 
+      <main>
       <section className="relative py-12 lg:py-20 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-transparent to-pink-500/10" />
         <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500/20 rounded-full blur-3xl" />
@@ -1071,6 +1072,7 @@ export default function Landing() {
           </Card>
         </div>
       </section>
+      </main>
 
       <footer className="border-t py-8" data-testid="footer">
         <div className="container mx-auto px-4">

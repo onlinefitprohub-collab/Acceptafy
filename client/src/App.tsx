@@ -112,6 +112,8 @@ import { EmailBuilder } from './components/EmailBuilder';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
+import { SEOHead } from './components/SEOHead';
+import { StructuredData } from './components/StructuredData';
 import { 
   getHistory, 
   saveAnalysis, 
@@ -2616,6 +2618,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <SEOHead />
+        <StructuredData />
         <Suspense fallback={<PageLoader />}>
           <Switch>
             <Route path="/pricing" component={Pricing} />
