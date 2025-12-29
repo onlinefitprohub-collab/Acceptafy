@@ -2950,6 +2950,128 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // ========== BLACKLIST MONITORING ROUTES ==========
+  
+  app.post('/api/blacklist/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const { target } = req.body;
+      
+      if (!target || typeof target !== 'string') {
+        return res.status(400).json({ message: 'Target (IP or domain) is required' });
+      }
+      
+      const userId = req.user.claims.sub;
+      
+      const { checkBlacklists } = await import('./services/blacklistChecker');
+      const result = await checkBlacklists(target.trim().toLowerCase());
+      
+      await storage.saveBlacklistCheck({
+        userId,
+        domain: result.domain,
+        type: result.type,
+        totalBlacklists: result.totalBlacklists,
+        listedOn: result.listedOn,
+        cleanOn: result.cleanOn,
+        results: result.results,
+      });
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error('Blacklist check error:', error);
+      res.status(400).json({ message: error.message || 'Failed to check blacklists' });
+    }
+  });
+  
+  app.get('/api/blacklist/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const domain = req.query.domain as string | undefined;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const history = await storage.getBlacklistCheckHistory(userId, domain, limit);
+      res.json(history);
+    } catch (error) {
+      console.error('Blacklist history error:', error);
+      res.status(500).json({ message: 'Failed to get blacklist history' });
+    }
+  });
+  
+  app.get('/api/blacklist/domains', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const domains = await storage.getMonitoredDomains(userId);
+      res.json(domains);
+    } catch (error) {
+      console.error('Get monitored domains error:', error);
+      res.status(500).json({ message: 'Failed to get monitored domains' });
+    }
+  });
+  
+  app.post('/api/blacklist/domains', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { domain, type } = req.body;
+      
+      if (!domain || typeof domain !== 'string') {
+        return res.status(400).json({ message: 'Domain or IP is required' });
+      }
+      
+      const existing = await storage.getMonitoredDomain(userId, domain.trim().toLowerCase());
+      if (existing) {
+        return res.status(400).json({ message: 'This domain/IP is already being monitored' });
+      }
+      
+      const user = await storage.getUser(userId);
+      const tier = user?.subscriptionTier || 'starter';
+      const domains = await storage.getMonitoredDomains(userId);
+      
+      const limits: Record<string, number> = { starter: 1, pro: 5, scale: 20 };
+      const limit = limits[tier] || 1;
+      
+      if (domains.length >= limit) {
+        return res.status(403).json({ 
+          message: `${tier.charAt(0).toUpperCase() + tier.slice(1)} plan allows monitoring ${limit} domain(s). Upgrade for more.` 
+        });
+      }
+      
+      const result = await storage.createMonitoredDomain({
+        userId,
+        domain: domain.trim().toLowerCase(),
+        type: type || 'domain',
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Create monitored domain error:', error);
+      res.status(500).json({ message: 'Failed to add domain to monitoring' });
+    }
+  });
+  
+  app.delete('/api/blacklist/domains/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      await storage.deleteMonitoredDomain(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete monitored domain error:', error);
+      res.status(500).json({ message: 'Failed to remove domain from monitoring' });
+    }
+  });
+  
+  app.get('/api/blacklist/guidance/:zone', async (req, res) => {
+    try {
+      const { zone } = req.params;
+      const { getDelistingGuidance } = await import('./services/blacklistChecker');
+      const guidance = getDelistingGuidance(zone);
+      res.json(guidance);
+    } catch (error) {
+      console.error('Get delisting guidance error:', error);
+      res.status(500).json({ message: 'Failed to get delisting guidance' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
