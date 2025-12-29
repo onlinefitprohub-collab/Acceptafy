@@ -212,3 +212,10 @@ Preferred communication style: Simple, everyday language.
 - Preserves existing variations when importing (updates first variation only)
 - Supported ESPs: SendGrid, Mailchimp, HubSpot, Klaviyo, Ontraport
 - Error handling for missing content, disconnected ESPs, and API failures
+
+**Performance Optimizations - Lazy Loading**:
+- Route-level lazy loading: Pages (Pricing, Account, TermsOfService, PrivacyPolicy, Contact, Admin, ResetPassword) are lazy loaded with React.lazy()
+- Heavy component lazy loading: AcademyHub, Dashboard, ESPStatsDashboard, DeliverabilityIntelligence, CampaignFunnelVisualization, OnboardingTour
+- Non-critical widget lazy loading: CookieConsent and ContactWidget load after initial render
+- Suspense boundaries with appropriate fallbacks: PageLoader for full pages, ComponentLoader for in-page components
+- Reduces initial bundle size and improves first page load time
