@@ -175,6 +175,301 @@ function ROICalculator() {
   );
 }
 
+function MoneyLeftOnTableCalculator() {
+  const [listSize, setListSize] = useState(10000);
+  const [currentOpenRate, setCurrentOpenRate] = useState(18);
+  const [avgOrderValue, setAvgOrderValue] = useState(75);
+  const [emailsPerMonth, setEmailsPerMonth] = useState(8);
+
+  const industryAvgOpenRate = 21.5;
+  const topPerformerOpenRate = 35;
+  
+  const currentOpens = listSize * (currentOpenRate / 100) * emailsPerMonth;
+  const potentialOpens = listSize * (topPerformerOpenRate / 100) * emailsPerMonth;
+  const missedOpens = Math.max(0, potentialOpens - currentOpens);
+  
+  const clickThroughRate = 0.025;
+  const conversionRate = 0.02;
+  
+  const missedClicks = missedOpens * clickThroughRate;
+  const missedConversions = missedClicks * conversionRate;
+  const monthlyLoss = Math.max(0, Math.round(missedConversions * avgOrderValue));
+  const yearlyLoss = monthlyLoss * 12;
+
+  const gapToIndustry = Math.max(0, industryAvgOpenRate - currentOpenRate);
+  const isOutperforming = currentOpenRate >= topPerformerOpenRate;
+
+  return (
+    <div className="space-y-6" data-testid="money-left-calculator">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <Mail className="w-4 h-4 text-muted-foreground" />
+            Email List Size
+          </label>
+          <Input
+            type="number"
+            value={listSize}
+            onChange={(e) => setListSize(Math.max(0, parseInt(e.target.value) || 0))}
+            className="text-center"
+            data-testid="input-loss-list-size"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-muted-foreground" />
+            Current Open Rate
+          </label>
+          <div className="relative">
+            <Input
+              type="number"
+              value={currentOpenRate}
+              onChange={(e) => setCurrentOpenRate(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+              className="text-center pr-7"
+              data-testid="input-current-open-rate"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-muted-foreground" />
+            Avg. Order Value
+          </label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+            <Input
+              type="number"
+              value={avgOrderValue}
+              onChange={(e) => setAvgOrderValue(Math.max(0, parseInt(e.target.value) || 0))}
+              className="text-center pl-7"
+              data-testid="input-avg-order-value"
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium flex items-center gap-2">
+            <Send className="w-4 h-4 text-muted-foreground" />
+            Emails/Month
+          </label>
+          <Input
+            type="number"
+            value={emailsPerMonth}
+            onChange={(e) => setEmailsPerMonth(Math.max(1, parseInt(e.target.value) || 1))}
+            className="text-center"
+            data-testid="input-emails-per-month"
+          />
+        </div>
+      </div>
+
+      {isOutperforming ? (
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-lg p-6 text-center border border-green-500/20">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Trophy className="w-6 h-6 text-green-600" />
+            <p className="text-sm text-green-600 dark:text-green-400 font-medium">You're a Top Performer!</p>
+          </div>
+          <p className="text-3xl font-bold text-green-600 dark:text-green-400" data-testid="text-monthly-loss">
+            $0 lost
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Your {currentOpenRate}% open rate exceeds the top performer benchmark. Keep it up!
+          </p>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-lg p-6 text-center border border-red-500/20">
+          <p className="text-sm text-red-600 dark:text-red-400 mb-2 font-medium">Revenue You're Leaving on the Table</p>
+          <p className="text-5xl font-bold text-red-600 dark:text-red-400" data-testid="text-monthly-loss">
+            ${monthlyLoss.toLocaleString()}<span className="text-2xl">/mo</span>
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            That's <span className="font-bold text-red-600 dark:text-red-400">${yearlyLoss.toLocaleString()}</span> per year in missed sales
+          </p>
+        </div>
+      )}
+
+      <div className="grid md:grid-cols-3 gap-4 text-center text-sm">
+        <div className="p-4 bg-card rounded-xl border border-border flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Your Open Rate</p>
+          <p className={`font-bold text-2xl ${isOutperforming ? 'text-green-600' : 'text-foreground'}`}>{currentOpenRate}%</p>
+          <p className="text-xs text-muted-foreground">
+            {isOutperforming ? 'Exceeds benchmarks!' : gapToIndustry > 0 ? `${gapToIndustry.toFixed(1)}% below average` : 'Above average'}
+          </p>
+        </div>
+        <div className="p-4 bg-card rounded-xl border border-border flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Industry Average</p>
+          <p className="font-bold text-2xl text-yellow-600">{industryAvgOpenRate}%</p>
+          <p className="text-xs text-muted-foreground">Typical performance</p>
+        </div>
+        <div className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/20 rounded-xl border-2 border-green-500/30 flex flex-col justify-between min-h-[100px]">
+          <p className="text-xs text-green-700 dark:text-green-400 uppercase tracking-wide font-semibold">Top Performers</p>
+          <p className="font-bold text-2xl text-green-600">{topPerformerOpenRate}%</p>
+          <p className="text-xs text-green-600 dark:text-green-400 font-medium">{isOutperforming ? 'You made it!' : 'Your target with Acceptafy'}</p>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        {isOutperforming ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              <span className="font-bold text-green-600">Maintain your edge</span> with ongoing optimization
+            </p>
+            <LoginDialog mode="signup">
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" data-testid="button-stop-losing">
+                Keep Winning
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </LoginDialog>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Close the gap and recover <span className="font-bold text-green-600">${yearlyLoss.toLocaleString()}/year</span>
+            </p>
+            <LoginDialog mode="signup">
+              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600" data-testid="button-stop-losing">
+                Stop Losing Money
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </LoginDialog>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BeforeAfterComparison() {
+  const beforeEmail = {
+    subject: "Check out our new products!!!",
+    preview: "We have new items in stock",
+    issues: [
+      { text: "Multiple exclamation marks trigger spam filters", severity: "high" },
+      { text: "Generic subject lacks personalization", severity: "medium" },
+      { text: "Preview text wastes valuable real estate", severity: "medium" },
+      { text: "No urgency or value proposition", severity: "low" },
+    ],
+    score: 42,
+    grade: "D+",
+  };
+
+  const afterEmail = {
+    subject: "[First Name], your exclusive early access starts now",
+    preview: "24 hours only: Be first to shop our new collection + free shipping",
+    improvements: [
+      { text: "Personalization increases open rates by 26%", impact: "+26%" },
+      { text: "Creates urgency with time-limited offer", impact: "+18%" },
+      { text: "Clear value prop in preview text", impact: "+12%" },
+      { text: "Clean punctuation passes spam filters", impact: "+15%" },
+    ],
+    score: 94,
+    grade: "A",
+  };
+
+  return (
+    <div className="space-y-6" data-testid="before-after-comparison">
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="border-2 border-red-500/30 bg-gradient-to-br from-red-500/5 to-orange-500/5" data-testid="card-before">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30">
+                <AlertCircle className="w-3 h-3 mr-1" />
+                Before
+              </Badge>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-red-600">{beforeEmail.grade}</span>
+                <span className="text-sm text-muted-foreground">({beforeEmail.score}/100)</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="p-3 bg-muted/50 rounded-lg border border-red-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Subject Line</p>
+                <p className="font-mono text-sm">{beforeEmail.subject}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border border-red-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Preview Text</p>
+                <p className="font-mono text-sm">{beforeEmail.preview}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-red-600 uppercase tracking-wide">Issues Found</p>
+              {beforeEmail.issues.map((issue, index) => (
+                <div key={index} className="flex items-start gap-2 text-sm">
+                  <AlertCircle className={`w-4 h-4 mt-0.5 shrink-0 ${
+                    issue.severity === 'high' ? 'text-red-500' : 
+                    issue.severity === 'medium' ? 'text-orange-500' : 'text-yellow-500'
+                  }`} />
+                  <span className="text-muted-foreground">{issue.text}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-2 border-green-500/30 bg-gradient-to-br from-green-500/5 to-emerald-500/5" data-testid="card-after">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-2">
+              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                <CheckCircle2 className="w-3 h-3 mr-1" />
+                After Acceptafy
+              </Badge>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-green-600">{afterEmail.grade}</span>
+                <span className="text-sm text-muted-foreground">({afterEmail.score}/100)</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="p-3 bg-muted/50 rounded-lg border border-green-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Subject Line</p>
+                <p className="font-mono text-sm">{afterEmail.subject}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border border-green-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Preview Text</p>
+                <p className="font-mono text-sm">{afterEmail.preview}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Improvements Applied</p>
+              {afterEmail.improvements.map((improvement, index) => (
+                <div key={index} className="flex items-start justify-between gap-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-green-500" />
+                    <span className="text-muted-foreground">{improvement.text}</span>
+                  </div>
+                  <Badge className="bg-green-500/10 text-green-600 border-green-500/30 shrink-0">
+                    {improvement.impact}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col items-center gap-4 pt-4">
+        <div className="flex items-center gap-4 text-center">
+          <div className="px-4 py-2 rounded-lg bg-muted">
+            <p className="text-2xl font-bold text-red-600">{beforeEmail.score}</p>
+            <p className="text-xs text-muted-foreground">Before</p>
+          </div>
+          <ArrowRight className="w-8 h-8 text-purple-500" />
+          <div className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30">
+            <p className="text-2xl font-bold text-green-600">{afterEmail.score}</p>
+            <p className="text-xs text-muted-foreground">After</p>
+          </div>
+          <span className="text-lg font-bold text-purple-600">= +{afterEmail.score - beforeEmail.score} points</span>
+        </div>
+        <p className="text-sm text-muted-foreground text-center max-w-md">
+          This transformation happens in seconds with Acceptafy's 1-click smart rewrites
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function AnimatedCounter({ end, duration = 2000, suffix = "" }: { end: number; duration?: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   
@@ -633,6 +928,25 @@ export default function Landing() {
 
       <section className="py-16">
         <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <Badge variant="outline" className="mb-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/30">
+                <Sparkles className="w-3 h-3 mr-1" />
+                See the Difference
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold mb-2">From Spam Folder to Inbox Hero</h2>
+              <p className="text-muted-foreground max-w-xl mx-auto">
+                Watch how Acceptafy transforms underperforming emails into high-converting messages
+              </p>
+            </div>
+            
+            <BeforeAfterComparison />
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <Badge variant="outline" className="mb-4">
               <Inbox className="w-3 h-3 mr-1" />
@@ -856,7 +1170,32 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="pricing" className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="bg-gradient-to-br from-red-500/5 to-orange-500/5 border-red-500/20" data-testid="card-money-left">
+              <CardContent className="p-8">
+                <div className="text-center mb-8">
+                  <Badge variant="outline" className="mb-4 bg-red-500/10 text-red-600 border-red-500/30" data-testid="badge-money-left">
+                    <AlertCircle className="w-3 h-3 mr-1" />
+                    Revenue Reality Check
+                  </Badge>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-2">How Much Money Are You Leaving on the Table?</h2>
+                  <p className="text-muted-foreground">Every email that doesn't get opened is revenue you're losing. See the real cost of underperforming emails.</p>
+                </div>
+                
+                <MoneyLeftOnTableCalculator />
+
+                <p className="text-center text-xs text-muted-foreground mt-6" data-testid="disclaimer-loss">
+                  <span className="font-medium">*Calculation methodology:</span> Based on industry benchmarks for click-through (2.5%) and conversion rates (2%). Actual results depend on your specific industry, email content, and audience engagement.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Simple Pricing, No Surprises</h2>
