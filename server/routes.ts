@@ -3025,8 +3025,8 @@ Return your response as a JSON object with this exact structure:
       const tier = user?.subscriptionTier || 'starter';
       const domains = await storage.getMonitoredDomains(userId);
       
-      const limits: Record<string, number> = { starter: 1, pro: 5, scale: 20 };
-      const limit = limits[tier] || 1;
+      const tierLimits = { starter: 3, pro: 15, scale: 50 };
+      const limit = tierLimits[tier as keyof typeof tierLimits] || 3;
       
       if (domains.length >= limit) {
         return res.status(403).json({ 

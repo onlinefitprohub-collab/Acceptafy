@@ -52,6 +52,8 @@ import {
   DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area } from 'recharts';
+import { TrendingUp, BarChart3 } from 'lucide-react';
 
 interface DelistingGuidance {
   steps: string[];
@@ -345,6 +347,10 @@ export function BlacklistMonitor() {
             <Clock className="h-4 w-4 mr-2" />
             Check History
           </TabsTrigger>
+          <TabsTrigger value="trends" data-testid="tab-trends">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Reputation Trends
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="monitored">
@@ -353,7 +359,7 @@ export function BlacklistMonitor() {
               <div>
                 <CardTitle>Your Monitored Domains</CardTitle>
                 <CardDescription>
-                  Save domains and IPs for quick checks. Limits: Starter (1), Pro (5), Scale (20)
+                  Save domains and IPs for quick checks. Limits: Starter (3), Pro (15), Scale (50)
                 </CardDescription>
               </div>
               <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
@@ -605,6 +611,136 @@ export function BlacklistMonitor() {
                     ))}
                   </div>
                 </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="trends">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Reputation Trends
+              </CardTitle>
+              <CardDescription>
+                Track your sender reputation over time based on blacklist checks
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {historyLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+              ) : history.length < 2 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Not enough data for trends</p>
+                  <p className="text-sm">Run at least 2 blacklist checks to see trends</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={history
+                          .slice()
+                          .reverse()
+                          .slice(-30)
+                          .map(check => ({
+                            date: check.createdAt ? format(new Date(check.createdAt), 'MMM d') : 'N/A',
+                            fullDate: check.createdAt ? format(new Date(check.createdAt), 'MMM d, yyyy h:mm a') : 'N/A',
+                            listings: check.listedOn ?? 0,
+                            clean: (check.totalBlacklists ?? 27) - (check.listedOn ?? 0),
+                            score: Math.round(((check.totalBlacklists ?? 27) - (check.listedOn ?? 0)) / (check.totalBlacklists ?? 27) * 100),
+                            domain: check.domain,
+                          }))}
+                        margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="date" className="text-xs fill-muted-foreground" />
+                        <YAxis domain={[0, 100]} className="text-xs fill-muted-foreground" />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-popover border rounded-lg p-3 shadow-lg">
+                                  <p className="font-medium">{data.domain}</p>
+                                  <p className="text-sm text-muted-foreground">{data.fullDate}</p>
+                                  <div className="mt-2 space-y-1 text-sm">
+                                    <p className="text-green-500">Reputation Score: {data.score}%</p>
+                                    <p className="text-destructive">Blacklists: {data.listings}</p>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="score" 
+                          stroke="#22c55e" 
+                          fillOpacity={1} 
+                          fill="url(#colorScore)"
+                          name="Reputation Score"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {(() => {
+                      const recentChecks = history.slice(0, 10);
+                      const avgScore = recentChecks.length > 0 
+                        ? Math.round(recentChecks.reduce((sum, check) => 
+                            sum + ((check.totalBlacklists ?? 27) - (check.listedOn ?? 0)) / (check.totalBlacklists ?? 27) * 100, 0
+                          ) / recentChecks.length)
+                        : 0;
+                      const totalListings = recentChecks.reduce((sum, check) => sum + (check.listedOn ?? 0), 0);
+                      const uniqueDomains = [...new Set(recentChecks.map(c => c.domain))].length;
+                      
+                      return (
+                        <>
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className="text-4xl font-bold text-green-500">{avgScore}%</p>
+                                <p className="text-sm text-muted-foreground mt-1">Avg Reputation Score</p>
+                                <p className="text-xs text-muted-foreground">(last 10 checks)</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className={`text-4xl font-bold ${totalListings > 0 ? 'text-destructive' : 'text-green-500'}`}>
+                                  {totalListings}
+                                </p>
+                                <p className="text-sm text-muted-foreground mt-1">Total Listings Found</p>
+                                <p className="text-xs text-muted-foreground">(last 10 checks)</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="pt-6">
+                              <div className="text-center">
+                                <p className="text-4xl font-bold">{uniqueDomains}</p>
+                                <p className="text-sm text-muted-foreground mt-1">Domains Checked</p>
+                                <p className="text-xs text-muted-foreground">(last 10 checks)</p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
