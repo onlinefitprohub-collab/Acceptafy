@@ -1190,6 +1190,7 @@ export const blacklistCheckResponseSchema = z.object({
   listedOn: z.number(),
   cleanOn: z.number(),
   status: z.enum(['clean', 'listed', 'error']),
+  resolvedIP: z.string().optional(),
   results: z.array(blacklistResultSchema),
 });
 

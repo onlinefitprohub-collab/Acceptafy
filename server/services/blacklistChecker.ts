@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import type { BlacklistResult, BlacklistCheckResponse } from '@shared/schema';
 
 const dnsResolve4 = promisify(dns.resolve4);
+const dnsResolveMx = promisify(dns.resolveMx);
 
 export interface BlacklistInfo {
   zone: string;
@@ -86,6 +87,15 @@ async function checkBlacklist(target: string, blacklist: BlacklistInfo, isIP: bo
   }
 }
 
+async function resolveToIP(domain: string): Promise<string | null> {
+  try {
+    const ips = await dnsResolve4(domain);
+    return ips && ips.length > 0 ? ips[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function checkBlacklists(target: string): Promise<BlacklistCheckResponse> {
   const isIP = isValidIP(target);
   const isDomain = isValidDomain(target);
@@ -94,39 +104,89 @@ export async function checkBlacklists(target: string): Promise<BlacklistCheckRes
     throw new Error('Invalid IP address or domain name');
   }
   
-  const applicableBlacklists = BLACKLISTS.filter(bl => {
-    if (isIP) return bl.type === 'ip' || bl.type === 'both';
-    return bl.type === 'domain' || bl.type === 'both';
-  });
+  let resolvedIP: string | null = null;
   
-  const results = await Promise.allSettled(
-    applicableBlacklists.map(bl => checkBlacklist(target, bl, isIP))
-  );
+  if (isDomain) {
+    resolvedIP = await resolveToIP(target);
+  }
   
-  const blacklistResults: BlacklistResult[] = results.map((result, index) => {
-    if (result.status === 'fulfilled') {
-      return result.value;
+  const allResults: BlacklistResult[] = [];
+  
+  if (isIP) {
+    const ipBlacklists = BLACKLISTS.filter(bl => bl.type === 'ip' || bl.type === 'both');
+    const results = await Promise.allSettled(
+      ipBlacklists.map(bl => checkBlacklist(target, bl, true))
+    );
+    
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        allResults.push(result.value);
+      } else {
+        allResults.push({
+          blacklist: ipBlacklists[index].zone,
+          name: ipBlacklists[index].name,
+          listed: false,
+          error: 'Check failed',
+        });
+      }
+    });
+  } else {
+    const domainBlacklists = BLACKLISTS.filter(bl => bl.type === 'domain' || bl.type === 'both');
+    const domainResults = await Promise.allSettled(
+      domainBlacklists.map(bl => checkBlacklist(target, bl, false))
+    );
+    
+    domainResults.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        allResults.push(result.value);
+      } else {
+        allResults.push({
+          blacklist: domainBlacklists[index].zone,
+          name: domainBlacklists[index].name,
+          listed: false,
+          error: 'Check failed',
+        });
+      }
+    });
+    
+    if (resolvedIP) {
+      const ipBlacklists = BLACKLISTS.filter(bl => bl.type === 'ip' || bl.type === 'both');
+      const ipResults = await Promise.allSettled(
+        ipBlacklists.map(bl => checkBlacklist(resolvedIP!, bl, true))
+      );
+      
+      ipResults.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const res = result.value;
+          allResults.push({
+            ...res,
+            name: `${res.name} (${resolvedIP})`,
+          });
+        } else {
+          allResults.push({
+            blacklist: ipBlacklists[index].zone,
+            name: `${ipBlacklists[index].name} (${resolvedIP})`,
+            listed: false,
+            error: 'Check failed',
+          });
+        }
+      });
     }
-    return {
-      blacklist: applicableBlacklists[index].zone,
-      name: applicableBlacklists[index].name,
-      listed: false,
-      error: 'Check failed',
-    };
-  });
+  }
   
-  const listedOn = blacklistResults.filter(r => r.listed).length;
-  const cleanOn = blacklistResults.filter(r => !r.listed && !r.error).length;
+  const listedOn = allResults.filter(r => r.listed).length;
+  const cleanOn = allResults.filter(r => !r.listed && !r.error).length;
   
   return {
     domain: target,
     type: isIP ? 'ip' : 'domain',
     checkedAt: new Date().toISOString(),
-    totalBlacklists: applicableBlacklists.length,
+    totalBlacklists: allResults.length,
     listedOn,
     cleanOn,
     status: listedOn > 0 ? 'listed' : 'clean',
-    results: blacklistResults.sort((a, b) => {
+    resolvedIP: resolvedIP || undefined,
+    results: allResults.sort((a, b) => {
       if (a.listed && !b.listed) return -1;
       if (!a.listed && b.listed) return 1;
       return a.name.localeCompare(b.name);

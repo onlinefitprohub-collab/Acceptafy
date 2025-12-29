@@ -222,6 +222,11 @@ export function BlacklistMonitor() {
               <span className="flex items-center gap-1">
                 {checkResult.type === 'ip' ? <Server className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
                 {checkResult.domain}
+                {checkResult.resolvedIP && (
+                  <span className="text-muted-foreground ml-1">
+                    (resolved: {checkResult.resolvedIP})
+                  </span>
+                )}
               </span>
               <span>Checked: {checkResult.totalBlacklists} lists</span>
               <span className="text-green-600">Clean: {checkResult.cleanOn}</span>
