@@ -2,7 +2,7 @@
 
 ## Overview
 
-Acceptafy is a React + TypeScript email marketing analysis and education platform. The application helps users optimize their email campaigns through AI-powered grading, provides deliverability tools, tracks sender reputation, and offers comprehensive educational resources. Built with Vite, Express, and the Google Gemini AI API, it combines real-time email analysis with educational content to help users master email marketing best practices.
+Acceptafy is a React and TypeScript email marketing analysis and education platform. Its primary purpose is to help users optimize their email campaigns through AI-powered grading, deliverability tools, sender reputation tracking, and comprehensive educational resources. Built with Vite, Express, and the Google Gemini AI API, the platform aims to provide real-time email analysis and educational content to master email marketing best practices. The business vision is to empower marketers with intelligent tools to improve campaign performance and deliverability.
 
 ## User Preferences
 
@@ -10,212 +10,35 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 
-**Framework**: React 18 with TypeScript, bundled via Vite
+The frontend is built with React 18 and TypeScript, bundled via Vite. It uses `shadcn/ui` components (Radix UI primitives) with a custom dark theme design system featuring purple gradient accents and dark slate backgrounds. Styling is handled with Tailwind CSS, including custom utility classes for animations. State management relies on local component state with React hooks, and browser localStorage for history data. The application is a single-page application, using conditional rendering for its Grader, History, and Academy views.
 
-**UI Component Strategy**: The application uses shadcn/ui components (Radix UI primitives) with a custom dark theme design system. All styling is predefined in a comprehensive design guidelines document, featuring purple gradient accents, dark slate backgrounds, and specific animation patterns (pulse, shimmer, aurora, fade-in, scale-in).
+### Backend
 
-**State Management**: Local component state with React hooks. No global state management library is used—state is lifted to parent components and passed down as props. History data is persisted in browser localStorage.
-
-**Routing**: Single-page application without client-side routing. The app uses conditional rendering to switch between three main views: Grader (default), History, and Academy.
-
-**Key Design Decisions**:
-- Pre-defined custom design system (not customizable by users)
-- All visual specifications are explicit—no design flexibility required
-- Tailwind CSS with custom utility classes for animations and effects
-- Accessibility considerations built into design (contrast, semantic HTML)
-
-### Backend Architecture
-
-**Server Framework**: Express.js with TypeScript
-
-**API Structure**: RESTful endpoints for AI-powered operations:
-- `/api/grade` - Email content analysis and scoring
-- `/api/rewrite` - AI-powered email rewriting with goal-based optimization
-- `/api/followup` - Follow-up email generation
-- `/api/sequence` - Multi-email sequence generation
-- `/api/dns/generate` - DNS record generation for email authentication
-- `/api/domain/health` - Domain reputation checking
-- `/api/list/analyze` - Email list quality analysis
-- `/api/bimi/generate` - BIMI record generation
-- `/api/glossary/explain` - Educational term explanations
-
-**Build System**: 
-- Custom build script (`script/build.ts`) using esbuild for server code
-- Vite for client bundling
-- Server dependencies are selectively bundled to reduce cold start times
-- Production builds output to `dist/` directory
-
-**Development vs Production**:
-- Development: Vite dev server with HMR via middleware mode
-- Production: Serves pre-built static assets from `dist/public`
+The backend is an Express.js server with TypeScript, providing RESTful APIs for AI-powered operations such as email content analysis (`/api/grade`), rewriting (`/api/rewrite`), follow-up generation (`/api/followup`), and various deliverability tools. The server code is built using a custom `esbuild` script, while Vite handles client bundling. Production builds serve static assets from `dist/public`.
 
 ### Data Storage
 
-**Database**: PostgreSQL with Drizzle ORM
-
-**Schema Design**: Minimal schema with just a users table (id, username, password). The application is designed to be extended with additional tables as needed.
-
-**Session Storage**: The codebase includes infrastructure for session management (connect-pg-simple) though user authentication is not fully implemented in the provided code.
-
-**Client-Side Storage**: Browser localStorage for analysis history (limited to 20 most recent items). History items store complete email content, variations, and AI analysis results.
+PostgreSQL is used as the database with Drizzle ORM, primarily for a minimal user schema. Client-side storage uses browser localStorage for analysis history, limited to the 20 most recent items, storing complete email content and AI analysis results.
 
 ### AI Integration
 
-**Provider**: Google Gemini AI via Replit's AI Integrations service
+The platform integrates with Google Gemini AI via Replit's AI Integrations service. All AI operations utilize structured output with schema validation, mapping to defined TypeScript interfaces. Key AI functions include multi-faceted email grading, goal-based email rewriting, context-aware follow-up and sequence generation, technical record generation (SPF, DKIM, DMARC, BIMI), and domain/list analysis.
 
-**Implementation Pattern**: Structured output with schema validation using Gemini's Type system. All AI operations use defined TypeScript interfaces that map to response schemas.
+### System Design Choices
 
-**Key AI Operations**:
-1. **Email Grading**: Complex multi-faceted analysis returning scores, grades, and detailed feedback across multiple dimensions (subject line, preview text, body copy, spam triggers, structural issues, personalization, links, accessibility)
-2. **Email Rewriting**: Goal-based rewriting (general improvement, urgency, clarity, conciseness)
-3. **Follow-up Generation**: Context-aware follow-up emails with goal targeting
-4. **Sequence Generation**: Multi-email drip sequences with timing and rationale
-5. **Technical Record Generation**: SPF, DKIM, DMARC, BIMI records
-6. **Domain Analysis**: Reputation checking and list quality analysis
+The project employs a monorepo structure, sharing types between client and server for type safety. It utilizes `drizzle-kit push` for schema synchronization instead of migrations. Static assets for the client are built separately and served in production. Infrastructure for session management with PostgreSQL is present, although user authentication is not fully implemented. A daily rate-limiting system tracks usage per day and month, with subscription-tier based limits enforced at the API level. Performance is optimized through lazy loading of routes and heavy components, along with SEO enhancements including comprehensive meta tags, structured data, and semantic HTML.
 
-**Error Handling**: Try-catch blocks with generic error responses. No retry logic implemented.
+## External Dependencies
 
-### External Dependencies
-
-**Primary Services**:
-- **Google Gemini AI** (via Replit AI Integrations): All AI-powered features
-- **PostgreSQL** (via Neon serverless): Database (configured but minimally used)
-
-**UI Component Libraries**:
-- **Radix UI**: Headless component primitives (accordion, dialog, dropdown, popover, tooltip, etc.)
-- **shadcn/ui**: Pre-configured Radix components with Tailwind styling
-- **Lucide React**: Icon library (supplemented by custom SVG icons in CategoryIcons component)
-
-**Supporting Libraries**:
-- **TanStack Query**: Client-side data fetching and caching (infrastructure present but underutilized)
-- **Tailwind CSS**: Utility-first styling with extensive custom configuration
-- **class-variance-authority & clsx**: Dynamic className composition
-- **date-fns**: Date formatting for history items
-- **Zod**: Runtime schema validation (with drizzle-zod for database schemas)
-
-**Development Tools**:
-- **Vite Plugins**: React plugin, runtime error overlay, Replit-specific tooling (cartographer, dev banner)
-- **TypeScript**: Strict mode with ESNext modules
-- **PostCSS**: With Tailwind and Autoprefixer
-
-**Notable Architectural Choices**:
-1. **Monorepo Structure**: Client, server, and shared code in single repository with path aliases
-2. **Type Safety**: Shared types between client/server in `client/src/types.ts` and `shared/schema.ts`
-3. **No Database Migrations**: Uses `drizzle-kit push` for schema synchronization
-4. **Static Asset Strategy**: Client built separately, served as static files in production
-5. **Session Strategy**: Infrastructure for PostgreSQL session store present but not actively used
-
-## Recent Changes
-
-### December 2025
-
-**ESP Stats Dashboard (Scale-only)**:
-- Added subscription tier check requiring Scale plan membership
-- Loading state while authentication is being verified
-- Upgrade prompt for non-Scale members with feature highlights
-- AI-powered deliverability analysis with inbox placement predictions
-
-**Gamification System Expansion**:
-- Expanded from 20 to 40 achievements across 8 categories:
-  - Getting Started (3): First grade, first rewrite, first deliverability check
-  - Excellence Milestones (6): A+ grades from 1 to 20
-  - Volume - Grading (5): 10 to 250 emails graded
-  - Volume - Rewrites (4): 5 to 50 AI rewrites
-  - Volume - Follow-ups (4): 1 to 50 follow-ups
-  - Deliverability (4): 1 to 50 deliverability checks
-  - Streaks (6): 3 to 90 day streaks
-  - Levels (5): Level 5 to 25
-  - XP (3): 1,000 to 10,000 XP earned
-- All achievements have corresponding unlock conditions in checkAndUnlockAchievements function
-
-**HighLevel ESP Integration (Limited Support with Manual Entry)**:
-- HighLevel marked as "Limited Support" with visual badge indicator
-- Campaign analytics not available through HighLevel's API (platform limitation)
-- Added manual campaign stats entry feature for HighLevel users
-  - Users can manually enter campaign name, subject line, sent/delivered/opened/clicked counts
-  - Automatically calculates open rate, click rate, bounce rate, unsubscribe rate
-  - Data persisted to localStorage for future sessions
-  - Manual campaigns appear in Recent Campaigns list and contribute to analytics
-- Clear user messaging explaining the limitation and suggesting to use HighLevel's native dashboard
-- Email sending and CRM sync features remain available
-
-**Email Body Analysis Feature**:
-- Added "Analyze Full Email Body" button to CampaignDetailModal
-- `fetchCampaignContent` method added to ESPProvider interface (optional method)
-- Backend route `GET /api/esp/:provider/campaign/:campaignId/content` for fetching email content
-- Supported ESPs for content fetching: SendGrid, Mailchimp, HubSpot, Klaviyo, Ontraport
-- Content fetched on-demand to avoid bloating payloads and respect API rate limits
-- HTML content is converted to text and passed to the email grader
-- Manual HighLevel campaigns show informative message that content isn't available
-- Unsupported ESPs display a message indicating the limitation
-
-**List Health Dashboard (Scale-tier only, Phase 1)**:
-- New database schema: `listHealthSnapshots` table for tracking subscriber list metrics over time
-- Backend service: `listHealthService.ts` with engagement scoring algorithm
-  - Health score (0-100) calculated from open rate, click rate, bounce rate, complaint rate, unsubscribe rate
-  - Engagement tier classification: high (25%+ engagement score), medium (12-25%), low (<12%)
-  - Health trend detection: improving, stable, declining (based on 5-point score changes)
-  - Growth rate tracking: percentage change in subscriber count between snapshots
-- API routes: `GET /api/list-health/:provider` and `GET /api/list-health/:provider/:listId/history`
-- Frontend component: `ListHealthDashboard.tsx` integrated into DeliverabilityIntelligence accordion
-  - Summary cards: total subscribers, health score with progress bar, engagement metrics, list hygiene stats
-  - Lists table: individual list rows with health scores, trends, growth rates, engagement tiers
-- ESP support for list health: SendGrid, Mailchimp, Klaviyo, Ontraport (via `fetchListHealth` method)
-
-**Content Calendar (Phase 2)**:
-- New database schema: `scheduledCampaigns` table for campaign scheduling and tracking
-  - Fields: name, subject, body, scheduledDate, status, ESP provider, target lists
-  - Metrics tracking: sent, delivered, opened, clicked counts
-  - Status management: draft, scheduled, sent, cancelled
-- Backend: Full CRUD routes for scheduled campaigns (`/api/scheduled-campaigns/*`)
-- Frontend component: `ContentCalendar.tsx` with month/week toggle views
-  - Calendar grid with scheduled campaigns displayed as events
-  - Create/edit campaign dialogs with ESP integration fields
-  - Drag-and-drop rescheduling for campaign events
-  - Status indicators and color coding by campaign status
-- Navigation: Accessible via Tools > Content Calendar in sidebar
-
-**Campaign Funnel Visualization (Phase 3)**:
-- New component: `CampaignFunnelVisualization.tsx` for campaign analytics
-  - Funnel chart: Visual Sent → Delivered → Opened → Clicked flow
-  - Metrics cards: Real-time display of campaign statistics
-  - Drop-off analysis: Stage-by-stage conversion tracking with severity indicators
-  - Compare mode: Side-by-side comparison of up to 4 campaigns
-- AI-powered analysis: `/api/funnel/analyze` endpoint
-  - Gemini-powered campaign optimization recommendations
-  - Fallback rule-based recommendations when AI unavailable
-  - Priority action and overall assessment summaries
-- Sample data for demonstration with note to connect ESP for real data
-- Navigation: Accessible via Tools > Campaign Funnel in sidebar
-
-**Daily Rate Limiting System (Anti-Abuse)**:
-- New database table: `daily_usage_counters` for tracking per-day usage with YYYY-MM-DD date column
-- Daily limits added to SUBSCRIPTION_LIMITS alongside monthly limits:
-  - Starter: 2 grades/day, 1 rewrite/day, 1 followup/day, 1 deliverability check/day
-  - Pro: 50 grades/day, 50 rewrites/day, 50 followups/day, 50 deliverability checks/day
-  - Scale: 150 grades/day, 150 rewrites/day, 150 followups/day, 150 deliverability checks/day
-- Automatic date rollover: Counters reset at midnight UTC when counter.date !== today
-- Storage methods: getDailyUsageCounter, createDailyUsageCounter, getOrCreateDailyUsageCounter, checkDailyUsageLimit, checkBothUsageLimits, incrementBothUsages
-- API enforcement: checkAndIncrementUsage checks both daily and monthly limits before allowing requests
-- Error responses distinguish between "Daily limit reached" and "Monthly limit reached"
-- Frontend: Account.tsx displays both daily and monthly usage with dual progress bars
-- API: /api/usage now returns dailyUsage object alongside monthly usage
-
-**Import from ESP Feature**:
-- Added "Import from ESP" button to Email Grader card header
-- Modal workflow: Select connected ESP → View campaigns → Import campaign content
-- Fetches campaigns from `/api/esp/stats/:provider` endpoint
-- Retrieves campaign content via `/api/esp/:provider/campaign/:campaignId/content`
-- Populates subject line and email body into grader input fields
-- Preserves existing variations when importing (updates first variation only)
-- Supported ESPs: SendGrid, Mailchimp, HubSpot, Klaviyo, Ontraport
-- Error handling for missing content, disconnected ESPs, and API failures
-
-**Performance Optimizations - Lazy Loading**:
-- Route-level lazy loading: Pages (Pricing, Account, TermsOfService, PrivacyPolicy, Contact, Admin, ResetPassword) are lazy loaded with React.lazy()
-- Heavy component lazy loading: AcademyHub, Dashboard, ESPStatsDashboard, DeliverabilityIntelligence, CampaignFunnelVisualization, OnboardingTour
-- Non-critical widget lazy loading: CookieConsent and ContactWidget load after initial render
-- Suspense boundaries with appropriate fallbacks: PageLoader for full pages, ComponentLoader for in-page components
-- Reduces initial bundle size and improves first page load time
+-   **Google Gemini AI**: Used for all AI-powered features (via Replit AI Integrations).
+-   **PostgreSQL**: Database for persistent storage (configured via Neon serverless).
+-   **Radix UI**: Headless UI component primitives.
+-   **shadcn/ui**: Pre-configured Radix components with Tailwind styling.
+-   **Lucide React**: Icon library.
+-   **TanStack Query**: Client-side data fetching and caching.
+-   **Tailwind CSS**: Utility-first styling framework.
+-   **Zod**: Runtime schema validation.
+-   **Vite**: Frontend build tool.
+-   **Express.js**: Backend web framework.
