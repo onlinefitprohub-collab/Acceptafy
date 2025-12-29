@@ -342,6 +342,14 @@ function BeforeAfterComparison() {
   const beforeEmail = {
     subject: "Check out our new products!!!",
     preview: "We have new items in stock",
+    body: `Hi there,
+
+We have some new products that you might like. Click here to see them all.
+
+Thanks,
+The Team
+
+UNSUBSCRIBE | PRIVACY POLICY`,
     issues: [
       { text: "Multiple exclamation marks trigger spam filters", severity: "high" },
       { text: "Generic subject lacks personalization", severity: "medium" },
@@ -355,6 +363,25 @@ function BeforeAfterComparison() {
   const afterEmail = {
     subject: "[First Name], your exclusive early access starts now",
     preview: "24 hours only: Be first to shop our new collection + free shipping",
+    body: `Hi Sarah,
+
+You're one of our most valued customers, so we wanted you to be first to know...
+
+Our Spring Collection just dropped, and you get 24-hour early access before anyone else.
+
+What's included:
+- 15 new arrivals handpicked for you
+- Free shipping on orders $50+
+- Exclusive 20% off with code EARLYBIRD
+
+[SHOP EARLY ACCESS NOW]
+
+This early access expires tomorrow at midnight.
+
+Cheers,
+Emma from StyleBox
+
+P.S. Your favorites are selling fast - the blue cardigan is already 60% claimed!`,
     improvements: [
       { text: "Personalization increases open rates by 26%", impact: "+26%" },
       { text: "Creates urgency with time-limited offer", impact: "+18%" },
@@ -390,6 +417,10 @@ function BeforeAfterComparison() {
               <div className="p-3 bg-muted/50 rounded-lg border border-red-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Preview Text</p>
                 <p className="font-mono text-sm">{beforeEmail.preview}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border border-red-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Email Body</p>
+                <pre className="font-mono text-xs whitespace-pre-wrap text-muted-foreground leading-relaxed">{beforeEmail.body}</pre>
               </div>
             </div>
             <div className="space-y-2">
@@ -429,6 +460,10 @@ function BeforeAfterComparison() {
               <div className="p-3 bg-muted/50 rounded-lg border border-green-500/20">
                 <p className="text-xs text-muted-foreground mb-1">Preview Text</p>
                 <p className="font-mono text-sm">{afterEmail.preview}</p>
+              </div>
+              <div className="p-3 bg-muted/50 rounded-lg border border-green-500/20">
+                <p className="text-xs text-muted-foreground mb-1">Email Body</p>
+                <pre className="font-mono text-xs whitespace-pre-wrap text-foreground leading-relaxed">{afterEmail.body}</pre>
               </div>
             </div>
             <div className="space-y-2">
