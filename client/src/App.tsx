@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { Switch, Route } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
@@ -13,12 +13,10 @@ import { FollowUpSequenceDisplay } from './components/FollowUpSequenceDisplay';
 import { ReputationDashboard } from './components/ReputationDashboard';
 import { ErrorMessage } from './components/ErrorMessage';
 import { EnhancedPdfExport } from './components/EnhancedPdfExport';
-import { AcademyHub } from './components/Academy/AcademyHub';
 import { AppSidebar } from './components/app-sidebar';
 import { ThemeToggle } from './components/ThemeToggle';
-import { Dashboard } from './components/Dashboard';
-import { OnboardingTour, useOnboarding } from './components/OnboardingTour';
-import { CelebrationModal, useCelebration } from './components/CelebrationModal';
+import { useOnboarding } from './components/OnboardingTour';
+import { useCelebration } from './components/CelebrationModal';
 import { PriorityIssues } from './components/PriorityIssues';
 import { GamificationProvider, useGamification } from './hooks/use-gamification';
 import { useAuth } from './hooks/useAuth';
@@ -27,16 +25,52 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { CookieConsent } from './components/CookieConsent';
-import { ContactWidget } from './components/ContactWidget';
 import Landing from './pages/Landing';
-import Pricing from './pages/Pricing';
-import Account from './pages/Account';
-import TermsOfService from './pages/TermsOfService';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import Contact from './pages/Contact';
-import Admin from './pages/Admin';
-import ResetPassword from './pages/reset-password';
+
+// Lazy load non-critical widgets to improve initial load
+const CookieConsent = lazy(() => import('./components/CookieConsent').then(m => ({ default: m.CookieConsent })));
+const ContactWidget = lazy(() => import('./components/ContactWidget').then(m => ({ default: m.ContactWidget })));
+
+// Lazy load heavy components
+const AcademyHub = lazy(() => import('./components/Academy/AcademyHub').then(m => ({ default: m.AcademyHub })));
+const Dashboard = lazy(() => import('./components/Dashboard').then(m => ({ default: m.Dashboard })));
+const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m => ({ default: m.OnboardingTour })));
+const ESPStatsDashboard = lazy(() => import('./components/ESPStatsDashboard').then(m => ({ default: m.ESPStatsDashboard })));
+const DeliverabilityIntelligence = lazy(() => import('./components/DeliverabilityIntelligence').then(m => ({ default: m.DeliverabilityIntelligence })));
+const CampaignFunnelVisualization = lazy(() => import('./components/CampaignFunnelVisualization').then(m => ({ default: m.CampaignFunnelVisualization })));
+
+// Lazy load pages for better initial load performance
+const Pricing = lazy(() => import('./pages/Pricing'));
+const Account = lazy(() => import('./pages/Account'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Admin = lazy(() => import('./pages/Admin'));
+const ResetPassword = lazy(() => import('./pages/reset-password'));
+
+// Loading fallback for lazy-loaded pages
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="animate-pulse flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500" />
+        <span className="text-lg font-semibold text-foreground">Loading...</span>
+      </div>
+    </div>
+  );
+}
+
+// Compact loading fallback for in-page components
+function ComponentLoader() {
+  return (
+    <div className="flex items-center justify-center p-12">
+      <div className="animate-pulse flex items-center gap-2">
+        <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500" />
+        <span className="text-sm font-medium text-muted-foreground">Loading...</span>
+      </div>
+    </div>
+  );
+}
 import { 
   SidebarProvider, 
   SidebarTrigger,
@@ -75,10 +109,7 @@ import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { SendTimeOptimizer } from './components/SendTimeOptimizer';
 import { EmailBuilder } from './components/EmailBuilder';
-import { CampaignFunnelVisualization } from './components/CampaignFunnelVisualization';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
-import { ESPStatsDashboard } from './components/ESPStatsDashboard';
-import { DeliverabilityIntelligence } from './components/DeliverabilityIntelligence';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { 
@@ -1615,7 +1646,9 @@ function AppContent() {
       )}
 
       {toolsSubView === 'funnel' && (
-        <CampaignFunnelVisualization />
+        <Suspense fallback={<ComponentLoader />}>
+          <CampaignFunnelVisualization />
+        </Suspense>
       )}
 
       {!toolsSubView && (
@@ -1909,16 +1942,20 @@ function AppContent() {
       )}
 
       {integrationsSubView === 'stats' && (
-        <ESPStatsDashboard onAnalyzeSubject={handleAnalyzeSubject} />
+        <Suspense fallback={<ComponentLoader />}>
+          <ESPStatsDashboard onAnalyzeSubject={handleAnalyzeSubject} />
+        </Suspense>
       )}
 
       {integrationsSubView === 'intelligence' && (
-        <DeliverabilityIntelligence 
-          connections={espConnections.map(c => ({ 
-            provider: c.provider, 
-            isConnected: c.connected || false 
-          }))} 
-        />
+        <Suspense fallback={<ComponentLoader />}>
+          <DeliverabilityIntelligence 
+            connections={espConnections.map(c => ({ 
+              provider: c.provider, 
+              isConnected: c.connected || false 
+            }))} 
+          />
+        </Suspense>
       )}
 
       {!integrationsSubView && (
@@ -2507,12 +2544,14 @@ function AppContent() {
           <main className="flex-1 overflow-y-auto p-6">
             <div className="max-w-5xl mx-auto">
               {activeView === 'dashboard' && (
-                <Dashboard 
-                  history={history}
-                  onNavigate={handleDashboardNavigate}
-                  onOpenAcademy={() => setShowAcademy(true)}
-                  onReplayTutorial={resetOnboarding}
-                />
+                <Suspense fallback={<ComponentLoader />}>
+                  <Dashboard 
+                    history={history}
+                    onNavigate={handleDashboardNavigate}
+                    onOpenAcademy={() => setShowAcademy(true)}
+                    onReplayTutorial={resetOnboarding}
+                  />
+                </Suspense>
               )}
               {activeView === 'grader' && renderGraderView()}
               {activeView === 'history' && renderHistoryView()}
@@ -2527,15 +2566,19 @@ function AppContent() {
 
       {showAcademy && (
         <div className="fixed inset-0 z-50 bg-background">
-          <AcademyHub onClose={() => setShowAcademy(false)} history={history} />
+          <Suspense fallback={<ComponentLoader />}>
+            <AcademyHub onClose={() => setShowAcademy(false)} history={history} />
+          </Suspense>
         </div>
       )}
 
       {showOnboarding && (
-        <OnboardingTour 
-          onComplete={completeOnboarding}
-          onSkip={completeOnboarding}
-        />
+        <Suspense fallback={null}>
+          <OnboardingTour 
+            onComplete={completeOnboarding}
+            onSkip={completeOnboarding}
+          />
+        </Suspense>
       )}
 
       <CelebrationRenderer />
@@ -2573,19 +2616,23 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Switch>
-          <Route path="/pricing" component={Pricing} />
-          <Route path="/account" component={Account} />
-          <Route path="/terms" component={TermsOfService} />
-          <Route path="/privacy" component={PrivacyPolicy} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/admin" component={Admin} />
-          <Route path="/reset-password" component={ResetPassword} />
-          <Route path="/" component={AuthenticatedApp} />
-          <Route component={AuthenticatedApp} />
-        </Switch>
-        <CookieConsent />
-        <ContactWidget />
+        <Suspense fallback={<PageLoader />}>
+          <Switch>
+            <Route path="/pricing" component={Pricing} />
+            <Route path="/account" component={Account} />
+            <Route path="/terms" component={TermsOfService} />
+            <Route path="/privacy" component={PrivacyPolicy} />
+            <Route path="/contact" component={Contact} />
+            <Route path="/admin" component={Admin} />
+            <Route path="/reset-password" component={ResetPassword} />
+            <Route path="/" component={AuthenticatedApp} />
+            <Route component={AuthenticatedApp} />
+          </Switch>
+        </Suspense>
+        <Suspense fallback={null}>
+          <CookieConsent />
+          <ContactWidget />
+        </Suspense>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
