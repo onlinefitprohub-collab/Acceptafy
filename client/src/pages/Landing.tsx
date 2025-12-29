@@ -1091,14 +1091,16 @@ export default function Landing() {
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                  <Link2 className="w-4 h-4 text-orange-600" />
+            <div className="rounded-xl border bg-gradient-to-br from-orange-500/5 to-amber-500/5 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6 pb-4 border-b border-orange-500/20">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-lg">
+                    <Link2 className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="font-bold text-xl bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">ESP Integrations</h3>
+                  <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30">New</Badge>
                 </div>
-                <h3 className="font-semibold text-lg">ESP Integrations</h3>
-                <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/30">New</Badge>
-                <span className="text-sm text-muted-foreground">— Connect your email service provider</span>
+                <span className="text-sm text-muted-foreground sm:ml-2">Connect your email service provider</span>
               </div>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -1109,7 +1111,7 @@ export default function Landing() {
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <Card key={index} className="hover-elevate border-orange-500/10" data-testid={`feature-esp-${index}`}>
+                    <Card key={index} className="hover-elevate border-orange-500/20 bg-background/50" data-testid={`feature-esp-${index}`}>
                       <CardContent className="p-4">
                         <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center mb-3">
                           <Icon className="w-4 h-4 text-orange-600" />
