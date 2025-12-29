@@ -1140,17 +1140,21 @@ export const monitoredDomains = pgTable("monitored_domains", {
   userId: varchar("user_id").notNull().references(() => users.id),
   domain: varchar("domain").notNull(),
   type: varchar("type").notNull().default("domain"), // 'domain' or 'ip'
+  checkFrequency: varchar("check_frequency").default("daily"), // 'daily', 'weekly', 'manual'
+  alertsEnabled: boolean("alerts_enabled").default(true),
   lastCheckedAt: timestamp("last_checked_at"),
   lastStatus: varchar("last_status"), // 'clean', 'listed', 'error'
+  previousStatus: varchar("previous_status"), // To track status changes
   listedCount: integer("listed_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => [
   index("idx_monitored_domains_user").on(table.userId),
+  index("idx_monitored_domains_frequency").on(table.checkFrequency),
 ]);
 
 export type MonitoredDomain = typeof monitoredDomains.$inferSelect;
 export type InsertMonitoredDomain = typeof monitoredDomains.$inferInsert;
-export const insertMonitoredDomainSchema = createInsertSchema(monitoredDomains).omit({ id: true, createdAt: true, lastCheckedAt: true, lastStatus: true, listedCount: true });
+export const insertMonitoredDomainSchema = createInsertSchema(monitoredDomains).omit({ id: true, createdAt: true, lastCheckedAt: true, lastStatus: true, previousStatus: true, listedCount: true });
 
 // Blacklist check history
 export const blacklistCheckHistory = pgTable("blacklist_check_history", {

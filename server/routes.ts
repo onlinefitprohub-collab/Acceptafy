@@ -3060,6 +3060,43 @@ Return your response as a JSON object with this exact structure:
     }
   });
   
+  app.patch('/api/blacklist/domains/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const { checkFrequency, alertsEnabled } = req.body;
+      
+      const updates: any = {};
+      if (checkFrequency !== undefined) updates.checkFrequency = checkFrequency;
+      if (alertsEnabled !== undefined) updates.alertsEnabled = alertsEnabled;
+      
+      const result = await storage.updateMonitoredDomain(id, userId, updates);
+      if (!result) {
+        return res.status(404).json({ message: 'Domain not found' });
+      }
+      res.json(result);
+    } catch (error) {
+      console.error('Update monitored domain error:', error);
+      res.status(500).json({ message: 'Failed to update monitoring settings' });
+    }
+  });
+  
+  app.post('/api/blacklist/domains/:id/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      const { runManualCheck } = await import('./services/blacklistScheduler');
+      await runManualCheck(id, userId);
+      
+      const domain = await storage.getMonitoredDomainById(id, userId);
+      res.json(domain);
+    } catch (error) {
+      console.error('Manual check error:', error);
+      res.status(500).json({ message: 'Failed to run manual check' });
+    }
+  });
+  
   app.get('/api/blacklist/guidance/:zone', async (req, res) => {
     try {
       const { zone } = req.params;

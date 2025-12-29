@@ -233,9 +233,12 @@ export interface IStorage {
   // Blacklist Monitoring
   getMonitoredDomains(userId: string): Promise<MonitoredDomain[]>;
   getMonitoredDomain(userId: string, domain: string): Promise<MonitoredDomain | undefined>;
+  getMonitoredDomainById(id: string, userId: string): Promise<MonitoredDomain | undefined>;
   createMonitoredDomain(data: InsertMonitoredDomain): Promise<MonitoredDomain>;
   updateMonitoredDomain(id: string, userId: string, updates: Partial<MonitoredDomain>): Promise<MonitoredDomain | undefined>;
+  updateMonitoredDomainStatus(id: string, status: string, listedCount: number): Promise<void>;
   deleteMonitoredDomain(id: string, userId: string): Promise<boolean>;
+  getDomainsForScheduledCheck(frequencies: string[]): Promise<MonitoredDomain[]>;
   
   saveBlacklistCheck(data: InsertBlacklistCheckHistory): Promise<BlacklistCheckHistory>;
   getBlacklistCheckHistory(userId: string, domain?: string, limit?: number): Promise<BlacklistCheckHistory[]>;
@@ -2435,6 +2438,14 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getMonitoredDomainById(id: string, userId: string): Promise<MonitoredDomain | undefined> {
+    const [result] = await db
+      .select()
+      .from(monitoredDomains)
+      .where(and(eq(monitoredDomains.id, id), eq(monitoredDomains.userId, userId)));
+    return result;
+  }
+
   async createMonitoredDomain(data: InsertMonitoredDomain): Promise<MonitoredDomain> {
     const [result] = await db.insert(monitoredDomains).values(data).returning();
     return result;
@@ -2454,6 +2465,38 @@ export class DatabaseStorage implements IStorage {
       .delete(monitoredDomains)
       .where(and(eq(monitoredDomains.id, id), eq(monitoredDomains.userId, userId)));
     return true;
+  }
+
+  async updateMonitoredDomainStatus(id: string, status: string, listedCount: number): Promise<void> {
+    const current = await db.select().from(monitoredDomains).where(eq(monitoredDomains.id, id));
+    const previousStatus = current[0]?.lastStatus || null;
+    
+    await db
+      .update(monitoredDomains)
+      .set({
+        lastStatus: status,
+        previousStatus: previousStatus,
+        listedCount: listedCount,
+        lastCheckedAt: new Date(),
+      })
+      .where(eq(monitoredDomains.id, id));
+  }
+
+  async getDomainsForScheduledCheck(frequencies: string[]): Promise<MonitoredDomain[]> {
+    if (frequencies.length === 0) return [];
+    
+    const now = new Date();
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+    return db
+      .select()
+      .from(monitoredDomains)
+      .where(
+        and(
+          sql`${monitoredDomains.checkFrequency} = ANY(${frequencies})`,
+          sql`(${monitoredDomains.lastCheckedAt} IS NULL OR ${monitoredDomains.lastCheckedAt} < ${oneDayAgo})`
+        )
+      );
   }
 
   async saveBlacklistCheck(data: InsertBlacklistCheckHistory): Promise<BlacklistCheckHistory> {

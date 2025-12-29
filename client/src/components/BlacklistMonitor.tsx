@@ -22,7 +22,11 @@ import {
   CheckCircle,
   HelpCircle,
   Globe,
-  Server
+  Server,
+  Settings,
+  Bell,
+  BellOff,
+  Calendar
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { BlacklistCheckResponse, BlacklistResult, MonitoredDomain, BlacklistCheckHistory } from '@shared/schema';
@@ -36,6 +40,18 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
 
 interface DelistingGuidance {
   steps: string[];
@@ -122,6 +138,42 @@ export function BlacklistMonitor() {
       toast({
         title: 'Domain Removed',
         description: 'Removed from monitoring list.',
+      });
+    },
+  });
+
+  const updateDomainMutation = useMutation({
+    mutationFn: async ({ id, checkFrequency, alertsEnabled }: { id: string; checkFrequency?: string; alertsEnabled?: boolean }) => {
+      const res = await apiRequest('PATCH', `/api/blacklist/domains/${id}`, { checkFrequency, alertsEnabled });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blacklist/domains'] });
+      toast({
+        title: 'Settings Updated',
+        description: 'Monitoring settings have been updated.',
+      });
+    },
+  });
+
+  const runManualCheckMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest('POST', `/api/blacklist/domains/${id}/check`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/blacklist/domains'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/blacklist/history'] });
+      toast({
+        title: 'Check Complete',
+        description: 'Domain has been checked and history updated.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Check Failed',
+        description: 'Failed to run manual check.',
+        variant: 'destructive',
       });
     },
   });
@@ -385,31 +437,105 @@ export function BlacklistMonitor() {
                         )}
                         <div>
                           <p className="font-medium">{domain.domain}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Added {domain.createdAt ? format(new Date(domain.createdAt), 'MMM d, yyyy') : 'recently'}
-                          </p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>
+                              {domain.lastCheckedAt 
+                                ? `Last check: ${format(new Date(domain.lastCheckedAt), 'MMM d, HH:mm')}`
+                                : 'Never checked'
+                              }
+                            </span>
+                            {domain.lastStatus && (
+                              <Badge variant={domain.lastStatus === 'listed' ? 'destructive' : 'outline'} className="text-xs">
+                                {domain.lastStatus === 'listed' ? `Listed (${domain.listedCount})` : 'Clean'}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          <Calendar className="h-3 w-3 mr-1" />
+                          {domain.checkFrequency === 'daily' ? 'Daily' : domain.checkFrequency === 'weekly' ? 'Weekly' : 'Manual'}
+                        </Badge>
+                        {domain.alertsEnabled ? (
+                          <Badge variant="outline" className="text-xs text-green-600">
+                            <Bell className="h-3 w-3" />
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            <BellOff className="h-3 w-3" />
+                          </Badge>
+                        )}
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleQuickCheck(domain.domain)}
-                          disabled={checkMutation.isPending}
+                          onClick={() => runManualCheckMutation.mutate(domain.id)}
+                          disabled={runManualCheckMutation.isPending}
                           data-testid={`button-quick-check-${domain.id}`}
                         >
-                          <RefreshCw className={`h-4 w-4 mr-1 ${checkMutation.isPending ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`h-4 w-4 mr-1 ${runManualCheckMutation.isPending ? 'animate-spin' : ''}`} />
                           Check
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => deleteDomainMutation.mutate(domain.id)}
-                          disabled={deleteDomainMutation.isPending}
-                          data-testid={`button-delete-domain-${domain.id}`}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" data-testid={`button-settings-${domain.id}`}>
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Monitoring Settings</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Calendar className="h-4 w-4 mr-2" />
+                                Check Frequency
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem 
+                                  onClick={() => updateDomainMutation.mutate({ id: domain.id, checkFrequency: 'daily' })}
+                                >
+                                  {domain.checkFrequency === 'daily' && <CheckCircle className="h-4 w-4 mr-2 text-green-500" />}
+                                  Daily
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => updateDomainMutation.mutate({ id: domain.id, checkFrequency: 'weekly' })}
+                                >
+                                  {domain.checkFrequency === 'weekly' && <CheckCircle className="h-4 w-4 mr-2 text-green-500" />}
+                                  Weekly
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => updateDomainMutation.mutate({ id: domain.id, checkFrequency: 'manual' })}
+                                >
+                                  {domain.checkFrequency === 'manual' && <CheckCircle className="h-4 w-4 mr-2 text-green-500" />}
+                                  Manual Only
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuItem 
+                              onClick={() => updateDomainMutation.mutate({ id: domain.id, alertsEnabled: !domain.alertsEnabled })}
+                            >
+                              {domain.alertsEnabled ? (
+                                <>
+                                  <BellOff className="h-4 w-4 mr-2" />
+                                  Disable Alerts
+                                </>
+                              ) : (
+                                <>
+                                  <Bell className="h-4 w-4 mr-2" />
+                                  Enable Alerts
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => deleteDomainMutation.mutate(domain.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove Domain
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   ))}
