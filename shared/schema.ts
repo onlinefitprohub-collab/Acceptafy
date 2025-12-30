@@ -190,11 +190,11 @@ export const SUBSCRIPTION_LIMITS = {
   },
 } as const;
 
-// Pricing information
+// Pricing information (yearly = 10 months, 2 months free = ~17% savings)
 export const PRICING = {
-  starter: { monthly: 0, name: 'Starter', tagline: 'Perfect for trying things out' },
-  pro: { monthly: 59, name: 'Pro', tagline: 'For growing email marketers' },
-  scale: { monthly: 149, name: 'Scale', tagline: 'For teams & agencies' },
+  starter: { monthly: 0, yearly: 0, name: 'Starter', tagline: 'Perfect for trying things out' },
+  pro: { monthly: 59, yearly: 590, name: 'Pro', tagline: 'For growing email marketers' },
+  scale: { monthly: 149, yearly: 1490, name: 'Scale', tagline: 'For teams & agencies' },
 } as const;
 
 // Overage pricing (per pack)
