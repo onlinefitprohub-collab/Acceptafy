@@ -561,12 +561,17 @@ function LiveDemoPreview() {
 }
 
 export default function Landing() {
-  const plans = [
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
+
+  const getPlans = (period: 'monthly' | 'yearly') => [
     {
       key: "starter",
       name: PRICING.starter.name,
       tagline: PRICING.starter.tagline,
-      price: PRICING.starter.monthly,
+      monthlyPrice: PRICING.starter.monthly,
+      yearlyPrice: PRICING.starter.yearly,
+      price: period === 'monthly' ? PRICING.starter.monthly : Math.round(PRICING.starter.yearly / 12),
+      totalYearly: PRICING.starter.yearly,
       limits: SUBSCRIPTION_LIMITS.starter,
       features: [
         `${SUBSCRIPTION_LIMITS.starter.gradesPerMonth} email grades/month`,
@@ -577,12 +582,16 @@ export default function Landing() {
       ],
       cta: "Start Free",
       popular: false,
+      savings: 0,
     },
     {
       key: "pro",
       name: PRICING.pro.name,
       tagline: PRICING.pro.tagline,
-      price: PRICING.pro.monthly,
+      monthlyPrice: PRICING.pro.monthly,
+      yearlyPrice: PRICING.pro.yearly,
+      price: period === 'monthly' ? PRICING.pro.monthly : Math.round(PRICING.pro.yearly / 12),
+      totalYearly: PRICING.pro.yearly,
       limits: SUBSCRIPTION_LIMITS.pro,
       features: [
         `${SUBSCRIPTION_LIMITS.pro.gradesPerMonth} email grades/month`,
@@ -595,12 +604,16 @@ export default function Landing() {
       ],
       cta: "Get Pro",
       popular: true,
+      savings: Math.round(((PRICING.pro.monthly * 12) - PRICING.pro.yearly) / (PRICING.pro.monthly * 12) * 100),
     },
     {
       key: "scale",
       name: PRICING.scale.name,
       tagline: PRICING.scale.tagline,
-      price: PRICING.scale.monthly,
+      monthlyPrice: PRICING.scale.monthly,
+      yearlyPrice: PRICING.scale.yearly,
+      price: period === 'monthly' ? PRICING.scale.monthly : Math.round(PRICING.scale.yearly / 12),
+      totalYearly: PRICING.scale.yearly,
       limits: SUBSCRIPTION_LIMITS.scale,
       features: [
         `${SUBSCRIPTION_LIMITS.scale.gradesPerMonth} email grades/month`,
@@ -614,8 +627,11 @@ export default function Landing() {
       ],
       cta: "Get Scale",
       popular: false,
+      savings: Math.round(((PRICING.scale.monthly * 12) - PRICING.scale.yearly) / (PRICING.scale.monthly * 12) * 100),
     },
   ];
+
+  const plans = getPlans(billingPeriod);
 
   return (
     <div className="min-h-screen bg-background">
@@ -1201,9 +1217,37 @@ export default function Landing() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Simple Pricing, No Surprises</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-muted-foreground max-w-xl mx-auto mb-8">
               Start free, upgrade when you need more. All plans include core grading and spam detection.
             </p>
+            
+            <div className="inline-flex items-center gap-3 p-1.5 bg-muted rounded-full" data-testid="billing-toggle">
+              <button
+                onClick={() => setBillingPeriod('monthly')}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                  billingPeriod === 'monthly'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                data-testid="button-billing-monthly"
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingPeriod('yearly')}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                  billingPeriod === 'yearly'
+                    ? 'bg-background shadow-sm text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                data-testid="button-billing-yearly"
+              >
+                Yearly
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                  Save 17%
+                </Badge>
+              </button>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -1229,9 +1273,26 @@ export default function Landing() {
                 
                 <CardContent className="flex-1">
                   <div className="text-center mb-6">
-                    <span className="text-5xl font-bold">${plan.price}</span>
-                    {plan.price > 0 && (
-                      <span className="text-muted-foreground">/mo</span>
+                    <div className="flex items-baseline justify-center gap-1">
+                      <span className="text-5xl font-bold">${plan.price}</span>
+                      {plan.price > 0 && (
+                        <span className="text-muted-foreground">/mo</span>
+                      )}
+                    </div>
+                    {billingPeriod === 'yearly' && plan.price > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          ${plan.totalYearly} billed annually
+                        </p>
+                        <Badge className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                          2 months free
+                        </Badge>
+                      </div>
+                    )}
+                    {billingPeriod === 'monthly' && plan.price > 0 && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        billed monthly
+                      </p>
                     )}
                   </div>
                   
