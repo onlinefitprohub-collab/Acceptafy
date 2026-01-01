@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ResourcesSection } from "@/components/admin/ResourcesSection";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -3177,6 +3178,11 @@ export default function Admin() {
               </Card>
             </div>
             </>
+          )}
+
+          {/* Resources Section */}
+          {activeSection === 'resources' && (
+            <ResourcesSection />
           )}
 
         </div>

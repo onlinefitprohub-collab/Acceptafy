@@ -25,6 +25,7 @@ import {
   adminActivityLogs,
   monitoredDomains,
   blacklistCheckHistory,
+  articles,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -79,6 +80,8 @@ import {
   type InsertMonitoredDomain,
   type BlacklistCheckHistory,
   type InsertBlacklistCheckHistory,
+  type Article,
+  type InsertArticle,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -242,6 +245,15 @@ export interface IStorage {
   
   saveBlacklistCheck(data: InsertBlacklistCheckHistory): Promise<BlacklistCheckHistory>;
   getBlacklistCheckHistory(userId: string, domain?: string, limit?: number): Promise<BlacklistCheckHistory[]>;
+  
+  // Articles/Resources
+  getArticles(publishedOnly?: boolean): Promise<Article[]>;
+  getArticleById(id: string): Promise<Article | undefined>;
+  getArticleBySlug(slug: string): Promise<Article | undefined>;
+  createArticle(data: InsertArticle): Promise<Article>;
+  updateArticle(id: string, updates: Partial<Article>): Promise<Article | undefined>;
+  deleteArticle(id: string): Promise<boolean>;
+  incrementArticleViewCount(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2519,6 +2531,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(blacklistCheckHistory.userId, userId))
       .orderBy(desc(blacklistCheckHistory.createdAt))
       .limit(limit);
+  }
+
+  // Articles/Resources
+  async getArticles(publishedOnly: boolean = false): Promise<Article[]> {
+    if (publishedOnly) {
+      return db
+        .select()
+        .from(articles)
+        .where(eq(articles.published, true))
+        .orderBy(desc(articles.publishedAt));
+    }
+    return db
+      .select()
+      .from(articles)
+      .orderBy(desc(articles.createdAt));
+  }
+
+  async getArticleById(id: string): Promise<Article | undefined> {
+    const [article] = await db.select().from(articles).where(eq(articles.id, id));
+    return article;
+  }
+
+  async getArticleBySlug(slug: string): Promise<Article | undefined> {
+    const [article] = await db.select().from(articles).where(eq(articles.slug, slug));
+    return article;
+  }
+
+  async createArticle(data: InsertArticle): Promise<Article> {
+    const [article] = await db.insert(articles).values(data).returning();
+    return article;
+  }
+
+  async updateArticle(id: string, updates: Partial<Article>): Promise<Article | undefined> {
+    const [article] = await db
+      .update(articles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(articles.id, id))
+      .returning();
+    return article;
+  }
+
+  async deleteArticle(id: string): Promise<boolean> {
+    await db.delete(articles).where(eq(articles.id, id));
+    return true;
+  }
+
+  async incrementArticleViewCount(id: string): Promise<void> {
+    await db
+      .update(articles)
+      .set({ viewCount: sql`${articles.viewCount} + 1` })
+      .where(eq(articles.id, id));
   }
 }
 

@@ -49,7 +49,8 @@ export type AdminSection =
   | 'esp-metrics'
   | 'system-health'
   | 'website-analytics'
-  | 'communications';
+  | 'communications'
+  | 'resources';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -348,6 +349,30 @@ export function AdminSidebar({
                     <Mail className="w-4 h-4" />
                   </div>
                   <span className="font-medium">Emails & Announcements</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Content Section */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
+            Content
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-1">
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  isActive={activeSection === 'resources'}
+                  onClick={() => handleSectionClick('resources')}
+                  className={`group transition-all duration-200 ${activeSection === 'resources' ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/15 border border-emerald-500/20' : ''}`}
+                  data-testid="admin-nav-resources"
+                >
+                  <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeSection === 'resources' ? 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-md shadow-emerald-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <span className="font-medium">Resources</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

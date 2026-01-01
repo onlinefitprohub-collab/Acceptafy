@@ -1200,3 +1200,35 @@ export const blacklistCheckResponseSchema = z.object({
 
 export type BlacklistCheckResponse = z.infer<typeof blacklistCheckResponseSchema>;
 
+// Resources/Articles - SEO-focused content management
+export const articles = pgTable("articles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: varchar("title").notNull(),
+  slug: varchar("slug").notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  featuredImage: varchar("featured_image"),
+  tags: text("tags").array(),
+  metaTitle: varchar("meta_title"),
+  metaDescription: text("meta_description"),
+  published: boolean("published").default(false),
+  authorId: varchar("author_id").notNull().references(() => users.id),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  publishedAt: timestamp("published_at"),
+}, (table) => [
+  index("idx_articles_slug").on(table.slug),
+  index("idx_articles_published").on(table.published),
+  index("idx_articles_author").on(table.authorId),
+]);
+
+export type Article = typeof articles.$inferSelect;
+export type InsertArticle = typeof articles.$inferInsert;
+export const insertArticleSchema = createInsertSchema(articles).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+  viewCount: true,
+});
+

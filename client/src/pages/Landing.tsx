@@ -651,6 +651,9 @@ export default function Landing() {
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-how-it-works">
               How It Works
             </a>
+            <a href="/resources" className="text-sm text-muted-foreground hover:text-foreground transition-colors" data-testid="link-resources">
+              Resources
+            </a>
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="text-sm text-muted-foreground/60 cursor-not-allowed flex items-center gap-1" data-testid="link-affiliate">
@@ -688,6 +691,9 @@ export default function Landing() {
                   </a>
                   <a href="#how-it-works" className="text-lg font-medium hover:text-primary transition-colors py-2" data-testid="link-how-it-works-mobile">
                     How It Works
+                  </a>
+                  <a href="/resources" className="text-lg font-medium hover:text-primary transition-colors py-2" data-testid="link-resources-mobile">
+                    Resources
                   </a>
                   <div className="flex items-center gap-2 text-lg font-medium text-muted-foreground/60 py-2">
                     <Gift className="w-4 h-4" />
@@ -1486,6 +1492,7 @@ export default function Landing() {
               <span className="font-semibold">Acceptafy</span>
             </a>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <a href="/resources" className="hover:text-foreground transition-colors" data-testid="link-footer-resources">Resources</a>
               <a href="/terms" className="hover:text-foreground transition-colors" data-testid="link-footer-terms">Terms of Service</a>
               <a href="/privacy" className="hover:text-foreground transition-colors" data-testid="link-footer-privacy">Privacy Policy</a>
               <a href="/contact" className="hover:text-foreground transition-colors" data-testid="link-footer-contact">Contact Us</a>

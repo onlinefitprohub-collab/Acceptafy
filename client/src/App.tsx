@@ -47,6 +47,8 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Admin = lazy(() => import('./pages/Admin'));
 const ResetPassword = lazy(() => import('./pages/reset-password'));
+const Resources = lazy(() => import('./pages/Resources'));
+const ResourceArticle = lazy(() => import('./pages/ResourceArticle'));
 
 // Loading fallback for lazy-loaded pages
 function PageLoader() {
@@ -2647,6 +2649,8 @@ function App() {
             <Route path="/contact" component={Contact} />
             <Route path="/admin" component={Admin} />
             <Route path="/reset-password" component={ResetPassword} />
+            <Route path="/resources/:slug" component={ResourceArticle} />
+            <Route path="/resources" component={Resources} />
             <Route path="/" component={AuthenticatedApp} />
             <Route component={AuthenticatedApp} />
           </Switch>

@@ -3119,6 +3119,159 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // ========== ARTICLES / RESOURCES API ==========
+  
+  // Public: Get all published articles
+  app.get('/api/articles', async (req, res) => {
+    try {
+      const articles = await storage.getArticles(true);
+      res.json(articles);
+    } catch (error) {
+      console.error('Get articles error:', error);
+      res.status(500).json({ message: 'Failed to get articles' });
+    }
+  });
+  
+  // Public: Get article by slug
+  app.get('/api/articles/slug/:slug', async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const article = await storage.getArticleBySlug(slug);
+      
+      if (!article || !article.published) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      // Increment view count
+      await storage.incrementArticleViewCount(article.id);
+      
+      res.json(article);
+    } catch (error) {
+      console.error('Get article by slug error:', error);
+      res.status(500).json({ message: 'Failed to get article' });
+    }
+  });
+  
+  // Admin: Get all articles (including drafts)
+  app.get('/api/admin/articles', isAdmin, async (req: any, res) => {
+    try {
+      const articles = await storage.getArticles(false);
+      res.json(articles);
+    } catch (error) {
+      console.error('Admin get articles error:', error);
+      res.status(500).json({ message: 'Failed to get articles' });
+    }
+  });
+  
+  // Admin: Get article by ID
+  app.get('/api/admin/articles/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const article = await storage.getArticleById(id);
+      
+      if (!article) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      res.json(article);
+    } catch (error) {
+      console.error('Admin get article error:', error);
+      res.status(500).json({ message: 'Failed to get article' });
+    }
+  });
+  
+  // Admin: Create article
+  app.post('/api/admin/articles', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const { title, slug, excerpt, content, featuredImage, tags, metaTitle, metaDescription, published } = req.body;
+      
+      if (!title || !slug || !content) {
+        return res.status(400).json({ message: 'Title, slug, and content are required' });
+      }
+      
+      // Check for duplicate slug
+      const existing = await storage.getArticleBySlug(slug);
+      if (existing) {
+        return res.status(400).json({ message: 'An article with this URL slug already exists' });
+      }
+      
+      const article = await storage.createArticle({
+        title,
+        slug: slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-'),
+        excerpt: excerpt || null,
+        content,
+        featuredImage: featuredImage || null,
+        tags: tags || [],
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || excerpt || null,
+        published: published || false,
+        authorId: adminId,
+        publishedAt: published ? new Date() : null,
+      });
+      
+      res.json(article);
+    } catch (error) {
+      console.error('Create article error:', error);
+      res.status(500).json({ message: 'Failed to create article' });
+    }
+  });
+  
+  // Admin: Update article
+  app.patch('/api/admin/articles/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { title, slug, excerpt, content, featuredImage, tags, metaTitle, metaDescription, published } = req.body;
+      
+      const existing = await storage.getArticleById(id);
+      if (!existing) {
+        return res.status(404).json({ message: 'Article not found' });
+      }
+      
+      // Check for duplicate slug if changed
+      if (slug && slug !== existing.slug) {
+        const slugCheck = await storage.getArticleBySlug(slug);
+        if (slugCheck && slugCheck.id !== id) {
+          return res.status(400).json({ message: 'An article with this URL slug already exists' });
+        }
+      }
+      
+      const updates: any = {};
+      if (title !== undefined) updates.title = title;
+      if (slug !== undefined) updates.slug = slug.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+      if (excerpt !== undefined) updates.excerpt = excerpt;
+      if (content !== undefined) updates.content = content;
+      if (featuredImage !== undefined) updates.featuredImage = featuredImage;
+      if (tags !== undefined) updates.tags = tags;
+      if (metaTitle !== undefined) updates.metaTitle = metaTitle;
+      if (metaDescription !== undefined) updates.metaDescription = metaDescription;
+      if (published !== undefined) {
+        updates.published = published;
+        if (published && !existing.publishedAt) {
+          updates.publishedAt = new Date();
+        }
+      }
+      
+      const article = await storage.updateArticle(id, updates);
+      res.json(article);
+    } catch (error) {
+      console.error('Update article error:', error);
+      res.status(500).json({ message: 'Failed to update article' });
+    }
+  });
+  
+  // Admin: Delete article
+  app.delete('/api/admin/articles/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteArticle(id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete article error:', error);
+      res.status(500).json({ message: 'Failed to delete article' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
