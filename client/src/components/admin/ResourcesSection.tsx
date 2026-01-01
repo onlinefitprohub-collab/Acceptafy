@@ -38,6 +38,7 @@ import {
   Loader2,
   ExternalLink,
   Search,
+  Copy,
 } from 'lucide-react';
 
 interface Article {
@@ -86,6 +87,25 @@ export function ResourcesSection() {
   const { data: articles, isLoading } = useQuery<Article[]>({
     queryKey: ['/api/admin/articles'],
   });
+
+  const templateArticle = articles?.find(a => a.slug === 'seo-template-email-marketing-guide');
+
+  const handleCopyFromTemplate = () => {
+    if (templateArticle) {
+      setTitle('');
+      setSlug('');
+      setExcerpt(templateArticle.excerpt || '');
+      setContent(templateArticle.content);
+      setFeaturedImage(templateArticle.featuredImage || '');
+      setTags(templateArticle.tags?.join(', ') || '');
+      setMetaTitle('');
+      setMetaDescription('');
+      setPublished(false);
+      toast({ title: 'Template loaded', description: 'Article structure copied from template. Update the title and content with your own.' });
+    } else {
+      toast({ title: 'Template not found', description: 'The SEO template article is not available.', variant: 'destructive' });
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -343,7 +363,21 @@ export function ResourcesSection() {
       <Dialog open={showEditor} onOpenChange={setShowEditor}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingArticle ? 'Edit Article' : 'Create New Article'}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{editingArticle ? 'Edit Article' : 'Create New Article'}</DialogTitle>
+              {!editingArticle && templateArticle && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyFromTemplate}
+                  className="gap-2"
+                  data-testid="button-copy-template"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy from Template
+                </Button>
+              )}
+            </div>
             <DialogDescription>
               {editingArticle ? 'Update the article content and settings' : 'Create a new SEO-optimized article for your resources section'}
             </DialogDescription>
