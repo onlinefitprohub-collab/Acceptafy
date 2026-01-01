@@ -72,6 +72,8 @@ function generateSlug(title: string): string {
 export function ResourcesSection() {
   const { toast } = useToast();
   const [showEditor, setShowEditor] = useState(false);
+  const [showTopicDialog, setShowTopicDialog] = useState(false);
+  const [topicInput, setTopicInput] = useState('');
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -191,6 +193,39 @@ export function ResourcesSection() {
     seoMutation.mutate({ title, excerpt, content });
   };
 
+  const generateArticleMutation = useMutation({
+    mutationFn: async (topic: string) => {
+      const response = await apiRequest('POST', '/api/admin/articles/generate', { topic });
+      return response.json();
+    },
+    onSuccess: (data: { title: string; slug: string; excerpt: string; content: string; featuredImage: string; tags: string[]; metaTitle: string; metaDescription: string }) => {
+      setTitle(data.title || '');
+      setSlug(data.slug || '');
+      setExcerpt(data.excerpt || '');
+      setContent(data.content || '');
+      setFeaturedImage(data.featuredImage || '');
+      setTags(Array.isArray(data.tags) ? data.tags.join(', ') : '');
+      setMetaTitle(data.metaTitle || '');
+      setMetaDescription(data.metaDescription || '');
+      setPublished(false);
+      setShowTopicDialog(false);
+      setTopicInput('');
+      setShowEditor(true);
+      toast({ title: 'Article generated', description: 'Review and edit the content, then save when ready.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to generate article', variant: 'destructive' });
+    },
+  });
+
+  const handleGenerateArticle = () => {
+    if (topicInput.trim().length < 5) {
+      toast({ title: 'Topic too short', description: 'Please enter a more descriptive topic.', variant: 'destructive' });
+      return;
+    }
+    generateArticleMutation.mutate(topicInput.trim());
+  };
+
   const resetForm = () => {
     setTitle('');
     setSlug('');
@@ -266,18 +301,28 @@ export function ResourcesSection() {
                 {articles?.length || 0} articles total, {articles?.filter(a => a.published).length || 0} published
               </CardDescription>
             </div>
-            <Button 
-              onClick={() => {
-                resetForm();
-                setEditingArticle(null);
-                setShowEditor(true);
-              }}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
-              data-testid="button-new-article"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              New Article
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => setShowTopicDialog(true)}
+                data-testid="button-generate-article"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                Generate Article
+              </Button>
+              <Button 
+                onClick={() => {
+                  resetForm();
+                  setEditingArticle(null);
+                  setShowEditor(true);
+                }}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                data-testid="button-new-article"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Article
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -557,6 +602,59 @@ export function ResourcesSection() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               )}
               {editingArticle ? 'Update Article' : 'Create Article'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTopicDialog} onOpenChange={setShowTopicDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generate Article</DialogTitle>
+            <DialogDescription>
+              Enter a topic and we'll create a complete, SEO-optimized article for you.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="topic">Article Topic</Label>
+            <Input
+              id="topic"
+              placeholder="e.g., How to improve email open rates"
+              value={topicInput}
+              onChange={(e) => setTopicInput(e.target.value)}
+              className="mt-2"
+              data-testid="input-article-topic"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !generateArticleMutation.isPending) {
+                  handleGenerateArticle();
+                }
+              }}
+            />
+            <p className="text-sm text-muted-foreground mt-2">
+              Be specific - better topics create better articles.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTopicDialog(false)} data-testid="button-cancel-topic">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleGenerateArticle}
+              disabled={topicInput.trim().length < 5 || generateArticleMutation.isPending}
+              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+              data-testid="button-submit-topic"
+            >
+              {generateArticleMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Generate
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

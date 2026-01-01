@@ -2413,6 +2413,125 @@ export interface SEOSuggestion {
   tags: string[];
 }
 
+// Full article generation schema
+const fullArticleSchema = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    slug: { type: Type.STRING },
+    excerpt: { type: Type.STRING },
+    content: { type: Type.STRING },
+    featuredImageKeywords: { type: Type.STRING },
+    tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+    metaTitle: { type: Type.STRING },
+    metaDescription: { type: Type.STRING }
+  }
+};
+
+export interface GeneratedArticle {
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  featuredImageKeywords: string;
+  tags: string[];
+  metaTitle: string;
+  metaDescription: string;
+}
+
+export const generateFullArticle = async (topic: string): Promise<GeneratedArticle> => {
+  try {
+    const prompt = `Create a complete, SEO-optimized blog article about the following topic for an email marketing and deliverability platform:
+
+**Topic:** ${topic}
+
+Generate a comprehensive article with:
+1. A compelling, keyword-rich title (50-60 characters ideal)
+2. A URL-friendly slug (lowercase, hyphens, no special characters)
+3. An engaging excerpt/summary (2-3 sentences, under 200 characters)
+4. Full article content in HTML format with proper structure
+5. Keywords for finding a relevant featured image
+6. 4-6 relevant tags
+7. An optimized meta title (under 60 characters)
+8. A compelling meta description (under 160 characters)`;
+
+    const systemInstruction = `You are an expert content writer for Acceptafy, an email deliverability optimization platform. Create high-quality, SEO-optimized articles that help email marketers improve their campaigns.
+
+CONTENT STRUCTURE (use this exact HTML structure):
+<h2>Introduction: [Hook]</h2>
+<p>Opening paragraph that hooks the reader and introduces the topic value...</p>
+
+<h2>What is [Topic]?</h2>
+<p>Clear definition and explanation...</p>
+<blockquote><p><strong>Key Insight:</strong> Include a memorable statistic or quote.</p></blockquote>
+
+<h2>Why [Topic] Matters</h2>
+<p>Explain the importance:</p>
+<ul>
+<li><strong>Benefit 1:</strong> Explanation</li>
+<li><strong>Benefit 2:</strong> Explanation</li>
+<li><strong>Benefit 3:</strong> Explanation</li>
+</ul>
+
+<h2>Step-by-Step Guide</h2>
+<h3>Step 1: [Action]</h3>
+<p>Detailed explanation...</p>
+<h3>Step 2: [Action]</h3>
+<p>Detailed explanation...</p>
+<h3>Step 3: [Action]</h3>
+<p>Detailed explanation...</p>
+
+<h2>Common Mistakes to Avoid</h2>
+<ol>
+<li><strong>Mistake 1:</strong> What it is and how to prevent it</li>
+<li><strong>Mistake 2:</strong> What it is and how to prevent it</li>
+<li><strong>Mistake 3:</strong> What it is and how to prevent it</li>
+</ol>
+
+<h2>Best Practices</h2>
+<ul>
+<li><strong>Tip 1:</strong> Advanced technique</li>
+<li><strong>Tip 2:</strong> Advanced technique</li>
+<li><strong>Tip 3:</strong> Advanced technique</li>
+</ul>
+
+<h2>Frequently Asked Questions</h2>
+<h3>Q: [Question 1]?</h3>
+<p>A: [Answer]</p>
+<h3>Q: [Question 2]?</h3>
+<p>A: [Answer]</p>
+
+<h2>Conclusion</h2>
+<p>Summary of key points and call to action...</p>
+
+IMPORTANT RULES:
+- Never use the word "AI" anywhere in the content
+- Focus on email marketing, deliverability, sender reputation, and campaign optimization
+- Write in a friendly, professional tone
+- Use specific numbers and data points where possible
+- Content should be 1200-1500 words
+- Make it actionable and practical
+- For featuredImageKeywords, provide 2-3 words for searching stock photos (e.g., "email marketing laptop")
+
+Return your response as a JSON object.`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: fullArticleSchema
+      }
+    });
+
+    return JSON.parse(res.text || '{}') as GeneratedArticle;
+  } catch (error) {
+    console.error("Error generating full article:", error);
+    throw new Error("Failed to generate article.");
+  }
+};
+
 export const generateSEOSuggestions = async (
   title: string,
   excerpt: string,

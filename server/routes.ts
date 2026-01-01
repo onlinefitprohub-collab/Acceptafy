@@ -30,7 +30,8 @@ import {
   predictEngagement,
   compareToIndustry,
   analyzeReputation,
-  generateSEOSuggestions
+  generateSEOSuggestions,
+  generateFullArticle
 } from "./gemini";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
@@ -3178,6 +3179,31 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin get article error:', error);
       res.status(500).json({ message: 'Failed to get article' });
+    }
+  });
+  
+  // Admin: Generate full article from topic
+  app.post('/api/admin/articles/generate', isAdmin, async (req: any, res) => {
+    try {
+      const { topic } = req.body;
+      
+      if (!topic || topic.trim().length < 5) {
+        return res.status(400).json({ message: 'Please provide a topic with at least 5 characters' });
+      }
+      
+      const article = await generateFullArticle(topic.trim());
+      
+      // Convert featuredImageKeywords to an Unsplash source URL with relevant keywords
+      const imageQuery = encodeURIComponent(article.featuredImageKeywords || 'email marketing');
+      const featuredImage = `https://source.unsplash.com/1200x630/?${imageQuery}`;
+      
+      res.json({
+        ...article,
+        featuredImage
+      });
+    } catch (error) {
+      console.error('Generate article error:', error);
+      res.status(500).json({ message: 'Failed to generate article' });
     }
   });
   
