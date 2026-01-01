@@ -29,7 +29,8 @@ import {
   optimizeSendTime,
   predictEngagement,
   compareToIndustry,
-  analyzeReputation
+  analyzeReputation,
+  generateSEOSuggestions
 } from "./gemini";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
@@ -3177,6 +3178,27 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin get article error:', error);
       res.status(500).json({ message: 'Failed to get article' });
+    }
+  });
+  
+  // Admin: Generate SEO suggestions for article
+  app.post('/api/admin/articles/seo-suggestions', isAdmin, async (req: any, res) => {
+    try {
+      const { title, excerpt, content } = req.body;
+      
+      if (!title || !content) {
+        return res.status(400).json({ message: 'Title and content are required' });
+      }
+      
+      if (content.length < 100) {
+        return res.status(400).json({ message: 'Content must be at least 100 characters for SEO analysis' });
+      }
+      
+      const suggestions = await generateSEOSuggestions(title, excerpt || '', content);
+      res.json(suggestions);
+    } catch (error) {
+      console.error('Generate SEO suggestions error:', error);
+      res.status(500).json({ message: 'Failed to generate SEO suggestions' });
     }
   });
   

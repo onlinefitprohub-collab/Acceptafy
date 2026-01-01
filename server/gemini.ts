@@ -2396,3 +2396,71 @@ Return your analysis as a JSON object matching the provided schema.`;
     throw new Error("Failed to analyze ESP statistics.");
   }
 };
+
+// SEO suggestion schema for article meta generation
+const seoSuggestionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    metaTitle: { type: Type.STRING },
+    metaDescription: { type: Type.STRING },
+    tags: { type: Type.ARRAY, items: { type: Type.STRING } }
+  }
+};
+
+export interface SEOSuggestion {
+  metaTitle: string;
+  metaDescription: string;
+  tags: string[];
+}
+
+export const generateSEOSuggestions = async (
+  title: string,
+  excerpt: string,
+  content: string
+): Promise<SEOSuggestion> => {
+  try {
+    const plainTextContent = content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 3000);
+    
+    const prompt = `Generate SEO-optimized metadata for this article about email marketing.
+
+**Article Title:** ${title}
+
+**Excerpt:** ${excerpt || 'Not provided'}
+
+**Content Preview:** ${plainTextContent}
+
+Create:
+1. An optimized meta title (max 60 characters) that includes the main keyword and is compelling for search results
+2. A meta description (max 160 characters) that summarizes the value proposition and encourages clicks
+3. Up to 6 relevant tags based on the article's main topics`;
+
+    const systemInstruction = `You are an SEO expert for Acceptafy, an email deliverability platform. Generate search-optimized metadata that will help articles rank well in Google.
+
+GUIDELINES:
+- Meta Title: Keep under 60 characters, front-load keywords, make it compelling
+- Meta Description: Under 160 characters, include primary benefit, use action words
+- Tags: Choose 4-6 lowercase tags that represent the article's main topics (email marketing, deliverability, spam prevention, etc.)
+
+IMPORTANT:
+- Never use the word "AI" in any output
+- Focus on email marketing, deliverability, and campaign optimization topics
+- Use natural language that appeals to marketers
+
+Return your response as a JSON object with metaTitle, metaDescription, and tags fields.`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: seoSuggestionSchema
+      }
+    });
+
+    return JSON.parse(res.text || '{}') as SEOSuggestion;
+  } catch (error) {
+    console.error("Error generating SEO suggestions:", error);
+    throw new Error("Failed to generate SEO suggestions.");
+  }
+};

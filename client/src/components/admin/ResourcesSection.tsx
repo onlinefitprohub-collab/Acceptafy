@@ -39,6 +39,7 @@ import {
   ExternalLink,
   Search,
   Copy,
+  Wand2,
 } from 'lucide-react';
 
 interface Article {
@@ -165,6 +166,30 @@ export function ResourcesSection() {
       toast({ title: 'Error', description: error.message || 'Failed to update article', variant: 'destructive' });
     },
   });
+
+  const seoMutation = useMutation({
+    mutationFn: async (data: { title: string; excerpt: string; content: string }) => {
+      const response = await apiRequest('POST', '/api/admin/articles/seo-suggestions', data);
+      return response.json();
+    },
+    onSuccess: (data: { metaTitle: string; metaDescription: string; tags: string[] }) => {
+      setMetaTitle(data.metaTitle);
+      setMetaDescription(data.metaDescription);
+      setTags(data.tags.join(', '));
+      toast({ title: 'SEO Generated', description: 'Meta title, description, and tags have been auto-filled. Feel free to adjust them.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to generate SEO suggestions', variant: 'destructive' });
+    },
+  });
+
+  const handleGenerateSEO = () => {
+    if (!title || content.length < 100) {
+      toast({ title: 'More content needed', description: 'Add a title and at least 100 characters of content first.', variant: 'destructive' });
+      return;
+    }
+    seoMutation.mutate({ title, excerpt, content });
+  };
 
   const resetForm = () => {
     setTitle('');
@@ -458,7 +483,24 @@ export function ResourcesSection() {
             </div>
 
             <div className="border-t pt-4">
-              <h4 className="font-medium mb-3">SEO Settings</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">SEO Settings</h4>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateSEO}
+                  disabled={!title || content.length < 100 || seoMutation.isPending}
+                  className="gap-2"
+                  data-testid="button-generate-seo"
+                >
+                  {seoMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  Auto-generate SEO
+                </Button>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="metaTitle">Meta Title</Label>
