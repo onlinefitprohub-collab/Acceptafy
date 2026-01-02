@@ -2425,7 +2425,8 @@ const fullArticleSchema = {
     tags: { type: Type.ARRAY, items: { type: Type.STRING } },
     metaTitle: { type: Type.STRING },
     metaDescription: { type: Type.STRING }
-  }
+  },
+  required: ['title', 'slug', 'excerpt', 'content', 'featuredImageKeywords', 'tags', 'metaTitle', 'metaDescription']
 };
 
 export interface GeneratedArticle {

@@ -3197,7 +3197,35 @@ Return your response as a JSON object with this exact structure:
         return res.status(400).json({ message: 'Please provide a topic with at least 5 characters' });
       }
       
-      const article = await generateFullArticle(topic.trim());
+      const rawArticle = await generateFullArticle(topic.trim());
+      
+      // Generate fallbacks for missing fields
+      const generateSlug = (title: string): string => {
+        return title
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .substring(0, 60)
+          .trim();
+      };
+      
+      const extractExcerpt = (content: string): string => {
+        // Strip HTML and get first 150 chars
+        const text = content.replace(/<[^>]*>/g, '').trim();
+        return text.length > 150 ? text.substring(0, 147) + '...' : text;
+      };
+      
+      const article = {
+        title: rawArticle.title || topic.trim(),
+        slug: rawArticle.slug || generateSlug(rawArticle.title || topic.trim()),
+        excerpt: rawArticle.excerpt || extractExcerpt(rawArticle.content || ''),
+        content: rawArticle.content || '',
+        featuredImageKeywords: rawArticle.featuredImageKeywords || 'email marketing',
+        tags: rawArticle.tags || [],
+        metaTitle: rawArticle.metaTitle || (rawArticle.title || topic.trim()).substring(0, 60),
+        metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160)
+      };
       
       let featuredImage = '';
       
