@@ -31,8 +31,11 @@ import {
   compareToIndustry,
   analyzeReputation,
   generateSEOSuggestions,
-  generateFullArticle
+  generateFullArticle,
+  generateArticleImage
 } from "./gemini";
+import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
+import { randomUUID } from "crypto";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
@@ -97,6 +100,9 @@ export async function registerRoutes(
   }
 
   await setupAuth(app);
+  
+  // Register object storage routes for image uploads
+  registerObjectStorageRoutes(app);
 
   // Email/Password Login
   app.post('/api/auth/login', async (req, res) => {
@@ -3193,9 +3199,51 @@ Return your response as a JSON object with this exact structure:
       
       const article = await generateFullArticle(topic.trim());
       
-      // Convert featuredImageKeywords to an Unsplash source URL with relevant keywords
-      const imageQuery = encodeURIComponent(article.featuredImageKeywords || 'email marketing');
-      const featuredImage = `https://source.unsplash.com/1200x630/?${imageQuery}`;
+      let featuredImage = '';
+      
+      // Try to generate image with Nano Banana (Gemini image generation)
+      try {
+        const imageResult = await generateArticleImage(topic.trim(), article.featuredImageKeywords || 'email marketing');
+        
+        if (imageResult) {
+          // Upload the image to object storage using private directory (used by /objects route)
+          const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
+          
+          if (privateDir) {
+            const imageId = randomUUID();
+            const extension = imageResult.mimeType === 'image/jpeg' ? 'jpg' : 'png';
+            const objectName = `uploads/${imageId}.${extension}`;
+            
+            // Parse the private directory path (format: /bucket-name/path)
+            const fullPath = privateDir.startsWith('/') ? privateDir.slice(1) : privateDir;
+            const pathParts = fullPath.split('/');
+            const bucketName = pathParts[0];
+            const basePath = pathParts.slice(1).join('/');
+            
+            const bucket = objectStorageClient.bucket(bucketName);
+            const filePath = basePath ? `${basePath}/${objectName}` : objectName;
+            const file = bucket.file(filePath);
+            
+            await file.save(imageResult.imageData, {
+              contentType: imageResult.mimeType,
+              metadata: {
+                'custom:aclPolicy': JSON.stringify({ owner: 'system', visibility: 'public' })
+              }
+            });
+            
+            // Return the URL to access the image via /objects route
+            featuredImage = `/objects/${objectName}`;
+          }
+        }
+      } catch (imageError) {
+        console.error('Image generation failed, using fallback:', imageError);
+      }
+      
+      // Fallback to Unsplash if image generation failed
+      if (!featuredImage) {
+        const imageQuery = encodeURIComponent(article.featuredImageKeywords || 'email marketing');
+        featuredImage = `https://source.unsplash.com/1200x630/?${imageQuery}`;
+      }
       
       res.json({
         ...article,

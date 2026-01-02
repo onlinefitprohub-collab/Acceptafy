@@ -2532,6 +2532,52 @@ Return your response as a JSON object.`;
   }
 };
 
+export const generateArticleImage = async (
+  topic: string,
+  keywords: string
+): Promise<{ imageData: Buffer; mimeType: string } | null> => {
+  try {
+    const prompt = `Create a professional, visually appealing featured image for a blog article about: "${topic}".
+
+The image should:
+- Be clean and modern with a professional business aesthetic
+- Use a color palette that includes teal, blue, or purple tones
+- Feature abstract or conceptual representation of email marketing/communication
+- NOT contain any text, logos, or watermarks
+- Be suitable as a blog header image (landscape orientation)
+- Feel inspiring and professional
+
+Keywords for visual inspiration: ${keywords}`;
+
+    // Use gemini-2.5-flash-image (Nano Banana) for image generation
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: prompt,
+      config: {
+        responseModalities: ['image', 'text'],
+      }
+    });
+
+    // Extract image data from response
+    if (res.candidates && res.candidates[0]?.content?.parts) {
+      for (const part of res.candidates[0].content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          const imageBuffer = Buffer.from(part.inlineData.data, 'base64');
+          return {
+            imageData: imageBuffer,
+            mimeType: part.inlineData.mimeType || 'image/png'
+          };
+        }
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error generating article image:", error);
+    return null;
+  }
+};
+
 export const generateSEOSuggestions = async (
   title: string,
   excerpt: string,
