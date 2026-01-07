@@ -107,6 +107,7 @@ import { SpamChecker } from './components/SpamChecker';
 import { SentimentAnalyzer } from './components/SentimentAnalyzer';
 import { SenderScoreEstimator } from './components/SenderScoreEstimator';
 import { BlacklistMonitor } from './components/BlacklistMonitor';
+import { CampaignRiskScore } from './components/CampaignRiskScore';
 import { EmailTemplates } from './components/EmailTemplates';
 import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
@@ -155,7 +156,7 @@ import type {
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
-type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
 type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
 const EXAMPLE_EMAIL = {
@@ -1820,6 +1821,10 @@ function AppContent() {
         <BlacklistMonitor />
       )}
 
+      {deliverabilitySubView === 'campaign-risk' && (
+        <CampaignRiskScore />
+      )}
+
       {!deliverabilitySubView && (
         <div className="grid md:grid-cols-2 gap-4">
           <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('dns')}>
@@ -1898,9 +1903,22 @@ function AppContent() {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-foreground">Blacklist Monitor</h3>
-                  <Badge className="bg-gradient-to-r from-rose-500 to-red-600 text-white text-[10px] px-1.5 py-0">NEW</Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">Check if your sending domain or IP is on major email blacklists (Spamhaus, Barracuda, etc.)</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setDeliverabilitySubView('campaign-risk')}>
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+                <ShieldCheck className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground">Campaign Risk Score</h3>
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">Predict how a campaign will affect your sender reputation before you send it</p>
               </div>
             </CardContent>
           </Card>

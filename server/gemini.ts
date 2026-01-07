@@ -2579,6 +2579,146 @@ Keywords for visual inspiration: ${keywords}`;
   }
 };
 
+// Campaign Risk Score schema
+const campaignRiskSchema = {
+  type: Type.OBJECT,
+  properties: {
+    overallRisk: { type: Type.STRING },
+    riskScore: { type: Type.NUMBER },
+    riskFactors: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          factor: { type: Type.STRING },
+          severity: { type: Type.STRING },
+          impact: { type: Type.STRING },
+          recommendation: { type: Type.STRING }
+        }
+      }
+    },
+    predictedOpenRate: { type: Type.NUMBER },
+    predictedBounceRate: { type: Type.NUMBER },
+    predictedComplaintRate: { type: Type.NUMBER },
+    spamTriggerWords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    positiveFactors: { type: Type.ARRAY, items: { type: Type.STRING } },
+    summary: { type: Type.STRING },
+    recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+  },
+  required: ['overallRisk', 'riskScore', 'riskFactors', 'summary', 'recommendations']
+};
+
+export interface CampaignRiskAnalysis {
+  overallRisk: 'low' | 'medium' | 'high';
+  riskScore: number;
+  riskFactors: Array<{
+    factor: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    impact: string;
+    recommendation: string;
+  }>;
+  predictedOpenRate: number;
+  predictedBounceRate: number;
+  predictedComplaintRate: number;
+  spamTriggerWords: string[];
+  positiveFactors: string[];
+  summary: string;
+  recommendations: string[];
+}
+
+export const analyzeCampaignRisk = async (
+  subject: string,
+  content: string,
+  estimatedVolume?: number,
+  listAge?: string
+): Promise<CampaignRiskAnalysis> => {
+  try {
+    const prompt = `Analyze this email campaign for potential sender reputation risks before sending.
+
+**Subject Line:** ${subject}
+
+**Email Content:**
+${content.slice(0, 5000)}
+
+**Estimated Send Volume:** ${estimatedVolume ? `${estimatedVolume.toLocaleString()} recipients` : 'Not specified'}
+
+**List Age/Quality:** ${listAge || 'Not specified'}
+
+Evaluate the campaign's potential impact on sender reputation and deliverability. Consider:
+1. Spam trigger words and phrases
+2. Link density and quality concerns
+3. Image-to-text ratio issues
+4. Unsubscribe link presence
+5. Subject line quality
+6. Overall content quality and professionalism
+7. Potential for high bounce or complaint rates`;
+
+    const systemInstruction = `You are an email deliverability expert analyzing campaigns BEFORE they are sent. Your goal is to predict reputation impact and prevent deliverability issues.
+
+SCORING GUIDELINES:
+- riskScore: 0-100 where 100 = safest (low risk), 0 = extremely risky
+- overallRisk: "low" (80-100), "medium" (50-79), "high" (0-49)
+
+RISK FACTORS TO CHECK:
+1. SPAM TRIGGER WORDS: "FREE", "ACT NOW", "LIMITED TIME", "GUARANTEED", excessive caps, excessive punctuation
+2. LINK ISSUES: Too many links (>5), URL shorteners, suspicious domains
+3. IMAGE RATIO: All-image emails with no text, missing alt text
+4. COMPLIANCE: Missing unsubscribe link, no physical address
+5. CONTENT QUALITY: Grammar issues, aggressive language, deceptive subject lines
+6. VOLUME: Large sends without warm-up history
+7. TECHNICAL: Missing authentication references, generic sender info
+
+SEVERITY LEVELS:
+- "critical": Will likely cause immediate reputation damage or blocking
+- "high": Strong negative impact on deliverability
+- "medium": May affect inbox placement over time
+- "low": Minor issue, easy to fix
+
+PREDICTIONS (as percentages):
+- predictedOpenRate: Based on subject line quality and relevance (typical range 15-35%)
+- predictedBounceRate: Based on content and list quality indicators (target under 2%)
+- predictedComplaintRate: Based on content quality and spam signals (target under 0.1%)
+
+POSITIVE FACTORS TO IDENTIFY:
+- Personalization tokens
+- Clear value proposition
+- Professional formatting
+- Good text-to-link ratio
+- Clear call-to-action
+- Unsubscribe link present
+
+Provide actionable recommendations to improve the campaign before sending.
+
+Return your response as a JSON object.`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: campaignRiskSchema
+      }
+    });
+
+    const result = JSON.parse(res.text || '{}') as CampaignRiskAnalysis;
+    
+    // Normalize overallRisk based on score
+    if (result.riskScore >= 80) {
+      result.overallRisk = 'low';
+    } else if (result.riskScore >= 50) {
+      result.overallRisk = 'medium';
+    } else {
+      result.overallRisk = 'high';
+    }
+    
+    return result;
+  } catch (error) {
+    console.error("Error analyzing campaign risk:", error);
+    throw new Error("Failed to analyze campaign risk.");
+  }
+};
+
 export const generateSEOSuggestions = async (
   title: string,
   excerpt: string,

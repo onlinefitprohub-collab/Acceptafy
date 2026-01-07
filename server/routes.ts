@@ -32,7 +32,8 @@ import {
   analyzeReputation,
   generateSEOSuggestions,
   generateFullArticle,
-  generateArticleImage
+  generateArticleImage,
+  analyzeCampaignRisk
 } from "./gemini";
 import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
 import { randomUUID } from "crypto";
@@ -1134,6 +1135,37 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Sentiment analysis error:', error);
       res.status(500).json({ error: 'Failed to analyze sentiment' });
+    }
+  });
+
+  // Campaign Risk Analysis - Pre-send reputation impact prediction
+  app.post('/api/campaign/risk-analysis', optionalAuth, async (req: any, res) => {
+    try {
+      if (req.user) {
+        const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
+        if (!allowed) return;
+      }
+
+      const { subject, content, estimatedVolume, listAge } = req.body;
+      
+      if (!subject || typeof subject !== 'string') {
+        return res.status(400).json({ error: 'Subject line is required' });
+      }
+      if (!content || typeof content !== 'string') {
+        return res.status(400).json({ error: 'Email content is required' });
+      }
+      
+      const result = await analyzeCampaignRisk(
+        subject, 
+        content, 
+        estimatedVolume ? parseInt(estimatedVolume, 10) : undefined,
+        listAge
+      );
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Campaign risk analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze campaign risk' });
     }
   });
 
