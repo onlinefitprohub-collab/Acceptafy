@@ -67,7 +67,7 @@ import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
-type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | null;
+type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
 type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
 
 interface AppSidebarProps {
@@ -457,6 +457,20 @@ export function AppSidebar({
                         >
                           <ShieldAlert className="w-3 h-3" />
                           <span>Blacklist Monitor</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'campaign-risk'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            setDeliverabilitySubView('campaign-risk');
+                            setToolsSubView(null);
+                          }}
+                          data-testid="nav-deliverability-campaign-risk"
+                        >
+                          <Target className="w-3 h-3" />
+                          <span>Campaign Risk</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

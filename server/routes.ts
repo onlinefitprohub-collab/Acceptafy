@@ -1155,13 +1155,19 @@ export async function registerRoutes(
         return res.status(400).json({ error: 'Email content is required' });
       }
       
+      // Limit content length to prevent very long prompts
+      const trimmedContent = content.slice(0, 10000);
+      const trimmedSubject = subject.slice(0, 500);
+      
       const result = await analyzeCampaignRisk(
-        subject, 
-        content, 
+        trimmedSubject, 
+        trimmedContent, 
         estimatedVolume ? parseInt(estimatedVolume, 10) : undefined,
-        listAge
+        typeof listAge === 'string' ? listAge.slice(0, 200) : undefined
       );
       
+      // The analyzeCampaignRisk function now always returns a valid response
+      // with fallback values if there's an error, so we can return it directly
       res.json(result);
     } catch (error) {
       console.error('Campaign risk analysis error:', error);

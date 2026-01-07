@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { z } from "zod";
 import type { 
   GradingResult, 
   RewrittenEmail, 
@@ -2579,7 +2580,7 @@ Keywords for visual inspiration: ${keywords}`;
   }
 };
 
-// Campaign Risk Score schema
+// Campaign Risk Score schema for Gemini
 const campaignRiskSchema = {
   type: Type.OBJECT,
   properties: {
@@ -2607,6 +2608,25 @@ const campaignRiskSchema = {
   },
   required: ['overallRisk', 'riskScore', 'riskFactors', 'summary', 'recommendations']
 };
+
+// Zod schema for validating Gemini response
+const campaignRiskZodSchema = z.object({
+  overallRisk: z.enum(['low', 'medium', 'high']).default('medium'),
+  riskScore: z.number().min(0).max(100).default(50),
+  riskFactors: z.array(z.object({
+    factor: z.string().default('Unknown factor'),
+    severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+    impact: z.string().default('Potential impact on deliverability'),
+    recommendation: z.string().default('Review this aspect of your campaign')
+  })).default([]),
+  predictedOpenRate: z.number().min(0).max(100).default(20),
+  predictedBounceRate: z.number().min(0).max(100).default(1),
+  predictedComplaintRate: z.number().min(0).max(100).default(0.05),
+  spamTriggerWords: z.array(z.string()).default([]),
+  positiveFactors: z.array(z.string()).default([]),
+  summary: z.string().default('Analysis completed. Review the risk factors and recommendations.'),
+  recommendations: z.array(z.string()).default(['Review your email content for potential issues'])
+});
 
 export interface CampaignRiskAnalysis {
   overallRisk: 'low' | 'medium' | 'high';
@@ -2701,9 +2721,32 @@ Return your response as a JSON object.`;
       }
     });
 
-    const result = JSON.parse(res.text || '{}') as CampaignRiskAnalysis;
+    // Parse JSON response with proper error handling
+    let rawResult: unknown;
+    const responseText = res.text || '';
     
-    // Normalize overallRisk based on score
+    if (!responseText || responseText.trim() === '') {
+      throw new Error('Empty response from analysis service');
+    }
+    
+    try {
+      rawResult = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response as JSON:", responseText.slice(0, 500));
+      throw new Error('Invalid response format from analysis service');
+    }
+    
+    // Validate with Zod schema - will apply defaults for missing fields
+    const parseResult = campaignRiskZodSchema.safeParse(rawResult);
+    
+    if (!parseResult.success) {
+      console.error("Zod validation failed:", parseResult.error.flatten());
+      throw new Error('Invalid response structure from analysis service');
+    }
+    
+    const result = parseResult.data;
+    
+    // Normalize overallRisk based on score for consistency
     if (result.riskScore >= 80) {
       result.overallRisk = 'low';
     } else if (result.riskScore >= 50) {
@@ -2715,7 +2758,8 @@ Return your response as a JSON object.`;
     return result;
   } catch (error) {
     console.error("Error analyzing campaign risk:", error);
-    throw new Error("Failed to analyze campaign risk.");
+    // Re-throw to let the API handler return a proper 500 error
+    throw error;
   }
 };
 
