@@ -2814,3 +2814,104 @@ Return your response as a JSON object with metaTitle, metaDescription, and tags 
     throw new Error("Failed to generate SEO suggestions.");
   }
 };
+
+// Spell and Grammar Check Types
+export interface SpellGrammarIssue {
+  type: 'spelling' | 'grammar' | 'punctuation' | 'style';
+  original: string;
+  suggestion: string;
+  explanation: string;
+  position: number;
+  length: number;
+}
+
+export interface SpellGrammarResult {
+  issues: SpellGrammarIssue[];
+  correctedText: string;
+  issueCount: number;
+}
+
+const spellGrammarSchema = {
+  type: Type.OBJECT,
+  properties: {
+    issues: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          type: { type: Type.STRING },
+          original: { type: Type.STRING },
+          suggestion: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          position: { type: Type.NUMBER },
+          length: { type: Type.NUMBER }
+        }
+      }
+    },
+    correctedText: { type: Type.STRING },
+    issueCount: { type: Type.NUMBER }
+  }
+};
+
+export const checkSpellGrammar = async (text: string): Promise<SpellGrammarResult> => {
+  try {
+    if (!text || text.trim().length < 3) {
+      return { issues: [], correctedText: text, issueCount: 0 };
+    }
+
+    const prompt = `Check the following email text for spelling errors, grammar issues, punctuation problems, and style improvements:
+
+"""
+${text}
+"""
+
+IMPORTANT RULES:
+1. Only flag actual errors, not personal style choices
+2. Preserve email marketing conventions (e.g., "Hi [Name]" placeholders are valid)
+3. Do NOT flag personalization tokens like [Name], {{firstName}}, etc.
+4. For each issue, provide the exact position (character index starting from 0) where it appears
+5. Keep suggestions professional and appropriate for email marketing
+6. Focus on: typos, subject-verb agreement, punctuation, capitalization, and sentence structure
+7. The position should be the exact character index where the "original" text starts in the input
+
+Return a JSON object with:
+- issues: Array of problems found
+- correctedText: The fully corrected version of the text
+- issueCount: Total number of issues found`;
+
+    const systemInstruction = `You are a professional proofreader specializing in email marketing content. Check for spelling, grammar, punctuation, and style issues. Be helpful but not overly pedantic. Focus on errors that would make the sender look unprofessional.
+
+Do NOT flag:
+- Personalization placeholders like [Name], {{first_name}}, etc.
+- Intentional informal language common in marketing emails
+- Brand-specific capitalizations
+- Stylistic choices that are subjective
+
+DO flag:
+- Spelling mistakes
+- Grammar errors (subject-verb agreement, tense issues)
+- Missing or incorrect punctuation
+- Run-on sentences
+- Capitalization errors`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: spellGrammarSchema
+      }
+    });
+
+    const result = JSON.parse(res.text || '{}') as SpellGrammarResult;
+    return {
+      issues: result.issues || [],
+      correctedText: result.correctedText || text,
+      issueCount: result.issueCount || result.issues?.length || 0
+    };
+  } catch (error) {
+    console.error("Error checking spell/grammar:", error);
+    return { issues: [], correctedText: text, issueCount: 0 };
+  }
+};
