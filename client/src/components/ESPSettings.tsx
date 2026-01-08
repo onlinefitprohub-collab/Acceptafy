@@ -75,7 +75,7 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     ],
     apiKeyHelp: 'Go to Settings > Business Profile > scroll down to "API Key". Copy your Location API Key. For Agency access, use Settings > Company > API Keys.',
     limitedSupport: true,
-    limitedSupportReason: 'Campaign analytics not available via API'
+    limitedSupportReason: 'Campaign analytics not available via API. Use "HighLevel Contacts" to export and clean your contact list, and our Grader tools for manual email content analysis.'
   },
   {
     id: 'sendgrid',

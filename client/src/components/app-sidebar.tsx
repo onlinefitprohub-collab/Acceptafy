@@ -68,7 +68,7 @@ import { useGamification } from '@/hooks/use-gamification';
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
-type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | null;
+type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'highlevel-contacts' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -534,6 +534,21 @@ export function AppSidebar({
                         >
                           <Activity className="w-3 h-3" />
                           <span>Trend Intelligence</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={integrationsSubView === 'highlevel-contacts'}
+                          onClick={() => {
+                            setActiveView('integrations');
+                            setIntegrationsSubView('highlevel-contacts');
+                            setToolsSubView(null);
+                            setDeliverabilitySubView(null);
+                          }}
+                          data-testid="nav-integrations-highlevel-contacts"
+                        >
+                          <Users className="w-3 h-3" />
+                          <span>HighLevel Contacts</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

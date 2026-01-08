@@ -2380,6 +2380,31 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // HighLevel Contact Export for List Cleaning
+  app.get('/api/esp/highlevel/contacts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const limit = parseInt(req.query.limit as string) || 500;
+
+      const connection = await storage.getESPConnection(userId, 'highlevel');
+      if (!connection || !connection.isConnected) {
+        return res.status(404).json({ error: 'HighLevel connection not found. Please connect your account first.' });
+      }
+
+      const credentials: ESPCredentials = {
+        apiKey: connection.apiKey || undefined,
+      };
+
+      const { fetchHighLevelContacts } = await import('./services/esp');
+      const result = await fetchHighLevelContacts(credentials, Math.min(limit, 1000));
+
+      res.json(result);
+    } catch (error) {
+      console.error('HighLevel contacts export error:', error);
+      res.status(500).json({ success: false, error: 'Failed to export contacts from HighLevel' });
+    }
+  });
+
   // ============================================
   // Deliverability Intelligence Routes (Scale-tier only)
   // ============================================

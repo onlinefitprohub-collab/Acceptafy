@@ -67,6 +67,18 @@ export interface ESPProvider {
   sendEmail(credentials: ESPCredentials, request: SendEmailRequest): Promise<SendEmailResult>;
   fetchCampaignContent?(credentials: ESPCredentials, campaignId: string): Promise<CampaignContentResult>;
   fetchListHealth?(credentials: ESPCredentials): Promise<ListHealthResult>;
+  fetchContacts?(credentials: ESPCredentials, limit?: number): Promise<HighLevelContact[]>;
+}
+
+export interface HighLevelContact {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  tags: string[];
+  dateCreated?: string;
+  lastActivity?: string;
 }
 
 const sendgridProvider: ESPProvider = {
@@ -1223,6 +1235,66 @@ const highlevelProvider: ESPProvider = {
 
   async sendEmail(): Promise<SendEmailResult> {
     return { success: false, error: 'HighLevel requires workflow-based sending.' };
+  },
+
+  async fetchContacts(credentials: ESPCredentials, limit = 100): Promise<HighLevelContact[]> {
+    if (!credentials.apiKey) return [];
+    try {
+      const contacts: HighLevelContact[] = [];
+      let startAfterId: string | undefined;
+      let hasMore = true;
+      const maxPages = Math.ceil(limit / 100);
+      let page = 0;
+
+      while (hasMore && page < maxPages) {
+        let url = `https://services.leadconnectorhq.com/contacts/?limit=100`;
+        if (startAfterId) {
+          url += `&startAfterId=${startAfterId}`;
+        }
+
+        const resp = await fetch(url, {
+          headers: { 
+            'Authorization': `Bearer ${credentials.apiKey}`,
+            'Version': '2021-07-28',
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!resp.ok) {
+          console.error('HighLevel fetchContacts failed:', resp.status);
+          break;
+        }
+
+        const data = await resp.json();
+        const pageContacts = data.contacts || [];
+
+        for (const c of pageContacts) {
+          contacts.push({
+            id: c.id,
+            email: c.email || '',
+            firstName: c.firstName || '',
+            lastName: c.lastName || '',
+            phone: c.phone || '',
+            tags: c.tags || [],
+            dateCreated: c.dateAdded || c.createdAt,
+            lastActivity: c.lastActivity || c.lastUpdated,
+          });
+        }
+
+        // Check for pagination
+        if (pageContacts.length < 100 || contacts.length >= limit) {
+          hasMore = false;
+        } else {
+          startAfterId = pageContacts[pageContacts.length - 1]?.id;
+          page++;
+        }
+      }
+
+      return contacts.slice(0, limit);
+    } catch (error) {
+      console.error('HighLevel fetchContacts error:', error);
+      return [];
+    }
   }
 };
 
@@ -1641,4 +1713,24 @@ export async function fetchESPListHealth(
     };
   }
   return espProvider.fetchListHealth(credentials);
+}
+
+export async function fetchHighLevelContacts(
+  credentials: ESPCredentials,
+  limit = 500
+): Promise<{ success: boolean; contacts: HighLevelContact[]; error?: string }> {
+  const espProvider = getESPProvider('highlevel');
+  if (!espProvider.fetchContacts) {
+    return { 
+      success: false, 
+      contacts: [],
+      error: 'Contact export not supported for this provider' 
+    };
+  }
+  try {
+    const contacts = await espProvider.fetchContacts(credentials, limit);
+    return { success: true, contacts };
+  } catch (error: any) {
+    return { success: false, contacts: [], error: error.message };
+  }
 }
