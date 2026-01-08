@@ -135,10 +135,10 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
 
   return (
     <Card 
-      className={`relative overflow-hidden border-0 ${glow} ${isExcellentScore && !isComparison ? 'shimmer-effect' : ''}`} 
+      className={`relative overflow-hidden bg-white dark:bg-card border border-border/50 shadow-lg ${glow} ${isExcellentScore && !isComparison ? 'shimmer-effect' : ''}`} 
       data-testid="results-hub"
     >
-      <div className={`absolute inset-0 bg-gradient-to-br ${bg} opacity-50`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${bg} opacity-30 dark:opacity-50`} />
       {isExcellentScore && !isComparison && (
         <div className="absolute inset-0 aurora-background opacity-30" />
       )}
@@ -190,19 +190,19 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
                   >
                     {animatedScore}
                   </span>
-                  <span className="text-2xl font-semibold text-muted-foreground ml-1">%</span>
+                  <span className="text-2xl font-semibold text-gray-500 dark:text-muted-foreground ml-1">%</span>
                 </div>
               </div>
             </div>
             
             <div className="text-center mt-4">
               <div className="flex items-center justify-center gap-2">
-                <div className={`p-1.5 rounded-full ${text} bg-white/10`}>
+                <div className={`p-1.5 rounded-full ${text} bg-gray-100 dark:bg-white/10`}>
                   {icon}
                 </div>
                 <span className={`font-bold ${text}`}>{label}</span>
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Chance of reaching inbox</p>
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">Chance of reaching inbox</p>
             </div>
           </div>
           
@@ -212,7 +212,7 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
                 <Award className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">{gradeInfo.title}</p>
+                <p className="text-sm text-gray-600 dark:text-muted-foreground">{gradeInfo.title}</p>
                 <p 
                   className={`text-4xl font-bold bg-gradient-to-r ${gradeInfo.color} bg-clip-text text-transparent`}
                   data-testid="text-overall-grade"
@@ -222,14 +222,14 @@ export const ResultsHub: React.FC<ResultsHubProps> = ({ scoreData, gradeData, is
               </div>
             </div>
             
-            <blockquote className="pl-4 border-l-2 border-primary/50">
-              <p className="text-muted-foreground italic" data-testid="text-score-summary">
+            <blockquote className="pl-4 border-l-2 border-purple-400 dark:border-primary/50">
+              <p className="text-gray-700 dark:text-muted-foreground italic" data-testid="text-score-summary">
                 "{scoreData.summary}"
               </p>
             </blockquote>
             
-            <div className="pt-4 border-t border-border">
-              <p className="text-sm text-muted-foreground" data-testid="text-grade-summary">
+            <div className="pt-4 border-t border-gray-200 dark:border-border">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground" data-testid="text-grade-summary">
                 {gradeData.summary}
               </p>
             </div>
