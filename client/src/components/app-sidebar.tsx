@@ -68,7 +68,7 @@ import { useGamification } from '@/hooks/use-gamification';
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
-type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'highlevel-contacts' | null;
+type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'contact-export' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -538,17 +538,17 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'highlevel-contacts'}
+                          isActive={integrationsSubView === 'contact-export'}
                           onClick={() => {
                             setActiveView('integrations');
-                            setIntegrationsSubView('highlevel-contacts');
+                            setIntegrationsSubView('contact-export');
                             setToolsSubView(null);
                             setDeliverabilitySubView(null);
                           }}
-                          data-testid="nav-integrations-highlevel-contacts"
+                          data-testid="nav-integrations-contact-export"
                         >
                           <Users className="w-3 h-3" />
-                          <span>HighLevel Contacts</span>
+                          <span>Contact Export</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>

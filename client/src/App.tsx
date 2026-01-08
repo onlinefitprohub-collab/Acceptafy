@@ -114,7 +114,7 @@ import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { SendTimeOptimizer } from './components/SendTimeOptimizer';
 import { EmailBuilder } from './components/EmailBuilder';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
-import { HighLevelContactCleaner } from './components/HighLevelContactCleaner';
+import { ESPContactCleaner } from './components/ESPContactCleaner';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
 import { AnnouncementBanner } from './components/AnnouncementBanner';
 import { SEOHead } from './components/SEOHead';
@@ -158,7 +158,7 @@ import type {
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
 type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
-type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'highlevel-contacts' | null;
+type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'contact-export' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -1999,9 +1999,13 @@ function AppContent() {
         </Suspense>
       )}
 
-      {integrationsSubView === 'highlevel-contacts' && (
-        <HighLevelContactCleaner 
-          isConnected={espConnections.some(c => c.provider === 'highlevel' && c.connected)}
+      {integrationsSubView === 'contact-export' && (
+        <ESPContactCleaner 
+          connections={espConnections.map(c => ({ 
+            provider: c.provider, 
+            accountName: c.accountName,
+            isConnected: c.connected || false 
+          }))}
         />
       )}
 
@@ -2045,13 +2049,13 @@ function AppContent() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('highlevel-contacts')} data-testid="card-integrations-highlevel">
+            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('contact-export')} data-testid="card-integrations-contact-export">
               <CardContent className="p-6 flex items-center gap-4">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
                   <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-foreground">HighLevel Contacts</h3>
+                  <h3 className="font-semibold text-foreground">Contact Export</h3>
                   <p className="text-sm text-muted-foreground">Export & clean contact lists</p>
                 </div>
               </CardContent>

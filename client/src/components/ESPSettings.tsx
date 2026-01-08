@@ -67,13 +67,14 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     description: 'All-in-one CRM and marketing automation',
     color: 'green',
     gradient: 'from-green-500 to-emerald-500',
-    features: ['Email Sending', 'CRM Sync'],
+    features: ['Email Sending', 'CRM Sync', 'Contact Export'],
     authType: 'api_key',
     docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
     fields: [
-      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key', type: 'password' }
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key (pit-xxxxx or Bearer token)', type: 'password' },
+      { key: 'apiUrl', label: 'Location ID', placeholder: 'Your Location/Sub-account ID (e.g., HjiMUOsCCHCjtxzEf8PR)' }
     ],
-    apiKeyHelp: 'Go to Settings > Business Profile > scroll down to "API Key". Copy your Location API Key. For Agency access, use Settings > Company > API Keys.',
+    apiKeyHelp: 'For Private Integration: Go to Settings > Private Integrations > Create new. For Location ID: Check your URL when logged into a sub-account, or go to Agency Settings > Sub-Accounts and copy the ID.',
     limitedSupport: true,
     limitedSupportReason: 'Campaign analytics not available via API. Use "HighLevel Contacts" to export and clean your contact list, and our Grader tools for manual email content analysis.'
   },

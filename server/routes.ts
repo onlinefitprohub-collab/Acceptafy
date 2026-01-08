@@ -2380,28 +2380,36 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  // HighLevel Contact Export for List Cleaning
-  app.get('/api/esp/highlevel/contacts', isAuthenticated, async (req: any, res) => {
+  // Generic ESP Contact Export for List Cleaning (supports all providers with fetchContacts)
+  app.get('/api/esp/:provider/contacts', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      const { provider } = req.params;
       const limit = parseInt(req.query.limit as string) || 500;
 
-      const connection = await storage.getESPConnection(userId, 'highlevel');
+      const providerValidation = espProviderSchema.safeParse(provider);
+      if (!providerValidation.success) {
+        return res.status(400).json({ error: 'Invalid provider' });
+      }
+
+      const connection = await storage.getESPConnection(userId, providerValidation.data);
       if (!connection || !connection.isConnected) {
-        return res.status(404).json({ error: 'HighLevel connection not found. Please connect your account first.' });
+        return res.status(404).json({ error: `${provider} connection not found. Please connect your account first.` });
       }
 
       const credentials: ESPCredentials = {
         apiKey: connection.apiKey || undefined,
+        apiUrl: connection.apiUrl || undefined,
+        appId: connection.appId || undefined,
       };
 
-      const { fetchHighLevelContacts } = await import('./services/esp');
-      const result = await fetchHighLevelContacts(credentials, Math.min(limit, 1000));
+      const { fetchESPContacts } = await import('./services/esp');
+      const result = await fetchESPContacts(providerValidation.data, credentials, Math.min(limit, 1000));
 
       res.json(result);
     } catch (error) {
-      console.error('HighLevel contacts export error:', error);
-      res.status(500).json({ success: false, error: 'Failed to export contacts from HighLevel' });
+      console.error('ESP contacts export error:', error);
+      res.status(500).json({ success: false, error: 'Failed to export contacts' });
     }
   });
 

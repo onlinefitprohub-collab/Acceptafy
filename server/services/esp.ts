@@ -277,6 +277,35 @@ const sendgridProvider: ESPProvider = {
     } catch (error: any) {
       return { success: false, lists: [], totalContacts: 0, error: error.message };
     }
+  },
+
+  async fetchContacts(credentials: ESPCredentials, limit = 500): Promise<HighLevelContact[]> {
+    if (!credentials.apiKey) return [];
+    try {
+      // SendGrid contacts API - exports all contacts
+      const response = await fetch(`https://api.sendgrid.com/v3/marketing/contacts?page_size=${Math.min(limit, 1000)}`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      if (!response.ok) {
+        console.error('SendGrid fetchContacts failed:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      const contacts = (data.result || []).slice(0, limit).map((c: any) => ({
+        id: c.id || c.contact_id,
+        email: c.email || '',
+        firstName: c.first_name || '',
+        lastName: c.last_name || '',
+        phone: c.phone_number || '',
+        tags: [],
+        dateCreated: c.created_at,
+        lastActivity: c.updated_at,
+      }));
+      return contacts;
+    } catch (error) {
+      console.error('SendGrid fetchContacts error:', error);
+      return [];
+    }
   }
 };
 
@@ -405,6 +434,52 @@ const mailchimpProvider: ESPProvider = {
     } catch (error: any) {
       return { success: false, lists: [], totalContacts: 0, error: error.message };
     }
+  },
+
+  async fetchContacts(credentials: ESPCredentials, limit = 500): Promise<HighLevelContact[]> {
+    if (!credentials.apiKey) return [];
+    const dc = credentials.apiKey.split('-').pop() || 'us1';
+    try {
+      // Mailchimp requires list ID to get contacts - fetch from all lists
+      const listsResp = await fetch(`https://${dc}.api.mailchimp.com/3.0/lists?count=100`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      if (!listsResp.ok) {
+        console.error('Mailchimp fetchContacts: failed to get lists');
+        return [];
+      }
+      const listsData = await listsResp.json();
+      const lists = listsData.lists || [];
+      
+      const allContacts: HighLevelContact[] = [];
+      for (const list of lists) {
+        if (allContacts.length >= limit) break;
+        const remaining = limit - allContacts.length;
+        const membersResp = await fetch(
+          `https://${dc}.api.mailchimp.com/3.0/lists/${list.id}/members?count=${Math.min(remaining, 100)}&status=subscribed`,
+          { headers: { 'Authorization': `Bearer ${credentials.apiKey}` } }
+        );
+        if (membersResp.ok) {
+          const membersData = await membersResp.json();
+          for (const m of (membersData.members || [])) {
+            allContacts.push({
+              id: m.id || m.email_address,
+              email: m.email_address || '',
+              firstName: m.merge_fields?.FNAME || '',
+              lastName: m.merge_fields?.LNAME || '',
+              phone: m.merge_fields?.PHONE || '',
+              tags: (m.tags || []).map((t: any) => t.name),
+              dateCreated: m.timestamp_signup || m.timestamp_opt,
+              lastActivity: m.last_changed,
+            });
+          }
+        }
+      }
+      return allContacts.slice(0, limit);
+    } catch (error) {
+      console.error('Mailchimp fetchContacts error:', error);
+      return [];
+    }
   }
 };
 
@@ -463,6 +538,34 @@ const activecampaignProvider: ESPProvider = {
 
   async sendEmail(): Promise<SendEmailResult> {
     return { success: false, error: 'ActiveCampaign requires automation-based sending.' };
+  },
+
+  async fetchContacts(credentials: ESPCredentials, limit = 500): Promise<HighLevelContact[]> {
+    if (!credentials.apiKey || !credentials.apiUrl) return [];
+    try {
+      const response = await fetch(`${credentials.apiUrl}/api/3/contacts?limit=${Math.min(limit, 100)}`, {
+        headers: { 'Api-Token': credentials.apiKey }
+      });
+      if (!response.ok) {
+        console.error('ActiveCampaign fetchContacts failed:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      const contacts = (data.contacts || []).slice(0, limit).map((c: any) => ({
+        id: c.id,
+        email: c.email || '',
+        firstName: c.firstName || '',
+        lastName: c.lastName || '',
+        phone: c.phone || '',
+        tags: [],
+        dateCreated: c.cdate,
+        lastActivity: c.udate,
+      }));
+      return contacts;
+    } catch (error) {
+      console.error('ActiveCampaign fetchContacts error:', error);
+      return [];
+    }
   }
 };
 
@@ -609,6 +712,34 @@ const hubspotProvider: ESPProvider = {
       };
     } catch (error: any) {
       return { success: false, error: error.message };
+    }
+  },
+
+  async fetchContacts(credentials: ESPCredentials, limit = 500): Promise<HighLevelContact[]> {
+    if (!credentials.apiKey) return [];
+    try {
+      const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts?limit=${Math.min(limit, 100)}&properties=email,firstname,lastname,phone`, {
+        headers: { 'Authorization': `Bearer ${credentials.apiKey}` }
+      });
+      if (!response.ok) {
+        console.error('HubSpot fetchContacts failed:', response.status);
+        return [];
+      }
+      const data = await response.json();
+      const contacts = (data.results || []).slice(0, limit).map((c: any) => ({
+        id: c.id,
+        email: c.properties?.email || '',
+        firstName: c.properties?.firstname || '',
+        lastName: c.properties?.lastname || '',
+        phone: c.properties?.phone || '',
+        tags: [],
+        dateCreated: c.createdAt,
+        lastActivity: c.updatedAt,
+      }));
+      return contacts;
+    } catch (error) {
+      console.error('HubSpot fetchContacts error:', error);
+      return [];
     }
   }
 };
@@ -1239,6 +1370,14 @@ const highlevelProvider: ESPProvider = {
 
   async fetchContacts(credentials: ESPCredentials, limit = 100): Promise<HighLevelContact[]> {
     if (!credentials.apiKey) return [];
+    
+    // locationId is stored in apiUrl field for HighLevel
+    const locationId = credentials.apiUrl;
+    if (!locationId) {
+      console.error('HighLevel fetchContacts: locationId (stored in apiUrl) is required');
+      return [];
+    }
+    
     try {
       const contacts: HighLevelContact[] = [];
       let startAfterId: string | undefined;
@@ -1247,21 +1386,27 @@ const highlevelProvider: ESPProvider = {
       let page = 0;
 
       while (hasMore && page < maxPages) {
-        let url = `https://services.leadconnectorhq.com/contacts/?limit=100`;
+        let url = `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&limit=100`;
         if (startAfterId) {
           url += `&startAfterId=${startAfterId}`;
         }
 
+        // HighLevel accepts either 'Bearer <token>' or just the token directly for private integrations
+        const authHeader = credentials.apiKey.startsWith('pit-') 
+          ? credentials.apiKey 
+          : `Bearer ${credentials.apiKey}`;
+
         const resp = await fetch(url, {
           headers: { 
-            'Authorization': `Bearer ${credentials.apiKey}`,
+            'Authorization': authHeader,
             'Version': '2021-07-28',
             'Accept': 'application/json'
           }
         });
 
         if (!resp.ok) {
-          console.error('HighLevel fetchContacts failed:', resp.status);
+          const errorText = await resp.text().catch(() => '');
+          console.error('HighLevel fetchContacts failed:', resp.status, errorText);
           break;
         }
 
@@ -1719,12 +1864,21 @@ export async function fetchHighLevelContacts(
   credentials: ESPCredentials,
   limit = 500
 ): Promise<{ success: boolean; contacts: HighLevelContact[]; error?: string }> {
-  const espProvider = getESPProvider('highlevel');
+  return fetchESPContacts('highlevel', credentials, limit);
+}
+
+// Generic function to fetch contacts from any ESP provider
+export async function fetchESPContacts(
+  provider: ESPProviderType,
+  credentials: ESPCredentials,
+  limit = 500
+): Promise<{ success: boolean; contacts: HighLevelContact[]; error?: string }> {
+  const espProvider = getESPProvider(provider);
   if (!espProvider.fetchContacts) {
     return { 
       success: false, 
       contacts: [],
-      error: 'Contact export not supported for this provider' 
+      error: `Contact export not supported for ${provider}. This provider may not have a contacts API.` 
     };
   }
   try {
