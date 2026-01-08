@@ -2407,9 +2407,10 @@ Return your response as a JSON object with this exact structure:
       const result = await fetchESPContacts(providerValidation.data, credentials, Math.min(limit, 1000));
 
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error('ESP contacts export error:', error);
-      res.status(500).json({ success: false, error: 'Failed to export contacts' });
+      const errorMessage = error?.message || 'Failed to export contacts';
+      res.status(400).json({ success: false, error: errorMessage });
     }
   });
 

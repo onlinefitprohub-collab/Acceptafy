@@ -41,6 +41,7 @@ interface ESPConnection {
   provider: string;
   accountName?: string;
   isConnected: boolean;
+  hasLocationId?: boolean;
 }
 
 interface ESPContactCleanerProps {

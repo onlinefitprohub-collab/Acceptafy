@@ -1369,13 +1369,14 @@ const highlevelProvider: ESPProvider = {
   },
 
   async fetchContacts(credentials: ESPCredentials, limit = 100): Promise<HighLevelContact[]> {
-    if (!credentials.apiKey) return [];
+    if (!credentials.apiKey) {
+      throw new Error('HighLevel API key is required');
+    }
     
     // locationId is stored in apiUrl field for HighLevel
     const locationId = credentials.apiUrl;
     if (!locationId) {
-      console.error('HighLevel fetchContacts: locationId (stored in apiUrl) is required');
-      return [];
+      throw new Error('Location ID is required for HighLevel contact export. Please disconnect and reconnect HighLevel in ESP Settings with your Location ID.');
     }
     
     try {

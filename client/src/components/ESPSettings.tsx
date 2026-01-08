@@ -39,7 +39,7 @@ interface ESPProviderInfo {
   features: string[];
   authType: 'api_key' | 'oauth' | 'api_key_url';
   docsUrl: string;
-  fields: { key: string; label: string; placeholder: string; type?: string }[];
+  fields: { key: string; label: string; placeholder: string; type?: string; required?: boolean }[];
   apiKeyHelp: string;
   limitedSupport?: boolean;
   limitedSupportReason?: string;
@@ -71,10 +71,10 @@ const ESP_PROVIDERS: ESPProviderInfo[] = [
     authType: 'api_key',
     docsUrl: 'https://highlevel.stoplight.io/docs/integrations',
     fields: [
-      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key (pit-xxxxx or Bearer token)', type: 'password' },
-      { key: 'apiUrl', label: 'Location ID', placeholder: 'Your Location/Sub-account ID (e.g., HjiMUOsCCHCjtxzEf8PR)' }
+      { key: 'apiKey', label: 'API Key', placeholder: 'Your HighLevel API key (pit-xxxxx or Bearer token)', type: 'password', required: true },
+      { key: 'apiUrl', label: 'Location ID (Required for Contact Export)', placeholder: 'Your Location/Sub-account ID (e.g., HjiMUOsCCHCjtxzEf8PR)', required: true }
     ],
-    apiKeyHelp: 'For Private Integration: Go to Settings > Private Integrations > Create new. For Location ID: Check your URL when logged into a sub-account, or go to Agency Settings > Sub-Accounts and copy the ID.',
+    apiKeyHelp: 'Both fields required! API Key: Settings > Private Integrations > Create new. Location ID: Check your browser URL after /location/ when in a sub-account, or go to Agency Settings > Sub-Accounts.',
     limitedSupport: true,
     limitedSupportReason: 'Campaign analytics not available via API. Use "HighLevel Contacts" to export and clean your contact list, and our Grader tools for manual email content analysis.'
   },
@@ -435,7 +435,10 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                       <div className="space-y-3">
                         {provider.fields.map((field) => (
                           <div key={field.key} className="space-y-1.5">
-                            <Label className="text-xs">{field.label}</Label>
+                            <Label className="text-xs flex items-center gap-1">
+                              {field.label}
+                              {field.required && <span className="text-red-400">*</span>}
+                            </Label>
                             <Input
                               type={field.type || 'text'}
                               placeholder={field.placeholder}
