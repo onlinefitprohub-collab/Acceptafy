@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Shield, Copy, Check, FileText } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ShieldAlert, ShieldCheck, Shield, Copy, Check, FileText, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { SpamCheckResult, HistoryItem } from '../types';
 
@@ -283,12 +283,40 @@ export const SpamChecker: React.FC<SpamCheckerProps> = ({ history = [] }) => {
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
             data-testid="button-check-spam"
           >
-            {isLoading ? 'Scanning for Spam Triggers...' : 'Check for Spam Triggers'}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Scanning for Spam Triggers...
+              </>
+            ) : (
+              'Check for Spam Triggers'
+            )}
           </Button>
         </CardContent>
       </Card>
 
-      {result && (
+      {isLoading && (
+        <Card className="border-2 border-orange-500/30 animate-pulse">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20">
+                <Loader2 className="w-6 h-6 text-orange-500 animate-spin" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">Analyzing your email...</h3>
+                <p className="text-sm text-muted-foreground">Scanning for spam triggers, checking content patterns, and calculating inbox probability</p>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                <div className="h-full w-2/3 bg-gradient-to-r from-orange-500 to-red-500 rounded-full animate-pulse" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {result && !isLoading && (
         <div className="space-y-4 animate-fade-in">
           <Card className={`border-2 ${
             overallRisk === 'Low' ? 'border-green-500/30' : 
