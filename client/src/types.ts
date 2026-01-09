@@ -161,12 +161,23 @@ export interface DomainHealth {
     recommendation: string;
 }
 
+export interface EmailQualityStatus {
+    email: string;
+    isValid: boolean;
+    isRoleBased: boolean;
+    isFreeProvider: boolean;
+    isDisposable: boolean;
+    isPotentialSpamTrap: boolean;
+    reason?: string;
+}
+
 export interface ListQualityAnalysis {
     roleBasedAccountPercentage: number;
     freeMailProviderPercentage: number;
     disposableDomainIndicators: boolean;
     spamTrapIndicators: boolean;
     summaryReport: string;
+    emailStatuses?: EmailQualityStatus[];
 }
 
 export interface BimiRecord {

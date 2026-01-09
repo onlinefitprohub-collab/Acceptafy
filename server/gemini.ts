@@ -512,18 +512,29 @@ Return as JSON with:
 };
 
 export const analyzeEmailList = async (sample: string): Promise<ListQualityAnalysis> => {
-  const prompt = `Analyze this email list sample for quality issues:
+  const emails = sample.split(/[\n,;]+/).map(e => e.trim().toLowerCase()).filter(e => e.length > 0);
+  
+  const prompt = `Analyze this email list for quality issues. For EACH email address, determine its quality status.
 
-${sample}
+Email list:
+${emails.join('\n')}
 
-Provide:
-1. Percentage of role-based accounts (info@, sales@, etc.)
-2. Percentage of free mail providers (gmail, yahoo, etc.)
-3. Whether there are disposable domain indicators
-4. Whether there are spam trap indicators
-5. Summary report with recommendations
+For each email, analyze:
+- isValid: Does it have valid email format (user@domain.tld)?
+- isRoleBased: Is it a role-based account (info@, sales@, admin@, support@, contact@, hello@, help@, billing@, etc.)?
+- isFreeProvider: Is it from a free email provider (gmail.com, yahoo.com, hotmail.com, outlook.com, aol.com, mail.com, protonmail.com, icloud.com, etc.)?
+- isDisposable: Is it from a known disposable/temporary email domain (mailinator, tempmail, 10minutemail, guerrillamail, throwaway, etc.)?
+- isPotentialSpamTrap: Does it look like a potential spam trap (pristine traps often have patterns like random strings, typo domains, or recycled addresses)?
+- reason: Brief explanation if the email has quality issues
 
-Return as JSON with keys: roleBasedAccountPercentage, freeMailProviderPercentage, disposableDomainIndicators (boolean), spamTrapIndicators (boolean), summaryReport.`;
+Also calculate aggregate statistics:
+- roleBasedAccountPercentage: Percentage of role-based accounts
+- freeMailProviderPercentage: Percentage of free mail provider accounts
+- disposableDomainIndicators: true if ANY disposable domains found
+- spamTrapIndicators: true if ANY potential spam traps found
+- summaryReport: Overall recommendations for list hygiene
+
+Return as JSON.`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -537,7 +548,22 @@ Return as JSON with keys: roleBasedAccountPercentage, freeMailProviderPercentage
           freeMailProviderPercentage: { type: Type.NUMBER },
           disposableDomainIndicators: { type: Type.BOOLEAN },
           spamTrapIndicators: { type: Type.BOOLEAN },
-          summaryReport: { type: Type.STRING }
+          summaryReport: { type: Type.STRING },
+          emailStatuses: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                email: { type: Type.STRING },
+                isValid: { type: Type.BOOLEAN },
+                isRoleBased: { type: Type.BOOLEAN },
+                isFreeProvider: { type: Type.BOOLEAN },
+                isDisposable: { type: Type.BOOLEAN },
+                isPotentialSpamTrap: { type: Type.BOOLEAN },
+                reason: { type: Type.STRING }
+              }
+            }
+          }
         }
       }
     }
