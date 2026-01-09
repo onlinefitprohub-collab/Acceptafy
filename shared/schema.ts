@@ -143,6 +143,43 @@ export const competitorAnalyses = pgTable("competitor_analyses", {
 export type CompetitorAnalysis = typeof competitorAnalyses.$inferSelect;
 export type InsertCompetitorAnalysis = typeof competitorAnalyses.$inferInsert;
 
+// Manual campaign statistics table (user-entered metrics)
+export const manualCampaignStats = pgTable("manual_campaign_stats", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  campaignName: varchar("campaign_name").notNull(),
+  totalSent: integer("total_sent"),
+  delivered: integer("delivered"),
+  deliveredType: varchar("delivered_type").default("number"), // "number" or "percentage"
+  opened: integer("opened"),
+  openedType: varchar("opened_type").default("number"),
+  clicked: integer("clicked"),
+  clickedType: varchar("clicked_type").default("number"),
+  conversion: integer("conversion"),
+  conversionType: varchar("conversion_type").default("number"),
+  softBounced: integer("soft_bounced"),
+  softBouncedType: varchar("soft_bounced_type").default("number"),
+  hardBounced: integer("hard_bounced"),
+  hardBouncedType: varchar("hard_bounced_type").default("number"),
+  unsubscribed: integer("unsubscribed"),
+  unsubscribedType: varchar("unsubscribed_type").default("number"),
+  skipped: integer("skipped"),
+  skippedType: varchar("skipped_type").default("number"),
+  spam: integer("spam"),
+  spamType: varchar("spam_type").default("number"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type ManualCampaignStats = typeof manualCampaignStats.$inferSelect;
+export type InsertManualCampaignStats = typeof manualCampaignStats.$inferInsert;
+
+export const insertManualCampaignStatsSchema = createInsertSchema(manualCampaignStats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Subscription tier limits - designed to prevent abuse while providing value
 // Daily limits prevent burst abuse while monthly limits cap total usage
 export const SUBSCRIPTION_LIMITS = {
