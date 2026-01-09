@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +45,7 @@ interface ESPConnection {
 }
 
 interface ESPContactCleanerProps {
-  connections: ESPConnection[];
+  connections?: ESPConnection[];
 }
 
 const PROVIDER_NAMES: Record<string, string> = {
@@ -65,7 +65,7 @@ const PROVIDER_NAMES: Record<string, string> = {
 
 const PROVIDERS_WITH_CONTACTS = ['highlevel', 'sendgrid', 'mailchimp', 'activecampaign', 'hubspot'];
 
-export function ESPContactCleaner({ connections }: ESPContactCleanerProps) {
+export function ESPContactCleaner({ connections: propConnections }: ESPContactCleanerProps) {
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [contacts, setContacts] = useState<ESPContact[]>([]);
   const [analyzedContacts, setAnalyzedContacts] = useState<EmailAnalysis[]>([]);
@@ -73,7 +73,30 @@ export function ESPContactCleaner({ connections }: ESPContactCleanerProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeProgress, setAnalyzeProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [localConnections, setLocalConnections] = useState<ESPConnection[]>([]);
+  const [isLoadingConnections, setIsLoadingConnections] = useState(false);
   const { toast } = useToast();
+
+  const connections = propConnections ?? localConnections;
+
+  useEffect(() => {
+    if (!propConnections) {
+      setIsLoadingConnections(true);
+      fetch('/api/esp/connections', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setLocalConnections(data);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch ESP connections:', err);
+        })
+        .finally(() => {
+          setIsLoadingConnections(false);
+        });
+    }
+  }, [propConnections]);
 
   const availableProviders = connections.filter(
     c => c.isConnected && PROVIDERS_WITH_CONTACTS.includes(c.provider)
