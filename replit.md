@@ -28,7 +28,15 @@ The platform integrates with Google Gemini AI via Replit's AI Integrations servi
 
 ### System Design Choices
 
-The project employs a monorepo structure, sharing types between client and server for type safety. It utilizes `drizzle-kit push` for schema synchronization instead of migrations. Static assets for the client are built separately and served in production. Infrastructure for session management with PostgreSQL is present, although user authentication is not fully implemented. A daily rate-limiting system tracks usage per day and month, with subscription-tier based limits enforced at the API level. Performance is optimized through lazy loading of routes and heavy components, along with SEO enhancements including comprehensive meta tags, structured data, and semantic HTML.
+The project employs a monorepo structure, sharing types between client and server for type safety. It utilizes `drizzle-kit push` for schema synchronization instead of migrations. Static assets for the client are built separately and served in production. Infrastructure for session management with PostgreSQL is present, with Replit authentication fully implemented. A daily rate-limiting system tracks usage per day and month, with subscription-tier based limits enforced at the API level. Performance is optimized through lazy loading of routes and heavy components, along with SEO enhancements including comprehensive meta tags, structured data, and semantic HTML.
+
+### Security Features
+
+- **Session Security**: Express sessions use `httpOnly`, `secure`, and `sameSite="lax"` cookie settings for CSRF protection
+- **Input Validation**: Zod schemas validate all user input for gamification, manual campaign stats, and admin notes
+- **Rate Limiting**: IP-based rate limiting on authentication, password reset, AI endpoints, and contact list processing
+- **Authentication**: Sensitive endpoints require authentication (isAuthenticated) or admin access (isAdmin); public AI features use optionalAuth with rate limiting for free trial experience
+- **Admin Exclusion**: Admin accounts are excluded from all analytics metrics to prevent data skewing
 
 ## External Dependencies
 
