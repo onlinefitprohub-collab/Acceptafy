@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { Mail, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,17 +10,17 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <a href="/" className="flex items-center gap-2" data-testid="link-home">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold">Acceptafy</span>
-          </a>
+          </Link>
           <Button variant="ghost" asChild data-testid="button-back">
-            <a href="/">
+            <Link href="/">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Home
-            </a>
+            </Link>
           </Button>
         </div>
       </header>

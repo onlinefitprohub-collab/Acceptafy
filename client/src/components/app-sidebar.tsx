@@ -142,6 +142,19 @@ export function AppSidebar({
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
+          <div className="px-2 mb-4">
+            <button
+              onClick={() => {
+                setActiveView('grader');
+                clearAllSubViews();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
+              data-testid="button-start-grading"
+            >
+              <Mail className="w-5 h-5" />
+              <span>Grade an Email</span>
+            </button>
+          </div>
           <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
             Navigation
           </SidebarGroupLabel>

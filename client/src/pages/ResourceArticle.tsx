@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -106,12 +106,12 @@ export default function ResourceArticle() {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
           <div className="container mx-auto flex h-16 items-center justify-between px-4">
-            <a href="/" className="flex items-center gap-2" data-testid="link-home">
+            <Link href="/" className="flex items-center gap-2" data-testid="link-home">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                 <Mail className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold">Acceptafy</span>
-            </a>
+            </Link>
           </div>
         </header>
         <main className="container mx-auto px-4 py-20 text-center">
@@ -121,7 +121,7 @@ export default function ResourceArticle() {
             The article you're looking for doesn't exist or has been removed.
           </p>
           <Button asChild>
-            <a href="/resources">Browse All Resources</a>
+            <Link href="/resources">Browse All Resources</Link>
           </Button>
         </main>
       </div>
@@ -132,18 +132,18 @@ export default function ResourceArticle() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <a href="/" className="flex items-center gap-2" data-testid="link-home">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold">Acceptafy</span>
-          </a>
+          </Link>
           <nav className="flex items-center gap-4">
             <Button variant="ghost" asChild data-testid="button-back-resources">
-              <a href="/resources">
+              <Link href="/resources">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 All Resources
-              </a>
+              </Link>
             </Button>
           </nav>
         </div>

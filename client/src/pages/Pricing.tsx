@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -152,16 +153,16 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <a href="/" className="flex items-center gap-2" data-testid="link-home">
+          <Link href="/" className="flex items-center gap-2" data-testid="link-home">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
               <Mail className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold">Acceptafy</span>
-          </a>
+          </Link>
           <div className="flex items-center gap-4">
             {isAuthenticated ? (
               <Button variant="ghost" asChild data-testid="button-dashboard">
-                <a href="/">Dashboard</a>
+                <Link href="/">Dashboard</Link>
               </Button>
             ) : (
               <>
