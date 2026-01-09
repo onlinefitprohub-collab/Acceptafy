@@ -142,19 +142,6 @@ export function AppSidebar({
 
       <SidebarContent className="px-3 py-2">
         <SidebarGroup>
-          <div className="px-2 mb-4">
-            <button
-              onClick={() => {
-                setActiveView('grader');
-                clearAllSubViews();
-              }}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-              data-testid="button-start-grading"
-            >
-              <Mail className="w-5 h-5" />
-              <span>Grade an Email</span>
-            </button>
-          </div>
           <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
             Navigation
           </SidebarGroupLabel>
@@ -893,44 +880,39 @@ export function AppSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
-            Achievements
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <div className="px-3 py-3 rounded-xl bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-pink-500/10 border border-yellow-500/20 shadow-inner">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 shadow-md shadow-yellow-500/30">
-                      <Trophy className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-sm font-semibold text-sidebar-foreground">{unlockedAchievements}/{achievements.length} Badges</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {achievements.slice(0, 4).map((achievement, i) => {
-                      const IconComponent = iconMap[achievement.icon] || Target;
-                      return (
-                        <div 
-                          key={i}
-                          className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                            achievement.unlocked 
-                              ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-md shadow-orange-500/30 scale-100' 
-                              : 'bg-sidebar-accent/60 text-muted-foreground/50 scale-95'
-                          }`}
-                          title={achievement.title}
-                        >
-                          <IconComponent className="w-4 h-4" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
+
+      <div className="px-3 pb-2">
+        <SidebarGroupLabel className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 px-2 mb-1">
+          Achievements
+        </SidebarGroupLabel>
+        <div className="px-3 py-3 rounded-xl bg-gradient-to-br from-yellow-500/10 via-orange-500/10 to-pink-500/10 border border-yellow-500/20 shadow-inner">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500 to-orange-500 shadow-md shadow-yellow-500/30">
+              <Trophy className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-sm font-semibold text-sidebar-foreground">{unlockedAchievements}/{achievements.length} Badges</span>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {achievements.slice(0, 4).map((achievement, i) => {
+              const IconComponent = iconMap[achievement.icon] || Target;
+              return (
+                <div 
+                  key={i}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    achievement.unlocked 
+                      ? 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-md shadow-orange-500/30 scale-100' 
+                      : 'bg-sidebar-accent/60 text-muted-foreground/50 scale-95'
+                  }`}
+                  title={achievement.title}
+                >
+                  <IconComponent className="w-4 h-4" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <SidebarFooter className="p-3 border-t border-sidebar-border/50">
         <div className="space-y-3">
