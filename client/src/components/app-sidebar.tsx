@@ -148,7 +148,7 @@ export function AppSidebar({
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
               <SidebarMenuItem>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <SidebarMenuButton 
                       isActive={activeView === 'dashboard'}
@@ -172,7 +172,7 @@ export function AppSidebar({
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <SidebarMenuButton 
                       isActive={activeView === 'grader'}
@@ -210,7 +210,7 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'builder'}
@@ -231,7 +231,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'rewrite'}
@@ -252,7 +252,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'followup'}
@@ -273,7 +273,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'templates'}
@@ -294,7 +294,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'tone'}
@@ -315,7 +315,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={createSubView === 'import'}
@@ -354,7 +354,7 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'variations'}
@@ -375,7 +375,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'preview'}
@@ -396,7 +396,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'spam'}
@@ -417,7 +417,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'sentiment'}
@@ -438,7 +438,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'sendtime'}
@@ -459,7 +459,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={optimizeSubView === 'competitor'}
@@ -498,7 +498,7 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={analyticsSubView === 'stats'}
@@ -519,7 +519,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={analyticsSubView === 'funnel'}
@@ -540,7 +540,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={analyticsSubView === 'intelligence'}
@@ -579,7 +579,7 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'dns'}
@@ -600,7 +600,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'domain-health'}
@@ -621,7 +621,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'bimi'}
@@ -642,7 +642,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'warmup'}
@@ -663,7 +663,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'sender-score'}
@@ -684,7 +684,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'list-quality'}
@@ -705,7 +705,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'blacklist'}
@@ -726,7 +726,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={deliverabilitySubView === 'campaign-risk'}
@@ -765,7 +765,7 @@ export function AppSidebar({
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={connectionsSubView === 'esp'}
@@ -786,7 +786,7 @@ export function AppSidebar({
                         </Tooltip>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Tooltip>
+                        <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
                             <SidebarMenuSubButton 
                               isActive={connectionsSubView === 'contact-export'}
@@ -812,7 +812,7 @@ export function AppSidebar({
               </Collapsible>
 
               <SidebarMenuItem>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <SidebarMenuButton 
                       isActive={activeView === 'history'}
@@ -837,7 +837,7 @@ export function AppSidebar({
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <SidebarMenuButton 
                       onClick={onOpenAcademy}
@@ -857,7 +857,7 @@ export function AppSidebar({
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <Tooltip>
+                <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <div className="w-full">
                       <SidebarMenuButton 
