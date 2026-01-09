@@ -79,6 +79,7 @@ interface ESPCampaignStats {
   clickRate: number;
   bounceRate: number;
   unsubscribeRate: number;
+  isManual?: boolean;
 }
 
 interface ESPStatsResponse {
@@ -392,21 +393,18 @@ export function CampaignFunnelVisualization() {
     queryKey: ['/api/esp/stats'],
   });
   
-  // Transform ESP data to campaign list
+  // Transform ESP and manual campaign data to campaign list
   const campaigns = useMemo(() => {
     if (espStatsData?.combinedStats?.campaigns?.length) {
-      const espCampaigns: CampaignData[] = [];
-      
-      // Get campaigns from each provider
-      espStatsData.providers.forEach(providerData => {
-        if (providerData.stats?.campaigns) {
-          providerData.stats.campaigns.forEach(c => {
-            espCampaigns.push(transformESPCampaignToFunnelData(c, providerData.provider));
-          });
-        }
+      const allCampaigns: CampaignData[] = espStatsData.combinedStats.campaigns.map(c => {
+        const provider = c.isManual ? 'manual' : 
+          espStatsData.providers.find(p => 
+            p.stats?.campaigns?.some(pc => pc.campaignId === c.campaignId)
+          )?.provider || 'unknown';
+        return transformESPCampaignToFunnelData(c, provider);
       });
       
-      return espCampaigns.length > 0 ? espCampaigns : sampleCampaigns;
+      return allCampaigns.length > 0 ? allCampaigns : sampleCampaigns;
     }
     return sampleCampaigns;
   }, [espStatsData]);

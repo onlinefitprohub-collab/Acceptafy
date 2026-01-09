@@ -1,4 +1,5 @@
 import { useState, useEffect, useId } from 'react';
+import { Link } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,8 @@ import {
   Send,
   Plus,
   Trash2,
-  Save
+  Save,
+  Filter
 } from 'lucide-react';
 import {
   Tooltip,
@@ -1101,20 +1103,19 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
   }, []);
 
   const analyzeStats = async () => {
-    if (!stats?.combinedStats) return;
+    if (!stats?.combinedStats?.campaigns?.length) return;
     
     setIsAnalyzing(true);
     try {
-      const allCampaigns = stats.providers.flatMap(p => 
-        p.stats?.campaigns?.map(c => ({
-          campaignName: c.campaignName,
-          subject: c.subject,
-          totalSent: c.totalSent,
-          openRate: c.openRate,
-          clickRate: c.clickRate,
-          bounceRate: c.bounceRate,
-        })) || []
-      );
+      const allCampaigns = stats.combinedStats.campaigns.map(c => ({
+        campaignName: c.campaignName,
+        subject: c.subject,
+        totalSent: c.totalSent,
+        openRate: c.openRate,
+        clickRate: c.clickRate,
+        bounceRate: c.bounceRate,
+        isManual: c.isManual || false,
+      }));
 
       const response = await fetch('/api/esp/analyze', {
         method: 'POST',
@@ -1290,6 +1291,16 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             )}
             Analyze with AI
           </Button>
+          <Link href="/integrations/funnel-analysis">
+            <Button 
+              variant="outline"
+              className="gap-2"
+              data-testid="button-funnel-analysis"
+            >
+              <Filter className="w-4 h-4" />
+              Funnel Analysis
+            </Button>
+          </Link>
         </div>
       </div>
 

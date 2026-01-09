@@ -105,7 +105,14 @@ interface NormalizedManualCampaign {
 }
 
 function normalizeManualCampaignStats(manual: any): NormalizedManualCampaign | null {
-  const totalSent = manual.totalSent || 0;
+  const deliveredRaw = manual.delivered || 0;
+  const softBouncedRaw = manual.softBounced || 0;
+  const hardBouncedRaw = manual.hardBounced || 0;
+  
+  let totalSent = manual.totalSent || 0;
+  if (totalSent === 0) {
+    totalSent = deliveredRaw + softBouncedRaw + hardBouncedRaw;
+  }
   if (totalSent === 0) return null;
 
   const convertValue = (value: number | null | undefined, type: string | null | undefined, maxValue: number): number => {
