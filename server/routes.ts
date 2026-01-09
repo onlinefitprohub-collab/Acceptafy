@@ -58,6 +58,63 @@ const generateRoadmapRequestSchema = z.object({
   body: z.string().default(''),
 });
 
+// Rate limiting for security-critical endpoints
+interface RateLimitEntry {
+  count: number;
+  resetAt: number;
+}
+
+const rateLimitStore = new Map<string, RateLimitEntry>();
+
+function getClientIp(req: any): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',')[0].trim();
+  }
+  return req.ip || req.connection?.remoteAddress || 'unknown';
+}
+
+function createRateLimiter(maxRequests: number, windowMs: number) {
+  return (req: any, res: any, next: any) => {
+    const key = `${req.path}:${getClientIp(req)}`;
+    const now = Date.now();
+    const entry = rateLimitStore.get(key);
+
+    if (!entry || now > entry.resetAt) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+
+    if (entry.count >= maxRequests) {
+      const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+      res.setHeader('Retry-After', retryAfter);
+      return res.status(429).json({ 
+        message: 'Too many requests. Please try again later.',
+        retryAfter 
+      });
+    }
+
+    entry.count++;
+    return next();
+  };
+}
+
+// Rate limiters for different endpoint types
+const authRateLimiter = createRateLimiter(5, 15 * 60 * 1000); // 5 attempts per 15 min
+const passwordResetRateLimiter = createRateLimiter(3, 60 * 60 * 1000); // 3 attempts per hour
+const aiRateLimiter = createRateLimiter(30, 60 * 1000); // 30 requests per minute
+const contactRateLimiter = createRateLimiter(5, 60 * 60 * 1000); // 5 messages per hour
+
+// Clean up old rate limit entries periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore) {
+    if (now > entry.resetAt) {
+      rateLimitStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Clean every 5 minutes
+
 const espStatsAnalysisRequestSchema = z.object({
   stats: z.object({
     totalCampaigns: z.number().min(0),
@@ -188,8 +245,8 @@ export async function registerRoutes(
   // Register object storage routes for image uploads
   registerObjectStorageRoutes(app);
 
-  // Email/Password Login
-  app.post('/api/auth/login', async (req, res) => {
+  // Email/Password Login (rate limited to prevent brute force)
+  app.post('/api/auth/login', authRateLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
       
@@ -235,8 +292,8 @@ export async function registerRoutes(
     }
   });
 
-  // Email/Password Registration
-  app.post('/api/auth/register', async (req, res) => {
+  // Email/Password Registration (rate limited to prevent spam)
+  app.post('/api/auth/register', authRateLimiter, async (req, res) => {
     try {
       const { email, password } = req.body;
       
@@ -434,8 +491,8 @@ export async function registerRoutes(
     }
   });
 
-  // Request password reset
-  app.post('/api/auth/forgot-password', async (req, res) => {
+  // Request password reset (rate limited to prevent abuse)
+  app.post('/api/auth/forgot-password', passwordResetRateLimiter, async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -894,7 +951,7 @@ export async function registerRoutes(
     return true;
   }
 
-  app.post('/api/grade', optionalAuth, async (req: any, res) => {
+  app.post('/api/grade', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'gradeCount');
@@ -964,7 +1021,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/rewrite', optionalAuth, async (req: any, res) => {
+  app.post('/api/rewrite', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'rewriteCount');
@@ -980,7 +1037,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/followup', optionalAuth, async (req: any, res) => {
+  app.post('/api/followup', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'followupCount');
@@ -2912,8 +2969,8 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  // Contact form endpoint
-  app.post('/api/contact', async (req, res) => {
+  // Contact form endpoint (rate limited to prevent spam)
+  app.post('/api/contact', contactRateLimiter, async (req, res) => {
     try {
       const validation = insertContactMessageSchema.safeParse(req.body);
       if (!validation.success) {
