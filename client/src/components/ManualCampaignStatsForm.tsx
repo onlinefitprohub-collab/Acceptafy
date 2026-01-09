@@ -344,16 +344,10 @@ export function ManualCampaignStatsForm() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="number">
-                            <div className="flex items-center gap-1">
-                              <Hash className="w-3 h-3" />
-                              <span>#</span>
-                            </div>
+                            <Hash className="w-4 h-4" />
                           </SelectItem>
                           <SelectItem value="percentage">
-                            <div className="flex items-center gap-1">
-                              <Percent className="w-3 h-3" />
-                              <span>%</span>
-                            </div>
+                            <Percent className="w-4 h-4" />
                           </SelectItem>
                         </SelectContent>
                       </Select>
