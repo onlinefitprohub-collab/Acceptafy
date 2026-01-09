@@ -82,6 +82,9 @@ import {
   type InsertBlacklistCheckHistory,
   type Article,
   type InsertArticle,
+  manualCampaignStats,
+  type ManualCampaignStats,
+  type InsertManualCampaignStats,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -254,6 +257,13 @@ export interface IStorage {
   updateArticle(id: string, updates: Partial<Article>): Promise<Article | undefined>;
   deleteArticle(id: string): Promise<boolean>;
   incrementArticleViewCount(id: string): Promise<void>;
+  
+  // Manual Campaign Stats
+  getManualCampaignStats(userId: string): Promise<ManualCampaignStats[]>;
+  getManualCampaignStatsById(id: string, userId: string): Promise<ManualCampaignStats | undefined>;
+  createManualCampaignStats(data: InsertManualCampaignStats): Promise<ManualCampaignStats>;
+  updateManualCampaignStats(id: string, userId: string, updates: Partial<ManualCampaignStats>): Promise<ManualCampaignStats | undefined>;
+  deleteManualCampaignStats(id: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2582,6 +2592,44 @@ export class DatabaseStorage implements IStorage {
       .update(articles)
       .set({ viewCount: sql`${articles.viewCount} + 1` })
       .where(eq(articles.id, id));
+  }
+
+  // Manual Campaign Stats
+  async getManualCampaignStats(userId: string): Promise<ManualCampaignStats[]> {
+    return db
+      .select()
+      .from(manualCampaignStats)
+      .where(eq(manualCampaignStats.userId, userId))
+      .orderBy(desc(manualCampaignStats.createdAt));
+  }
+
+  async getManualCampaignStatsById(id: string, userId: string): Promise<ManualCampaignStats | undefined> {
+    const [stats] = await db
+      .select()
+      .from(manualCampaignStats)
+      .where(and(eq(manualCampaignStats.id, id), eq(manualCampaignStats.userId, userId)));
+    return stats;
+  }
+
+  async createManualCampaignStats(data: InsertManualCampaignStats): Promise<ManualCampaignStats> {
+    const [stats] = await db.insert(manualCampaignStats).values(data).returning();
+    return stats;
+  }
+
+  async updateManualCampaignStats(id: string, userId: string, updates: Partial<ManualCampaignStats>): Promise<ManualCampaignStats | undefined> {
+    const [stats] = await db
+      .update(manualCampaignStats)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(manualCampaignStats.id, id), eq(manualCampaignStats.userId, userId)))
+      .returning();
+    return stats;
+  }
+
+  async deleteManualCampaignStats(id: string, userId: string): Promise<boolean> {
+    await db
+      .delete(manualCampaignStats)
+      .where(and(eq(manualCampaignStats.id, id), eq(manualCampaignStats.userId, userId)));
+    return true;
   }
 }
 

@@ -3484,6 +3484,95 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Manual Campaign Stats Routes
+  app.get('/api/manual-campaign-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const stats = await storage.getManualCampaignStats(userId);
+      res.json(stats);
+    } catch (error) {
+      console.error('Get manual campaign stats error:', error);
+      res.status(500).json({ message: 'Failed to get manual campaign stats' });
+    }
+  });
+
+  app.get('/api/manual-campaign-stats/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const stats = await storage.getManualCampaignStatsById(id, userId);
+      
+      if (!stats) {
+        return res.status(404).json({ message: 'Stats not found' });
+      }
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Get manual campaign stats by id error:', error);
+      res.status(500).json({ message: 'Failed to get manual campaign stats' });
+    }
+  });
+
+  app.post('/api/manual-campaign-stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { campaignName, totalSent, ...metrics } = req.body;
+      
+      if (!campaignName || campaignName.trim().length === 0) {
+        return res.status(400).json({ message: 'Campaign name is required' });
+      }
+      
+      const stats = await storage.createManualCampaignStats({
+        userId,
+        campaignName: campaignName.trim(),
+        totalSent: totalSent || null,
+        ...metrics
+      });
+      
+      res.json(stats);
+    } catch (error) {
+      console.error('Create manual campaign stats error:', error);
+      res.status(500).json({ message: 'Failed to create manual campaign stats' });
+    }
+  });
+
+  app.patch('/api/manual-campaign-stats/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const existing = await storage.getManualCampaignStatsById(id, userId);
+      if (!existing) {
+        return res.status(404).json({ message: 'Stats not found' });
+      }
+      
+      const stats = await storage.updateManualCampaignStats(id, userId, updates);
+      res.json(stats);
+    } catch (error) {
+      console.error('Update manual campaign stats error:', error);
+      res.status(500).json({ message: 'Failed to update manual campaign stats' });
+    }
+  });
+
+  app.delete('/api/manual-campaign-stats/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { id } = req.params;
+      
+      const existing = await storage.getManualCampaignStatsById(id, userId);
+      if (!existing) {
+        return res.status(404).json({ message: 'Stats not found' });
+      }
+      
+      await storage.deleteManualCampaignStats(id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete manual campaign stats error:', error);
+      res.status(500).json({ message: 'Failed to delete manual campaign stats' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
