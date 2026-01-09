@@ -948,7 +948,11 @@ export class DatabaseStorage implements IStorage {
     gradeDistribution: { grade: string; count: number }[];
     scoreDistribution: { range: string; count: number }[];
   }> {
-    const allAnalyses = await db.select().from(emailAnalyses);
+    // Exclude admin accounts from content analytics
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    const allAnalyses = (await db.select().from(emailAnalyses))
+      .filter(a => !adminUserIds.has(a.userId));
     
     // Top subject lines by score (highest scores first)
     const withSubjects = allAnalyses
@@ -1037,7 +1041,11 @@ export class DatabaseStorage implements IStorage {
     usageTrends: { date: string; grades: number; rewrites: number; followups: number; deliverability: number }[];
     totalUsage: number;
   }> {
-    const allUsage = await db.select().from(usageCounters);
+    // Exclude admin accounts from feature adoption metrics
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    const allUsage = (await db.select().from(usageCounters))
+      .filter(u => !adminUserIds.has(u.userId));
     
     // Aggregate feature usage across all users and periods
     let totalGrades = 0;
@@ -1134,7 +1142,11 @@ export class DatabaseStorage implements IStorage {
     providerBreakdown: { provider: string; count: number }[];
     usersWithConnections: number;
   }> {
-    const allConnections = await db.select().from(espConnections);
+    // Exclude admin accounts from ESP metrics
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    const allConnections = (await db.select().from(espConnections))
+      .filter(c => !adminUserIds.has(c.userId));
     
     const totalConnections = allConnections.length;
     const activeConnections = allConnections.filter(c => c.isConnected).length;
@@ -1325,9 +1337,14 @@ export class DatabaseStorage implements IStorage {
     };
     dailyActivity: { date: string; users: number; analyses: number }[];
   }> {
-    const allUsers = await db.select().from(users);
-    const allAnalyses = await db.select().from(emailAnalyses);
-    const allUsage = await db.select().from(usageCounters);
+    // Exclude admin accounts from all date range analytics
+    const allUsersRaw = await db.select().from(users);
+    const allUsers = allUsersRaw.filter(u => u.role !== 'admin');
+    const adminUserIds = new Set(allUsersRaw.filter(u => u.role === 'admin').map(u => u.id));
+    const allAnalyses = (await db.select().from(emailAnalyses))
+      .filter(a => !adminUserIds.has(a.userId));
+    const allUsage = (await db.select().from(usageCounters))
+      .filter(u => !adminUserIds.has(u.userId));
 
     // Filter users created in date range
     const newUsers = allUsers.filter(u => 
@@ -1430,9 +1447,14 @@ export class DatabaseStorage implements IStorage {
     lastActivity: string | null;
     daysSinceActive: number;
   }>> {
-    const allUsers = await db.select().from(users);
-    const allUsage = await db.select().from(usageCounters);
-    const allAnalyses = await db.select().from(emailAnalyses);
+    // Exclude admin accounts from health scores
+    const allUsersRaw = await db.select().from(users);
+    const allUsers = allUsersRaw.filter(u => u.role !== 'admin');
+    const adminUserIds = new Set(allUsersRaw.filter(u => u.role === 'admin').map(u => u.id));
+    const allUsage = (await db.select().from(usageCounters))
+      .filter(u => !adminUserIds.has(u.userId));
+    const allAnalyses = (await db.select().from(emailAnalyses))
+      .filter(a => !adminUserIds.has(a.userId));
 
     const now = new Date();
     const healthScores: Array<{
@@ -1537,8 +1559,12 @@ export class DatabaseStorage implements IStorage {
       percentage: number;
     }>;
   }> {
-    const allUsers = await db.select().from(users);
-    const allAnalyses = await db.select().from(emailAnalyses);
+    // Exclude admin accounts from cohort analysis
+    const allUsersRaw = await db.select().from(users);
+    const allUsers = allUsersRaw.filter(u => u.role !== 'admin');
+    const adminUserIds = new Set(allUsersRaw.filter(u => u.role === 'admin').map(u => u.id));
+    const allAnalyses = (await db.select().from(emailAnalyses))
+      .filter(a => !adminUserIds.has(a.userId));
     const now = new Date();
 
     // Group users by signup week
@@ -2065,7 +2091,11 @@ export class DatabaseStorage implements IStorage {
     commonIssues: { issue: string; count: number; percentage: number }[];
     gradeImprovement: { grade: string; firstTimeCount: number; repeatCount: number }[];
   }> {
-    const allAnalyses = await db.select().from(emailAnalyses).orderBy(desc(emailAnalyses.createdAt));
+    // Exclude admin accounts from quality metrics
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    const allAnalyses = (await db.select().from(emailAnalyses).orderBy(desc(emailAnalyses.createdAt)))
+      .filter(a => !adminUserIds.has(a.userId));
     
     const weeklyScores = new Map<string, { total: number; count: number }>();
     for (const analysis of allAnalyses) {
