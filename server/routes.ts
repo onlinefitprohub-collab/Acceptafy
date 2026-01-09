@@ -58,6 +58,47 @@ const generateRoadmapRequestSchema = z.object({
   body: z.string().default(''),
 });
 
+// Validation schemas for security-sensitive endpoints
+const gamificationUpdateSchema = z.object({
+  xp: z.number().int().min(0).optional(),
+  level: z.number().int().min(1).optional(),
+  streak: z.number().int().min(0).optional(),
+  achievements: z.array(z.string()).optional(),
+  totalGrades: z.number().int().min(0).optional(),
+  bestScore: z.number().min(0).max(100).optional(),
+  lastGradeAt: z.string().datetime().optional(),
+});
+
+const metricTypeSchema = z.enum(['number', 'percentage']).nullable().optional();
+
+const manualCampaignStatsSchema = z.object({
+  campaignName: z.string().min(1).max(200),
+  totalSent: z.number().min(0).nullable().optional(),
+  delivered: z.number().min(0).nullable().optional(),
+  deliveredType: metricTypeSchema,
+  opened: z.number().min(0).nullable().optional(),
+  openedType: metricTypeSchema,
+  clicked: z.number().min(0).nullable().optional(),
+  clickedType: metricTypeSchema,
+  softBounced: z.number().min(0).nullable().optional(),
+  softBouncedType: metricTypeSchema,
+  hardBounced: z.number().min(0).nullable().optional(),
+  hardBouncedType: metricTypeSchema,
+  bounced: z.number().min(0).nullable().optional(),
+  unsubscribed: z.number().min(0).nullable().optional(),
+  unsubscribedType: metricTypeSchema,
+  spam: z.number().min(0).nullable().optional(),
+  spamType: metricTypeSchema,
+  complaints: z.number().min(0).nullable().optional(),
+  openRate: z.number().min(0).max(100).nullable().optional(),
+  clickRate: z.number().min(0).max(100).nullable().optional(),
+  bounceRate: z.number().min(0).max(100).nullable().optional(),
+});
+
+const adminNoteSchema = z.object({
+  note: z.string().min(1).max(5000),
+});
+
 // Rate limiting for security-critical endpoints
 interface RateLimitEntry {
   count: number;
@@ -893,9 +934,12 @@ export async function registerRoutes(
   app.post('/api/gamification', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const data = req.body;
+      const parseResult = gamificationUpdateSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid gamification data', errors: parseResult.error.flatten() });
+      }
       const gamification = await storage.upsertUserGamification({
-        ...data,
+        ...parseResult.data,
         userId,
       });
       res.json(gamification);
@@ -3109,12 +3153,11 @@ Return your response as a JSON object with this exact structure:
   app.post('/api/admin/users/:id/notes', isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { note } = req.body;
-      const adminId = req.user.claims.sub;
-      
-      if (!note || typeof note !== 'string' || note.trim().length === 0) {
-        return res.status(400).json({ message: 'Note content is required' });
+      const parseResult = adminNoteSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid note data', errors: parseResult.error.flatten() });
       }
+      const adminId = req.user.claims.sub;
       
       const user = await storage.getUser(id);
       if (!user) {
@@ -3124,7 +3167,7 @@ Return your response as a JSON object with this exact structure:
       const created = await storage.createAdminNote({
         userId: id,
         adminId,
-        note: note.trim(),
+        note: parseResult.data.note.trim(),
       });
       
       res.json(created);
@@ -3664,16 +3707,15 @@ Return your response as a JSON object with this exact structure:
   app.post('/api/manual-campaign-stats', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { campaignName, totalSent, ...metrics } = req.body;
-      
-      if (!campaignName || campaignName.trim().length === 0) {
-        return res.status(400).json({ message: 'Campaign name is required' });
+      const parseResult = manualCampaignStatsSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid campaign data', errors: parseResult.error.flatten() });
       }
       
+      const { campaignName, ...metrics } = parseResult.data;
       const stats = await storage.createManualCampaignStats({
         userId,
         campaignName: campaignName.trim(),
-        totalSent: totalSent || null,
         ...metrics
       });
       
@@ -3688,14 +3730,17 @@ Return your response as a JSON object with this exact structure:
     try {
       const userId = req.user.claims.sub;
       const { id } = req.params;
-      const updates = req.body;
+      const parseResult = manualCampaignStatsSchema.partial().safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ message: 'Invalid update data', errors: parseResult.error.flatten() });
+      }
       
       const existing = await storage.getManualCampaignStatsById(id, userId);
       if (!existing) {
         return res.status(404).json({ message: 'Stats not found' });
       }
       
-      const stats = await storage.updateManualCampaignStats(id, userId, updates);
+      const stats = await storage.updateManualCampaignStats(id, userId, parseResult.data);
       res.json(stats);
     } catch (error) {
       console.error('Update manual campaign stats error:', error);
