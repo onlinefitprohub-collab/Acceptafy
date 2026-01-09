@@ -108,27 +108,37 @@ function normalizeManualCampaignStats(manual: any): NormalizedManualCampaign | n
   const totalSent = manual.totalSent || 0;
   if (totalSent === 0) return null;
 
-  const convertValue = (value: number | null | undefined, type: string | null | undefined): number => {
+  const convertValue = (value: number | null | undefined, type: string | null | undefined, maxValue: number): number => {
     if (value === null || value === undefined) return 0;
+    let result: number;
     if (type === 'percentage') {
-      return Math.round((value / 100) * totalSent);
+      const clampedPercent = Math.min(100, Math.max(0, value));
+      result = Math.round((clampedPercent / 100) * totalSent);
+    } else {
+      result = value;
     }
-    return value;
+    return Math.min(Math.max(0, result), maxValue);
   };
 
-  const delivered = convertValue(manual.delivered, manual.deliveredType);
-  const opened = convertValue(manual.opened, manual.openedType);
-  const clicked = convertValue(manual.clicked, manual.clickedType);
-  const softBounced = convertValue(manual.softBounced, manual.softBouncedType);
-  const hardBounced = convertValue(manual.hardBounced, manual.hardBouncedType);
-  const bounced = softBounced + hardBounced;
-  const unsubscribed = convertValue(manual.unsubscribed, manual.unsubscribedType);
-  const spamReports = convertValue(manual.spam, manual.spamType);
+  const softBounced = convertValue(manual.softBounced, manual.softBouncedType, totalSent);
+  const hardBounced = convertValue(manual.hardBounced, manual.hardBouncedType, totalSent - softBounced);
+  const bounced = Math.min(softBounced + hardBounced, totalSent);
+  
+  const deliveredInput = convertValue(manual.delivered, manual.deliveredType, totalSent);
+  const delivered = deliveredInput > 0 
+    ? Math.min(deliveredInput, totalSent - bounced)
+    : Math.max(0, totalSent - bounced);
+  const effectiveDelivered = Math.max(delivered, 1);
+  
+  const opened = convertValue(manual.opened, manual.openedType, effectiveDelivered);
+  const clicked = convertValue(manual.clicked, manual.clickedType, opened > 0 ? opened : effectiveDelivered);
+  const unsubscribed = convertValue(manual.unsubscribed, manual.unsubscribedType, effectiveDelivered);
+  const spamReports = convertValue(manual.spam, manual.spamType, effectiveDelivered);
 
-  const openRate = totalSent > 0 ? (opened / totalSent) * 100 : 0;
-  const clickRate = totalSent > 0 ? (clicked / totalSent) * 100 : 0;
+  const openRate = effectiveDelivered > 0 ? (opened / effectiveDelivered) * 100 : 0;
+  const clickRate = effectiveDelivered > 0 ? (clicked / effectiveDelivered) * 100 : 0;
   const bounceRate = totalSent > 0 ? (bounced / totalSent) * 100 : 0;
-  const unsubscribeRate = totalSent > 0 ? (unsubscribed / totalSent) * 100 : 0;
+  const unsubscribeRate = effectiveDelivered > 0 ? (unsubscribed / effectiveDelivered) * 100 : 0;
 
   return {
     campaignId: `manual-${manual.id}`,
