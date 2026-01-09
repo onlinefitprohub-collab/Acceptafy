@@ -1103,7 +1103,15 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
   }, []);
 
   const analyzeStats = async () => {
-    if (!stats?.combinedStats?.campaigns?.length) return;
+    console.log('[ESPStats] analyzeStats called', { 
+      hasStats: !!stats, 
+      hasCombinedStats: !!stats?.combinedStats,
+      campaignsLength: stats?.combinedStats?.campaigns?.length 
+    });
+    if (!stats?.combinedStats?.campaigns?.length) {
+      console.log('[ESPStats] No campaigns available for analysis');
+      return;
+    }
     
     setIsAnalyzing(true);
     try {
