@@ -155,10 +155,12 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | null;
+type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
+type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
-type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'contact-export' | null;
+type ConnectionsSubView = 'esp' | 'contact-export' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -189,9 +191,11 @@ function AppContent() {
   const [spamTriggers, setSpamTriggers] = useState<SpamTrigger[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
-  const [toolsSubView, setToolsSubView] = useState<ToolsSubView>(null);
+  const [createSubView, setCreateSubView] = useState<CreateSubView>(null);
+  const [optimizeSubView, setOptimizeSubView] = useState<OptimizeSubView>(null);
+  const [analyticsSubView, setAnalyticsSubView] = useState<AnalyticsSubView>(null);
   const [deliverabilitySubView, setDeliverabilitySubView] = useState<DeliverabilitySubView>(null);
-  const [integrationsSubView, setIntegrationsSubView] = useState<IntegrationsSubView>(null);
+  const [connectionsSubView, setConnectionsSubView] = useState<ConnectionsSubView>(null);
   const [espConnections, setEspConnections] = useState<{ provider: ESPProvider; connected: boolean; accountName?: string; lastSync?: string }[]>([]);
   const [showAcademy, setShowAcademy] = useState(false);
   const [prevLevel, setPrevLevel] = useState(level);
@@ -269,15 +273,27 @@ function AppContent() {
     setActiveView('grader');
   };
 
-  const handleDashboardNavigate = (view: 'grader' | 'history' | 'tools' | 'deliverability', subView?: string) => {
+  const clearAllSubViews = () => {
+    setCreateSubView(null);
+    setOptimizeSubView(null);
+    setAnalyticsSubView(null);
+    setDeliverabilitySubView(null);
+    setConnectionsSubView(null);
+  };
+
+  const handleDashboardNavigate = (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => {
     setActiveView(view);
-    if (view === 'tools' && subView) {
-      setToolsSubView(subView as ToolsSubView);
+    clearAllSubViews();
+    if (view === 'create' && subView) {
+      setCreateSubView(subView as CreateSubView);
+    } else if (view === 'optimize' && subView) {
+      setOptimizeSubView(subView as OptimizeSubView);
+    } else if (view === 'analytics' && subView) {
+      setAnalyticsSubView(subView as AnalyticsSubView);
     } else if (view === 'deliverability' && subView) {
       setDeliverabilitySubView(subView as DeliverabilitySubView);
-    } else {
-      setToolsSubView(null);
-      setDeliverabilitySubView(null);
+    } else if (view === 'connections' && subView) {
+      setConnectionsSubView(subView as ConnectionsSubView);
     }
   };
 
@@ -436,7 +452,7 @@ function AppContent() {
     setVariations(item.content.variations);
     setSpamTriggers(item.result.spamAnalysis || []);
     setActiveView('grader');
-    setToolsSubView(null);
+    clearAllSubViews();
   };
 
   const handleDeleteHistory = async (id: string) => {
@@ -827,14 +843,14 @@ function AppContent() {
     </div>
   );
 
-  const renderToolsView = () => (
+  const renderCreateView = () => (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-foreground">Smart Tools</h2>
-        <p className="text-muted-foreground">Powerful tools to optimize your emails</p>
+        <h2 className="text-2xl font-bold text-foreground">Create</h2>
+        <p className="text-muted-foreground">Build and write emails with powerful tools</p>
       </div>
 
-      {toolsSubView === 'rewrite' && (
+      {createSubView === 'rewrite' && (
         <Card className="card-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -1030,7 +1046,7 @@ function AppContent() {
         </Card>
       )}
 
-      {toolsSubView === 'followup' && (
+      {createSubView === 'followup' && (
         <Card className="card-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -1258,7 +1274,7 @@ function AppContent() {
         </Card>
       )}
 
-      {toolsSubView === 'variations' && (
+      {optimizeSubView === 'variations' && (
         <Card className="card-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -1336,7 +1352,7 @@ function AppContent() {
               <Card className="bg-muted/50 border-dashed">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground mb-3">
-                    Enter your email content below to generate subject line variations, or go to the <button onClick={() => { setActiveView('grader'); setToolsSubView(null); }} className="text-primary underline">Email Grader</button> first.
+                    Enter your email content below to generate subject line variations, or go to the <button onClick={() => { setActiveView('grader'); clearAllSubViews(); }} className="text-primary underline">Email Grader</button> first.
                   </p>
                   <div className="space-y-3">
                     <div>
@@ -1424,7 +1440,7 @@ function AppContent() {
         </Card>
       )}
 
-      {toolsSubView === 'tone' && (
+      {createSubView === 'tone' && (
         <Card className="card-lift">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -1502,7 +1518,7 @@ function AppContent() {
               <Card className="bg-muted/50 border-dashed">
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground mb-3">
-                    Enter your email content below, or go to the <button onClick={() => { setActiveView('grader'); setToolsSubView(null); }} className="text-primary underline">Email Grader</button> first to input your email.
+                    Enter your email content below, or go to the <button onClick={() => { setActiveView('grader'); clearAllSubViews(); }} className="text-primary underline">Email Grader</button> first to input your email.
                   </p>
                   <div className="space-y-3">
                     <div>
@@ -1605,19 +1621,19 @@ function AppContent() {
         </Card>
       )}
 
-      {toolsSubView === 'preview' && (
+      {optimizeSubView === 'preview' && (
         <EmailPreviewTool />
       )}
 
-      {toolsSubView === 'spam' && (
+      {optimizeSubView === 'spam' && (
         <SpamChecker history={history} />
       )}
 
-      {toolsSubView === 'sentiment' && (
+      {optimizeSubView === 'sentiment' && (
         <SentimentAnalyzer />
       )}
 
-      {toolsSubView === 'templates' && (
+      {createSubView === 'templates' && (
         <EmailTemplates
           currentSubject={variations[0]?.subject || ''}
           currentPreviewText={variations[0]?.previewText || ''}
@@ -1629,51 +1645,56 @@ function AppContent() {
         />
       )}
 
-      {toolsSubView === 'import' && (
+      {createSubView === 'import' && (
         <EmailImport
           onLoadEmail={(subject, previewText, bodyContent) => {
             setVariations([{ subject, previewText }]);
             setBody(bodyContent);
             setActiveView('grader');
-            setToolsSubView(null);
+            clearAllSubViews();
           }}
         />
       )}
 
-      {toolsSubView === 'competitor' && (
+      {optimizeSubView === 'competitor' && (
         <CompetitorAnalysis />
       )}
 
-      {toolsSubView === 'sendtime' && (
+      {optimizeSubView === 'sendtime' && (
         <SendTimeOptimizer />
       )}
 
-      {toolsSubView === 'builder' && (
+      {createSubView === 'builder' && (
         <EmailBuilder />
       )}
 
-      {toolsSubView === 'funnel' && (
-        <Suspense fallback={<ComponentLoader />}>
-          <CampaignFunnelVisualization />
-        </Suspense>
-      )}
-
-      {!toolsSubView && (
+      {!createSubView && (
         <div className="grid md:grid-cols-2 gap-4">
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('rewrite')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('builder')} data-testid="card-create-builder">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Email Builder</h3>
+                <p className="text-sm text-muted-foreground">Build emails visually</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('rewrite')} data-testid="card-create-rewrite">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
                 <Zap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">AI Rewrite</h3>
+                <h3 className="font-semibold text-foreground">Rewrite</h3>
                 <p className="text-sm text-muted-foreground">Transform your email</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('followup')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('followup')} data-testid="card-create-followup">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
                 <Mail className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -1682,18 +1703,18 @@ function AppContent() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('variations')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('templates')} data-testid="card-create-templates">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
-                <Target className="w-6 h-6 text-white" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+                <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">A/B Subject Lab</h3>
-                <p className="text-sm text-muted-foreground">Test subject variations</p>
+                <h3 className="font-semibold text-foreground">Templates</h3>
+                <p className="text-sm text-muted-foreground">Save and reuse your best emails</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('tone')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('tone')} data-testid="card-create-tone">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500">
                 <Sparkles className="w-6 h-6 text-white" />
@@ -1704,81 +1725,257 @@ function AppContent() {
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('preview')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('import')} data-testid="card-create-import">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
+                <Upload className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Import Email</h3>
+                <p className="text-sm text-muted-foreground">Import .eml files to analyze</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderOptimizeView = () => (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Optimize</h2>
+        <p className="text-muted-foreground">Test and optimize your emails for better results</p>
+      </div>
+
+      {optimizeSubView === 'variations' && (
+        <Card className="card-lift">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle>A/B Subject Line Lab</CardTitle>
+                <CardDescription>Generate 5 subject line variations with predicted open rates</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={handleGenerateSubjectVariations}
+              disabled={isGeneratingVariations || !variations[0]?.subject.trim() || !body.trim()}
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+              data-testid="button-generate-variations"
+            >
+              {isGeneratingVariations ? (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Variations...
+                </>
+              ) : (
+                <>
+                  <Target className="w-4 h-4 mr-2" />
+                  Generate A/B Variations
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {optimizeSubView === 'preview' && <EmailPreviewTool />}
+      {optimizeSubView === 'spam' && <SpamChecker history={history} />}
+      {optimizeSubView === 'sentiment' && <SentimentAnalyzer />}
+      {optimizeSubView === 'sendtime' && <SendTimeOptimizer />}
+      {optimizeSubView === 'competitor' && <CompetitorAnalysis />}
+
+      {!optimizeSubView && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('variations')} data-testid="card-optimize-variations">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">A/B Subject Lab</h3>
+                <p className="text-sm text-muted-foreground">Test subject variations</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('preview')} data-testid="card-optimize-preview">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500">
                 <Mail className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Email Preview</h3>
-                <p className="text-sm text-muted-foreground">See how emails look in Gmail, Outlook & Apple Mail</p>
+                <p className="text-sm text-muted-foreground">See how emails look</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('spam')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('spam')} data-testid="card-optimize-spam">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-500">
                 <ShieldAlert className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground">Spam Checker</h3>
-                <p className="text-sm text-muted-foreground">Scan for spam trigger words</p>
+                <p className="text-sm text-muted-foreground">Scan for spam triggers</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('sentiment')}>
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('sentiment')} data-testid="card-optimize-sentiment">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500">
                 <Heart className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">Sentiment Analysis</h3>
-                  <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Analyze emotional tone & improve engagement</p>
+              <div>
+                <h3 className="font-semibold text-foreground">Sentiment</h3>
+                <p className="text-sm text-muted-foreground">Analyze emotional tone</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('templates')} data-testid="card-tools-templates">
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('sendtime')} data-testid="card-optimize-sendtime">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
-                <FileText className="w-6 h-6 text-white" />
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500">
+                <Activity className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">Email Templates</h3>
-                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Save and reuse your best emails</p>
+              <div>
+                <h3 className="font-semibold text-foreground">Send Time</h3>
+                <p className="text-sm text-muted-foreground">Optimize send timing</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('import')} data-testid="card-tools-import">
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500">
-                <Upload className="w-6 h-6 text-white" />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">Import Email</h3>
-                  <Badge className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Import .eml files to analyze</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="card-lift cursor-pointer" onClick={() => setToolsSubView('competitor')} data-testid="card-tools-competitor">
+          <Card className="card-lift cursor-pointer" onClick={() => setOptimizeSubView('competitor')} data-testid="card-optimize-competitor">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500">
                 <Users className="w-6 h-6 text-white" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-foreground">Competitor Analysis</h3>
-                  <Badge className="bg-gradient-to-r from-violet-500 to-purple-500 text-white text-[10px] px-1.5 py-0">NEW</Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">Analyze competitor email strategies</p>
+              <div>
+                <h3 className="font-semibold text-foreground">Competitor Analysis</h3>
+                <p className="text-sm text-muted-foreground">Analyze competitor strategies</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderAnalyticsView = () => (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Analytics</h2>
+        <p className="text-muted-foreground">Track and analyze your email performance</p>
+      </div>
+
+      {analyticsSubView === 'stats' && (
+        <Suspense fallback={<ComponentLoader />}>
+          <ESPStatsDashboard />
+        </Suspense>
+      )}
+
+      {analyticsSubView === 'funnel' && (
+        <Suspense fallback={<ComponentLoader />}>
+          <CampaignFunnelVisualization />
+        </Suspense>
+      )}
+
+      {analyticsSubView === 'intelligence' && (
+        <Suspense fallback={<ComponentLoader />}>
+          <DeliverabilityIntelligence />
+        </Suspense>
+      )}
+
+      {!analyticsSubView && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setAnalyticsSubView('stats')} data-testid="card-analytics-stats">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Campaign Stats</h3>
+                <p className="text-sm text-muted-foreground">View campaign performance</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setAnalyticsSubView('funnel')} data-testid="card-analytics-funnel">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Campaign Funnel</h3>
+                <p className="text-sm text-muted-foreground">Visualize email funnel</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setAnalyticsSubView('intelligence')} data-testid="card-analytics-intelligence">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Trend Intelligence</h3>
+                <p className="text-sm text-muted-foreground">Deliverability trends</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderConnectionsView = () => (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Connections</h2>
+        <p className="text-muted-foreground">Connect your email service providers</p>
+      </div>
+
+      {connectionsSubView === 'esp' && (
+        <ESPSettings
+          connections={espConnections}
+          onConnect={async (provider) => {
+            setEspConnections(prev => 
+              prev.map(c => c.provider === provider ? { ...c, connected: true } : c)
+            );
+          }}
+          onDisconnect={async (provider) => {
+            setEspConnections(prev => 
+              prev.map(c => c.provider === provider ? { ...c, connected: false } : c)
+            );
+          }}
+        />
+      )}
+
+      {connectionsSubView === 'contact-export' && (
+        <ESPContactCleaner />
+      )}
+
+      {!connectionsSubView && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setConnectionsSubView('esp')} data-testid="card-connections-esp">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">ESP Settings</h3>
+                <p className="text-sm text-muted-foreground">Connect email providers</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setConnectionsSubView('contact-export')} data-testid="card-connections-contact-export">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-teal-500 to-green-500">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Contact Export</h3>
+                <p className="text-sm text-muted-foreground">Export and clean contacts</p>
               </div>
             </CardContent>
           </Card>
@@ -1971,100 +2168,6 @@ function AppContent() {
 
     setEspConnections(prev => prev.filter(c => c.provider !== provider));
   };
-
-  const renderIntegrationsView = () => (
-    <div className="animate-fade-in space-y-6">
-      {integrationsSubView === 'esp' && (
-        <ESPSettings
-          connections={espConnections}
-          onConnect={handleESPConnect}
-          onDisconnect={handleESPDisconnect}
-        />
-      )}
-
-      {integrationsSubView === 'stats' && (
-        <Suspense fallback={<ComponentLoader />}>
-          <ESPStatsDashboard onAnalyzeSubject={handleAnalyzeSubject} />
-        </Suspense>
-      )}
-
-      {integrationsSubView === 'intelligence' && (
-        <Suspense fallback={<ComponentLoader />}>
-          <DeliverabilityIntelligence 
-            connections={espConnections.map(c => ({ 
-              provider: c.provider, 
-              isConnected: c.connected || false 
-            }))} 
-          />
-        </Suspense>
-      )}
-
-      {integrationsSubView === 'contact-export' && (
-        <ESPContactCleaner 
-          connections={espConnections.map(c => ({ 
-            provider: c.provider, 
-            accountName: c.accountName,
-            isConnected: c.connected || false 
-          }))}
-        />
-      )}
-
-      {!integrationsSubView && (
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Integrations</h2>
-            <p className="text-muted-foreground">Connect your email service providers and view campaign stats</p>
-          </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('esp')} data-testid="card-integrations-esp">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500">
-                  <Mail className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">ESP Settings</h3>
-                  <p className="text-sm text-muted-foreground">Connect SendGrid, Mailchimp & more</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('stats')} data-testid="card-integrations-stats">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Campaign Stats</h3>
-                  <p className="text-sm text-muted-foreground">Analyze ESP performance metrics</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('intelligence')} data-testid="card-integrations-intelligence">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
-                  <Activity className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Trend Intelligence</h3>
-                  <p className="text-sm text-muted-foreground">Advanced deliverability insights</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="card-lift cursor-pointer" onClick={() => setIntegrationsSubView('contact-export')} data-testid="card-integrations-contact-export">
-              <CardContent className="p-6 flex items-center gap-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
-                  <Users className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Contact Export</h3>
-                  <p className="text-sm text-muted-foreground">Export & clean contact lists</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-    </div>
-  );
 
   const AccountView = () => {
     const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -2526,12 +2629,17 @@ function AppContent() {
           activeView={activeView}
           setActiveView={setActiveView}
           onOpenAcademy={() => setShowAcademy(true)}
-          toolsSubView={toolsSubView}
-          setToolsSubView={setToolsSubView}
+          createSubView={createSubView}
+          setCreateSubView={setCreateSubView}
+          optimizeSubView={optimizeSubView}
+          setOptimizeSubView={setOptimizeSubView}
+          analyticsSubView={analyticsSubView}
+          setAnalyticsSubView={setAnalyticsSubView}
           deliverabilitySubView={deliverabilitySubView}
           setDeliverabilitySubView={setDeliverabilitySubView}
-          integrationsSubView={integrationsSubView}
-          setIntegrationsSubView={setIntegrationsSubView}
+          connectionsSubView={connectionsSubView}
+          setConnectionsSubView={setConnectionsSubView}
+          clearAllSubViews={clearAllSubViews}
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
@@ -2549,9 +2657,11 @@ function AppContent() {
                   {activeView === 'dashboard' && 'Dashboard'}
                   {activeView === 'grader' && 'Email Grader'}
                   {activeView === 'history' && 'History'}
-                  {activeView === 'tools' && 'Smart Tools'}
-                  {activeView === 'deliverability' && 'Deliverability Tools'}
-                  {activeView === 'integrations' && 'Integrations'}
+                  {activeView === 'create' && 'Create'}
+                  {activeView === 'optimize' && 'Optimize'}
+                  {activeView === 'analytics' && 'Analytics'}
+                  {activeView === 'deliverability' && 'Deliverability'}
+                  {activeView === 'connections' && 'Connections'}
                   {activeView === 'account' && 'Account Settings'}
                 </h2>
               </div>
@@ -2573,7 +2683,7 @@ function AppContent() {
               <Button
                 size="sm"
                 variant={activeView === 'grader' ? 'default' : 'outline'}
-                onClick={() => { setActiveView('grader'); setToolsSubView(null); }}
+                onClick={() => { setActiveView('grader'); clearAllSubViews(); }}
                 className={`flex-shrink-0 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-grader"
               >
@@ -2582,9 +2692,9 @@ function AppContent() {
               </Button>
               <Button
                 size="sm"
-                variant={activeView === 'tools' && toolsSubView === 'rewrite' ? 'default' : 'outline'}
-                onClick={() => { setActiveView('tools'); setToolsSubView('rewrite'); }}
-                className={`flex-shrink-0 ${activeView === 'tools' && toolsSubView === 'rewrite' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
+                variant={activeView === 'create' && createSubView === 'rewrite' ? 'default' : 'outline'}
+                onClick={() => { setActiveView('create'); clearAllSubViews(); setCreateSubView('rewrite'); }}
+                className={`flex-shrink-0 ${activeView === 'create' && createSubView === 'rewrite' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-rewrite"
               >
                 <Zap className="w-4 h-4 mr-1.5" />
@@ -2593,7 +2703,7 @@ function AppContent() {
               <Button
                 size="sm"
                 variant={activeView === 'deliverability' ? 'default' : 'outline'}
-                onClick={() => { setActiveView('deliverability'); setDeliverabilitySubView('domain-health'); }}
+                onClick={() => { setActiveView('deliverability'); clearAllSubViews(); setDeliverabilitySubView('domain-health'); }}
                 className={`flex-shrink-0 ${activeView === 'deliverability' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 border-0' : ''}`}
                 data-testid="mobile-quick-deliverability"
               >
@@ -2617,9 +2727,11 @@ function AppContent() {
               )}
               {activeView === 'grader' && renderGraderView()}
               {activeView === 'history' && renderHistoryView()}
-              {activeView === 'tools' && renderToolsView()}
+              {activeView === 'create' && renderCreateView()}
+              {activeView === 'optimize' && renderOptimizeView()}
+              {activeView === 'analytics' && renderAnalyticsView()}
               {activeView === 'deliverability' && renderDeliverabilityView()}
-              {activeView === 'integrations' && renderIntegrationsView()}
+              {activeView === 'connections' && renderConnectionsView()}
               {activeView === 'account' && <AccountView />}
             </div>
           </main>

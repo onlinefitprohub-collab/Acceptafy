@@ -3,7 +3,7 @@ import {
   Mail, 
   History, 
   GraduationCap, 
-  Wand2, 
+  PenTool,
   Target, 
   Zap,
   Trophy,
@@ -31,6 +31,7 @@ import {
   Gift,
   Clock,
   Activity,
+  FlaskConical,
   type LucideIcon
 } from 'lucide-react';
 
@@ -65,37 +66,51 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'tools' | 'deliverability' | 'integrations' | 'account';
-type ToolsSubView = 'rewrite' | 'followup' | 'variations' | 'tone' | 'preview' | 'spam' | 'sentiment' | 'templates' | 'import' | 'competitor' | 'sendtime' | 'builder' | 'funnel' | null;
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | null;
+type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
+type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
-type IntegrationsSubView = 'esp' | 'stats' | 'intelligence' | 'contact-export' | null;
+type ConnectionsSubView = 'esp' | 'contact-export' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
   onOpenAcademy: () => void;
-  toolsSubView: ToolsSubView;
-  setToolsSubView: (view: ToolsSubView) => void;
+  createSubView: CreateSubView;
+  setCreateSubView: (view: CreateSubView) => void;
+  optimizeSubView: OptimizeSubView;
+  setOptimizeSubView: (view: OptimizeSubView) => void;
+  analyticsSubView: AnalyticsSubView;
+  setAnalyticsSubView: (view: AnalyticsSubView) => void;
   deliverabilitySubView: DeliverabilitySubView;
   setDeliverabilitySubView: (view: DeliverabilitySubView) => void;
-  integrationsSubView: IntegrationsSubView;
-  setIntegrationsSubView: (view: IntegrationsSubView) => void;
+  connectionsSubView: ConnectionsSubView;
+  setConnectionsSubView: (view: ConnectionsSubView) => void;
+  clearAllSubViews: () => void;
 }
 
 export function AppSidebar({ 
   activeView, 
   setActiveView, 
   onOpenAcademy,
-  toolsSubView,
-  setToolsSubView,
+  createSubView,
+  setCreateSubView,
+  optimizeSubView,
+  setOptimizeSubView,
+  analyticsSubView,
+  setAnalyticsSubView,
   deliverabilitySubView,
   setDeliverabilitySubView,
-  integrationsSubView,
-  setIntegrationsSubView
+  connectionsSubView,
+  setConnectionsSubView,
+  clearAllSubViews
 }: AppSidebarProps) {
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [optimizeOpen, setOptimizeOpen] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [deliverabilityOpen, setDeliverabilityOpen] = useState(false);
-  const [integrationsOpen, setIntegrationsOpen] = useState(false);
+  const [connectionsOpen, setConnectionsOpen] = useState(false);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
   
   const xpProgress = (xp / nextLevelXp) * 100;
@@ -129,9 +144,7 @@ export function AppSidebar({
                   isActive={activeView === 'dashboard'}
                   onClick={() => {
                     setActiveView('dashboard');
-                    setToolsSubView(null);
-                    setDeliverabilitySubView(null);
-                    setIntegrationsSubView(null);
+                    clearAllSubViews();
                   }}
                   className={`group transition-all duration-200 ${activeView === 'dashboard' ? 'bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/20' : ''}`}
                   data-testid="nav-dashboard"
@@ -148,7 +161,7 @@ export function AppSidebar({
                   isActive={activeView === 'grader'}
                   onClick={() => {
                     setActiveView('grader');
-                    setToolsSubView(null);
+                    clearAllSubViews();
                   }}
                   className={`group transition-all duration-200 ${activeView === 'grader' ? 'bg-gradient-to-r from-purple-500/15 to-pink-500/15 border border-purple-500/20' : ''}`}
                   data-testid="nav-grader"
@@ -161,170 +174,28 @@ export function AppSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
+              <Collapsible open={createOpen} onOpenChange={setCreateOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'tools' ? 'bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/20' : ''}`} data-testid="nav-tools">
-                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'tools' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
-                        <Wand2 className="w-4 h-4" />
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'create' ? 'bg-gradient-to-r from-blue-500/15 to-cyan-500/15 border border-blue-500/20' : ''}`} data-testid="nav-create">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'create' ? 'bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <PenTool className="w-4 h-4" />
                       </div>
-                      <span className="font-medium">Smart Tools</span>
-                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${toolsOpen ? 'rotate-180' : ''}`} />
+                      <span className="font-medium">Create</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${createOpen ? 'rotate-180' : ''}`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'rewrite'}
+                          isActive={createSubView === 'builder'}
                           onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('rewrite');
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('builder');
                           }}
-                          data-testid="nav-tools-rewrite"
-                        >
-                          <Zap className="w-3 h-3" />
-                          <span>AI Rewrite</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'followup'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('followup');
-                          }}
-                          data-testid="nav-tools-followup"
-                        >
-                          <Mail className="w-3 h-3" />
-                          <span>Follow-ups</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'variations'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('variations');
-                          }}
-                          data-testid="nav-tools-variations"
-                        >
-                          <Target className="w-3 h-3" />
-                          <span>A/B Subject Lab</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'tone'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('tone');
-                          }}
-                          data-testid="nav-tools-tone"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          <span>Tone Profiles</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'preview'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('preview');
-                          }}
-                          data-testid="nav-tools-preview"
-                        >
-                          <Globe className="w-3 h-3" />
-                          <span>Email Preview</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'spam'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('spam');
-                          }}
-                          data-testid="nav-tools-spam"
-                        >
-                          <ShieldAlert className="w-3 h-3" />
-                          <span>Spam Checker</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'sentiment'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('sentiment');
-                          }}
-                          data-testid="nav-tools-sentiment"
-                        >
-                          <Heart className="w-3 h-3" />
-                          <span>Sentiment</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'templates'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('templates');
-                          }}
-                          data-testid="nav-tools-templates"
-                        >
-                          <FileText className="w-3 h-3" />
-                          <span>Templates</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'import'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('import');
-                          }}
-                          data-testid="nav-tools-import"
-                        >
-                          <Upload className="w-3 h-3" />
-                          <span>Import Email</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'competitor'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('competitor');
-                          }}
-                          data-testid="nav-tools-competitor"
-                        >
-                          <UsersIcon className="w-3 h-3" />
-                          <span>Competitor Analysis</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'sendtime'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('sendtime');
-                          }}
-                          data-testid="nav-tools-sendtime"
-                        >
-                          <Clock className="w-3 h-3" />
-                          <span>Send Time Optimizer</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'builder'}
-                          onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('builder');
-                          }}
-                          data-testid="nav-tools-builder"
+                          data-testid="nav-create-builder"
                         >
                           <Mail className="w-3 h-3" />
                           <span>Email Builder</span>
@@ -332,15 +203,234 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={toolsSubView === 'funnel'}
+                          isActive={createSubView === 'rewrite'}
                           onClick={() => {
-                            setActiveView('tools');
-                            setToolsSubView('funnel');
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('rewrite');
                           }}
-                          data-testid="nav-tools-funnel"
+                          data-testid="nav-create-rewrite"
+                        >
+                          <Zap className="w-3 h-3" />
+                          <span>Rewrite</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={createSubView === 'followup'}
+                          onClick={() => {
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('followup');
+                          }}
+                          data-testid="nav-create-followup"
+                        >
+                          <Mail className="w-3 h-3" />
+                          <span>Follow-ups</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={createSubView === 'templates'}
+                          onClick={() => {
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('templates');
+                          }}
+                          data-testid="nav-create-templates"
+                        >
+                          <FileText className="w-3 h-3" />
+                          <span>Templates</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={createSubView === 'tone'}
+                          onClick={() => {
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('tone');
+                          }}
+                          data-testid="nav-create-tone"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>Tone Profiles</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={createSubView === 'import'}
+                          onClick={() => {
+                            setActiveView('create');
+                            clearAllSubViews();
+                            setCreateSubView('import');
+                          }}
+                          data-testid="nav-create-import"
+                        >
+                          <Upload className="w-3 h-3" />
+                          <span>Import Email</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              <Collapsible open={optimizeOpen} onOpenChange={setOptimizeOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'optimize' ? 'bg-gradient-to-r from-violet-500/15 to-purple-500/15 border border-violet-500/20' : ''}`} data-testid="nav-optimize">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'optimize' ? 'bg-gradient-to-br from-violet-500 to-purple-500 shadow-md shadow-violet-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <FlaskConical className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Optimize</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${optimizeOpen ? 'rotate-180' : ''}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'variations'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('variations');
+                          }}
+                          data-testid="nav-optimize-variations"
+                        >
+                          <Target className="w-3 h-3" />
+                          <span>A/B Subject Lab</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'preview'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('preview');
+                          }}
+                          data-testid="nav-optimize-preview"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>Email Preview</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'spam'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('spam');
+                          }}
+                          data-testid="nav-optimize-spam"
+                        >
+                          <ShieldAlert className="w-3 h-3" />
+                          <span>Spam Checker</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'sentiment'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('sentiment');
+                          }}
+                          data-testid="nav-optimize-sentiment"
+                        >
+                          <Heart className="w-3 h-3" />
+                          <span>Sentiment</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'sendtime'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('sendtime');
+                          }}
+                          data-testid="nav-optimize-sendtime"
+                        >
+                          <Clock className="w-3 h-3" />
+                          <span>Send Time</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={optimizeSubView === 'competitor'}
+                          onClick={() => {
+                            setActiveView('optimize');
+                            clearAllSubViews();
+                            setOptimizeSubView('competitor');
+                          }}
+                          data-testid="nav-optimize-competitor"
+                        >
+                          <UsersIcon className="w-3 h-3" />
+                          <span>Competitor Analysis</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              <Collapsible open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'analytics' ? 'bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/20' : ''}`} data-testid="nav-analytics">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'analytics' ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-md shadow-amber-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <BarChart3 className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Analytics</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${analyticsOpen ? 'rotate-180' : ''}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={analyticsSubView === 'stats'}
+                          onClick={() => {
+                            setActiveView('analytics');
+                            clearAllSubViews();
+                            setAnalyticsSubView('stats');
+                          }}
+                          data-testid="nav-analytics-stats"
                         >
                           <BarChart3 className="w-3 h-3" />
+                          <span>Campaign Stats</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={analyticsSubView === 'funnel'}
+                          onClick={() => {
+                            setActiveView('analytics');
+                            clearAllSubViews();
+                            setAnalyticsSubView('funnel');
+                          }}
+                          data-testid="nav-analytics-funnel"
+                        >
+                          <Activity className="w-3 h-3" />
                           <span>Campaign Funnel</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
+                          isActive={analyticsSubView === 'intelligence'}
+                          onClick={() => {
+                            setActiveView('analytics');
+                            clearAllSubViews();
+                            setAnalyticsSubView('intelligence');
+                          }}
+                          data-testid="nav-analytics-intelligence"
+                        >
+                          <Activity className="w-3 h-3" />
+                          <span>Trend Intelligence</span>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
@@ -363,25 +453,11 @@ export function AppSidebar({
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={deliverabilitySubView === 'warmup'}
-                          onClick={() => {
-                            setActiveView('deliverability');
-                            setDeliverabilitySubView('warmup');
-                            setToolsSubView(null);
-                          }}
-                          data-testid="nav-deliverability-warmup"
-                        >
-                          <Calendar className="w-3 h-3" />
-                          <span>Warm-up Planner</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
                           isActive={deliverabilitySubView === 'dns'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('dns');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-dns"
                         >
@@ -394,8 +470,8 @@ export function AppSidebar({
                           isActive={deliverabilitySubView === 'domain-health'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('domain-health');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-domain"
                         >
@@ -405,25 +481,11 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={deliverabilitySubView === 'list-quality'}
-                          onClick={() => {
-                            setActiveView('deliverability');
-                            setDeliverabilitySubView('list-quality');
-                            setToolsSubView(null);
-                          }}
-                          data-testid="nav-deliverability-list"
-                        >
-                          <Users className="w-3 h-3" />
-                          <span>List Quality</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
                           isActive={deliverabilitySubView === 'bimi'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('bimi');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-bimi"
                         >
@@ -433,11 +495,25 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'warmup'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            clearAllSubViews();
+                            setDeliverabilitySubView('warmup');
+                          }}
+                          data-testid="nav-deliverability-warmup"
+                        >
+                          <Calendar className="w-3 h-3" />
+                          <span>Warm-up Planner</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
                           isActive={deliverabilitySubView === 'sender-score'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('sender-score');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-sender-score"
                         >
@@ -447,11 +523,25 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
+                          isActive={deliverabilitySubView === 'list-quality'}
+                          onClick={() => {
+                            setActiveView('deliverability');
+                            clearAllSubViews();
+                            setDeliverabilitySubView('list-quality');
+                          }}
+                          data-testid="nav-deliverability-list"
+                        >
+                          <Users className="w-3 h-3" />
+                          <span>List Quality</span>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton 
                           isActive={deliverabilitySubView === 'blacklist'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('blacklist');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-blacklist"
                         >
@@ -464,8 +554,8 @@ export function AppSidebar({
                           isActive={deliverabilitySubView === 'campaign-risk'}
                           onClick={() => {
                             setActiveView('deliverability');
+                            clearAllSubViews();
                             setDeliverabilitySubView('campaign-risk');
-                            setToolsSubView(null);
                           }}
                           data-testid="nav-deliverability-campaign-risk"
                         >
@@ -478,29 +568,28 @@ export function AppSidebar({
                 </SidebarMenuItem>
               </Collapsible>
 
-              <Collapsible open={integrationsOpen} onOpenChange={setIntegrationsOpen}>
+              <Collapsible open={connectionsOpen} onOpenChange={setConnectionsOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'integrations' ? 'bg-gradient-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/20' : ''}`} data-testid="nav-integrations">
-                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'integrations' ? 'bg-gradient-to-br from-amber-500 to-orange-500 shadow-md shadow-amber-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'connections' ? 'bg-gradient-to-r from-rose-500/15 to-pink-500/15 border border-rose-500/20' : ''}`} data-testid="nav-connections">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'connections' ? 'bg-gradient-to-br from-rose-500 to-pink-500 shadow-md shadow-rose-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
                         <Link2 className="w-4 h-4" />
                       </div>
-                      <span className="font-medium">Integrations</span>
-                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${integrationsOpen ? 'rotate-180' : ''}`} />
+                      <span className="font-medium">Connections</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${connectionsOpen ? 'rotate-180' : ''}`} />
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'esp'}
+                          isActive={connectionsSubView === 'esp'}
                           onClick={() => {
-                            setActiveView('integrations');
-                            setIntegrationsSubView('esp');
-                            setToolsSubView(null);
-                            setDeliverabilitySubView(null);
+                            setActiveView('connections');
+                            clearAllSubViews();
+                            setConnectionsSubView('esp');
                           }}
-                          data-testid="nav-integrations-esp"
+                          data-testid="nav-connections-esp"
                         >
                           <Mail className="w-3 h-3" />
                           <span>ESP Settings</span>
@@ -508,44 +597,13 @@ export function AppSidebar({
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'stats'}
+                          isActive={connectionsSubView === 'contact-export'}
                           onClick={() => {
-                            setActiveView('integrations');
-                            setIntegrationsSubView('stats');
-                            setToolsSubView(null);
-                            setDeliverabilitySubView(null);
+                            setActiveView('connections');
+                            clearAllSubViews();
+                            setConnectionsSubView('contact-export');
                           }}
-                          data-testid="nav-integrations-stats"
-                        >
-                          <BarChart3 className="w-3 h-3" />
-                          <span>Campaign Stats</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'intelligence'}
-                          onClick={() => {
-                            setActiveView('integrations');
-                            setIntegrationsSubView('intelligence');
-                            setToolsSubView(null);
-                            setDeliverabilitySubView(null);
-                          }}
-                          data-testid="nav-integrations-intelligence"
-                        >
-                          <Activity className="w-3 h-3" />
-                          <span>Trend Intelligence</span>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton 
-                          isActive={integrationsSubView === 'contact-export'}
-                          onClick={() => {
-                            setActiveView('integrations');
-                            setIntegrationsSubView('contact-export');
-                            setToolsSubView(null);
-                            setDeliverabilitySubView(null);
-                          }}
-                          data-testid="nav-integrations-contact-export"
+                          data-testid="nav-connections-contact-export"
                         >
                           <Users className="w-3 h-3" />
                           <span>Contact Export</span>
@@ -561,9 +619,7 @@ export function AppSidebar({
                   isActive={activeView === 'history'}
                   onClick={() => {
                     setActiveView('history');
-                    setToolsSubView(null);
-                    setDeliverabilitySubView(null);
-                    setIntegrationsSubView(null);
+                    clearAllSubViews();
                   }}
                   className={`group transition-all duration-200 ${activeView === 'history' ? 'bg-gradient-to-r from-emerald-500/15 to-green-500/15 border border-emerald-500/20' : ''}`}
                   data-testid="nav-history"
@@ -683,8 +739,7 @@ export function AppSidebar({
                 isActive={activeView === 'account'}
                 onClick={() => {
                   setActiveView('account');
-                  setToolsSubView(null);
-                  setDeliverabilitySubView(null);
+                  clearAllSubViews();
                 }}
                 className={`group transition-all duration-200 ${activeView === 'account' ? 'bg-gradient-to-r from-slate-500/15 to-slate-600/15 border border-slate-500/20' : ''}`}
                 data-testid="nav-account"
