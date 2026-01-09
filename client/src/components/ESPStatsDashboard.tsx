@@ -47,6 +47,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ManualCampaignStatsForm } from './ManualCampaignStatsForm';
 
 interface ESPCampaignStats {
   campaignId: string;
@@ -1210,6 +1211,8 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             </p>
           </CardContent>
         </Card>
+        
+        <ManualCampaignStatsForm />
       </div>
     );
   }
@@ -1950,6 +1953,8 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
           </Card>
         </>
       )}
+
+      <ManualCampaignStatsForm />
 
       <CampaignDetailModal
         campaign={selectedCampaign?.campaign || null}

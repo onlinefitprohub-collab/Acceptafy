@@ -79,11 +79,7 @@ export function ManualCampaignStatsForm() {
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/manual-campaign-stats', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return apiRequest('POST', '/api/manual-campaign-stats', data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manual-campaign-stats'] });
@@ -97,11 +93,7 @@ export function ManualCampaignStatsForm() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      return apiRequest(`/api/manual-campaign-stats/${id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return apiRequest('PATCH', `/api/manual-campaign-stats/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manual-campaign-stats'] });
@@ -115,7 +107,7 @@ export function ManualCampaignStatsForm() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      return apiRequest(`/api/manual-campaign-stats/${id}`, { method: 'DELETE' });
+      return apiRequest('DELETE', `/api/manual-campaign-stats/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/manual-campaign-stats'] });
