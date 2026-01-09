@@ -65,6 +65,7 @@ interface ESPCampaignStats {
   clickRate: number;
   bounceRate: number;
   unsubscribeRate: number;
+  isManual?: boolean;
 }
 
 interface ProviderStats {
@@ -98,6 +99,8 @@ interface CombinedStats {
     avgOpenRate: number;
     avgClickRate: number;
     avgBounceRate: number;
+    manualCampaignCount?: number;
+    espCampaignCount?: number;
   };
 }
 
@@ -406,9 +409,15 @@ function CampaignRow({
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <Badge variant="secondary" className="text-xs" data-testid={`badge-provider-${campaign.campaignId}`}>
-            {ESP_PROVIDER_NAMES[provider] || provider}
-          </Badge>
+          {campaign.isManual ? (
+            <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400" data-testid={`badge-manual-${campaign.campaignId}`}>
+              Manual
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-xs" data-testid={`badge-provider-${campaign.campaignId}`}>
+              {ESP_PROVIDER_NAMES[provider] || provider}
+            </Badge>
+          )}
           <span className="text-xs text-muted-foreground">{formatDate(campaign.sentAt)}</span>
           <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
         </div>
@@ -1187,8 +1196,9 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
 
   const hasNoProviders = stats.providers.length === 0;
   const hasNoData = !stats.combinedStats || stats.combinedStats.campaigns.length === 0;
+  const hasOnlyManualData = hasNoProviders && stats.combinedStats && stats.combinedStats.campaigns.length > 0;
 
-  if (hasNoProviders) {
+  if (hasNoProviders && !hasOnlyManualData) {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
@@ -1218,20 +1228,15 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
   }
 
   const totals = stats.combinedStats?.totals;
-  const allCampaigns: Array<{ campaign: ESPCampaignStats; provider: string }> = [];
   
-  stats.providers.forEach(p => {
-    if (p.stats?.campaigns) {
-      p.stats.campaigns.forEach(campaign => {
-        allCampaigns.push({ campaign, provider: p.provider });
-      });
-    }
-  });
-
-  // Add manual HighLevel campaigns to the list
-  manualCampaigns.forEach(campaign => {
-    allCampaigns.push({ campaign, provider: 'highlevel' });
-  });
+  const allCampaigns: Array<{ campaign: ESPCampaignStats; provider: string }> = 
+    stats.combinedStats?.campaigns?.map(campaign => ({
+      campaign,
+      provider: campaign.isManual ? 'manual' : 
+        stats.providers.find(p => 
+          p.stats?.campaigns?.some(c => c.campaignId === campaign.campaignId)
+        )?.provider || 'unknown'
+    })) || [];
 
   allCampaigns.sort((a, b) => {
     const dateA = a.campaign.sentAt ? new Date(a.campaign.sentAt).getTime() : 0;
@@ -1247,7 +1252,14 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             Campaign Statistics
           </h2>
           <p className="text-muted-foreground">
-            Performance metrics from {stats.providers.filter(p => p.stats !== null).length} connected provider{stats.providers.filter(p => p.stats !== null).length !== 1 ? 's' : ''}.
+            {hasOnlyManualData ? (
+              `Performance metrics from ${totals?.manualCampaignCount || 0} manual campaign${(totals?.manualCampaignCount || 0) !== 1 ? 's' : ''}.`
+            ) : (
+              <>
+                Performance metrics from {stats.providers.filter(p => p.stats !== null).length} connected provider{stats.providers.filter(p => p.stats !== null).length !== 1 ? 's' : ''}
+                {totals?.manualCampaignCount ? ` + ${totals.manualCampaignCount} manual campaign${totals.manualCampaignCount !== 1 ? 's' : ''}` : ''}.
+              </>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

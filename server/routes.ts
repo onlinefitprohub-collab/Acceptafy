@@ -85,6 +85,71 @@ function normalizeTier(tier: string | null | undefined): 'starter' | 'pro' | 'sc
   return 'starter';
 }
 
+interface NormalizedManualCampaign {
+  campaignId: string;
+  campaignName: string;
+  subject?: string;
+  sentAt?: string;
+  totalSent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  bounced: number;
+  unsubscribed: number;
+  spamReports: number;
+  openRate: number;
+  clickRate: number;
+  bounceRate: number;
+  unsubscribeRate: number;
+  isManual: boolean;
+}
+
+function normalizeManualCampaignStats(manual: any): NormalizedManualCampaign | null {
+  const totalSent = manual.totalSent || 0;
+  if (totalSent === 0) return null;
+
+  const convertValue = (value: number | null | undefined, type: string | null | undefined): number => {
+    if (value === null || value === undefined) return 0;
+    if (type === 'percentage') {
+      return Math.round((value / 100) * totalSent);
+    }
+    return value;
+  };
+
+  const delivered = convertValue(manual.delivered, manual.deliveredType);
+  const opened = convertValue(manual.opened, manual.openedType);
+  const clicked = convertValue(manual.clicked, manual.clickedType);
+  const softBounced = convertValue(manual.softBounced, manual.softBouncedType);
+  const hardBounced = convertValue(manual.hardBounced, manual.hardBouncedType);
+  const bounced = softBounced + hardBounced;
+  const unsubscribed = convertValue(manual.unsubscribed, manual.unsubscribedType);
+  const spamReports = convertValue(manual.spam, manual.spamType);
+
+  const openRate = totalSent > 0 ? (opened / totalSent) * 100 : 0;
+  const clickRate = totalSent > 0 ? (clicked / totalSent) * 100 : 0;
+  const bounceRate = totalSent > 0 ? (bounced / totalSent) * 100 : 0;
+  const unsubscribeRate = totalSent > 0 ? (unsubscribed / totalSent) * 100 : 0;
+
+  return {
+    campaignId: `manual-${manual.id}`,
+    campaignName: manual.campaignName,
+    subject: undefined,
+    sentAt: manual.createdAt?.toISOString?.() || manual.createdAt,
+    totalSent,
+    delivered,
+    opened,
+    clicked,
+    bounced,
+    unsubscribed,
+    spamReports,
+    openRate: Math.round(openRate * 100) / 100,
+    clickRate: Math.round(clickRate * 100) / 100,
+    bounceRate: Math.round(bounceRate * 100) / 100,
+    unsubscribeRate: Math.round(unsubscribeRate * 100) / 100,
+    isManual: true,
+  };
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -2248,32 +2313,39 @@ Return your response as a JSON object with this exact structure:
       const connections = await storage.getESPConnections(userId);
       const activeConnections = connections.filter(c => c.isConnected);
 
-      if (activeConnections.length === 0) {
-        return res.json({ providers: [], combinedStats: null });
-      }
-
       const limit = parseInt(req.query.limit as string) || 10;
-      const allStats = await Promise.all(
-        activeConnections.map(async (connection) => {
-          try {
-            const credentials: ESPCredentials = {
-              apiKey: connection.apiKey || undefined,
-              apiUrl: connection.apiUrl || undefined,
-              appId: connection.appId || undefined,
-            };
-            const stats = await fetchESPStats(connection.provider as any, credentials, limit);
-            return { provider: connection.provider, stats, error: null };
-          } catch (error: any) {
-            return { provider: connection.provider, stats: null, error: error.message };
-          }
-        })
-      );
+      
+      const [allStats, manualCampaigns] = await Promise.all([
+        Promise.all(
+          activeConnections.map(async (connection) => {
+            try {
+              const credentials: ESPCredentials = {
+                apiKey: connection.apiKey || undefined,
+                apiUrl: connection.apiUrl || undefined,
+                appId: connection.appId || undefined,
+              };
+              const stats = await fetchESPStats(connection.provider as any, credentials, limit);
+              return { provider: connection.provider, stats, error: null };
+            } catch (error: any) {
+              return { provider: connection.provider, stats: null, error: error.message };
+            }
+          })
+        ),
+        storage.getManualCampaignStats(userId)
+      ]);
 
       const successfulStats = allStats.filter(s => s.stats !== null);
+      const normalizedManualCampaigns = manualCampaigns
+        .map(normalizeManualCampaignStats)
+        .filter((c): c is NormalizedManualCampaign => c !== null);
       
       let combinedStats = null;
-      if (successfulStats.length > 0) {
-        const allCampaigns = successfulStats.flatMap(s => s.stats!.campaigns);
+      const espCampaigns = successfulStats.flatMap(s => 
+        s.stats!.campaigns.map(c => ({ ...c, isManual: false }))
+      );
+      const allCampaigns = [...espCampaigns, ...normalizedManualCampaigns];
+      
+      if (allCampaigns.length > 0) {
         const totals = {
           totalCampaigns: allCampaigns.length,
           totalSent: allCampaigns.reduce((sum, c) => sum + c.totalSent, 0),
@@ -2283,6 +2355,8 @@ Return your response as a JSON object with this exact structure:
           avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
           avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
           avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
+          manualCampaignCount: normalizedManualCampaigns.length,
+          espCampaignCount: espCampaigns.length,
         };
         combinedStats = { campaigns: allCampaigns, totals };
       }
