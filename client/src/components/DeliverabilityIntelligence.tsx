@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,17 +143,34 @@ interface FrequencyInsights {
 }
 
 interface DeliverabilityIntelligenceProps {
-  connections: Array<{ provider: string; isConnected: boolean }>;
+  connections?: Array<{ provider: string; isConnected: boolean }>;
 }
 
-export function DeliverabilityIntelligence({ connections }: DeliverabilityIntelligenceProps) {
+export function DeliverabilityIntelligence({ connections: propConnections }: DeliverabilityIntelligenceProps) {
   const { toast } = useToast();
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [riskSubject, setRiskSubject] = useState('');
   const [riskVolume, setRiskVolume] = useState('');
   const [compareId1, setCompareId1] = useState('');
   const [compareId2, setCompareId2] = useState('');
+  const [localConnections, setLocalConnections] = useState<Array<{ provider: string; isConnected: boolean }>>([]);
 
+  useEffect(() => {
+    if (!propConnections) {
+      fetch('/api/esp/connections', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setLocalConnections(data);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to fetch ESP connections:', err);
+        });
+    }
+  }, [propConnections]);
+
+  const connections = propConnections ?? localConnections;
   const connectedProviders = connections.filter(c => c.isConnected);
 
   const { data: healthPanels, isLoading: loadingHealth } = useQuery<ProviderHealth[]>({
