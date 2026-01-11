@@ -47,6 +47,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const Contact = lazy(() => import('./pages/Contact'));
 const Admin = lazy(() => import('./pages/Admin'));
 const ResetPassword = lazy(() => import('./pages/reset-password'));
+const VerifyEmail = lazy(() => import('./pages/verify-email'));
 const Resources = lazy(() => import('./pages/Resources'));
 const ResourceArticle = lazy(() => import('./pages/ResourceArticle'));
 
@@ -2839,6 +2840,7 @@ function App() {
             <Route path="/contact" component={Contact} />
             <Route path="/admin" component={Admin} />
             <Route path="/reset-password" component={ResetPassword} />
+            <Route path="/verify-email" component={VerifyEmail} />
             <Route path="/resources/:slug" component={ResourceArticle} />
             <Route path="/resources" component={Resources} />
             <Route path="/" component={AuthenticatedApp} />

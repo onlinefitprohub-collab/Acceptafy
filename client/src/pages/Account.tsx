@@ -397,6 +397,30 @@ export default function Account() {
     },
   });
 
+  const resendVerificationMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/auth/resend-verification");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to send verification email");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Verification Email Sent",
+        description: "Please check your inbox and click the verification link.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send verification email. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("success") === "true") {
@@ -502,6 +526,40 @@ export default function Account() {
           <h1 className="text-3xl font-bold">Account Settings</h1>
           <p className="text-muted-foreground">Manage your profile, subscription, and usage</p>
         </div>
+
+        {user.isEmailPasswordUser && !user.emailVerified && (
+          <Card className="mb-6 border-amber-500/50 bg-amber-500/5" data-testid="card-verify-email">
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-full bg-amber-500/10 p-2">
+                    <Mail className="w-5 h-5 text-amber-500" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium">Verify your email</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Please verify your email address to unlock all features.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => resendVerificationMutation.mutate()}
+                  disabled={resendVerificationMutation.isPending}
+                  className="border-amber-500/50 hover:bg-amber-500/10"
+                  data-testid="button-resend-verification"
+                >
+                  {resendVerificationMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Mail className="w-4 h-4 mr-2" />
+                  )}
+                  Resend Verification Email
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card data-testid="card-profile">

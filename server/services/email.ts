@@ -190,6 +190,43 @@ Upgrade your plan to get more ${feature} and unlock additional features.
 Visit https://acceptafy.com/pricing to view plans.`
   }),
 
+  emailVerification: (verifyUrl: string) => ({
+    subject: 'Verify Your Acceptafy Email',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Verify Your Email</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Welcome to Acceptafy! Please verify your email address by clicking the button below:</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">Verify Email</a>
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">This link will expire in 24 hours.</p>
+          <p style="font-size: 14px; color: #94a3b8;">If you didn't create an account with Acceptafy, you can safely ignore this email.</p>
+          <hr style="border: none; border-top: 1px solid #2d2150; margin: 32px 0;">
+          <p style="font-size: 12px; color: #64748b; text-align: center;">Can't click the button? Copy and paste this URL into your browser:<br><span style="color: #a855f7; word-break: break-all;">${verifyUrl}</span></p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Verify Your Email
+
+Welcome to Acceptafy! Please verify your email address by clicking the link below:
+
+${verifyUrl}
+
+This link will expire in 24 hours.
+
+If you didn't create an account with Acceptafy, you can safely ignore this email.`
+  }),
+
   paymentFailed: (email: string, amountDue: string) => ({
     subject: 'Action Required: Payment Failed for Your Acceptafy Subscription',
     html: `
@@ -336,6 +373,27 @@ export async function sendPaymentFailedEmail(toEmail: string, amountDue: string)
     return true;
   } catch (error) {
     console.error('Failed to send payment failed email:', error);
+    return false;
+  }
+}
+
+export async function sendEmailVerification(toEmail: string, verifyUrl: string): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.emailVerification(verifyUrl);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Email verification sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send email verification:', error);
     return false;
   }
 }

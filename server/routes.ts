@@ -41,7 +41,7 @@ import { randomUUID } from "crypto";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail } from "./services/email";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification } from "./services/email";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -440,6 +440,14 @@ export async function registerRoutes(
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter');
 
+      // Generate email verification token
+      const verificationToken = randomUUID();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      await storage.updateUser(user.id, {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      });
+
       // Create Stripe customer for the new user (don't block registration if it fails)
       try {
         const stripe = await getUncachableStripeClient();
@@ -452,8 +460,12 @@ export async function registerRoutes(
         console.error('Stripe customer creation failed:', stripeErr);
       }
 
-      // Send welcome email (don't block registration if email fails)
-      sendWelcomeEmail(email).catch(err => console.error('Welcome email failed:', err));
+      // Send email verification (don't block registration if email fails)
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://acceptafy.com';
+      const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+      sendEmailVerification(email, verifyUrl).catch(err => console.error('Verification email failed:', err));
 
       // Create session for newly registered user
       (req as any).login({ 
@@ -694,6 +706,82 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Password reset error:", error);
       res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
+  // Verify email with token
+  app.get('/api/auth/verify-email', async (req, res) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ success: false, message: "No token provided" });
+      }
+
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ success: false, message: "Invalid verification link" });
+      }
+
+      if (user.emailVerified) {
+        return res.json({ success: true, message: "Email already verified" });
+      }
+
+      if (user.emailVerificationExpires && new Date() > user.emailVerificationExpires) {
+        return res.status(400).json({ success: false, message: "Verification link has expired. Please request a new one." });
+      }
+
+      // Mark email as verified
+      await storage.updateUser(user.id, {
+        emailVerified: true,
+        emailVerificationToken: null,
+        emailVerificationExpires: null,
+      });
+
+      // Send welcome email after successful verification
+      sendWelcomeEmail(user.email!).catch(err => console.error('Welcome email failed:', err));
+
+      res.json({ success: true, message: "Email verified successfully!" });
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ success: false, message: "Failed to verify email" });
+    }
+  });
+
+  // Resend verification email
+  app.post('/api/auth/resend-verification', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+
+      if (!user || !user.email) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.emailVerified) {
+        return res.json({ success: true, message: "Email is already verified" });
+      }
+
+      // Generate new verification token
+      const verificationToken = randomUUID();
+      const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      await storage.updateUser(user.id, {
+        emailVerificationToken: verificationToken,
+        emailVerificationExpires: verificationExpires,
+      });
+
+      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+        : 'https://acceptafy.com';
+      const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
+      
+      await sendEmailVerification(user.email, verifyUrl);
+
+      res.json({ success: true, message: "Verification email sent" });
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({ message: "Failed to send verification email" });
     }
   });
 
