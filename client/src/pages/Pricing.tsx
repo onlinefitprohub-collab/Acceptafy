@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { CheckCircle2, ArrowLeft, Loader2, Mail, Sparkles, Users, Clock, Zap, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest } from "@/lib/queryClient";
@@ -32,6 +34,7 @@ const PLAN_ICONS = {
 
 export default function Pricing() {
   const { user, isAuthenticated } = useAuth();
+  const [isYearly, setIsYearly] = useState(false);
 
   const { data: productsData, isLoading: productsLoading } = useQuery<{ data: Product[] }>({
     queryKey: ["/api/products"],
@@ -106,11 +109,18 @@ export default function Pricing() {
       p.metadata?.tier === plan.key
     );
     const monthlyPrice = product?.prices?.find(p => p.recurring?.interval === 'month');
+    const yearlyPrice = product?.prices?.find(p => p.recurring?.interval === 'year');
+    
+    const selectedPrice = isYearly ? yearlyPrice : monthlyPrice;
+    const displayPrice = selectedPrice ? selectedPrice.unit_amount / 100 : (isYearly ? (PRICING[plan.key as keyof typeof PRICING]?.yearly || 0) : plan.price);
+    const monthlyEquivalent = isYearly ? Math.round(displayPrice / 12) : displayPrice;
     
     return {
       ...plan,
-      priceId: monthlyPrice?.id || null,
-      price: monthlyPrice ? monthlyPrice.unit_amount / 100 : plan.price,
+      priceId: selectedPrice?.id || null,
+      price: displayPrice,
+      monthlyEquivalent,
+      hasYearlySavings: isYearly && plan.key !== 'starter',
     };
   });
 
@@ -181,9 +191,24 @@ export default function Pricing() {
       <main className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h1 className="text-3xl md:text-4xl font-bold mb-4" data-testid="text-pricing-heading">Simple Pricing, No Surprises</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-pricing-description">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8" data-testid="text-pricing-description">
             Start free, upgrade when you need more. All plans include core grading and spam detection.
           </p>
+          
+          <div className="flex items-center justify-center gap-4" data-testid="billing-toggle">
+            <span className={`text-sm font-medium ${!isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
+            <Switch
+              checked={isYearly}
+              onCheckedChange={setIsYearly}
+              data-testid="switch-billing-period"
+            />
+            <span className={`text-sm font-medium ${isYearly ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Yearly
+              <Badge variant="secondary" className="ml-2 text-xs" data-testid="badge-yearly-savings">
+                Save 17%
+              </Badge>
+            </span>
+          </div>
         </div>
 
         {productsLoading ? (
@@ -223,9 +248,21 @@ export default function Pricing() {
                   
                   <CardContent className="flex-1">
                     <div className="text-center mb-6">
-                      <span className="text-5xl font-bold">${plan.price}</span>
-                      {plan.price > 0 && (
-                        <span className="text-muted-foreground">/mo</span>
+                      {isYearly && plan.key !== 'starter' ? (
+                        <>
+                          <span className="text-5xl font-bold">${plan.monthlyEquivalent}</span>
+                          <span className="text-muted-foreground">/mo</span>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Billed ${plan.price}/year
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-5xl font-bold">${plan.price}</span>
+                          {plan.price > 0 && (
+                            <span className="text-muted-foreground">/mo</span>
+                          )}
+                        </>
                       )}
                     </div>
                     

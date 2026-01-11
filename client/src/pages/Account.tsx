@@ -25,8 +25,22 @@ import {
   Save,
   Key,
   Eye,
-  EyeOff
+  EyeOff,
+  Download,
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useEffect, useState } from "react";
@@ -322,6 +336,62 @@ export default function Account() {
       toast({
         title: "Error",
         description: "Failed to open billing portal. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const exportDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/export-data", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `acceptafy-export-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Data Exported",
+        description: "Your data has been downloaded successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to export data. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("DELETE", "/api/delete-account");
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to delete account");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account and data have been permanently deleted.",
+      });
+      window.location.href = "/";
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete account. Please try again.",
         variant: "destructive",
       });
     },
@@ -1094,6 +1164,93 @@ export default function Account() {
             </CardContent>
           </Card>
         )}
+
+        <Card className="mt-6" data-testid="card-data-privacy">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              Data & Privacy
+            </CardTitle>
+            <CardDescription>
+              Export your data or delete your account
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border rounded-lg">
+              <div>
+                <h4 className="font-medium">Export Your Data</h4>
+                <p className="text-sm text-muted-foreground">
+                  Download a copy of all your data including your profile, usage history, and email analyses.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => exportDataMutation.mutate()}
+                disabled={exportDataMutation.isPending}
+                data-testid="button-export-data"
+              >
+                {exportDataMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Download className="w-4 h-4 mr-2" />
+                )}
+                Export Data
+              </Button>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 border border-destructive/30 rounded-lg bg-destructive/5">
+              <div>
+                <h4 className="font-medium text-destructive flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  Delete Account
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    data-testid="button-delete-account"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete your account
+                      and remove all your data from our servers, including:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Your profile information</li>
+                        <li>All email analyses and history</li>
+                        <li>Usage data and preferences</li>
+                        <li>Any active subscriptions</li>
+                      </ul>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteAccountMutation.mutate()}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      disabled={deleteAccountMutation.isPending}
+                      data-testid="button-confirm-delete"
+                    >
+                      {deleteAccountMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : null}
+                      Yes, delete my account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   );

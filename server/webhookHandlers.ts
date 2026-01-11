@@ -50,8 +50,14 @@ export class WebhookHandlers {
       case 'invoice.payment_failed':
         await WebhookHandlers.handlePaymentFailed(event.data.object as Stripe.Invoice);
         break;
+      case 'customer.subscription.created':
+        await WebhookHandlers.handleSubscriptionCreated(event.data.object as Stripe.Subscription);
+        break;
       case 'customer.subscription.updated':
         await WebhookHandlers.handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
+      case 'customer.subscription.deleted':
+        await WebhookHandlers.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       default:
         // Other events are handled by the sync library
@@ -98,14 +104,65 @@ export class WebhookHandlers {
       const user = await storage.getUserByStripeCustomerId(customerId);
       if (!user) return;
 
-      // Update user subscription status
+      // Determine subscription tier from product metadata
+      let newTier = 'starter';
+      if (subscription.status === 'active' || subscription.status === 'trialing') {
+        const stripe = getStripe();
+        if (stripe && subscription.items.data.length > 0) {
+          const priceId = subscription.items.data[0].price.id;
+          try {
+            const price = await stripe.prices.retrieve(priceId, { expand: ['product'] });
+            const product = price.product as Stripe.Product;
+            if (product.metadata?.tier) {
+              newTier = product.metadata.tier;
+            } else if (product.name?.toLowerCase().includes('scale')) {
+              newTier = 'scale';
+            } else if (product.name?.toLowerCase().includes('pro')) {
+              newTier = 'pro';
+            }
+          } catch (err) {
+            console.error('Error fetching price/product:', err);
+          }
+        }
+      } else if (subscription.status === 'canceled' || subscription.status === 'unpaid') {
+        newTier = 'starter';
+      }
+
+      // Update user subscription status and tier
       await storage.updateUser(user.id, {
         subscriptionStatus: subscription.status,
+        subscriptionTier: newTier,
+        stripeSubscriptionId: subscription.id,
       });
 
-      console.log(`Updated subscription status for user ${user.id} to ${subscription.status}`);
+      console.log(`Updated subscription for user ${user.id}: tier=${newTier}, status=${subscription.status}`);
     } catch (error) {
       console.error('Error handling subscription updated event:', error);
+    }
+  }
+
+  static async handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
+    await WebhookHandlers.handleSubscriptionUpdated(subscription);
+  }
+
+  static async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
+    try {
+      const customerId = subscription.customer as string;
+      if (!customerId) return;
+
+      const user = await storage.getUserByStripeCustomerId(customerId);
+      if (!user) return;
+
+      // Downgrade to starter on cancellation
+      await storage.updateUser(user.id, {
+        subscriptionStatus: 'canceled',
+        subscriptionTier: 'starter',
+        stripeSubscriptionId: null,
+      });
+
+      console.log(`Subscription canceled for user ${user.id}, downgraded to starter`);
+    } catch (error) {
+      console.error('Error handling subscription deleted event:', error);
     }
   }
 }

@@ -440,6 +440,18 @@ export async function registerRoutes(
       const passwordHash = await bcrypt.hash(password, 10);
       const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter');
 
+      // Create Stripe customer for the new user (don't block registration if it fails)
+      try {
+        const stripe = await getUncachableStripeClient();
+        const customer = await stripe.customers.create({
+          email,
+          metadata: { userId: user.id },
+        });
+        await storage.updateUserStripeInfo(user.id, { stripeCustomerId: customer.id });
+      } catch (stripeErr) {
+        console.error('Stripe customer creation failed:', stripeErr);
+      }
+
       // Send welcome email (don't block registration if email fails)
       sendWelcomeEmail(email).catch(err => console.error('Welcome email failed:', err));
 
@@ -947,6 +959,90 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Clear history error:", error);
       res.status(500).json({ message: "Failed to clear history" });
+    }
+  });
+
+  // Export user data (GDPR compliance)
+  app.get('/api/export-data', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      const analyses = await storage.getEmailAnalyses(userId, 10000);
+      const usageCounter = await storage.getUsageCounter(userId);
+
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        account: {
+          id: user?.id,
+          email: user?.email,
+          firstName: user?.firstName,
+          lastName: user?.lastName,
+          subscriptionTier: user?.subscriptionTier,
+          createdAt: user?.createdAt,
+        },
+        usage: usageCounter,
+        analysisHistory: analyses.map((a: any) => ({
+          id: a.id,
+          createdAt: a.createdAt,
+          body: a.body,
+          score: a.score,
+          grade: a.grade,
+          result: a.result,
+        })),
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="acceptafy-export-${new Date().toISOString().split('T')[0]}.json"`);
+      res.json(exportData);
+    } catch (error) {
+      console.error("Export data error:", error);
+      res.status(500).json({ message: "Failed to export data" });
+    }
+  });
+
+  // Get retention offer (for cancellation flow)
+  app.get('/api/retention-offer', isAuthenticated, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+      const coupons = await stripe.coupons.list({ limit: 100 });
+      const retentionCoupon = coupons.data.find(c => c.metadata?.type === 'retention' || c.name === 'Stay With Us - 50% Off');
+      
+      if (retentionCoupon) {
+        res.json({
+          available: true,
+          couponId: retentionCoupon.id,
+          percentOff: retentionCoupon.percent_off,
+          description: retentionCoupon.name,
+        });
+      } else {
+        res.json({ available: false });
+      }
+    } catch (error) {
+      console.error("Retention offer error:", error);
+      res.json({ available: false });
+    }
+  });
+
+  // Apply retention offer to subscription
+  app.post('/api/apply-retention-offer', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      const { couponId } = req.body;
+
+      if (!user?.stripeSubscriptionId) {
+        return res.status(400).json({ error: 'No active subscription found' });
+      }
+
+      const stripe = await getUncachableStripeClient();
+      await stripe.subscriptions.update(user.stripeSubscriptionId, {
+        discounts: [{ coupon: couponId }],
+      });
+
+      res.json({ success: true, message: 'Discount applied to your next billing cycle' });
+    } catch (error) {
+      console.error("Apply retention offer error:", error);
+      res.status(500).json({ message: "Failed to apply offer" });
     }
   });
 
