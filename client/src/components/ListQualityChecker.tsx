@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { analyzeEmailList } from '../services/geminiService';
 import type { ListQualityAnalysis, EmailQualityStatus } from '../types';
-import { Download, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Download, CheckCircle, XCircle, AlertTriangle, Upload, FileText, HelpCircle } from 'lucide-react';
 
 const StatCard: React.FC<{ label: string, value: string, good?: boolean }> = ({ label, value, good }) => (
     <div className="bg-gray-900/50 p-3 rounded-lg text-center">
@@ -15,6 +15,109 @@ export const ListQualityChecker: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [result, setResult] = useState<ListQualityAnalysis | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [fileName, setFileName] = useState<string | null>(null);
+    const [showInstructions, setShowInstructions] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const parseCSV = (content: string): string[] => {
+        const lines = content.split(/\r?\n/).filter(line => line.trim());
+        if (lines.length === 0) return [];
+        
+        const firstLineParts = lines[0].split(/[,;\t]/).map(p => p.trim().replace(/^["']|["']$/g, '').toLowerCase());
+        const headerKeywords = ['email', 'e-mail', 'email_address', 'emailaddress', 'mail_address'];
+        const hasHeader = firstLineParts.some(part => headerKeywords.includes(part));
+        const dataLines = hasHeader ? lines.slice(1) : lines;
+        
+        const emails: string[] = [];
+        for (const line of dataLines) {
+            const parts = line.split(/[,;\t]/).map(p => p.trim().replace(/^["']|["']$/g, ''));
+            
+            for (const part of parts) {
+                if (part.includes('@') && part.includes('.')) {
+                    emails.push(part);
+                    break;
+                }
+            }
+        }
+        
+        return emails;
+    };
+
+    const handleFileUpload = (file: File) => {
+        if (!file) return;
+        
+        const validTypes = ['text/csv', 'application/vnd.ms-excel', 'text/plain'];
+        const isValidType = validTypes.includes(file.type) || file.name.endsWith('.csv') || file.name.endsWith('.txt');
+        
+        if (!isValidType) {
+            setError('Please upload a CSV or TXT file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError('File size must be less than 5MB');
+            return;
+        }
+
+        setFileName(file.name);
+        setError(null);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target?.result as string;
+            const emails = parseCSV(content);
+            
+            if (emails.length === 0) {
+                setError('No valid email addresses found in the file. Check the format instructions.');
+                setFileName(null);
+                return;
+            }
+            
+            setListSample(emails.join('\n'));
+        };
+        reader.onerror = () => {
+            setError('Failed to read file. Please try again.');
+            setFileName(null);
+        };
+        reader.readAsText(file);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const file = e.dataTransfer.files[0];
+        if (file) handleFileUpload(file);
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) handleFileUpload(file);
+    };
+
+    const downloadTemplate = () => {
+        const templateContent = `email,first_name,last_name
+john.doe@example.com,John,Doe
+jane.smith@company.org,Jane,Smith
+sales@business.net,Sales,Team
+info@startup.io,Info,Startup`;
+        
+        const blob = new Blob([templateContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'email_list_template.csv';
+        link.click();
+    };
 
     const handleAnalyze = async () => {
         if (!listSample.trim()) return;
@@ -87,28 +190,139 @@ export const ListQualityChecker: React.FC = () => {
     
     return (
         <div className="space-y-4" data-testid="list-quality-checker">
-            <h3 className="text-xl font-bold text-white">List Quality Analyzer</h3>
-            <p className="text-sm text-gray-400">Paste your email list (one address per line, comma, or semicolon separated) to check for quality issues that can harm deliverability. After analysis, export a cleaned list with bad emails removed.</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <textarea
-                    value={listSample}
-                    onChange={(e) => setListSample(e.target.value)}
-                    placeholder="test@example.com&#10;info@company.com&#10;user@gmail.com"
-                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 h-48 resize-none font-mono"
-                    disabled={isLoading}
-                    rows={10}
-                    data-testid="textarea-email-list"
-                />
-                <div className="flex flex-col">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-xl font-bold text-white">List Cleaner</h3>
+                    <p className="text-sm text-gray-400">Upload a CSV file or paste email addresses to identify and remove problematic contacts.</p>
+                </div>
+                <button
+                    onClick={() => setShowInstructions(!showInstructions)}
+                    className="flex items-center gap-2 text-purple-400 hover:text-purple-300 text-sm transition-colors"
+                    data-testid="button-toggle-instructions"
+                >
+                    <HelpCircle className="w-4 h-4" />
+                    CSV Format Guide
+                </button>
+            </div>
+
+            {showInstructions && (
+                <div className="p-4 rounded-lg border border-purple-500/30 bg-purple-500/5 animate-fade-in" data-testid="csv-instructions">
+                    <h4 className="font-semibold text-purple-300 mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        How to Format Your CSV File
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <h5 className="font-medium text-white mb-2">Supported Formats:</h5>
+                            <ul className="text-gray-400 space-y-1">
+                                <li>CSV files (.csv) with comma, semicolon, or tab separators</li>
+                                <li>Plain text files (.txt) with one email per line</li>
+                                <li>Header row is optional (will be auto-detected)</li>
+                                <li>Email column can be in any position</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h5 className="font-medium text-white mb-2">Example CSV:</h5>
+                            <pre className="bg-gray-900/50 p-2 rounded text-gray-300 font-mono text-xs overflow-x-auto">
+{`email,first_name,last_name
+john@example.com,John,Doe
+jane@company.org,Jane,Smith`}
+                            </pre>
+                            <button
+                                onClick={downloadTemplate}
+                                className="mt-2 text-purple-400 hover:text-purple-300 text-xs flex items-center gap-1"
+                                data-testid="button-download-template"
+                            >
+                                <Download className="w-3 h-3" />
+                                Download Template
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-purple-500/20">
+                        <h5 className="font-medium text-white mb-1">What We Check:</h5>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                            <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded">Invalid format</span>
+                            <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded">Disposable domains</span>
+                            <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded">Spam traps</span>
+                            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded">Role-based (info@, admin@)</span>
+                            <span className="px-2 py-1 bg-yellow-500/20 text-yellow-300 rounded">Free providers</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                    <div
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
+                            ${isDragging 
+                                ? 'border-purple-500 bg-purple-500/10' 
+                                : 'border-gray-600 hover:border-purple-500/50 hover:bg-gray-800/30'
+                            }`}
+                        data-testid="dropzone-csv"
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".csv,.txt"
+                            onChange={handleFileInputChange}
+                            className="hidden"
+                            data-testid="input-file-csv"
+                        />
+                        <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragging ? 'text-purple-400' : 'text-gray-500'}`} />
+                        <p className="text-gray-300 font-medium">
+                            {fileName ? fileName : 'Drop your CSV file here'}
+                        </p>
+                        <p className="text-gray-500 text-sm mt-1">
+                            or click to browse (max 5MB)
+                        </p>
+                        {fileName && (
+                            <p className="text-green-400 text-xs mt-2">
+                                File loaded - emails extracted below
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="relative">
+                        <p className="text-gray-500 text-xs mb-1">Or paste emails directly:</p>
+                        <textarea
+                            value={listSample}
+                            onChange={(e) => { setListSample(e.target.value); setFileName(null); }}
+                            placeholder="test@example.com&#10;info@company.com&#10;user@gmail.com"
+                            className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 h-36 resize-none font-mono"
+                            disabled={isLoading}
+                            data-testid="textarea-email-list"
+                        />
+                        {listSample && (
+                            <span className="absolute top-0 right-0 text-xs text-gray-500">
+                                {listSample.split('\n').filter(l => l.trim()).length} emails
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
                     <button
                         onClick={handleAnalyze}
                         disabled={!listSample.trim() || isLoading}
-                        className="w-full px-5 py-2.5 mb-4 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                        className="w-full px-5 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
                         data-testid="button-analyze-list"
                     >
-                        {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                        Analyze List
+                        {isLoading ? (
+                            <>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                Analyzing...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle className="w-4 h-4" />
+                                Analyze & Clean List
+                            </>
+                        )}
                     </button>
                     {result && !isLoading && (
                         <div className="grid grid-cols-2 gap-3 animate-fade-in">
