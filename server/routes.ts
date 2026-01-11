@@ -99,6 +99,51 @@ const adminNoteSchema = z.object({
   note: z.string().min(1).max(5000),
 });
 
+// AI endpoint validation schemas
+const gradeRequestSchema = z.object({
+  body: z.string().min(1, 'Email body is required').max(50000, 'Email body too long'),
+  variations: z.array(z.object({
+    subject: z.string().max(500).optional(),
+    previewText: z.string().max(500).optional(),
+  })).optional(),
+  industry: z.string().max(100).optional(),
+  emailType: z.string().max(100).optional(),
+});
+
+const rewriteRequestSchema = z.object({
+  body: z.string().min(1, 'Email body is required').max(50000, 'Email body too long'),
+  subject: z.string().max(500).optional(),
+  preview: z.string().max(500).optional(),
+  goal: z.string().max(1000).optional(),
+});
+
+const followupRequestSchema = z.object({
+  original: z.string().min(1, 'Original email is required').max(50000),
+  analysis: z.any().optional(),
+  goal: z.string().max(100).optional(),
+  context: z.string().max(2000).optional(),
+});
+
+const sequenceRequestSchema = z.object({
+  original: z.string().min(1, 'Original email is required').max(50000),
+  analysis: z.any().optional(),
+  goal: z.string().max(100).optional(),
+  context: z.string().min(1, 'Goal description is required').max(2000),
+});
+
+const domainRequestSchema = z.object({
+  domain: z.string().min(1, 'Domain is required').max(255).regex(/^[a-zA-Z0-9][a-zA-Z0-9-_.]*\.[a-zA-Z]{2,}$/, 'Invalid domain format'),
+});
+
+const spamCheckRequestSchema = z.object({
+  text: z.string().min(1, 'Text is required').max(50000),
+});
+
+const competitorAnalyzeRequestSchema = z.object({
+  competitorEmail: z.string().min(1, 'Competitor email is required').max(50000),
+  userEmail: z.string().max(50000).optional(),
+});
+
 // Rate limiting for security-critical endpoints
 interface RateLimitEntry {
   count: number;
@@ -1029,13 +1074,22 @@ export async function registerRoutes(
 
   app.post('/api/grade', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = gradeRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'gradeCount');
         if (!allowed) return;
       }
 
-      const { body, variations, industry, emailType } = req.body;
-      const result = await gradeCopy(body, variations);
+      const { body, variations, industry, emailType } = parseResult.data;
+      const normalizedVariations = (variations || []).map(v => ({
+        subject: v.subject || '',
+        previewText: v.previewText || ''
+      }));
+      const result = await gradeCopy(body, normalizedVariations);
 
       // Generate benchmark feedback only if industry or emailType is provided
       let benchmarkFeedback = null;
@@ -1099,13 +1153,18 @@ export async function registerRoutes(
 
   app.post('/api/rewrite', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = rewriteRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'rewriteCount');
         if (!allowed) return;
       }
 
-      const { body, subject, preview, goal } = req.body;
-      const result = await rewriteCopy(body, subject, preview, goal);
+      const { body, subject, preview, goal } = parseResult.data;
+      const result = await rewriteCopy(body, subject || '', preview || '', goal || '');
       res.json(result);
     } catch (error) {
       console.error('Rewrite error:', error);
@@ -1115,13 +1174,19 @@ export async function registerRoutes(
 
   app.post('/api/followup', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = followupRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'followupCount');
         if (!allowed) return;
       }
 
-      const { original, analysis, goal, context } = req.body;
-      const result = await generateFollowUpEmail(original, analysis, goal, context);
+      const { original, analysis, goal, context } = parseResult.data;
+      const originalEmail = { subject: '', body: original };
+      const result = await generateFollowUpEmail(originalEmail, analysis, goal || 'reminder', context);
       res.json(result);
     } catch (error) {
       console.error('Follow-up error:', error);
@@ -1132,6 +1197,11 @@ export async function registerRoutes(
   // Sequence Generator (Pro+ only)
   app.post('/api/followup/sequence', optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = sequenceRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       const hasAccess = await checkFeatureAccess(req, res, 'sequenceGenerator');
       if (!hasAccess) return;
       
@@ -1140,11 +1210,10 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { original, analysis, goal, context } = req.body;
-      if (!context || !context.trim()) {
-        return res.status(400).json({ error: 'Please provide a goal description for the sequence' });
-      }
-      const result = await generateFollowUpSequence(original, analysis, context, goal);
+      const { original, analysis, goal, context } = parseResult.data;
+      const originalEmail = { subject: '', body: original };
+      // goal = sequence type (nurture, welcome, etc), context = goal description
+      const result = await generateFollowUpSequence(originalEmail, analysis, context, goal || 'sequence');
       res.json(result);
     } catch (error) {
       console.error('Sequence error:', error);
@@ -1154,12 +1223,17 @@ export async function registerRoutes(
 
   app.post('/api/dns/generate', optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = domainRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
         if (!allowed) return;
       }
 
-      const { domain } = req.body;
+      const { domain } = parseResult.data;
       const result = await generateDnsRecords(domain);
       res.json(result);
     } catch (error) {
@@ -1170,12 +1244,17 @@ export async function registerRoutes(
 
   app.post('/api/domain/health', optionalAuth, async (req: any, res) => {
     try {
+      const parseResult = domainRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
         if (!allowed) return;
       }
 
-      const { domain } = req.body;
+      const { domain } = parseResult.data;
       const result = await checkDomainHealth(domain);
       res.json(result);
     } catch (error) {

@@ -184,12 +184,12 @@ export const insertManualCampaignStatsSchema = createInsertSchema(manualCampaign
 // Daily limits prevent burst abuse while monthly limits cap total usage
 export const SUBSCRIPTION_LIMITS = {
   starter: {
-    gradesPerMonth: 1,
-    rewritesPerMonth: 1,
+    gradesPerMonth: 3,
+    rewritesPerMonth: 3,
     followupsPerMonth: 5,
     deliverabilityChecksPerMonth: 3,
-    gradesPerDay: 1,
-    rewritesPerDay: 1,
+    gradesPerDay: 3,
+    rewritesPerDay: 3,
     followupsPerDay: 5,
     deliverabilityChecksPerDay: 3,
     historyLimit: 10,

@@ -59,7 +59,7 @@ export default function PrivacyPolicy() {
                 
                 <h3 className="text-lg font-medium mb-2 mt-4">3.1 Information You Provide</h3>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li><strong>Account Information:</strong> Name, email address, and profile picture when you sign in via Replit authentication</li>
+                  <li><strong>Account Information:</strong> Name, email address, and profile picture when you create an account</li>
                   <li><strong>Email Content:</strong> Subject lines, preview text, and email body content you submit for analysis</li>
                   <li><strong>Payment Information:</strong> Processed securely by Stripe; we do not store your full payment card details</li>
                   <li><strong>Communications:</strong> Messages you send to us via contact forms or email</li>
@@ -108,7 +108,7 @@ export default function PrivacyPolicy() {
                   We may share your information with:
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li><strong>Service Providers:</strong> Including Stripe (payments), Replit (authentication and hosting), and Google (AI processing via Gemini)</li>
+                  <li><strong>Service Providers:</strong> Including Stripe (payments), cloud hosting providers, and Google (AI processing via Gemini)</li>
                   <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
                   <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
                 </ul>

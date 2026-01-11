@@ -100,7 +100,7 @@ const pricingFAQSchema = {
       "name": "Is there a limit on daily usage?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes, each plan has daily limits to ensure fair usage. Starter has 2 grades/day, Pro has 50 grades/day, and Scale has 150 grades/day."
+        "text": "Yes, each plan has daily limits to ensure fair usage. Starter has 3 grades/day, Pro has 50 grades/day, and Scale has 150 grades/day."
       }
     }
   ]
