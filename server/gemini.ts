@@ -381,16 +381,157 @@ const followUpSequenceSchema = {
     },
 };
 
+const getSequenceTypeInstructions = (sequenceType: string, context: string): { typeDescription: string; structureGuidance: string } => {
+    const types: Record<string, { typeDescription: string; structureGuidance: string }> = {
+        'sequence': {
+            typeDescription: `a custom follow-up sequence to achieve: "${context}"`,
+            structureGuidance: 'Progress logically from introduction to conversion, varying tactics throughout.'
+        },
+        'nurture': {
+            typeDescription: `a nurture sequence designed to: "${context}"`,
+            structureGuidance: `Structure: 
+            - Emails 1-3: Provide educational value, establish expertise
+            - Emails 4-6: Share case studies, testimonials, social proof
+            - Emails 7-8: Address common objections and FAQs
+            - Emails 9-10: Soft CTA to take next step`
+        },
+        'welcome': {
+            typeDescription: `a welcome sequence for new subscribers: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1 (immediate): Warm welcome, set expectations, deliver promised lead magnet
+            - Email 2 (Day 1): Introduce yourself/brand story
+            - Email 3 (Day 3): Share quick win or valuable tip
+            - Emails 4-6: Core value content, best resources
+            - Emails 7-8: Social proof and community building
+            - Emails 9-10: Introduce products/services naturally`
+        },
+        're-engagement': {
+            typeDescription: `a re-engagement sequence to win back inactive subscribers: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: "We miss you" - acknowledge absence, offer value
+            - Email 2: Share what they've missed, highlight best content
+            - Email 3: Special incentive or exclusive offer
+            - Email 4: Ask for feedback - why did they disengage?
+            - Email 5: Share customer success story
+            - Email 6: Final exclusive offer with deadline
+            - Email 7: "Last chance" reminder
+            - Email 8-9: Provide easy re-engagement path
+            - Email 10: Sunset warning - will remove if no engagement`
+        },
+        'launch': {
+            typeDescription: `a product launch sequence for: "${context}"`,
+            structureGuidance: `Structure:
+            - Emails 1-2: Build anticipation, tease what's coming
+            - Email 3: Reveal the product/offer
+            - Email 4: Features and benefits deep dive
+            - Email 5: Social proof and early results
+            - Email 6: FAQ and objection handling
+            - Email 7: Deadline reminder with bonuses
+            - Email 8: Last chance urgency
+            - Email 9: Final reminder
+            - Email 10: Doors closing/cart closing`
+        },
+        'book-a-call': {
+            typeDescription: `a call booking sequence to get prospects on sales calls: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: Introduce the call offer and its value
+            - Email 2: Share what they'll learn on the call
+            - Email 3: Case study of someone who booked a call
+            - Email 4: Address "I don't have time" objection
+            - Email 5: Address "I'm not ready" objection
+            - Email 6: Limited availability reminder
+            - Email 7: What happens on the call (remove mystery)
+            - Email 8: Success story with specific results
+            - Email 9: Special incentive for booking now
+            - Email 10: Final availability check`
+        },
+        'abandoned-cart': {
+            typeDescription: `an abandoned cart recovery sequence for: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1 (1 hour): "Did you forget something?" - simple reminder
+            - Email 2 (24 hours): Address common concerns, offer help
+            - Email 3 (48 hours): Social proof - reviews and ratings
+            - Email 4 (72 hours): Offer incentive (discount/free shipping)
+            - Email 5 (5 days): Scarcity - limited stock warning
+            - Email 6 (7 days): Last chance for incentive
+            - Email 7-8 (10-14 days): Alternative product suggestions
+            - Email 9 (21 days): Final reminder
+            - Email 10 (30 days): Sunset with bigger incentive`
+        },
+        'webinar': {
+            typeDescription: `a webinar promotion and follow-up sequence for: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: Webinar invitation with clear value prop
+            - Email 2: What they'll learn (3 key takeaways)
+            - Email 3: Speaker credibility and testimonials
+            - Email 4: 24-hour reminder
+            - Email 5: "Starting soon" reminder (1 hour before)
+            - Email 6 (post-webinar): Thank you + replay link
+            - Email 7: Key insights summary + CTA
+            - Email 8: Replay expiring warning
+            - Email 9: Bonus resources for attendees
+            - Email 10: Final CTA based on webinar content`
+        },
+        'testimonial': {
+            typeDescription: `a testimonial and review request sequence: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: Check-in on their experience
+            - Email 2: Ask for quick feedback (1 question)
+            - Email 3: Request full testimonial with easy template
+            - Email 4: Offer incentive for detailed review
+            - Email 5: Show examples of great testimonials
+            - Email 6: Ask for specific platform review (Google, etc.)
+            - Email 7: Photo/video testimonial request
+            - Email 8: Case study collaboration offer
+            - Email 9: Referral program introduction
+            - Email 10: Thank you and next steps`
+        },
+        'upsell': {
+            typeDescription: `an upsell/cross-sell sequence for: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: Check satisfaction with current purchase
+            - Email 2: Introduce complementary product naturally
+            - Email 3: Show how others combine products
+            - Email 4: Exclusive upgrade offer
+            - Email 5: Feature comparison (current vs upgraded)
+            - Email 6: Customer success story with upgrade
+            - Email 7: Limited-time bundle offer
+            - Email 8: Address "why do I need more" objection
+            - Email 9: Deadline reminder
+            - Email 10: Final offer with bonus`
+        },
+        'survey': {
+            typeDescription: `a survey and feedback collection sequence: "${context}"`,
+            structureGuidance: `Structure:
+            - Email 1: Friendly survey request (emphasize brevity)
+            - Email 2: Why their feedback matters
+            - Email 3: Incentive offer for completing survey
+            - Email 4: Preview of what you'll do with feedback
+            - Email 5: Social proof - "Join X others who shared"
+            - Email 6: Reminder with time estimate
+            - Email 7: Almost deadline
+            - Email 8: Final chance
+            - Email 9: Thank you to participants
+            - Email 10: Share survey results/actions taken`
+        }
+    };
+    
+    return types[sequenceType] || types['sequence'];
+};
+
 export const generateFollowUpSequence = async (
     originalEmail: { subject: string; body: string; },
     analysis: GradingResult,
-    sequenceGoal: string
+    sequenceGoal: string,
+    sequenceType: string = 'sequence'
 ): Promise<FollowUpSequenceEmail[]> => {
     try {
         const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${originalEmail.body}`;
         const analysisSummary = `The original email was analyzed and received an overall grade of ${analysis.overallGrade.grade}. Key feedback was: ${analysis.overallGrade.summary}. The main spam concern was: ${analysis.spamAnalysis[0]?.reason || 'none'}. The personalization score was ${analysis.personalizationScore.score}/100.`;
+        
+        const { typeDescription, structureGuidance } = getSequenceTypeInstructions(sequenceType, sequenceGoal);
 
-        const systemInstruction = `You are an expert email marketing and deliverability strategist. Your task is to write a 10-email follow-up sequence based on an original email and its performance analysis. The overall goal of this sequence is to: "${sequenceGoal}".
+        const systemInstruction = `You are an expert email marketing and deliverability strategist. Your task is to write ${typeDescription}.
 
         **CRITICAL DELIVERABILITY RULES:**
         1.  **High Inbox Probability:** Your primary objective is to create emails that land in the primary inbox. AVOID ALL spam triggers, especially those identified in the original analysis summary. Use natural, conversational language.
@@ -399,15 +540,16 @@ export const generateFollowUpSequence = async (
         4.  **Personalized Tone:** Write as if a human is writing to another human. Reference the original context subtly.
         
         **SEQUENCE STRUCTURE:**
+        ${structureGuidance}
+        
         -   The sequence must have exactly 10 emails.
-        -   Provide a logical 'timingSuggestion' for each (e.g., "Day 1", "Day 3", "Day 7", "Day 14").
-        -   The tone should progress logically, starting friendly and gradually becoming more direct or offering more value.
-        -   Each email must have a 'rationale' explaining its strategic purpose.
+        -   Provide a logical 'timingSuggestion' for each (timing varies by sequence type).
+        -   Each email must have a 'rationale' explaining its strategic purpose within this ${sequenceType} sequence.
         -   Return the result as a single JSON array of 10 email objects.`;
 
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: `Here is the original email:\n${originalContent}\n\nHere is a summary of its analysis:\n${analysisSummary}\n\nPlease write a 10-email follow-up sequence. The overall goal is: "${sequenceGoal}".`,
+            contents: `Here is the original email:\n${originalContent}\n\nHere is a summary of its analysis:\n${analysisSummary}\n\nPlease write a 10-email ${sequenceType} sequence. The goal/context is: "${sequenceGoal}".`,
             config: {
                 systemInstruction,
                 responseMimeType: "application/json",
@@ -418,7 +560,6 @@ export const generateFollowUpSequence = async (
         const jsonString = response.text?.trim() || '[]';
         const parsedResult = JSON.parse(jsonString);
         if (Array.isArray(parsedResult) && parsedResult.length > 0) {
-            // Convert literal \n sequences to actual newlines in each email
             return parsedResult.map((email: FollowUpSequenceEmail) => ({
                 ...email,
                 subject: email.subject?.replace(/\\n/g, '\n') || '',

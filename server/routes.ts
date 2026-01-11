@@ -1140,8 +1140,11 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { original, analysis, goal } = req.body;
-      const result = await generateFollowUpSequence(original, analysis, goal);
+      const { original, analysis, goal, context } = req.body;
+      if (!context || !context.trim()) {
+        return res.status(400).json({ error: 'Please provide a goal description for the sequence' });
+      }
+      const result = await generateFollowUpSequence(original, analysis, context, goal);
       res.json(result);
     } catch (error) {
       console.error('Sequence error:', error);

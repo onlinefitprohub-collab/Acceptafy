@@ -403,15 +403,22 @@ function AppContent() {
   const handleGenerateFollowUp = async () => {
     setIsGeneratingFollowUp(true);
     
+    const sequenceTypes = [
+      'sequence', 'nurture', 'welcome', 're-engagement', 'launch', 
+      'book-a-call', 'abandoned-cart', 'webinar', 'testimonial', 'upsell', 'survey'
+    ];
+    const isSequenceType = sequenceTypes.includes(followUpGoal);
+    
     try {
-      if (followUpGoal === 'sequence') {
+      if (isSequenceType) {
         const response = await fetch('/api/followup/sequence', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             original: { body, variations },
             analysis: result,
-            goal: followUpGoal
+            goal: followUpGoal,
+            context: followUpContext
           })
         });
         
@@ -1133,31 +1140,50 @@ function AppContent() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2">
-              {['reminder', 'discount', 'query', 'sequence'].map((goal) => (
-                <Button
-                  key={goal}
-                  onClick={() => setFollowUpGoal(goal)}
-                  variant={followUpGoal === goal ? 'default' : 'secondary'}
-                  size="sm"
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  value={followUpGoal}
+                  onChange={(e) => setFollowUpGoal(e.target.value)}
+                  className="bg-muted border border-border text-foreground text-sm rounded-lg focus:ring-2 focus:ring-primary focus:border-primary block w-full sm:w-auto p-2.5"
+                  data-testid="select-followup-goal"
                 >
-                  {goal === 'sequence' ? '10-Email Sequence' : goal.charAt(0).toUpperCase() + goal.slice(1)}
-                </Button>
-              ))}
+                  <optgroup label="Single Follow-Up">
+                    <option value="reminder">Gentle Reminder</option>
+                    <option value="discount">Offer Discount</option>
+                    <option value="query">Address a Query</option>
+                  </optgroup>
+                  <optgroup label="Email Sequences">
+                    <option value="sequence">Custom Sequence</option>
+                    <option value="nurture">Nurture Sequence</option>
+                    <option value="welcome">Welcome Sequence</option>
+                    <option value="re-engagement">Re-engagement Sequence</option>
+                    <option value="launch">Product Launch Sequence</option>
+                    <option value="book-a-call">Book a Call Sequence</option>
+                    <option value="abandoned-cart">Abandoned Cart Sequence</option>
+                    <option value="webinar">Webinar Sequence</option>
+                    <option value="testimonial">Testimonial Request Sequence</option>
+                    <option value="upsell">Upsell/Cross-sell Sequence</option>
+                    <option value="survey">Survey/Feedback Sequence</option>
+                  </optgroup>
+                </select>
+              </div>
             </div>
 
-            {followUpGoal !== 'sequence' && (
-              <textarea
-                value={followUpContext}
-                onChange={(e) => setFollowUpContext(e.target.value)}
-                placeholder="Add additional context for the follow-up (optional)"
-                className="w-full h-20 bg-muted border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none resize-none"
-              />
-            )}
+            <textarea
+              value={followUpContext}
+              onChange={(e) => setFollowUpContext(e.target.value)}
+              placeholder={
+                ['sequence', 'nurture', 'welcome', 're-engagement', 'launch', 'book-a-call', 'abandoned-cart', 'webinar', 'testimonial', 'upsell', 'survey'].includes(followUpGoal)
+                  ? "Describe the sequence goal (e.g., convert trial users to paid, onboard new customers...)"
+                  : "Add additional context for the follow-up (optional)"
+              }
+              className="w-full h-20 bg-muted border border-border rounded-lg p-3 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none resize-none"
+            />
             
             <Button
               onClick={handleGenerateFollowUp}
-              disabled={isGeneratingFollowUp}
+              disabled={isGeneratingFollowUp || (['sequence', 'nurture', 'welcome', 're-engagement', 'launch', 'book-a-call', 'abandoned-cart', 'webinar', 'testimonial', 'upsell', 'survey'].includes(followUpGoal) && !followUpContext.trim())}
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               data-testid="button-generate-followup"
             >
@@ -1166,7 +1192,7 @@ function AppContent() {
                   <Sparkles className="w-4 h-4 mr-2 animate-spin" />
                   Generating...
                 </>
-              ) : followUpGoal === 'sequence' ? (
+              ) : ['sequence', 'nurture', 'welcome', 're-engagement', 'launch', 'book-a-call', 'abandoned-cart', 'webinar', 'testimonial', 'upsell', 'survey'].includes(followUpGoal) ? (
                 'Generate 10-Email Sequence'
               ) : (
                 'Generate Follow-Up'

@@ -135,7 +135,7 @@ export interface FollowUpEmail {
     body: string;
 }
 
-export type FollowUpGoal = 'reminder' | 'discount' | 'query' | 'sequence';
+export type FollowUpGoal = 'reminder' | 'discount' | 'query' | 'sequence' | 'nurture' | 'welcome' | 're-engagement' | 'launch' | 'book-a-call' | 'abandoned-cart' | 'webinar' | 'testimonial' | 'upsell' | 'survey';
 
 export interface FollowUpSequenceEmail {
     timingSuggestion: string;
