@@ -696,7 +696,7 @@ export function AppSidebar({
                               data-testid="nav-deliverability-list"
                             >
                               <Users className="w-3 h-3" />
-                              <span>List Quality</span>
+                              <span>List Cleaner</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
                           <TooltipContent side="right">
