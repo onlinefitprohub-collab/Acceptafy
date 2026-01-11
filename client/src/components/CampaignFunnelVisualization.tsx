@@ -21,10 +21,14 @@ import {
   Info,
   Sparkles,
   RefreshCw,
-  Link2Off
+  Link2Off,
+  Crown,
+  Lock
 } from 'lucide-react';
+import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 interface FunnelStage {
   name: string;
@@ -387,6 +391,8 @@ export function CampaignFunnelVisualization() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('funnel');
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
+  const { toast } = useToast();
   
   // Fetch real campaigns from connected ESPs
   const { data: espStatsData, isLoading: isLoadingESP, error: espError } = useQuery<ESPStatsResponse>({
@@ -435,10 +441,28 @@ export function CampaignFunnelVisualization() {
         stages,
         dropOffAnalysis
       });
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData.error === 'Pro feature') {
+          throw { isUpgradeRequired: true };
+        }
+      }
       return response.json();
     },
     onSuccess: () => {
+      setRequiresUpgrade(false);
       queryClient.invalidateQueries({ queryKey: ['/api/funnel/recommendations', selectedCampaign] });
+    },
+    onError: (error: any) => {
+      if (error?.isUpgradeRequired) {
+        setRequiresUpgrade(true);
+        return;
+      }
+      toast({
+        title: 'Analysis Failed',
+        description: 'Failed to analyze campaign funnel',
+        variant: 'destructive',
+      });
     }
   });
   
@@ -690,7 +714,27 @@ export function CampaignFunnelVisualization() {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {analyzeWithAIMutation.isPending ? (
+                    {requiresUpgrade ? (
+                      <div className="p-6 text-center space-y-4">
+                        <div className="flex justify-center">
+                          <div className="p-3 rounded-full bg-purple-500/20">
+                            <Crown className="w-8 h-8 text-purple-400" />
+                          </div>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-foreground">Pro Feature</h3>
+                          <p className="text-muted-foreground text-sm mt-1">
+                            AI Funnel Analysis is available on Pro and Scale plans. Upgrade to get personalized insights to improve your campaign performance.
+                          </p>
+                        </div>
+                        <Link href="/pricing">
+                          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" data-testid="button-upgrade-funnel">
+                            <Lock className="w-4 h-4 mr-2" />
+                            Upgrade to Pro
+                          </Button>
+                        </Link>
+                      </div>
+                    ) : analyzeWithAIMutation.isPending ? (
                       <div className="flex flex-col items-center justify-center p-8">
                         <Loader2 className="w-8 h-8 text-purple-500 animate-spin mb-4" />
                         <p className="text-muted-foreground">Analyzing your campaign data...</p>

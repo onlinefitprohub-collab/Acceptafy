@@ -183,6 +183,38 @@ function normalizeTier(tier: string | null | undefined): 'starter' | 'pro' | 'sc
   return 'starter';
 }
 
+type FeatureKey = 'campaignRiskAnalysis' | 'competitorAnalysis' | 'inboxSimulation' | 'funnelAnalysis' | 'sequenceGenerator' | 'warmupPlan' | 'advancedSpamAnalysis';
+
+async function checkFeatureAccess(req: any, res: any, feature: FeatureKey): Promise<boolean> {
+  if (!req.user) {
+    res.status(403).json({ 
+      error: 'Pro feature', 
+      message: 'This feature requires a Pro or Scale subscription. Please sign in and upgrade to access.',
+      requiredTier: 'pro',
+      feature 
+    });
+    return false;
+  }
+  
+  const userId = req.user.claims.sub;
+  const user = await storage.getUser(userId);
+  const tier = normalizeTier(user?.subscriptionTier);
+  const limits = SUBSCRIPTION_LIMITS[tier];
+  
+  if (!limits[feature]) {
+    res.status(403).json({ 
+      error: 'Pro feature', 
+      message: `This feature is only available on Pro and Scale plans. Upgrade to unlock ${feature.replace(/([A-Z])/g, ' $1').toLowerCase()}.`,
+      requiredTier: 'pro',
+      currentTier: tier,
+      feature 
+    });
+    return false;
+  }
+  
+  return true;
+}
+
 interface NormalizedManualCampaign {
   campaignId: string;
   campaignName: string;
@@ -1097,8 +1129,12 @@ export async function registerRoutes(
     }
   });
 
+  // Sequence Generator (Pro+ only)
   app.post('/api/followup/sequence', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'sequenceGenerator');
+      if (!hasAccess) return;
+      
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'followupCount');
         if (!allowed) return;
@@ -1258,8 +1294,12 @@ export async function registerRoutes(
     }
   });
 
+  // Warmup Plan Generator (Pro+ only)
   app.post('/api/warmup/generate', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'warmupPlan');
+      if (!hasAccess) return;
+      
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
         if (!allowed) return;
@@ -1337,9 +1377,12 @@ export async function registerRoutes(
     }
   });
 
-  // Campaign Risk Analysis - Pre-send reputation impact prediction
+  // Campaign Risk Analysis - Pre-send reputation impact prediction (Pro+ only)
   app.post('/api/campaign/risk-analysis', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'campaignRiskAnalysis');
+      if (!hasAccess) return;
+      
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
         if (!allowed) return;
@@ -1392,9 +1435,12 @@ export async function registerRoutes(
     }
   });
 
-  // Campaign Funnel Analysis
+  // Campaign Funnel Analysis (Pro+ only)
   app.post('/api/funnel/analyze', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'funnelAnalysis');
+      if (!hasAccess) return;
+      
       const { campaign, stages, dropOffAnalysis } = req.body;
       
       if (!campaign || !stages || !dropOffAnalysis) {
@@ -1583,9 +1629,12 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  // Competitor Analysis API
+  // Competitor Analysis (Pro+ only)
   app.post('/api/competitor/analyze', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'competitorAnalysis');
+      if (!hasAccess) return;
+      
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'gradeCount');
         if (!allowed) return;
@@ -1626,9 +1675,12 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  // Inbox Placement Simulation API
+  // Inbox Placement Simulation (Pro+ only)
   app.post('/api/inbox/simulate', optionalAuth, async (req: any, res) => {
     try {
+      const hasAccess = await checkFeatureAccess(req, res, 'inboxSimulation');
+      if (!hasAccess) return;
+      
       if (req.user) {
         const allowed = await checkAndIncrementUsage(req, res, 'deliverabilityChecks');
         if (!allowed) return;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, Loader2, AlertCircle, Lightbulb, Target, Mail } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, TrendingUp, Loader2, AlertCircle, Lightbulb, Target, Mail, Lock, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Link } from 'wouter';
 
 interface RiskFactor {
   factor: string;
@@ -29,22 +30,6 @@ interface CampaignRiskAnalysis {
   recommendations: string[];
 }
 
-const analyzeCampaignRisk = async (data: {
-  subject: string;
-  content: string;
-  estimatedVolume?: number;
-  listAge?: string;
-}): Promise<CampaignRiskAnalysis> => {
-  const response = await fetch('/api/campaign/risk-analysis', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to analyze campaign risk');
-  }
-  return response.json();
-};
 
 const getRiskColor = (risk: string) => {
   switch (risk) {
@@ -99,6 +84,7 @@ export const CampaignRiskScore: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<CampaignRiskAnalysis | null>(null);
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
   
   const [formData, setFormData] = useState({
     subject: '',
@@ -120,14 +106,33 @@ export const CampaignRiskScore: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setRequiresUpgrade(false);
     
     try {
-      const data = await analyzeCampaignRisk({
-        subject: formData.subject,
-        content: formData.content,
-        estimatedVolume: formData.estimatedVolume ? parseInt(formData.estimatedVolume, 10) : undefined,
-        listAge: formData.listAge || undefined,
+      const response = await fetch('/api/campaign/risk-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject: formData.subject,
+          content: formData.content,
+          estimatedVolume: formData.estimatedVolume ? parseInt(formData.estimatedVolume, 10) : undefined,
+          listAge: formData.listAge || undefined,
+        }),
       });
+      
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData.error === 'Pro feature') {
+          setRequiresUpgrade(true);
+          return;
+        }
+      }
+      
+      if (!response.ok) {
+        throw new Error('Failed to analyze campaign risk');
+      }
+      
+      const data = await response.json();
       setResult(data);
     } catch (err) {
       setError('Failed to analyze campaign risk. Please try again.');
@@ -213,6 +218,30 @@ export const CampaignRiskScore: React.FC = () => {
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
                 {error}
               </div>
+            )}
+
+            {requiresUpgrade && (
+              <Card className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-purple-500/30">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <div className="p-3 rounded-full bg-purple-500/20">
+                      <Crown className="w-8 h-8 text-purple-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">Pro Feature</h3>
+                    <p className="text-slate-400 text-sm mt-1">
+                      Campaign Risk Analysis is available on Pro and Scale plans. Upgrade to predict deliverability issues before you send.
+                    </p>
+                  </div>
+                  <Link href="/pricing">
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" data-testid="button-upgrade-risk-analysis">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             )}
 
             <Button

@@ -415,6 +415,18 @@ function AppContent() {
           })
         });
         
+        if (response.status === 403) {
+          const errorData = await response.json();
+          if (errorData.error === 'Pro feature') {
+            toast({
+              title: "Pro Feature",
+              description: "Email Sequence Generator is available on Pro and Scale plans. Upgrade to unlock this feature.",
+              variant: "default",
+            });
+            return;
+          }
+        }
+        
         if (response.ok) {
           const data = await response.json();
           setFollowUpSequence(data);

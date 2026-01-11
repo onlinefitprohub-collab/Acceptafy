@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap } from 'lucide-react';
+import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap, Crown, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Link } from 'wouter';
 import type { WarmupPlan, WarmupDay } from '../types';
 
 const PhaseColors: Record<string, { bg: string; border: string; text: string }> = {
@@ -99,12 +100,14 @@ export const WarmupPlanner: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<WarmupPlan | null>(null);
   const [expandedDays, setExpandedDays] = useState<Set<number>>(new Set([1, 7, 14, 30]));
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
 
   const handleGenerate = async () => {
     if (!domain.trim()) return;
     setIsLoading(true);
     setError(null);
     setPlan(null);
+    setRequiresUpgrade(false);
     
     try {
       const response = await fetch('/api/warmup/generate', {
@@ -112,6 +115,14 @@ export const WarmupPlanner: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: domain.trim() })
       });
+      
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData.error === 'Pro feature') {
+          setRequiresUpgrade(true);
+          return;
+        }
+      }
       
       if (response.ok) {
         const data = await response.json();
@@ -181,6 +192,30 @@ export const WarmupPlanner: React.FC = () => {
           </div>
           
           {error && <p className="text-destructive text-sm mt-2" data-testid="text-warmup-error">{error}</p>}
+          
+          {requiresUpgrade && (
+            <Card className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-purple-500/30 mt-4">
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="flex justify-center">
+                  <div className="p-3 rounded-full bg-purple-500/20">
+                    <Crown className="w-8 h-8 text-purple-400" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">Pro Feature</h3>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Warmup Plan Generator is available on Pro and Scale plans. Upgrade to get a personalized 30-day warmup schedule for your domain.
+                  </p>
+                </div>
+                <Link href="/pricing">
+                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" data-testid="button-upgrade-warmup">
+                    <Lock className="w-4 h-4 mr-2" />
+                    Upgrade to Pro
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
 

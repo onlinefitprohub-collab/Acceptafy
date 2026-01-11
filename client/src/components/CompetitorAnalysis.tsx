@@ -19,8 +19,11 @@ import {
   ArrowRight,
   CheckCircle,
   AlertTriangle,
-  Zap
+  Zap,
+  Crown,
+  Lock
 } from 'lucide-react';
+import { Link } from 'wouter';
 import type { CompetitorAnalysisResult, CompetitorStrength, CompetitorWeakness, CompetitorTactic } from '../types';
 
 interface HistoryItem {
@@ -35,6 +38,7 @@ export function CompetitorAnalysis() {
   const [competitorEmail, setCompetitorEmail] = useState('');
   const [result, setResult] = useState<CompetitorAnalysisResult | null>(null);
   const [activeTab, setActiveTab] = useState('analyze');
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
 
   const { data: history = [], isLoading: historyLoading } = useQuery<HistoryItem[]>({
     queryKey: ['/api/competitor/history'],
@@ -43,9 +47,16 @@ export function CompetitorAnalysis() {
   const analyzeMutation = useMutation({
     mutationFn: async (email: string) => {
       const response = await apiRequest('POST', '/api/competitor/analyze', { competitorEmail: email });
+      if (response.status === 403) {
+        const errorData = await response.json();
+        if (errorData.error === 'Pro feature') {
+          throw { isUpgradeRequired: true };
+        }
+      }
       return response.json();
     },
     onSuccess: (data) => {
+      setRequiresUpgrade(false);
       setResult(data);
       queryClient.invalidateQueries({ queryKey: ['/api/competitor/history'] });
       toast({
@@ -53,7 +64,11 @@ export function CompetitorAnalysis() {
         description: 'Competitor email analyzed successfully!',
       });
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      if (error?.isUpgradeRequired) {
+        setRequiresUpgrade(true);
+        return;
+      }
       toast({
         title: 'Analysis Failed',
         description: error.message || 'Failed to analyze competitor email',
@@ -148,6 +163,30 @@ export function CompetitorAnalysis() {
                 </>
               )}
             </Button>
+
+            {requiresUpgrade && (
+              <Card className="bg-gradient-to-br from-purple-900/40 to-pink-900/40 border-purple-500/30">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="flex justify-center">
+                    <div className="p-3 rounded-full bg-purple-500/20">
+                      <Crown className="w-8 h-8 text-purple-400" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">Pro Feature</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Competitor Analysis is available on Pro and Scale plans. Upgrade to discover competitor strategies and outperform them.
+                    </p>
+                  </div>
+                  <Link href="/pricing">
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" data-testid="button-upgrade-competitor">
+                      <Lock className="w-4 h-4 mr-2" />
+                      Upgrade to Pro
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
 
             {result && (
               <div className="space-y-6 mt-6">
