@@ -100,18 +100,18 @@ export const SenderScoreEstimator: React.FC = () => {
   };
 
   const CategoryCard = ({ title, score, feedback }: { title: string; score: number; feedback: string }) => (
-    <div className="p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+    <div className="p-4 rounded-lg bg-muted/50 border border-border">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-medium text-slate-300">{title}</span>
+        <span className="text-sm font-medium text-muted-foreground">{title}</span>
         <span className={`text-lg font-bold ${getScoreColor(score)}`}>{score}</span>
       </div>
-      <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden mb-2">
+      <div className="w-full h-2 bg-muted rounded-full overflow-hidden mb-2">
         <div 
           className={`h-full transition-all duration-500 ${getProgressColor(score)}`}
           style={{ width: `${score}%` }}
         />
       </div>
-      <p className="text-xs text-slate-400">{feedback}</p>
+      <p className="text-xs text-muted-foreground">{feedback}</p>
     </div>
   );
 
@@ -119,20 +119,20 @@ export const SenderScoreEstimator: React.FC = () => {
     <div className="space-y-6">
       <div className="space-y-4">
         <div>
-          <Label htmlFor="domain" className="text-slate-300">Sending Domain</Label>
+          <Label htmlFor="domain" className="text-muted-foreground">Sending Domain</Label>
           <Input
             id="domain"
             data-testid="input-sender-domain"
             value={formData.domain}
             onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
             placeholder="example.com"
-            className="mt-1 bg-slate-800 border-slate-700 text-white"
+            className="mt-1"
           />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="hasSpf" className="text-slate-300 text-sm">SPF Configured</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="hasSpf" className="text-muted-foreground text-sm">SPF Configured</Label>
             <Switch
               id="hasSpf"
               data-testid="switch-spf"
@@ -140,8 +140,8 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, hasSpf: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="hasDkim" className="text-slate-300 text-sm">DKIM Configured</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="hasDkim" className="text-muted-foreground text-sm">DKIM Configured</Label>
             <Switch
               id="hasDkim"
               data-testid="switch-dkim"
@@ -149,8 +149,8 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, hasDkim: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="hasDmarc" className="text-slate-300 text-sm">DMARC Configured</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="hasDmarc" className="text-muted-foreground text-sm">DMARC Configured</Label>
             <Switch
               id="hasDmarc"
               data-testid="switch-dmarc"
@@ -162,29 +162,29 @@ export const SenderScoreEstimator: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <Label htmlFor="listSize" className="text-slate-300 text-sm">List Size</Label>
+            <Label htmlFor="listSize" className="text-muted-foreground text-sm">List Size</Label>
             <Input
               id="listSize"
               data-testid="input-list-size"
               type="number"
               value={formData.listSize}
               onChange={(e) => setFormData({ ...formData, listSize: parseInt(e.target.value) || 0 })}
-              className="mt-1 bg-slate-800 border-slate-700 text-white"
+              className="mt-1"
             />
           </div>
           <div>
-            <Label htmlFor="avgOpenRate" className="text-slate-300 text-sm">Avg Open Rate (%)</Label>
+            <Label htmlFor="avgOpenRate" className="text-muted-foreground text-sm">Avg Open Rate (%)</Label>
             <Input
               id="avgOpenRate"
               data-testid="input-open-rate"
               type="number"
               value={formData.avgOpenRate}
               onChange={(e) => setFormData({ ...formData, avgOpenRate: parseFloat(e.target.value) || 0 })}
-              className="mt-1 bg-slate-800 border-slate-700 text-white"
+              className="mt-1"
             />
           </div>
           <div>
-            <Label htmlFor="avgBounceRate" className="text-slate-300 text-sm">Avg Bounce Rate (%)</Label>
+            <Label htmlFor="avgBounceRate" className="text-muted-foreground text-sm">Avg Bounce Rate (%)</Label>
             <Input
               id="avgBounceRate"
               data-testid="input-bounce-rate"
@@ -192,11 +192,11 @@ export const SenderScoreEstimator: React.FC = () => {
               step="0.1"
               value={formData.avgBounceRate}
               onChange={(e) => setFormData({ ...formData, avgBounceRate: parseFloat(e.target.value) || 0 })}
-              className="mt-1 bg-slate-800 border-slate-700 text-white"
+              className="mt-1"
             />
           </div>
           <div>
-            <Label htmlFor="avgComplaintRate" className="text-slate-300 text-sm">Avg Complaint Rate (%)</Label>
+            <Label htmlFor="avgComplaintRate" className="text-muted-foreground text-sm">Avg Complaint Rate (%)</Label>
             <Input
               id="avgComplaintRate"
               data-testid="input-complaint-rate"
@@ -204,19 +204,19 @@ export const SenderScoreEstimator: React.FC = () => {
               step="0.01"
               value={formData.avgComplaintRate}
               onChange={(e) => setFormData({ ...formData, avgComplaintRate: parseFloat(e.target.value) || 0 })}
-              className="mt-1 bg-slate-800 border-slate-700 text-white"
+              className="mt-1"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="sendingFrequency" className="text-slate-300 text-sm">Sending Frequency</Label>
+            <Label htmlFor="sendingFrequency" className="text-muted-foreground text-sm">Sending Frequency</Label>
             <Select 
               value={formData.sendingFrequency} 
               onValueChange={(value) => setFormData({ ...formData, sendingFrequency: value })}
             >
-              <SelectTrigger data-testid="select-frequency" className="mt-1 bg-slate-800 border-slate-700 text-white">
+              <SelectTrigger data-testid="select-frequency" className="mt-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -229,21 +229,21 @@ export const SenderScoreEstimator: React.FC = () => {
             </Select>
           </div>
           <div>
-            <Label htmlFor="listAgeMonths" className="text-slate-300 text-sm">List Age (months)</Label>
+            <Label htmlFor="listAgeMonths" className="text-muted-foreground text-sm">List Age (months)</Label>
             <Input
               id="listAgeMonths"
               data-testid="input-list-age"
               type="number"
               value={formData.listAgeMonths}
               onChange={(e) => setFormData({ ...formData, listAgeMonths: parseInt(e.target.value) || 0 })}
-              className="mt-1 bg-slate-800 border-slate-700 text-white"
+              className="mt-1"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="usesDoubleOptIn" className="text-slate-300 text-sm">Uses Double Opt-in</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="usesDoubleOptIn" className="text-muted-foreground text-sm">Uses Double Opt-in</Label>
             <Switch
               id="usesDoubleOptIn"
               data-testid="switch-double-optin"
@@ -251,8 +251,8 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, usesDoubleOptIn: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="hasUnsubscribeLink" className="text-slate-300 text-sm">Has Unsubscribe Link</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="hasUnsubscribeLink" className="text-muted-foreground text-sm">Has Unsubscribe Link</Label>
             <Switch
               id="hasUnsubscribeLink"
               data-testid="switch-unsubscribe"
@@ -260,8 +260,8 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, hasUnsubscribeLink: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700">
-            <Label htmlFor="sendsFromDedicatedIp" className="text-slate-300 text-sm">Dedicated IP</Label>
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Label htmlFor="sendsFromDedicatedIp" className="text-muted-foreground text-sm">Dedicated IP</Label>
             <Switch
               id="sendsFromDedicatedIp"
               data-testid="switch-dedicated-ip"
@@ -299,10 +299,10 @@ export const SenderScoreEstimator: React.FC = () => {
 
       {result && (
         <div className="space-y-6">
-          <Card className="bg-slate-900 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Shield className="w-5 h-5 text-purple-400" />
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                 Your Sender Score
               </CardTitle>
             </CardHeader>
@@ -312,16 +312,16 @@ export const SenderScoreEstimator: React.FC = () => {
                   <div className={`text-7xl font-bold ${getScoreColor(result.overallScore)}`}>
                     {result.overallScore}
                   </div>
-                  <div className="text-slate-400 text-sm mt-1">out of 100</div>
+                  <div className="text-muted-foreground text-sm mt-1">out of 100</div>
                 </div>
-                <div className="text-center px-6 border-l border-slate-700">
+                <div className="text-center px-6 border-l border-border">
                   <div className={`text-5xl font-bold ${getGradeColor(result.grade)}`}>
                     {result.grade}
                   </div>
-                  <div className="text-slate-400 text-sm mt-1">Grade</div>
+                  <div className="text-muted-foreground text-sm mt-1">Grade</div>
                 </div>
               </div>
-              <p className="text-center text-slate-400 text-sm">{result.comparisonToIndustry}</p>
+              <p className="text-center text-muted-foreground text-sm">{result.comparisonToIndustry}</p>
             </CardContent>
           </Card>
 
@@ -354,18 +354,18 @@ export const SenderScoreEstimator: React.FC = () => {
           </div>
 
           {result.topIssues.length > 0 && (
-            <Card className="bg-slate-900 border-slate-700">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-white text-lg">
-                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
                   Top Issues
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {result.topIssues.map((issue, index) => (
-                    <li key={index} className="flex items-start gap-2 text-slate-300 text-sm">
-                      <X className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-2 text-muted-foreground text-sm">
+                      <X className="w-4 h-4 text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       {issue}
                     </li>
                   ))}
@@ -375,18 +375,18 @@ export const SenderScoreEstimator: React.FC = () => {
           )}
 
           {result.recommendations.length > 0 && (
-            <Card className="bg-slate-900 border-slate-700">
+            <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-white text-lg">
-                  <TrendingUp className="w-5 h-5 text-green-400" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <TrendingUp className="w-5 h-5 text-green-500 dark:text-green-400" />
                   Recommendations
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {result.recommendations.map((rec, index) => (
-                    <li key={index} className="flex items-start gap-2 text-slate-300 text-sm">
-                      <Check className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                    <li key={index} className="flex items-start gap-2 text-muted-foreground text-sm">
+                      <Check className="w-4 h-4 text-green-500 dark:text-green-400 mt-0.5 flex-shrink-0" />
                       {rec}
                     </li>
                   ))}

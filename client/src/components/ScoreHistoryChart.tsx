@@ -12,7 +12,7 @@ const formatDate = (dateString: string) => {
 export const ScoreHistoryChart: React.FC<ScoreHistoryChartProps> = ({ history }) => {
     if (history.length < 2) {
         return (
-            <div className="h-48 flex items-center justify-center bg-gray-900/50 rounded-lg text-center text-gray-400 p-4" data-testid="score-history-empty">
+            <div className="h-48 flex items-center justify-center bg-muted/50 rounded-lg text-center text-muted-foreground p-4" data-testid="score-history-empty">
                 <p>Analyze more emails to see your score history and track your improvements over time.</p>
             </div>
         );
@@ -32,7 +32,7 @@ export const ScoreHistoryChart: React.FC<ScoreHistoryChartProps> = ({ history })
     const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + `${p.x} ${p.y}`).join(' ');
 
     return (
-        <div className="bg-gray-900/50 rounded-lg p-4" data-testid="score-history-chart">
+        <div className="bg-muted/50 rounded-lg p-4" data-testid="score-history-chart">
             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto">
                 {[0, 25, 50, 75, 100].map(val => {
                     const y = height - padding - (val * (height - padding * 2)) / 100;

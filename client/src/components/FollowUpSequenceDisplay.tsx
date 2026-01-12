@@ -33,63 +33,63 @@ const SequenceItem: React.FC<{
     const [copiedId, copy] = useCopyToClipboard();
     
     return (
-        <div className="bg-white/5 rounded-lg border border-white/10 transition-all duration-300" data-testid={`sequence-item-${index}`}>
+        <div className="bg-muted/50 rounded-lg border border-border transition-all duration-300" data-testid={`sequence-item-${index}`}>
             <button
               type="button"
               onClick={onToggle}
               aria-expanded={isOpen}
-              className={`w-full flex justify-between items-center text-left p-4 hover:bg-white/10 transition-colors group ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
+              className={`w-full flex justify-between items-center text-left p-4 hover:bg-muted transition-colors group ${isOpen ? 'rounded-t-lg' : 'rounded-lg'}`}
               data-testid={`button-toggle-sequence-${index}`}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold bg-purple-500/30 text-purple-300 rounded-md px-2 py-1 flex-shrink-0">{item.timingSuggestion}</span>
-                <p className="font-bold text-gray-300 group-hover:text-purple-300 transition-colors text-sm sm:text-base truncate">
+                <span className="text-xs font-bold bg-purple-500/30 text-purple-600 dark:text-purple-300 rounded-md px-2 py-1 flex-shrink-0">{item.timingSuggestion}</span>
+                <p className="font-bold text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors text-sm sm:text-base truncate">
                     {index + 1}: {item.subject}
                 </p>
               </div>
-              <ChevronDownIcon className={`w-6 h-6 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} flex-shrink-0`} />
+              <ChevronDownIcon className={`w-6 h-6 text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} flex-shrink-0`} />
             </button>
             <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
               <div className="overflow-hidden">
-                <div className="p-4 border-t border-white/10 space-y-4">
+                <div className="p-4 border-t border-border space-y-4">
                     <div>
-                        <h4 className="font-semibold text-gray-400 text-sm mb-1">Purpose of this Email:</h4>
-                        <p className="text-gray-300 text-sm italic">"{item.rationale}"</p>
+                        <h4 className="font-semibold text-muted-foreground text-sm mb-1">Purpose of this Email:</h4>
+                        <p className="text-foreground text-sm italic">"{item.rationale}"</p>
                     </div>
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="block text-sm font-medium text-gray-400">Subject</label>
+                            <label className="block text-sm font-medium text-muted-foreground">Subject</label>
                             <button 
                                 onClick={() => copy(item.subject, `subject-${index}`)}
-                                className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${copiedId === `subject-${index}` ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${copiedId === `subject-${index}` ? 'bg-green-500/20 text-green-400 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                                 data-testid={`button-copy-subject-${index}`}
                             >
                                 {copiedId === `subject-${index}` ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
                                 <span>{copiedId === `subject-${index}` ? 'Copied' : 'Copy'}</span>
                             </button>
                         </div>
-                        <p className="p-2 bg-gray-900/50 rounded text-gray-200 border border-white/10 text-sm">{item.subject}</p>
+                        <p className="p-2 bg-muted/50 rounded text-foreground border border-border text-sm">{item.subject}</p>
                     </div>
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="block text-sm font-medium text-gray-400">Body</label>
+                            <label className="block text-sm font-medium text-muted-foreground">Body</label>
                              <button 
                                 onClick={() => copy(item.body, `body-${index}`)}
-                                className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${copiedId === `body-${index}` ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${copiedId === `body-${index}` ? 'bg-green-500/20 text-green-400 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                                 data-testid={`button-copy-body-${index}`}
                             >
                                 {copiedId === `body-${index}` ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
                                 <span>{copiedId === `body-${index}` ? 'Copied' : 'Copy'}</span>
                             </button>
                         </div>
-                        <div className="p-2 h-40 overflow-y-auto bg-gray-900/50 rounded text-gray-300 border border-white/10 whitespace-pre-wrap font-sans text-xs">
+                        <div className="p-2 h-40 overflow-y-auto bg-muted/50 rounded text-muted-foreground border border-border whitespace-pre-wrap font-sans text-xs">
                             {item.body}
                         </div>
                     </div>
                      <div className="flex justify-end">
                         <button
                             onClick={() => onLoad(item)}
-                            className="flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            className="flex items-center justify-center gap-2 px-3 py-1.5 text-xs font-semibold bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                             data-testid={`button-load-sequence-${index}`}
                         >
                             <UploadCloudIcon className="w-4 h-4" />
@@ -112,8 +112,8 @@ export const FollowUpSequenceDisplay: React.FC<FollowUpSequenceDisplayProps> = (
     };
 
     return (
-        <div className="my-8 p-4 sm:p-6 bg-indigo-900/30 rounded-xl border border-indigo-500/50 animate-fade-in shadow-lg" data-testid="followup-sequence-display">
-            <h3 className="text-xl font-bold text-indigo-300 mb-4">Generated 10-Email Sequence</h3>
+        <div className="my-8 p-4 sm:p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-500/30 animate-fade-in shadow-lg" data-testid="followup-sequence-display">
+            <h3 className="text-xl font-bold text-purple-700 dark:text-purple-300 mb-4">Generated 10-Email Sequence</h3>
             
             <div className="space-y-3">
                 {sequence.map((item, index) => (
@@ -128,10 +128,10 @@ export const FollowUpSequenceDisplay: React.FC<FollowUpSequenceDisplayProps> = (
                 ))}
             </div>
 
-            <div className="flex justify-end mt-6 pt-4 border-t border-indigo-500/30">
+            <div className="flex justify-end mt-6 pt-4 border-t border-purple-200 dark:border-purple-500/30">
                 <button
                     onClick={onDiscard}
-                    className="px-5 py-2 text-sm font-semibold bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    className="px-5 py-2 text-sm font-semibold bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
                     data-testid="button-discard-sequence"
                 >
                     Discard Sequence

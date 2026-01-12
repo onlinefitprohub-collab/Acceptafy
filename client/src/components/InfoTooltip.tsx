@@ -16,7 +16,7 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({ text }) => {
         onMouseLeave={() => setIsVisible(false)}
         onFocus={() => setIsVisible(true)}
         onBlur={() => setIsVisible(false)}
-        className="text-gray-400 hover:text-purple-400 transition-colors"
+        className="text-muted-foreground hover:text-purple-500 dark:hover:text-purple-400 transition-colors"
         aria-label="More information"
         data-testid="button-info-tooltip"
       >

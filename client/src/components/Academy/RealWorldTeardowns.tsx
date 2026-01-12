@@ -84,24 +84,24 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
         <div className={`bg-white/5 p-4 sm:p-6 rounded-lg border ${borderColor}`}>
             <h4 className={`text-xl font-bold ${textColor}`}>{isGood ? '✅ Effective Example:' : '❌ Ineffective Example:'} {title}</h4>
             <div className="mt-4 space-y-4">
-                <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
-                    <p className="text-sm font-semibold text-gray-400">Subject Line</p>
-                    <p className="text-gray-200 font-mono text-sm">{subject}</p>
+                <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                    <p className="text-sm font-semibold text-muted-foreground">Subject Line</p>
+                    <p className="text-foreground font-mono text-sm">{subject}</p>
                 </div>
-                <div className="p-3 bg-gray-900/50 rounded-lg border border-white/10">
-                     <p className="text-sm font-semibold text-gray-400 mb-2">Email Body</p>
-                     <div className="whitespace-pre-wrap font-sans text-sm text-gray-300">{body}</div>
+                <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                     <p className="text-sm font-semibold text-muted-foreground mb-2">Email Body</p>
+                     <div className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{body}</div>
                 </div>
 
                 <div className="bg-white/5 p-4 rounded-lg border-2 border-dashed border-white/10">
                     <p className="font-semibold text-gray-200 mb-4">{interactive.question}</p>
                     <div className="space-y-2 mb-4">
                         {interactive.options.map((option, index) => {
-                             let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
+                             let buttonClass = 'bg-card border-input hover:bg-muted/60';
                              if (answered) {
-                                 if (option.isCorrect) buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
-                                 else if (selected === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';
-                                 else buttonClass = 'bg-gray-900/30 border-gray-700 text-gray-500';
+                                 if (option.isCorrect) buttonClass = 'bg-green-500/20 border-green-500 text-green-600 dark:text-green-300';
+                                 else if (selected === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-600 dark:text-red-300';
+                                 else buttonClass = 'bg-muted/30 border-border text-muted-foreground';
                              }
                              return (
                                  <button
@@ -117,7 +117,7 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
                         })}
                     </div>
                     {answered && (
-                         <div className="p-3 bg-gray-900/50 rounded-md text-sm text-gray-300 animate-fade-in">
+                         <div className="p-3 bg-muted/50 rounded-md text-sm text-muted-foreground animate-fade-in">
                             <p>{interactive.explanation}</p>
                         </div>
                     )}
