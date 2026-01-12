@@ -39,6 +39,8 @@ import {
   LayoutTemplate,
   Palette,
   FileUp,
+  PieChart,
+  TrendingUp,
   type LucideIcon
 } from 'lucide-react';
 
@@ -537,7 +539,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-analytics-stats"
                             >
-                              <BarChart3 className="w-3 h-3" />
+                              <PieChart className="w-3 h-3" />
                               <span>Campaign Stats</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -579,7 +581,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-analytics-intelligence"
                             >
-                              <Activity className="w-3 h-3" />
+                              <TrendingUp className="w-3 h-3" />
                               <span>Trend Intelligence</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
