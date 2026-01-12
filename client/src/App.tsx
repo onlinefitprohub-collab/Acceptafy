@@ -1801,6 +1801,49 @@ function AppContent() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Show current email content if available */}
+            {variations[0]?.subject.trim() && body.trim() ? (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">Subject:</span>
+                  <p className="text-sm text-foreground">{variations[0]?.subject || 'No subject'}</p>
+                </div>
+                {body && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Body Preview:</span>
+                    <p className="text-sm text-muted-foreground line-clamp-3">{body}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-muted/50 border border-dashed border-border">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Enter your email content below to generate subject line variations, or go to the <button onClick={() => { setActiveView('grader'); clearAllSubViews(); }} className="text-primary underline">Email Grader</button> first.
+                </p>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Subject Line (required)</label>
+                    <Input
+                      value={variations[0]?.subject || ''}
+                      onChange={(e) => setVariations([{ ...variations[0], subject: e.target.value }])}
+                      placeholder="Enter your current subject line..."
+                      data-testid="input-optimize-variations-subject"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Email Body (required for context)</label>
+                    <Textarea
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      placeholder="Paste or type your email content here..."
+                      rows={6}
+                      data-testid="input-optimize-variations-body"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             <Button
               onClick={handleGenerateSubjectVariations}
               disabled={isGeneratingVariations || !variations[0]?.subject.trim() || !body.trim()}
@@ -1819,6 +1862,46 @@ function AppContent() {
                 </>
               )}
             </Button>
+
+            {/* Show generated variations */}
+            {subjectVariations.length > 0 && (
+              <div className="space-y-3 animate-fade-in">
+                {subjectVariations.map((variation, i) => (
+                  <Card key={i} className="bg-card/50">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <Badge variant="secondary">{variation.style}</Badge>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-bold ${
+                            variation.predictedOpenRate >= 30 ? 'text-green-600 dark:text-green-400' : 
+                            variation.predictedOpenRate >= 20 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {variation.predictedOpenRate}% predicted open rate
+                          </span>
+                          <Button
+                            onClick={() => handleUseVariation(variation)}
+                            size="sm"
+                            data-testid={`button-use-variation-optimize-${i}`}
+                          >
+                            Use
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-foreground font-medium mb-1">{variation.subject}</p>
+                      <p className="text-muted-foreground text-sm mb-2">{variation.previewText}</p>
+                      <p className="text-xs text-muted-foreground">{variation.rationale}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button
+                  onClick={() => setSubjectVariations([])}
+                  variant="secondary"
+                  className="w-full"
+                >
+                  Clear Variations
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
