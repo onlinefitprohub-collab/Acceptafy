@@ -3082,3 +3082,93 @@ DO flag:
     return { issues: [], correctedText: text, issueCount: 0 };
   }
 };
+
+// Content Generator - AI-powered content generation
+const contentGenerationSchema = {
+  type: Type.OBJECT,
+  properties: {
+    subject: { type: Type.STRING, description: "A compelling subject line for the content (for emails)" },
+    previewText: { type: Type.STRING, description: "Preview/pre-header text (for emails)" },
+    body: { type: Type.STRING, description: "The main generated content body" },
+    suggestions: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "3-5 suggestions for improving or customizing the content"
+    }
+  },
+  required: ["body", "suggestions"]
+};
+
+export interface GenerateContentParams {
+  contentType: 'email' | 'social' | 'blog' | 'ad';
+  prompt: string;
+  tone?: string;
+  industry?: string;
+  targetAudience?: string;
+  length?: 'short' | 'medium' | 'long';
+}
+
+export const generateContent = async (params: GenerateContentParams): Promise<{
+  subject?: string;
+  previewText?: string;
+  body: string;
+  suggestions: string[];
+}> => {
+  const { contentType, prompt, tone = 'professional', industry, targetAudience, length = 'medium' } = params;
+  
+  const lengthGuide = {
+    short: '50-100 words',
+    medium: '150-300 words',
+    long: '400-600 words'
+  };
+
+  const contentTypeInstructions: Record<string, string> = {
+    email: `Generate a complete marketing email with a compelling subject line and preview text. The email should be engaging, have a clear call-to-action, and follow email marketing best practices for deliverability.`,
+    social: `Generate a social media post optimized for engagement. Include hashtag suggestions. Keep it concise but impactful. No subject or preview text needed.`,
+    blog: `Generate a blog post intro and outline with key points. Make it SEO-friendly with clear structure. No subject or preview text needed.`,
+    ad: `Generate ad copy that is attention-grabbing and conversion-focused. Include a headline and supporting copy. Keep it concise and action-oriented. No subject or preview text needed.`
+  };
+
+  const systemInstruction = `You are an expert content creator specializing in ${contentType} marketing content. 
+Generate high-quality, engaging content based on the user's requirements.
+
+Content Guidelines:
+- Tone: ${tone}
+${industry ? `- Industry: ${industry}` : ''}
+${targetAudience ? `- Target Audience: ${targetAudience}` : ''}
+- Length: ${lengthGuide[length]}
+
+${contentTypeInstructions[contentType]}
+
+Be creative but authentic. Avoid spam trigger words and overly promotional language.
+For emails, ensure deliverability by avoiding ALL CAPS, excessive punctuation, and spam words.`;
+
+  const userPrompt = `Create ${contentType} content based on this brief:
+
+${prompt}
+
+Requirements:
+- ${tone} tone
+- Target length: ${lengthGuide[length]}
+${industry ? `- Industry context: ${industry}` : ''}
+${targetAudience ? `- Target audience: ${targetAudience}` : ''}
+
+Generate the content now.`;
+
+  try {
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: userPrompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: contentGenerationSchema
+      }
+    });
+
+    return JSON.parse(res.text || '{}');
+  } catch (error) {
+    console.error("Error generating content:", error);
+    throw new Error("Failed to generate content. Please try again.");
+  }
+};

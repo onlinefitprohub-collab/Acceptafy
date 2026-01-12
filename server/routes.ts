@@ -34,7 +34,8 @@ import {
   generateFullArticle,
   generateArticleImage,
   analyzeCampaignRisk,
-  checkSpellGrammar
+  checkSpellGrammar,
+  generateContent
 } from "./gemini";
 import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
 import { randomUUID } from "crypto";
@@ -1640,6 +1641,112 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Spell/grammar check error:', error);
       res.status(500).json({ error: 'Failed to check spelling and grammar' });
+    }
+  });
+
+  // Acceptafy Content Generator - AI-powered content generation
+  app.post('/api/content/generate', optionalAuth, async (req: any, res) => {
+    try {
+      const { contentType, prompt, tone, industry, targetAudience, length } = req.body;
+      
+      if (!contentType || !['email', 'social', 'blog', 'ad'].includes(contentType)) {
+        return res.status(400).json({ error: 'Valid content type is required (email, social, blog, ad)' });
+      }
+      if (!prompt || typeof prompt !== 'string' || prompt.trim().length < 10) {
+        return res.status(400).json({ error: 'Prompt must be at least 10 characters' });
+      }
+      
+      const result = await generateContent({
+        contentType,
+        prompt: prompt.slice(0, 2000),
+        tone: tone?.slice(0, 50),
+        industry: industry?.slice(0, 100),
+        targetAudience: targetAudience?.slice(0, 200),
+        length: ['short', 'medium', 'long'].includes(length) ? length : 'medium'
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('Content generation error:', error);
+      res.status(500).json({ error: 'Failed to generate content' });
+    }
+  });
+
+  // Content Drafts CRUD
+  app.get('/api/content/drafts', isAuthenticated, async (req: any, res) => {
+    try {
+      const drafts = await storage.getContentDrafts(req.user.id);
+      res.json(drafts);
+    } catch (error) {
+      console.error('Error fetching drafts:', error);
+      res.status(500).json({ error: 'Failed to fetch drafts' });
+    }
+  });
+
+  app.post('/api/content/drafts', isAuthenticated, async (req: any, res) => {
+    try {
+      const { name, contentType, prompt, generatedContent, editedContent, tone, industry } = req.body;
+      
+      if (!name || typeof name !== 'string') {
+        return res.status(400).json({ error: 'Draft name is required' });
+      }
+      if (!contentType || typeof contentType !== 'string') {
+        return res.status(400).json({ error: 'Content type is required' });
+      }
+      
+      const draft = await storage.createContentDraft({
+        userId: req.user.id,
+        name: name.slice(0, 200),
+        contentType: contentType.slice(0, 50),
+        prompt: prompt?.slice(0, 2000),
+        generatedContent: generatedContent?.slice(0, 10000),
+        editedContent: editedContent?.slice(0, 10000),
+        tone: tone?.slice(0, 50),
+        industry: industry?.slice(0, 100)
+      });
+      
+      res.json(draft);
+    } catch (error) {
+      console.error('Error creating draft:', error);
+      res.status(500).json({ error: 'Failed to create draft' });
+    }
+  });
+
+  app.put('/api/content/drafts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { name, editedContent, generatedContent } = req.body;
+      
+      const draft = await storage.updateContentDraft(id, req.user.id, {
+        name: name?.slice(0, 200),
+        editedContent: editedContent?.slice(0, 10000),
+        generatedContent: generatedContent?.slice(0, 10000)
+      });
+      
+      if (!draft) {
+        return res.status(404).json({ error: 'Draft not found' });
+      }
+      
+      res.json(draft);
+    } catch (error) {
+      console.error('Error updating draft:', error);
+      res.status(500).json({ error: 'Failed to update draft' });
+    }
+  });
+
+  app.delete('/api/content/drafts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteContentDraft(id, req.user.id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Draft not found' });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Error deleting draft:', error);
+      res.status(500).json({ error: 'Failed to delete draft' });
     }
   });
 

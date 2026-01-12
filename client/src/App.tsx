@@ -114,6 +114,7 @@ import { EmailImport } from './components/EmailImport';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { SendTimeOptimizer } from './components/SendTimeOptimizer';
 import { EmailBuilder } from './components/EmailBuilder';
+import ContentGenerator from './components/ContentGenerator';
 import { ESPSettings, type ESPProvider } from './components/ESPSettings';
 import { ESPContactCleaner } from './components/ESPContactCleaner';
 import { PaymentWarningBanner } from './components/PaymentWarningBanner';
@@ -157,7 +158,7 @@ import type {
 } from './types';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
-type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | null;
+type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
@@ -1707,8 +1708,23 @@ function AppContent() {
         <EmailBuilder />
       )}
 
+      {createSubView === 'content' && (
+        <ContentGenerator />
+      )}
+
       {!createSubView && (
         <div className="grid md:grid-cols-2 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('content')} data-testid="card-create-content">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Content Generator</h3>
+                <p className="text-sm text-muted-foreground">AI-powered content with undo/redo</p>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="card-lift cursor-pointer" onClick={() => setCreateSubView('builder')} data-testid="card-create-builder">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">

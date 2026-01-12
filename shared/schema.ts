@@ -1290,3 +1290,36 @@ export const insertArticleSchema = createInsertSchema(articles).omit({
   viewCount: true,
 });
 
+// Content Generator Drafts table
+export const contentDrafts = pgTable("content_drafts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  name: varchar("name").notNull(),
+  contentType: varchar("content_type").notNull(), // email, social, blog, ad
+  prompt: text("prompt"),
+  generatedContent: text("generated_content"),
+  editedContent: text("edited_content"),
+  tone: varchar("tone"),
+  industry: varchar("industry"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("idx_content_drafts_user").on(table.userId),
+]);
+
+export type ContentDraft = typeof contentDrafts.$inferSelect;
+export type InsertContentDraft = typeof contentDrafts.$inferInsert;
+export const insertContentDraftSchema = createInsertSchema(contentDrafts).omit({ 
+  id: true, 
+  createdAt: true, 
+  updatedAt: true,
+});
+
+// Content Generation Result type
+export interface GeneratedContent {
+  subject?: string;
+  previewText?: string;
+  body: string;
+  suggestions: string[];
+}
+

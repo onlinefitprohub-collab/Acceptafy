@@ -26,6 +26,7 @@ import {
   monitoredDomains,
   blacklistCheckHistory,
   articles,
+  contentDrafts,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -85,6 +86,8 @@ import {
   manualCampaignStats,
   type ManualCampaignStats,
   type InsertManualCampaignStats,
+  type ContentDraft,
+  type InsertContentDraft,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -265,6 +268,13 @@ export interface IStorage {
   createManualCampaignStats(data: InsertManualCampaignStats): Promise<ManualCampaignStats>;
   updateManualCampaignStats(id: string, userId: string, updates: Partial<ManualCampaignStats>): Promise<ManualCampaignStats | undefined>;
   deleteManualCampaignStats(id: string, userId: string): Promise<boolean>;
+  
+  // Content Drafts
+  getContentDrafts(userId: string): Promise<ContentDraft[]>;
+  getContentDraft(id: string, userId: string): Promise<ContentDraft | undefined>;
+  createContentDraft(data: InsertContentDraft): Promise<ContentDraft>;
+  updateContentDraft(id: string, userId: string, updates: Partial<ContentDraft>): Promise<ContentDraft | undefined>;
+  deleteContentDraft(id: string, userId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2665,6 +2675,44 @@ export class DatabaseStorage implements IStorage {
     await db
       .delete(manualCampaignStats)
       .where(and(eq(manualCampaignStats.id, id), eq(manualCampaignStats.userId, userId)));
+    return true;
+  }
+
+  // Content Drafts
+  async getContentDrafts(userId: string): Promise<ContentDraft[]> {
+    return db
+      .select()
+      .from(contentDrafts)
+      .where(eq(contentDrafts.userId, userId))
+      .orderBy(desc(contentDrafts.updatedAt));
+  }
+
+  async getContentDraft(id: string, userId: string): Promise<ContentDraft | undefined> {
+    const [draft] = await db
+      .select()
+      .from(contentDrafts)
+      .where(and(eq(contentDrafts.id, id), eq(contentDrafts.userId, userId)));
+    return draft;
+  }
+
+  async createContentDraft(data: InsertContentDraft): Promise<ContentDraft> {
+    const [draft] = await db.insert(contentDrafts).values(data).returning();
+    return draft;
+  }
+
+  async updateContentDraft(id: string, userId: string, updates: Partial<ContentDraft>): Promise<ContentDraft | undefined> {
+    const [draft] = await db
+      .update(contentDrafts)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(contentDrafts.id, id), eq(contentDrafts.userId, userId)))
+      .returning();
+    return draft;
+  }
+
+  async deleteContentDraft(id: string, userId: string): Promise<boolean> {
+    await db
+      .delete(contentDrafts)
+      .where(and(eq(contentDrafts.id, id), eq(contentDrafts.userId, userId)));
     return true;
   }
 }
