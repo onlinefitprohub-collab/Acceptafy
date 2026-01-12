@@ -67,7 +67,7 @@ import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
 type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
-type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | null;
+type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
@@ -209,6 +209,27 @@ export function AppSidebar({
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={createSubView === 'content'}
+                              onClick={() => {
+                                setActiveView('create');
+                                clearAllSubViews();
+                                setCreateSubView('content');
+                              }}
+                              data-testid="nav-create-content"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              <span>Content Generator</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>AI-powered content creation with undo/redo</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
