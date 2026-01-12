@@ -32,6 +32,13 @@ import {
   Clock,
   Activity,
   FlaskConical,
+  Wand2,
+  PenLine,
+  RefreshCw,
+  Reply,
+  LayoutTemplate,
+  Palette,
+  FileUp,
   type LucideIcon
 } from 'lucide-react';
 
@@ -221,7 +228,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-content"
                             >
-                              <Sparkles className="w-3 h-3" />
+                              <Wand2 className="w-3 h-3" />
                               <span>Content Generator</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -242,7 +249,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-builder"
                             >
-                              <Mail className="w-3 h-3" />
+                              <PenLine className="w-3 h-3" />
                               <span>Email Builder</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -263,7 +270,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-rewrite"
                             >
-                              <Zap className="w-3 h-3" />
+                              <RefreshCw className="w-3 h-3" />
                               <span>Rewrite</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -284,7 +291,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-followup"
                             >
-                              <Mail className="w-3 h-3" />
+                              <Reply className="w-3 h-3" />
                               <span>Follow-ups</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -305,7 +312,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-templates"
                             >
-                              <FileText className="w-3 h-3" />
+                              <LayoutTemplate className="w-3 h-3" />
                               <span>Templates</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -326,7 +333,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-tone"
                             >
-                              <Sparkles className="w-3 h-3" />
+                              <Palette className="w-3 h-3" />
                               <span>Tone Profiles</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
@@ -347,7 +354,7 @@ export function AppSidebar({
                               }}
                               data-testid="nav-create-import"
                             >
-                              <Upload className="w-3 h-3" />
+                              <FileUp className="w-3 h-3" />
                               <span>Import Email</span>
                             </SidebarMenuSubButton>
                           </TooltipTrigger>
