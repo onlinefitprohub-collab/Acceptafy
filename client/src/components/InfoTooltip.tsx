@@ -23,9 +23,9 @@ export const InfoTooltip: React.FC<InfoTooltipProps> = ({ text }) => {
         <InfoIcon className="w-4 h-4" />
       </button>
       {isVisible && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 border border-white/20 rounded-lg shadow-xl text-sm text-gray-300 animate-fade-in">
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-popover border border-border rounded-lg shadow-xl text-sm text-popover-foreground animate-fade-in">
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-popover"></div>
         </div>
       )}
     </div>

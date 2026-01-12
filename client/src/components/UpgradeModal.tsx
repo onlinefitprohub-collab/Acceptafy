@@ -26,12 +26,12 @@ interface Product {
 
 const ProFeature: React.FC<{ icon: React.ReactNode, title: string, description: string }> = ({ icon, title, description }) => (
     <div className="flex items-start gap-4">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/10 text-purple-300 flex items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted text-purple-500 dark:text-purple-300 flex items-center justify-center">
             {icon}
         </div>
         <div>
-            <h4 className="font-semibold text-white">{title}</h4>
-            <p className="text-sm text-gray-400">{description}</p>
+            <h4 className="font-semibold text-foreground">{title}</h4>
+            <p className="text-sm text-muted-foreground">{description}</p>
         </div>
     </div>
 );
@@ -79,7 +79,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -87,16 +87,16 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
       data-testid="upgrade-modal"
     >
       <div
-        className="w-full max-w-lg bg-slate-900/95 dark-bg border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in"
+        className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-scale-in"
         onClick={e => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between p-4 sm:p-5 border-b border-white/10 flex-shrink-0">
-          <h2 id="upgrade-modal-title" className="text-lg sm:text-xl font-bold text-white">
+        <header className="flex items-center justify-between p-4 sm:p-5 border-b border-border flex-shrink-0">
+          <h2 id="upgrade-modal-title" className="text-lg sm:text-xl font-bold text-foreground">
             Upgrade to Acceptafy {planName}
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+            className="p-2 text-muted-foreground rounded-full hover:bg-muted hover:text-foreground transition-colors"
             aria-label="Close modal"
             data-testid="button-close-upgrade-modal"
           >
@@ -111,7 +111,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   selectedPlan === 'pro' 
                     ? 'bg-purple-600 text-white' 
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
                 data-testid="button-select-pro"
               >
@@ -122,7 +122,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   selectedPlan === 'scale' 
                     ? 'bg-purple-600 text-white' 
-                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
                 data-testid="button-select-scale"
               >
@@ -130,7 +130,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
               </button>
             </div>
 
-            <p className="text-center text-gray-300">
+            <p className="text-center text-muted-foreground">
               {isPro 
                 ? "Unlock powerful features to maximize your deliverability and supercharge your email campaigns."
                 : "Get unlimited access with advanced analytics and white-label reports for your agency or team."

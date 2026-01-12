@@ -128,21 +128,21 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] })
 
     return (
         <div 
-            className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+            className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
             onClick={onClose}
         >
             <div 
-                className="w-full max-w-5xl h-[90vh] max-h-[800px] bg-slate-900/95 dark-bg border border-white/10 rounded-2xl shadow-2xl flex flex-col"
+                className="w-full max-w-5xl h-[90vh] max-h-[800px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col"
                 onClick={e => e.stopPropagation()}
             >
-                <header className="flex items-center justify-between p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
+                <header className="flex items-center justify-between p-4 sm:p-6 border-b border-border flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <span className="text-purple-400"><AcademyIcon /></span>
-                        <h2 className="text-xl sm:text-2xl font-bold text-white">Acceptafy Academy</h2>
+                        <span className="text-purple-500 dark:text-purple-400"><AcademyIcon /></span>
+                        <h2 className="text-xl sm:text-2xl font-bold text-foreground">Acceptafy Academy</h2>
                     </div>
                     <button 
                         onClick={onClose} 
-                        className="p-2 text-gray-400 rounded-full hover:bg-white/10 hover:text-white transition-colors"
+                        className="p-2 text-muted-foreground rounded-full hover:bg-muted hover:text-foreground transition-colors"
                         aria-label="Close Academy"
                         data-testid="button-close-academy"
                     >
@@ -150,8 +150,8 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] })
                     </button>
                 </header>
                 
-                <div className="p-4 sm:p-6 border-b border-white/10 flex-shrink-0">
-                    <div className="flex items-center gap-2 sm:gap-4 border border-white/10 p-1 rounded-lg bg-white/5 w-full sm:w-auto">
+                <div className="p-4 sm:p-6 border-b border-border flex-shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-4 border border-border p-1 rounded-lg bg-muted/50 w-full sm:w-auto">
                         <TabButton 
                             label="Learning Modules" 
                             isActive={activeTab === 'modules'} 
@@ -176,7 +176,7 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] })
 const TabButton: React.FC<{ label: string, isActive: boolean, onClick: () => void }> = ({ label, isActive, onClick }) => (
     <button
         onClick={onClick}
-        className={`w-full text-center px-4 py-2 text-sm sm:text-base font-semibold rounded-md transition-colors ${isActive ? 'bg-purple-600 text-white shadow-md' : 'text-gray-300 hover:bg-white/10'}`}
+        className={`w-full text-center px-4 py-2 text-sm sm:text-base font-semibold rounded-md transition-colors ${isActive ? 'bg-purple-600 text-white shadow-md' : 'text-muted-foreground hover:bg-muted'}`}
         data-testid={`button-tab-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
         {label}

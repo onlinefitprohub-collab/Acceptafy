@@ -49,13 +49,13 @@ export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate
     <div className="flex flex-col sm:flex-row justify-between items-center gap-4" data-testid="followup-generator">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
         <div className="flex items-center gap-2 w-full sm:w-80 flex-shrink-0">
-          <label htmlFor="followup-goal" className="text-sm font-medium text-gray-300 flex-shrink-0">Follow-up Goal:</label>
+          <label htmlFor="followup-goal" className="text-sm font-medium text-muted-foreground flex-shrink-0">Follow-up Goal:</label>
           <select
             id="followup-goal"
             value={goal}
             onChange={(e) => setGoal(e.target.value as FollowUpGoal)}
             disabled={isDisabled}
-            className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+            className="bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
             data-testid="select-followup-goal"
           >
             <optgroup label="Single Follow-Up">
@@ -86,7 +86,7 @@ export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate
                     onChange={(e) => setContext(e.target.value)}
                     placeholder="Enter recipient's query here..."
                     disabled={isDisabled}
-                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    className="bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
                     data-testid="input-query-context"
                 />
             )}
@@ -97,7 +97,7 @@ export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate
                     onChange={(e) => setSequenceGoal(e.target.value)}
                     placeholder={getSequencePlaceholder(goal)}
                     disabled={isDisabled}
-                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    className="bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
                     data-testid="input-sequence-goal"
                 />
             )}

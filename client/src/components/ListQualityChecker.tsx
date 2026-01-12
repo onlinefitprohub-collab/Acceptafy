@@ -4,9 +4,9 @@ import type { ListQualityAnalysis, EmailQualityStatus } from '../types';
 import { Download, CheckCircle, XCircle, AlertTriangle, Upload, FileText, HelpCircle } from 'lucide-react';
 
 const StatCard: React.FC<{ label: string, value: string, good?: boolean }> = ({ label, value, good }) => (
-    <div className="bg-gray-900/50 p-3 rounded-lg text-center">
-        <p className="text-xs text-gray-400 uppercase tracking-wider">{label}</p>
-        <p className={`text-xl font-bold ${good ? 'text-green-400' : 'text-yellow-400'}`}>{value}</p>
+    <div className="bg-muted/50 p-3 rounded-lg text-center">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className={`text-xl font-bold ${good ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`}>{value}</p>
     </div>
 );
 
@@ -222,8 +222,8 @@ info@startup.io,Info,Startup`;
                             </ul>
                         </div>
                         <div>
-                            <h5 className="font-medium text-white mb-2">Example CSV:</h5>
-                            <pre className="bg-gray-900/50 p-2 rounded text-gray-300 font-mono text-xs overflow-x-auto">
+                            <h5 className="font-medium text-foreground mb-2">Example CSV:</h5>
+                            <pre className="bg-muted/50 p-2 rounded text-muted-foreground font-mono text-xs overflow-x-auto">
 {`email,first_name,last_name
 john@example.com,John,Doe
 jane@company.org,Jane,Smith`}
@@ -261,7 +261,7 @@ jane@company.org,Jane,Smith`}
                         className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
                             ${isDragging 
                                 ? 'border-purple-500 bg-purple-500/10' 
-                                : 'border-gray-600 hover:border-purple-500/50 hover:bg-gray-800/30'
+                                : 'border-input hover:border-purple-500/50 hover:bg-muted/30'
                             }`}
                         data-testid="dropzone-csv"
                     >
@@ -293,7 +293,7 @@ jane@company.org,Jane,Smith`}
                             value={listSample}
                             onChange={(e) => { setListSample(e.target.value); setFileName(null); }}
                             placeholder="test@example.com&#10;info@company.com&#10;user@gmail.com"
-                            className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 h-36 resize-none font-mono"
+                            className="bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5 h-36 resize-none font-mono"
                             disabled={isLoading}
                             data-testid="textarea-email-list"
                         />
@@ -380,17 +380,17 @@ jane@company.org,Jane,Smith`}
                                 </div>
                             </div>
 
-                            <div className="border border-gray-700 rounded-lg overflow-hidden">
-                                <div className="bg-gray-800/50 px-4 py-2 border-b border-gray-700">
-                                    <h5 className="text-sm font-medium text-white">Email Quality Details</h5>
+                            <div className="border border-border rounded-lg overflow-hidden">
+                                <div className="bg-muted/50 px-4 py-2 border-b border-border">
+                                    <h5 className="text-sm font-medium text-foreground">Email Quality Details</h5>
                                 </div>
                                 <div className="max-h-64 overflow-y-auto">
                                     <table className="w-full text-sm">
-                                        <thead className="bg-gray-800/30 sticky top-0">
+                                        <thead className="bg-muted/30 sticky top-0">
                                             <tr>
-                                                <th className="text-left px-4 py-2 text-gray-400 font-medium">Status</th>
-                                                <th className="text-left px-4 py-2 text-gray-400 font-medium">Email</th>
-                                                <th className="text-left px-4 py-2 text-gray-400 font-medium">Issues</th>
+                                                <th className="text-left px-4 py-2 text-muted-foreground font-medium">Status</th>
+                                                <th className="text-left px-4 py-2 text-muted-foreground font-medium">Email</th>
+                                                <th className="text-left px-4 py-2 text-muted-foreground font-medium">Issues</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-700/50">

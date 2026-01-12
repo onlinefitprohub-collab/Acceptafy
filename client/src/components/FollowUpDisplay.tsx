@@ -44,22 +44,22 @@ export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLo
                             <span>{isSubjectCopied ? 'Copied' : 'Copy'}</span>
                         </button>
                     </div>
-                    <p className="p-3 bg-gray-900/50 rounded-lg text-gray-200 border border-white/10">{followUp.subject}</p>
+                    <p className="p-3 bg-muted/50 rounded-lg text-foreground border border-border">{followUp.subject}</p>
                 </div>
 
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-gray-300">Body</label>
+                        <label className="block text-sm font-medium text-muted-foreground">Body</label>
                          <button 
                             onClick={() => copyBody(followUp.body)}
-                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isBodyCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isBodyCopied ? 'bg-green-500/20 text-green-400 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             data-testid="button-copy-body"
                         >
                             {isBodyCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
                             <span>{isBodyCopied ? 'Copied' : 'Copy'}</span>
                         </button>
                     </div>
-                    <div className="p-3 h-48 overflow-y-auto bg-gray-900/50 rounded-lg text-gray-300 border border-white/10 whitespace-pre-wrap font-sans text-sm">
+                    <div className="p-3 h-48 overflow-y-auto bg-muted/50 rounded-lg text-muted-foreground border border-border whitespace-pre-wrap font-sans text-sm">
                         {followUp.body}
                     </div>
                 </div>
@@ -68,7 +68,7 @@ export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLo
             <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6 pt-4 border-t border-indigo-500/30">
                 <button
                     onClick={onDiscard}
-                    className="px-5 py-2 text-sm font-semibold bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    className="px-5 py-2 text-sm font-semibold bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
                     data-testid="button-discard-followup"
                 >
                     Discard

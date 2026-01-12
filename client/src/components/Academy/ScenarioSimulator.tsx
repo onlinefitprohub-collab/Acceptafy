@@ -451,11 +451,11 @@ export const ScenarioSimulator: React.FC<ModuleProps> = ({ onBack }) => {
                 <h4 className="font-bold text-gray-200 mb-3">Choose your strategy:</h4>
                 <div className="space-y-3">
                     {activeScenario.options.map((option, index) => {
-                        let buttonClass = 'bg-gray-900/50 border-gray-600 hover:bg-gray-800/60';
+                        let buttonClass = 'bg-card border-input hover:bg-muted/60';
                         if (answered) {
-                            if (option.outcome === 'Success') buttonClass = 'bg-green-500/20 border-green-500 text-green-300';
-                            else if (selectedOption === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-300';
-                            else buttonClass = 'bg-gray-900/30 border-gray-700 text-gray-500 opacity-60';
+                            if (option.outcome === 'Success') buttonClass = 'bg-green-500/20 border-green-500 text-green-600 dark:text-green-300';
+                            else if (selectedOption === index) buttonClass = 'bg-red-500/20 border-red-500 text-red-600 dark:text-red-300';
+                            else buttonClass = 'bg-muted/30 border-border text-muted-foreground opacity-60';
                         }
                         return(
                             <div key={index}>

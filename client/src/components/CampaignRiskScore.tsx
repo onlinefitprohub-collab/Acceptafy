@@ -157,32 +157,32 @@ export const CampaignRiskScore: React.FC = () => {
         <>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="subject" className="text-slate-300">Subject Line *</Label>
+              <Label htmlFor="subject" className="text-muted-foreground">Subject Line *</Label>
               <Input
                 id="subject"
                 data-testid="input-campaign-subject"
                 value={formData.subject}
                 onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                 placeholder="Enter your email subject line"
-                className="mt-1 bg-slate-800 border-slate-700 text-white"
+                className="mt-1"
               />
             </div>
 
             <div>
-              <Label htmlFor="content" className="text-slate-300">Email Content *</Label>
+              <Label htmlFor="content" className="text-muted-foreground">Email Content *</Label>
               <Textarea
                 id="content"
                 data-testid="input-campaign-content"
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 placeholder="Paste your email content here (HTML or plain text)"
-                className="mt-1 bg-slate-800 border-slate-700 text-white min-h-[200px]"
+                className="mt-1 min-h-[200px]"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="estimatedVolume" className="text-slate-300">Estimated Send Volume (optional)</Label>
+                <Label htmlFor="estimatedVolume" className="text-muted-foreground">Estimated Send Volume (optional)</Label>
                 <Input
                   id="estimatedVolume"
                   data-testid="input-estimated-volume"
@@ -190,16 +190,16 @@ export const CampaignRiskScore: React.FC = () => {
                   value={formData.estimatedVolume}
                   onChange={(e) => setFormData({ ...formData, estimatedVolume: e.target.value })}
                   placeholder="e.g., 10000"
-                  className="mt-1 bg-slate-800 border-slate-700 text-white"
+                  className="mt-1"
                 />
               </div>
               <div>
-                <Label htmlFor="listAge" className="text-slate-300">List Age/Quality (optional)</Label>
+                <Label htmlFor="listAge" className="text-muted-foreground">List Age/Quality (optional)</Label>
                 <Select
                   value={formData.listAge}
                   onValueChange={(value) => setFormData({ ...formData, listAge: value })}
                 >
-                  <SelectTrigger className="mt-1 bg-slate-800 border-slate-700 text-white" data-testid="select-list-age">
+                  <SelectTrigger className="mt-1" data-testid="select-list-age">
                     <SelectValue placeholder="Select list quality" />
                   </SelectTrigger>
                   <SelectContent>
@@ -294,37 +294,37 @@ export const CampaignRiskScore: React.FC = () => {
 
           {/* Predicted Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Mail className="w-5 h-5 text-blue-400" />
+                  <Mail className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                   <div>
-                    <div className="text-sm text-slate-400">Predicted Open Rate</div>
-                    <div className="text-2xl font-bold text-white">{result.predictedOpenRate}%</div>
+                    <div className="text-sm text-muted-foreground">Predicted Open Rate</div>
+                    <div className="text-2xl font-bold text-foreground">{result.predictedOpenRate}%</div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <AlertCircle className={`w-5 h-5 ${result.predictedBounceRate > 2 ? 'text-red-400' : 'text-green-400'}`} />
+                  <AlertCircle className={`w-5 h-5 ${result.predictedBounceRate > 2 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`} />
                   <div>
-                    <div className="text-sm text-slate-400">Predicted Bounce Rate</div>
-                    <div className={`text-2xl font-bold ${result.predictedBounceRate > 2 ? 'text-red-400' : 'text-white'}`}>
+                    <div className="text-sm text-muted-foreground">Predicted Bounce Rate</div>
+                    <div className={`text-2xl font-bold ${result.predictedBounceRate > 2 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                       {result.predictedBounceRate}%
                     </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <Target className={`w-5 h-5 ${result.predictedComplaintRate > 0.1 ? 'text-red-400' : 'text-green-400'}`} />
+                  <Target className={`w-5 h-5 ${result.predictedComplaintRate > 0.1 ? 'text-red-500 dark:text-red-400' : 'text-green-500 dark:text-green-400'}`} />
                   <div>
-                    <div className="text-sm text-slate-400">Predicted Complaint Rate</div>
-                    <div className={`text-2xl font-bold ${result.predictedComplaintRate > 0.1 ? 'text-red-400' : 'text-white'}`}>
+                    <div className="text-sm text-muted-foreground">Predicted Complaint Rate</div>
+                    <div className={`text-2xl font-bold ${result.predictedComplaintRate > 0.1 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                       {result.predictedComplaintRate}%
                     </div>
                   </div>
@@ -335,26 +335,26 @@ export const CampaignRiskScore: React.FC = () => {
 
           {/* Risk Factors */}
           {result.riskFactors && result.riskFactors.length > 0 && (
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
                   Risk Factors Detected
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {result.riskFactors.map((factor, index) => (
-                  <div key={index} className="p-4 rounded-lg bg-slate-900/50 border border-slate-700">
+                  <div key={index} className="p-4 rounded-lg bg-muted/50 border border-border">
                     <div className="flex items-start justify-between mb-2">
-                      <span className="font-medium text-white">{factor.factor}</span>
+                      <span className="font-medium text-foreground">{factor.factor}</span>
                       <Badge className={getSeverityColor(factor.severity)}>
                         {factor.severity}
                       </Badge>
                     </div>
-                    <p className="text-sm text-slate-400 mb-2">{factor.impact}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{factor.impact}</p>
                     <div className="flex items-start gap-2 p-2 rounded bg-purple-500/10 border border-purple-500/20">
-                      <Lightbulb className="w-4 h-4 text-purple-400 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-purple-300">{factor.recommendation}</p>
+                      <Lightbulb className="w-4 h-4 text-purple-500 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-purple-700 dark:text-purple-300">{factor.recommendation}</p>
                     </div>
                   </div>
                 ))}
@@ -364,17 +364,17 @@ export const CampaignRiskScore: React.FC = () => {
 
           {/* Spam Trigger Words */}
           {result.spamTriggerWords && result.spamTriggerWords.length > 0 && (
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-red-400" />
+                <CardTitle className="flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-red-500 dark:text-red-400" />
                   Spam Trigger Words Found
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
                   {result.spamTriggerWords.map((word, index) => (
-                    <Badge key={index} className="bg-red-500/20 text-red-400 border border-red-500/30">
+                    <Badge key={index} className="bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30">
                       {word}
                     </Badge>
                   ))}
@@ -385,18 +385,18 @@ export const CampaignRiskScore: React.FC = () => {
 
           {/* Positive Factors */}
           {result.positiveFactors && result.positiveFactors.length > 0 && (
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />
                   Positive Factors
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   {result.positiveFactors.map((factor, index) => (
-                    <li key={index} className="flex items-center gap-2 text-sm text-slate-300">
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                    <li key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle className="w-4 h-4 text-green-500 dark:text-green-400 flex-shrink-0" />
                       {factor}
                     </li>
                   ))}
@@ -407,10 +407,10 @@ export const CampaignRiskScore: React.FC = () => {
 
           {/* Recommendations */}
           {result.recommendations && result.recommendations.length > 0 && (
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                   Recommendations to Improve
                 </CardTitle>
               </CardHeader>
@@ -418,10 +418,10 @@ export const CampaignRiskScore: React.FC = () => {
                 <ol className="space-y-3">
                   {result.recommendations.map((rec, index) => (
                     <li key={index} className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 text-sm font-medium flex-shrink-0">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400 text-sm font-medium flex-shrink-0">
                         {index + 1}
                       </span>
-                      <span className="text-sm text-slate-300">{rec}</span>
+                      <span className="text-sm text-muted-foreground">{rec}</span>
                     </li>
                   ))}
                 </ol>
@@ -434,7 +434,7 @@ export const CampaignRiskScore: React.FC = () => {
             <Button
               onClick={handleReset}
               variant="outline"
-              className="flex-1 border-slate-700 text-slate-300 hover:bg-slate-800"
+              className="flex-1"
               data-testid="button-analyze-another"
             >
               Analyze Another Campaign

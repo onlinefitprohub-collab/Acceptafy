@@ -41,7 +41,7 @@ export const Glossary: React.FC = () => {
                     value={term}
                     onChange={(e) => setTerm(e.target.value)}
                     placeholder="e.g., Sender Reputation, Hard Bounce..."
-                    className="flex-grow bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    className="flex-grow bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
                     disabled={isLoading}
                     data-testid="input-glossary-search"
                 />

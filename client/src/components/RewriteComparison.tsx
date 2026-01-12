@@ -168,17 +168,17 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
                  <h3 className="text-lg sm:text-xl font-semibold text-center text-gray-300 mb-4">Body Copy Comparison</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                         <h4 className="font-semibold text-center text-gray-400 mb-2">Before</h4>
-                         <div className="p-4 bg-gray-900/50 rounded-lg text-gray-400 h-48 sm:h-64 overflow-y-auto whitespace-pre-wrap font-sans text-sm border border-white/10">
+                         <h4 className="font-semibold text-center text-muted-foreground mb-2">Before</h4>
+                         <div className="p-4 bg-muted/50 rounded-lg text-muted-foreground h-48 sm:h-64 overflow-y-auto whitespace-pre-wrap font-sans text-sm border border-border">
                             {originalContent.body}
                          </div>
                     </div>
                      <div>
                          <div className="flex justify-between items-center mb-2">
-                            <h4 className="font-semibold text-center text-green-300">After</h4>
+                            <h4 className="font-semibold text-center text-green-600 dark:text-green-300">After</h4>
                             <CopyButton text={rewrittenContent.body} type="body" />
                          </div>
-                         <div className="p-4 bg-gray-900/50 rounded-lg text-gray-400 h-48 sm:h-64 overflow-y-auto whitespace-pre-wrap font-sans text-sm border border-green-500/50">
+                         <div className="p-4 bg-muted/50 rounded-lg text-muted-foreground h-48 sm:h-64 overflow-y-auto whitespace-pre-wrap font-sans text-sm border border-green-500/50">
                             {rewrittenContent.body}
                          </div>
                     </div>
@@ -189,7 +189,7 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
                 <button
                     onClick={onDiscard}
-                    className="w-full sm:w-auto px-6 py-3 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-all duration-200"
+                    className="w-full sm:w-auto px-6 py-3 bg-muted text-foreground font-semibold rounded-lg hover:bg-muted/80 transition-all duration-200"
                     data-testid="button-discard-rewrite"
                 >
                     Discard Rewrite

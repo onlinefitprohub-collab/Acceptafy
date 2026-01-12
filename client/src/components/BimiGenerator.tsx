@@ -52,7 +52,7 @@ export const BimiGenerator: React.FC = () => {
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
                     placeholder="Enter your domain (e.g., yourcompany.com)"
-                    className="bg-gray-900/50 border border-gray-600 text-white text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
+                    className="bg-card border border-input text-foreground text-sm rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 block w-full p-2.5"
                     disabled={isLoading}
                     data-testid="input-bimi-domain"
                 />
@@ -86,9 +86,9 @@ export const BimiGenerator: React.FC = () => {
                         </div>
                     </div>
                     <div>
-                        <h5 className="text-sm font-semibold text-gray-300">Generated TXT Record for `default._bimi.{domain}`</h5>
+                        <h5 className="text-sm font-semibold text-muted-foreground">Generated TXT Record for `default._bimi.{domain}`</h5>
                         <div className="flex items-center gap-2 mt-1">
-                            <pre className="flex-1 p-2 bg-gray-900/50 rounded text-xs text-gray-400 overflow-x-auto">
+                            <pre className="flex-1 p-2 bg-muted/50 rounded text-xs text-muted-foreground overflow-x-auto">
                                 <code>{result.bimiRecord}</code>
                             </pre>
                             <button 
