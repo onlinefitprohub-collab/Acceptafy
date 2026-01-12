@@ -28,16 +28,16 @@ export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLo
     const [isBodyCopied, copyBody] = useCopyToClipboard();
 
     return (
-        <div className="my-8 p-4 sm:p-6 bg-indigo-900/30 rounded-xl border border-indigo-500/50 animate-fade-in shadow-lg" data-testid="followup-display">
-            <h3 className="text-xl font-bold text-indigo-300 mb-4">Generated Follow-up</h3>
+        <div className="my-8 p-4 sm:p-6 bg-indigo-100 dark:bg-indigo-900/30 rounded-xl border border-indigo-300 dark:border-indigo-500/50 animate-fade-in shadow-lg" data-testid="followup-display">
+            <h3 className="text-xl font-bold text-indigo-700 dark:text-indigo-300 mb-4">Generated Follow-up</h3>
             
             <div className="space-y-4">
                 <div>
                     <div className="flex justify-between items-center mb-1">
-                        <label className="block text-sm font-medium text-gray-300">Subject</label>
+                        <label className="block text-sm font-medium text-muted-foreground">Subject</label>
                         <button 
                             onClick={() => copySubject(followUp.subject)}
-                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isSubjectCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                            className={`flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold rounded-full transition-colors ${isSubjectCopied ? 'bg-green-500/20 text-green-600 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                             data-testid="button-copy-subject"
                         >
                             {isSubjectCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
@@ -65,7 +65,7 @@ export const FollowUpDisplay: React.FC<FollowUpDisplayProps> = ({ followUp, onLo
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6 pt-4 border-t border-indigo-500/30">
+            <div className="flex flex-col sm:flex-row justify-end gap-4 mt-6 pt-4 border-t border-indigo-300 dark:border-indigo-500/30">
                 <button
                     onClick={onDiscard}
                     className="px-5 py-2 text-sm font-semibold bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"

@@ -106,7 +106,7 @@ export const FollowUpGenerator: React.FC<FollowUpGeneratorProps> = ({ onGenerate
       <button
         onClick={handleGenerateClick}
         disabled={isButtonDisabled}
-        className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.5)] flex items-center gap-2 w-full sm:w-auto justify-center sm:min-w-72"
+        className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.5)] flex items-center gap-2 w-full sm:w-auto justify-center sm:min-w-72"
         data-testid="button-generate-followup"
       >
         {isGenerating ? (

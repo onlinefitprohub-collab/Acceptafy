@@ -20,7 +20,7 @@ export const DeliverabilityFoundations: React.FC<ModuleProps> = ({ onBack }) => 
             >
                 <p>Think of SPF as a public record that lists all the mail servers you've authorized to send email on behalf of your domain. When an email arrives, the recipient's mail server checks this list.</p>
                 <p>If the server that sent the email isn't on your SPF list, it's a major red flag for spam filters, suggesting the email might be a forgery (a practice known as 'spoofing').</p>
-                <p><strong className="text-gray-200">Primary Goal:</strong> Prevent scammers from sending emails that look like they came from you, thereby protecting your domain's reputation.</p>
+                <p><strong className="text-foreground">Primary Goal:</strong> Prevent scammers from sending emails that look like they came from you, thereby protecting your domain's reputation.</p>
             </SectionWrapper>
 
             <SectionWrapper
@@ -29,7 +29,7 @@ export const DeliverabilityFoundations: React.FC<ModuleProps> = ({ onBack }) => 
             >
                 <p>DKIM adds a unique, encrypted digital signature to every email you send. This signature is tied to your domain and is used to verify that the email's content has not been altered in transit.</p>
                 <p>If an email is modified after it's sent (e.g., by a malicious actor), the DKIM signature will no longer match, telling the recipient's server not to trust the message.</p>
-                <p><strong className="text-gray-200">Primary Goal:</strong> Ensure the integrity of your email, proving that the message received is the exact message you sent.</p>
+                <p><strong className="text-foreground">Primary Goal:</strong> Ensure the integrity of your email, proving that the message received is the exact message you sent.</p>
             </SectionWrapper>
             
             <SectionWrapper
@@ -38,7 +38,7 @@ export const DeliverabilityFoundations: React.FC<ModuleProps> = ({ onBack }) => 
             >
                 <p>DMARC builds on SPF and DKIM. It's a policy you publish that tells receiving mail servers what to do if an email claiming to be from you fails the SPF or DKIM checks.</p>
                 <p>You can instruct them to do nothing (`p=none`), send the email to spam (`p=quarantine`), or block it completely (`p=reject`). DMARC also enables reporting, so you can see who is sending email from your domain.</p>
-                <p><strong className="text-gray-200">Primary Goal:</strong> Enforce your authentication rules, gain visibility into your email traffic, and protect your brand from fraudulent use.</p>
+                <p><strong className="text-foreground">Primary Goal:</strong> Enforce your authentication rules, gain visibility into your email traffic, and protect your brand from fraudulent use.</p>
             </SectionWrapper>
             
             <InfoBox icon={<DnsIcon />}>

@@ -187,7 +187,7 @@ export function AppSidebar({
                         <Mail className="w-4 h-4" />
                       </div>
                       <span className="font-medium">Email Grader</span>
-                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'grader' ? 'opacity-100 text-pink-400' : 'opacity-0 -translate-x-2'}`} />
+                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'grader' ? 'opacity-100 text-pink-600 dark:text-pink-400' : 'opacity-0 -translate-x-2'}`} />
                     </SidebarMenuButton>
                   </TooltipTrigger>
                   <TooltipContent side="right">
@@ -827,7 +827,7 @@ export function AppSidebar({
                         <History className="w-4 h-4" />
                       </div>
                       <span className="font-medium">History</span>
-                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'history' ? 'opacity-100 text-emerald-400' : 'opacity-0 -translate-x-2'}`} />
+                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'history' ? 'opacity-100 text-emerald-600 dark:text-emerald-400' : 'opacity-0 -translate-x-2'}`} />
                     </SidebarMenuButton>
                   </TooltipTrigger>
                   <TooltipContent side="right">

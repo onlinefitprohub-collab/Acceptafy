@@ -19,11 +19,11 @@ export const AdvancedAutomation: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Sending the Right Message at the Perfect Moment"
             >
                 <p>Behavioral triggers allow you to launch automated email campaigns based on specific actions a user takes (or doesn't take) on your website or in your app. This makes your communication incredibly timely and relevant.</p>
-                <p><strong className="text-gray-200">Powerful Examples of Behavioral Triggers:</strong></p>
+                <p><strong className="text-foreground">Powerful Examples of Behavioral Triggers:</strong></p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong className="text-gray-200">Cart Abandonment:</strong> The most famous example. A user adds an item to their cart but doesn't complete the purchase.</li>
-                    <li><strong className="text-gray-200">Page Visit Trigger:</strong> A user visits your pricing page multiple times in a week but doesn't sign up. Trigger an email from a "sales consultant" offering to answer any questions.</li>
-                    <li><strong className="text-gray-200">In-App Behavior:</strong> A user has used Feature X but hasn't tried the related Feature Y. Trigger an email explaining the benefits of Feature Y and how to use it.</li>
+                    <li><strong className="text-foreground">Cart Abandonment:</strong> The most famous example. A user adds an item to their cart but doesn't complete the purchase.</li>
+                    <li><strong className="text-foreground">Page Visit Trigger:</strong> A user visits your pricing page multiple times in a week but doesn't sign up. Trigger an email from a "sales consultant" offering to answer any questions.</li>
+                    <li><strong className="text-foreground">In-App Behavior:</strong> A user has used Feature X but hasn't tried the related Feature Y. Trigger an email explaining the benefits of Feature Y and how to use it.</li>
                 </ul>
             </SectionWrapper>
 
@@ -32,7 +32,7 @@ export const AdvancedAutomation: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Making Each Email Unique to the Recipient"
             >
                 <p>Dynamic content allows you to change specific parts of your email content based on the data you have about each subscriber. Instead of creating dozens of separate emails for each segment, you create one email with dynamic blocks.</p>
-                <p><strong className="text-gray-200">How It Works in Practice:</strong></p>
+                <p><strong className="text-foreground">How It Works in Practice:</strong></p>
                 <p>Imagine an e-commerce store sending a weekly newsletter. Using dynamic content, they can show:</p>
                 <ul className="list-disc list-inside space-y-1 mt-2">
                     <li>A block of "Recommended Products" based on the recipient's past purchase history.</li>

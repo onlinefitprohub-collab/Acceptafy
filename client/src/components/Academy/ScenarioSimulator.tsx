@@ -362,10 +362,10 @@ const scenarios: Scenario[] = [
 
 const OutcomeDisplay: React.FC<{ outcome: ScenarioOption['outcome'], explanation: string }> = ({ outcome, explanation }) => {
     const styles = {
-        Success: { icon: <CheckIcon className="w-4 h-4" />, bgColor: 'bg-green-500/20', borderColor: 'border-green-500/50', textColor: 'text-green-300', iconBg: 'bg-green-500 text-green-900' },
-        Ineffective: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50', textColor: 'text-yellow-300', iconBg: 'bg-yellow-500 text-yellow-900' },
-        Negative: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-orange-500/20', borderColor: 'border-orange-500/50', textColor: 'text-orange-300', iconBg: 'bg-orange-500 text-orange-900' },
-        Catastrophic: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50', textColor: 'text-red-300', iconBg: 'bg-red-500 text-red-900' }
+        Success: { icon: <CheckIcon className="w-4 h-4" />, bgColor: 'bg-green-500/20', borderColor: 'border-green-500/50', textColor: 'text-green-600 dark:text-green-300', iconBg: 'bg-green-500 text-green-900' },
+        Ineffective: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-yellow-500/20', borderColor: 'border-yellow-500/50', textColor: 'text-yellow-600 dark:text-yellow-300', iconBg: 'bg-yellow-500 text-yellow-900' },
+        Negative: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-orange-500/20', borderColor: 'border-orange-500/50', textColor: 'text-orange-600 dark:text-orange-300', iconBg: 'bg-orange-500 text-orange-900' },
+        Catastrophic: { icon: <CloseIcon className="w-3 h-3" />, bgColor: 'bg-red-500/20', borderColor: 'border-red-500/50', textColor: 'text-red-600 dark:text-red-300', iconBg: 'bg-red-500 text-red-900' }
     };
     const currentStyle = styles[outcome];
     return (
@@ -374,7 +374,7 @@ const OutcomeDisplay: React.FC<{ outcome: ScenarioOption['outcome'], explanation
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${currentStyle.iconBg}`}>{currentStyle.icon}</div>
                 <h4 className={`text-lg font-bold ${currentStyle.textColor}`}>Outcome: {outcome}</h4>
             </div>
-            <p className="text-gray-300 text-sm mt-2 ml-9">{explanation}</p>
+            <p className="text-muted-foreground text-sm mt-2 ml-9">{explanation}</p>
         </div>
     );
 };
@@ -418,12 +418,12 @@ export const ScenarioSimulator: React.FC<ModuleProps> = ({ onBack }) => {
                         <button 
                             key={index} 
                             onClick={() => handleSelectScenario(index)}
-                            className="bg-white/5 p-5 rounded-lg border border-white/10 text-left h-full flex flex-col group hover:bg-white/10 hover:border-purple-500/50 transition-all duration-300"
+                            className="bg-muted/50 p-5 rounded-lg border border-border text-left h-full flex flex-col group hover:bg-muted hover:border-purple-500/50 transition-all duration-300"
                         >
                             <div className="text-purple-400 mb-3"><BranchingIcon /></div>
-                            <h4 className="font-bold text-lg text-white mb-2 group-hover:text-purple-300 transition-colors">{scenario.title}</h4>
-                            <p className="text-sm text-gray-400 flex-grow">{scenario.description.substring(0, 100)}...</p>
-                             <div className="mt-4 text-sm font-semibold text-purple-400 group-hover:text-purple-200 transition-colors">
+                            <h4 className="font-bold text-lg text-foreground mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors">{scenario.title}</h4>
+                            <p className="text-sm text-muted-foreground flex-grow">{scenario.description.substring(0, 100)}...</p>
+                             <div className="mt-4 text-sm font-semibold text-purple-600 dark:text-purple-400 group-hover:text-purple-500 dark:group-hover:text-purple-200 transition-colors">
                                 Start Scenario &rarr;
                             </div>
                         </button>
@@ -442,13 +442,13 @@ export const ScenarioSimulator: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Read the scenario and choose the best course of action."
             />
 
-            <div className="bg-white/5 p-4 sm:p-6 rounded-lg border border-white/10">
-                <h3 className="text-xl font-bold text-purple-300">{activeScenario.title}</h3>
-                <p className="text-gray-300 mt-2 text-sm leading-relaxed">{activeScenario.description}</p>
+            <div className="bg-muted/50 p-4 sm:p-6 rounded-lg border border-border">
+                <h3 className="text-xl font-bold text-purple-600 dark:text-purple-300">{activeScenario.title}</h3>
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">{activeScenario.description}</p>
             </div>
 
             <div>
-                <h4 className="font-bold text-gray-200 mb-3">Choose your strategy:</h4>
+                <h4 className="font-bold text-foreground mb-3">Choose your strategy:</h4>
                 <div className="space-y-3">
                     {activeScenario.options.map((option, index) => {
                         let buttonClass = 'bg-card border-input hover:bg-muted/60';

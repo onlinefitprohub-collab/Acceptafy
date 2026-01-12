@@ -33,10 +33,10 @@ interface CampaignRiskAnalysis {
 
 const getRiskColor = (risk: string) => {
   switch (risk) {
-    case 'low': return 'text-green-400';
-    case 'medium': return 'text-yellow-400';
-    case 'high': return 'text-red-400';
-    default: return 'text-slate-400';
+    case 'low': return 'text-green-600 dark:text-green-400';
+    case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+    case 'high': return 'text-red-600 dark:text-red-400';
+    default: return 'text-muted-foreground';
   }
 };
 
@@ -50,9 +50,9 @@ const getRiskBgColor = (risk: string) => {
 };
 
 const getScoreColor = (score: number) => {
-  if (score >= 80) return 'text-green-400';
-  if (score >= 50) return 'text-yellow-400';
-  return 'text-red-400';
+  if (score >= 80) return 'text-green-600 dark:text-green-400';
+  if (score >= 50) return 'text-yellow-600 dark:text-yellow-400';
+  return 'text-red-600 dark:text-red-400';
 };
 
 const getScoreProgressColor = (score: number) => {
@@ -63,20 +63,20 @@ const getScoreProgressColor = (score: number) => {
 
 const getSeverityColor = (severity: string) => {
   switch (severity) {
-    case 'critical': return 'bg-red-500/20 text-red-400 border-red-500/30';
-    case 'high': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-    case 'medium': return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
-    case 'low': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-    default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+    case 'critical': return 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30';
+    case 'high': return 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30';
+    case 'medium': return 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30';
+    case 'low': return 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30';
+    default: return 'bg-muted text-muted-foreground border-border';
   }
 };
 
 const getRiskIcon = (risk: string) => {
   switch (risk) {
-    case 'low': return <CheckCircle className="w-8 h-8 text-green-400" />;
-    case 'medium': return <AlertTriangle className="w-8 h-8 text-yellow-400" />;
-    case 'high': return <XCircle className="w-8 h-8 text-red-400" />;
-    default: return <Shield className="w-8 h-8 text-slate-400" />;
+    case 'low': return <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />;
+    case 'medium': return <AlertTriangle className="w-8 h-8 text-yellow-600 dark:text-yellow-400" />;
+    case 'high': return <XCircle className="w-8 h-8 text-red-600 dark:text-red-400" />;
+    default: return <Shield className="w-8 h-8 text-muted-foreground" />;
   }
 };
 
@@ -229,8 +229,8 @@ export const CampaignRiskScore: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">Pro Feature</h3>
-                    <p className="text-slate-400 text-sm mt-1">
+                    <h3 className="text-lg font-semibold text-foreground">Pro Feature</h3>
+                    <p className="text-muted-foreground text-sm mt-1">
                       Campaign Risk Analysis is available on Pro and Scale plans. Upgrade to predict deliverability issues before you send.
                     </p>
                   </div>
@@ -272,19 +272,19 @@ export const CampaignRiskScore: React.FC = () => {
               <div className="flex items-center gap-4">
                 {getRiskIcon(result.overallRisk)}
                 <div>
-                  <h3 className="text-lg font-semibold text-white">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {result.overallRisk === 'low' && 'Low Risk - Safe to Send'}
                     {result.overallRisk === 'medium' && 'Medium Risk - Review Recommended'}
                     {result.overallRisk === 'high' && 'High Risk - Changes Needed'}
                   </h3>
-                  <p className="text-sm text-slate-400">{result.summary}</p>
+                  <p className="text-sm text-muted-foreground">{result.summary}</p>
                 </div>
               </div>
               <div className="text-right">
                 <div className={`text-4xl font-bold ${getScoreColor(result.riskScore)}`}>
                   {result.riskScore}
                 </div>
-                <div className="text-xs text-slate-400">Safety Score</div>
+                <div className="text-xs text-muted-foreground">Safety Score</div>
               </div>
             </div>
             <div className="mt-4">

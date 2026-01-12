@@ -19,7 +19,7 @@ export const AutomationWorkflows: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Making a Powerful First Impression"
             >
                 <p>A welcome series is an automated sequence of emails sent to new subscribers. This is your best opportunity to engage them, as open rates are highest when a user first signs up. A strong welcome series sets the tone for your entire relationship.</p>
-                <p><strong className="text-gray-200">A Common 3-Part Welcome Series:</strong></p>
+                <p><strong className="text-foreground">A Common 3-Part Welcome Series:</strong></p>
                 <ul className="list-decimal list-inside space-y-1 mt-2">
                     <li><strong>Email 1 (Sent Immediately):</strong> Welcome the subscriber, deliver the lead magnet or resource they signed up for, and set expectations for what's to come.</li>
                     <li><strong>Email 2 (Sent 1-2 Days Later):</strong> Introduce your brand story, share a valuable resource, or address a common pain point to build trust.</li>
@@ -32,13 +32,13 @@ export const AutomationWorkflows: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Guiding Prospects Toward a Decision"
             >
                 <p>A nurture sequence is designed to build a relationship with a prospect over time, providing value and gently guiding them towards a conversion. These are often triggered by a specific action, like downloading a whitepaper or visiting a pricing page.</p>
-                 <p><strong className="text-gray-200">Example Nurture Flow:</strong> A user downloads an e-book about "Improving Team Productivity." This triggers a 5-email sequence that sends them related blog posts, a case study of a company that improved productivity, an invitation to a webinar on the topic, and finally, an offer for a free trial of your productivity software.</p>
+                 <p><strong className="text-foreground">Example Nurture Flow:</strong> A user downloads an e-book about "Improving Team Productivity." This triggers a 5-email sequence that sends them related blog posts, a case study of a company that improved productivity, an invitation to a webinar on the topic, and finally, an offer for a free trial of your productivity software.</p>
             </SectionWrapper>
 
             <InfoBox icon={<AutomationIcon />}>
                 <div>
-                    <h4 className="font-bold text-white">Automate Your Best Content</h4>
-                    <p className="text-purple-200 text-sm">Use our <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to instantly write the copy for your welcome series or nurture campaigns based on your initial email's content and goals.</p>
+                    <h4 className="font-bold text-foreground">Automate Your Best Content</h4>
+                    <p className="text-purple-600 dark:text-purple-200 text-sm">Use our <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to instantly write the copy for your welcome series or nurture campaigns based on your initial email's content and goals.</p>
                 </div>
             </InfoBox>
 

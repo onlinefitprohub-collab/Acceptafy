@@ -71,8 +71,8 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
 
     const isGood = type === 'good';
     const borderColor = isGood ? 'border-green-500/50' : 'border-red-500/50';
-    const textColor = isGood ? 'text-green-300' : 'text-red-300';
-    const bgColor = isGood ? 'bg-green-900/30' : 'bg-red-900/30';
+    const textColor = isGood ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300';
+    const bgColor = isGood ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30';
 
     const handleSelect = (index: number) => {
         if (answered) return;
@@ -81,7 +81,7 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
     };
 
     return (
-        <div className={`bg-white/5 p-4 sm:p-6 rounded-lg border ${borderColor}`}>
+        <div className={`bg-muted/50 p-4 sm:p-6 rounded-lg border ${borderColor}`}>
             <h4 className={`text-xl font-bold ${textColor}`}>{isGood ? '✅ Effective Example:' : '❌ Ineffective Example:'} {title}</h4>
             <div className="mt-4 space-y-4">
                 <div className="p-3 bg-muted/50 rounded-lg border border-border">
@@ -93,8 +93,8 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
                      <div className="whitespace-pre-wrap font-sans text-sm text-muted-foreground">{body}</div>
                 </div>
 
-                <div className="bg-white/5 p-4 rounded-lg border-2 border-dashed border-white/10">
-                    <p className="font-semibold text-gray-200 mb-4">{interactive.question}</p>
+                <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-border">
+                    <p className="font-semibold text-foreground mb-4">{interactive.question}</p>
                     <div className="space-y-2 mb-4">
                         {interactive.options.map((option, index) => {
                              let buttonClass = 'bg-card border-input hover:bg-muted/60';
@@ -125,10 +125,10 @@ const InteractiveCaseStudy: React.FC<{ caseStudy: CaseStudy }> = ({ caseStudy })
 
                 {answered && (
                     <div className={`p-4 ${bgColor} border-l-4 ${borderColor} rounded-r-lg animate-fade-in`}>
-                        <h5 className="font-bold text-gray-200 mb-2">Full Analysis: Why this {isGood ? 'Worked' : 'Failed'}</h5>
+                        <h5 className="font-bold text-foreground mb-2">Full Analysis: Why this {isGood ? 'Worked' : 'Failed'}</h5>
                         <ul className="space-y-2">
                             {analysis.map((point, index) => (
-                                <li key={index} className="flex items-start gap-2 text-sm text-gray-300">
+                                <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
                                     <div className={`mt-1 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${isGood ? 'bg-green-500 text-green-900' : 'bg-red-500 text-red-900'}`}>
                                         {isGood ? <CheckIcon className="w-2 h-2" /> : <CloseIcon className="w-2 h-2" />}
                                     </div>

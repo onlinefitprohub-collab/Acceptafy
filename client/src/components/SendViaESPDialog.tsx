@@ -166,8 +166,8 @@ export function SendViaESPDialog({
           </div>
         ) : sendSuccess ? (
           <div className="py-6 text-center" data-testid="send-success">
-            <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
-            <p className="text-green-400 font-medium mb-2">Email Sent!</p>
+            <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400 mx-auto mb-3" />
+            <p className="text-green-600 dark:text-green-400 font-medium mb-2">Email Sent!</p>
             <p className="text-sm text-muted-foreground">
               Email sent successfully via {ESP_PROVIDER_NAMES[selectedProvider] || selectedProvider}!
             </p>
@@ -226,14 +226,14 @@ export function SendViaESPDialog({
               />
             </div>
 
-            <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+            <div className="p-3 bg-muted/50 rounded-lg border border-border">
               <p className="text-xs text-muted-foreground mb-1">Subject:</p>
               <p className="text-sm font-medium truncate">{subject}</p>
             </div>
 
             {sendMutation.isError && (
               <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <p className="text-sm text-red-400">
+                <p className="text-sm text-red-600 dark:text-red-400">
                   {sendMutation.error?.message || 'Failed to send email'}
                 </p>
               </div>

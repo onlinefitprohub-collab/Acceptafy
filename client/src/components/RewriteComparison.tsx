@@ -47,17 +47,17 @@ const MetricRow: React.FC<MetricRowProps> = ({ label, originalValue, newValue, h
     const isImprovement = higherIsBetter ? diff > 0 : diff < 0;
     const isRegression = higherIsBetter ? diff < 0 : diff > 0;
 
-    const changeColor = isImprovement ? 'text-green-500' : isRegression ? 'text-red-500' : 'text-gray-400';
+    const changeColor = isImprovement ? 'text-green-500' : isRegression ? 'text-red-500' : 'text-muted-foreground';
     const changeIcon = isImprovement ? '▲' : isRegression ? '▼' : '';
 
     return (
-        <div className="flex justify-between items-center text-sm p-3 bg-white/5 rounded-md">
-            <span className="font-semibold text-gray-300">{label}</span>
+        <div className="flex justify-between items-center text-sm p-3 bg-muted/50 rounded-md">
+            <span className="font-semibold text-muted-foreground">{label}</span>
             <div className="flex items-center gap-2 sm:gap-4">
-                <span className="text-gray-400">{originalValue}</span>
-                <span className="text-2xl text-gray-500 font-light">→</span>
+                <span className="text-muted-foreground">{originalValue}</span>
+                <span className="text-2xl text-muted-foreground font-light">→</span>
                 <div className="flex items-baseline gap-1 w-20 sm:w-24 justify-end">
-                    <span className="font-bold text-lg text-purple-300">{newValue}</span>
+                    <span className="font-bold text-lg text-purple-600 dark:text-purple-300">{newValue}</span>
                     {diff !== 0 && (
                         <span className={`font-bold ${changeColor}`}>
                             {changeIcon} {!isGrade ? ` ${Math.abs(diff)}` : ''}
@@ -100,7 +100,7 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
         return (
             <button 
                 onClick={() => handleCopy(text, type)} 
-                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${isCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full transition-colors ${isCopied ? 'bg-green-500/20 text-green-600 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
                 data-testid={`button-copy-${type}`}
             >
                 {isCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
@@ -110,51 +110,51 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
     };
 
     return (
-        <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg space-y-8 animate-fade-in" data-testid="rewrite-comparison">
-            <h2 className="text-xl sm:text-2xl font-bold text-center text-white">Rewrite Comparison</h2>
+        <div className="bg-muted/50 backdrop-blur-lg border border-border rounded-2xl p-4 sm:p-6 shadow-lg space-y-8 animate-fade-in" data-testid="rewrite-comparison">
+            <h2 className="text-xl sm:text-2xl font-bold text-center text-foreground">Rewrite Comparison</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* BEFORE Column */}
                 <div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-center text-gray-400 mb-4">Before</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-center text-muted-foreground mb-4">Before</h3>
                     <ResultsHub scoreData={originalResult.inboxPlacementScore} gradeData={originalResult.overallGrade} isComparison={true} />
                     <div className="mt-6 space-y-4 text-sm">
                         <div>
-                            <h4 className="font-semibold text-gray-300 mb-1">Subject:</h4>
-                            <p className="p-3 bg-white/5 rounded-lg text-gray-400 border border-white/10">{originalWinner?.subject}</p>
+                            <h4 className="font-semibold text-muted-foreground mb-1">Subject:</h4>
+                            <p className="p-3 bg-muted/50 rounded-lg text-muted-foreground border border-border">{originalWinner?.subject}</p>
                         </div>
                         <div>
-                            <h4 className="font-semibold text-gray-300 mb-1">Preview Text:</h4>
-                            <p className="p-3 bg-white/5 rounded-lg text-gray-400 border border-white/10">{originalWinner?.previewText}</p>
+                            <h4 className="font-semibold text-muted-foreground mb-1">Preview Text:</h4>
+                            <p className="p-3 bg-muted/50 rounded-lg text-muted-foreground border border-border">{originalWinner?.previewText}</p>
                         </div>
                     </div>
                 </div>
 
                 {/* AFTER Column */}
                 <div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-center text-green-300 mb-4">After (Enhanced)</h3>
+                    <h3 className="text-lg sm:text-xl font-semibold text-center text-green-600 dark:text-green-300 mb-4">After (Enhanced)</h3>
                     <ResultsHub scoreData={rewrittenResult.inboxPlacementScore} gradeData={rewrittenResult.overallGrade} isComparison={true} />
                      <div className="mt-6 space-y-4 text-sm">
                         <div>
                             <div className="flex justify-between items-center mb-1">
-                                <h4 className="font-semibold text-gray-300">Subject:</h4>
+                                <h4 className="font-semibold text-muted-foreground">Subject:</h4>
                                 <CopyButton text={rewrittenContent.subject} type="subject" />
                             </div>
-                            <p className="p-3 bg-white/5 rounded-lg text-gray-400 border border-white/10">{rewrittenContent.subject}</p>
+                            <p className="p-3 bg-muted/50 rounded-lg text-muted-foreground border border-border">{rewrittenContent.subject}</p>
                         </div>
                         <div>
                             <div className="flex justify-between items-center mb-1">
-                                <h4 className="font-semibold text-gray-300">Preview Text:</h4>
+                                <h4 className="font-semibold text-muted-foreground">Preview Text:</h4>
                                 <CopyButton text={rewrittenContent.previewText} type="preview" />
                             </div>
-                            <p className="p-3 bg-white/5 rounded-lg text-gray-400 border border-white/10">{rewrittenContent.previewText}</p>
+                            <p className="p-3 bg-muted/50 rounded-lg text-muted-foreground border border-border">{rewrittenContent.previewText}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="border-t border-b border-white/10 py-6">
-                <h3 className="text-lg sm:text-xl font-semibold text-center text-gray-300 mb-4">Key Metric Improvements</h3>
+            <div className="border-t border-b border-border py-6">
+                <h3 className="text-lg sm:text-xl font-semibold text-center text-muted-foreground mb-4">Key Metric Improvements</h3>
                 <div className="max-w-xl mx-auto space-y-2">
                     <MetricRow label="Chance of reaching inbox" originalValue={originalResult.inboxPlacementScore.score} newValue={rewrittenResult.inboxPlacementScore.score} higherIsBetter={true} />
                     <MetricRow label="Overall Grade" originalValue={originalResult.overallGrade.grade} newValue={rewrittenResult.overallGrade.grade} isGrade={true} />
@@ -165,7 +165,7 @@ export const RewriteComparison: React.FC<RewriteComparisonProps> = ({
             </div>
             
             <div className="pt-6">
-                 <h3 className="text-lg sm:text-xl font-semibold text-center text-gray-300 mb-4">Body Copy Comparison</h3>
+                 <h3 className="text-lg sm:text-xl font-semibold text-center text-muted-foreground mb-4">Body Copy Comparison</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                          <h4 className="font-semibold text-center text-muted-foreground mb-2">Before</h4>

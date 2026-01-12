@@ -216,7 +216,7 @@ function EngagementCard({ data }: { data: EngagementPrediction }) {
   const getImpactIcon = (impact: string) => {
     if (impact === 'positive') return <ThumbsUp className="w-3 h-3 text-green-400" />;
     if (impact === 'negative') return <ThumbsDown className="w-3 h-3 text-red-400" />;
-    return <Minus className="w-3 h-3 text-gray-400" />;
+    return <Minus className="w-3 h-3 text-muted-foreground" />;
   };
 
   return (

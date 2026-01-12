@@ -32,8 +32,8 @@ export const Glossary: React.FC = () => {
 
     return (
         <div className="animate-fade-in">
-            <h3 className="text-2xl font-bold text-purple-300 mb-2">AI-Powered Glossary</h3>
-            <p className="text-gray-400 mb-6">Confused by email jargon? Type any term below and get a simple explanation.</p>
+            <h3 className="text-2xl font-bold text-purple-600 dark:text-purple-300 mb-2">AI-Powered Glossary</h3>
+            <p className="text-muted-foreground mb-6">Confused by email jargon? Type any term below and get a simple explanation.</p>
 
             <form onSubmit={handleSubmit} className="flex items-center gap-3 mb-8">
                 <input
@@ -61,7 +61,7 @@ export const Glossary: React.FC = () => {
             </form>
 
             {isLoading && (
-                <div className="text-center text-gray-400">
+                <div className="text-center text-muted-foreground">
                     <p>Thinking...</p>
                 </div>
             )}
@@ -69,18 +69,18 @@ export const Glossary: React.FC = () => {
             {error && <p className="text-center text-red-400" data-testid="text-glossary-error">{error}</p>}
             
             {result && (
-                <div className="space-y-6 bg-white/5 p-4 sm:p-6 rounded-lg border border-white/10 animate-fade-in" data-testid="glossary-result">
+                <div className="space-y-6 bg-muted/50 p-4 sm:p-6 rounded-lg border border-border animate-fade-in" data-testid="glossary-result">
                     <div>
-                        <h4 className="font-bold text-lg text-gray-200 mb-1">Simple Definition</h4>
-                        <p className="text-gray-300">{result.simpleDefinition}</p>
+                        <h4 className="font-bold text-lg text-foreground mb-1">Simple Definition</h4>
+                        <p className="text-muted-foreground">{result.simpleDefinition}</p>
                     </div>
-                    <div className="border-t border-white/10 pt-4">
-                        <h4 className="font-bold text-lg text-gray-200 mb-1">Detailed Explanation</h4>
-                        <p className="text-gray-400 leading-relaxed text-sm">{result.detailedExplanation}</p>
+                    <div className="border-t border-border pt-4">
+                        <h4 className="font-bold text-lg text-foreground mb-1">Detailed Explanation</h4>
+                        <p className="text-muted-foreground leading-relaxed text-sm">{result.detailedExplanation}</p>
                     </div>
-                     <div className="border-t border-white/10 pt-4">
-                        <h4 className="font-bold text-lg text-gray-200 mb-1">Why It Matters (Practical Example)</h4>
-                        <p className="text-gray-400 leading-relaxed text-sm">{result.practicalExample}</p>
+                     <div className="border-t border-border pt-4">
+                        <h4 className="font-bold text-lg text-foreground mb-1">Why It Matters (Practical Example)</h4>
+                        <p className="text-muted-foreground leading-relaxed text-sm">{result.practicalExample}</p>
                     </div>
                 </div>
             )}

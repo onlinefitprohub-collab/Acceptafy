@@ -20,11 +20,11 @@ export const LegalCompliance: React.FC<ModuleProps> = ({ onBack }) => {
             >
                 <p>The CAN-SPAM Act sets the rules for commercial email in the United States. Violations can lead to significant financial penalties.</p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong className="text-gray-200">Accurate Header Information:</strong> Your "From," "To," "Reply-To," and routing information must be accurate and identify the person or business who initiated the message.</li>
-                    <li><strong className="text-gray-200">Non-Deceptive Subject Lines:</strong> The subject line must accurately reflect the content of the message.</li>
-                    <li><strong className="text-gray-200">Identify the Message as an Ad:</strong> You must disclose clearly and conspicuously that your message is an advertisement.</li>
-                    <li><strong className="text-gray-200">Include a Physical Address:</strong> Your message must include your valid physical postal address.</li>
-                    <li><strong className="text-gray-200">Provide a Clear Opt-Out:</strong> You must provide a clear and conspicuous explanation of how the recipient can opt out of getting email from you in the future. Opt-out requests must be honored promptly (within 10 business days).</li>
+                    <li><strong className="text-foreground">Accurate Header Information:</strong> Your "From," "To," "Reply-To," and routing information must be accurate and identify the person or business who initiated the message.</li>
+                    <li><strong className="text-foreground">Non-Deceptive Subject Lines:</strong> The subject line must accurately reflect the content of the message.</li>
+                    <li><strong className="text-foreground">Identify the Message as an Ad:</strong> You must disclose clearly and conspicuously that your message is an advertisement.</li>
+                    <li><strong className="text-foreground">Include a Physical Address:</strong> Your message must include your valid physical postal address.</li>
+                    <li><strong className="text-foreground">Provide a Clear Opt-Out:</strong> You must provide a clear and conspicuous explanation of how the recipient can opt out of getting email from you in the future. Opt-out requests must be honored promptly (within 10 business days).</li>
                 </ul>
             </SectionWrapper>
 
@@ -34,9 +34,9 @@ export const LegalCompliance: React.FC<ModuleProps> = ({ onBack }) => {
             >
                 <p>The General Data Protection Regulation (GDPR) is a comprehensive data privacy law in the European Union. If you have subscribers in the EU, you must comply with its stricter requirements, which are centered on user consent and data rights.</p>
                  <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong className="text-gray-200">Explicit & Unambiguous Consent:</strong> You must obtain clear, affirmative consent before sending marketing emails. Pre-checked boxes or consent hidden in terms and conditions are not valid.</li>
-                    <li><strong className="text-gray-200">Proof of Consent:</strong> You must be able to prove when and how each individual gave you their consent.</li>
-                    <li><strong className="text-gray-200">The Right to Erasure:</strong> Individuals have the right to request that all of their personal data be deleted from your systems, and you must comply.</li>
+                    <li><strong className="text-foreground">Explicit & Unambiguous Consent:</strong> You must obtain clear, affirmative consent before sending marketing emails. Pre-checked boxes or consent hidden in terms and conditions are not valid.</li>
+                    <li><strong className="text-foreground">Proof of Consent:</strong> You must be able to prove when and how each individual gave you their consent.</li>
+                    <li><strong className="text-foreground">The Right to Erasure:</strong> Individuals have the right to request that all of their personal data be deleted from your systems, and you must comply.</li>
                 </ul>
             </SectionWrapper>
 

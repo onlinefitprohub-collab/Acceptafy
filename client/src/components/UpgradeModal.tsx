@@ -162,7 +162,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
             </div>
         </main>
 
-        <footer className="p-5 bg-black/20 border-t border-white/10">
+        <footer className="p-5 bg-muted/50 border-t border-border">
              <button 
                 onClick={handleUpgrade}
                 disabled={checkoutMutation.isPending}
@@ -178,7 +178,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
                   <>Upgrade to {planName} - {planPrice}/mo</>
                 )}
             </button>
-            <p className="text-center text-xs text-gray-500 mt-3">Secure payment via Stripe. Cancel anytime.</p>
+            <p className="text-center text-xs text-muted-foreground mt-3">Secure payment via Stripe. Cancel anytime.</p>
         </footer>
 
       </div>

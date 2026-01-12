@@ -319,7 +319,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
               className={`transition-all duration-300 ${
                 connection?.connected 
                   ? `border-${provider.color}-500/30 bg-gradient-to-br from-${provider.color}-500/5 to-transparent` 
-                  : 'hover:border-white/20'
+                  : 'hover:border-border/50'
               }`}
               data-testid={`esp-card-${provider.id}`}
             >
@@ -351,7 +351,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {connection?.connected && (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30" data-testid={`status-connected-${provider.id}`}>
+                      <Badge className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30" data-testid={`status-connected-${provider.id}`}>
                         <Check className="w-3 h-3 mr-1" />
                         Connected
                       </Badge>
@@ -359,7 +359,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                     {provider.limitedSupport && (
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-400 border-amber-500/30" data-testid={`badge-limited-${provider.id}`}>
+                          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" data-testid={`badge-limited-${provider.id}`}>
                             <AlertCircle className="w-3 h-3 mr-1" />
                             Limited
                           </Badge>
@@ -401,7 +401,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                       size="sm"
                       onClick={() => handleDisconnect(provider)}
                       disabled={isDisconnecting}
-                      className="w-full text-red-400 border-red-500/30 hover:bg-red-500/10"
+                      className="w-full text-red-600 dark:text-red-400 border-red-500/30 hover:bg-red-500/10"
                       data-testid={`button-disconnect-${provider.id}`}
                     >
                       {isDisconnecting ? (
@@ -416,7 +416,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                   <>
                     {provider.authType === 'oauth' ? (
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-xs text-amber-400" data-testid={`status-oauth-pending-${provider.id}`}>
+                        <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400" data-testid={`status-oauth-pending-${provider.id}`}>
                           <AlertCircle className="w-3 h-3" />
                           <span>OAuth integration coming soon</span>
                         </div>
@@ -437,7 +437,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
                           <div key={field.key} className="space-y-1.5">
                             <Label className="text-xs flex items-center gap-1">
                               {field.label}
-                              {field.required && <span className="text-red-400">*</span>}
+                              {field.required && <span className="text-red-600 dark:text-red-400">*</span>}
                             </Label>
                             <Input
                               type={field.type || 'text'}
@@ -510,7 +510,7 @@ export function ESPSettings({ connections, onConnect, onDisconnect }: ESPSetting
       <Card className="border-dashed border-muted-foreground/30 bg-muted/5" data-testid="card-esp-feedback">
         <CardContent className="py-6 text-center">
           <p className="text-sm text-muted-foreground" data-testid="text-esp-feedback">
-            Need a different ESP? <span className="text-purple-400">Let us know</span> which integrations you'd like to see.
+            Need a different ESP? <span className="text-purple-600 dark:text-purple-400">Let us know</span> which integrations you'd like to see.
           </p>
         </CardContent>
       </Card>

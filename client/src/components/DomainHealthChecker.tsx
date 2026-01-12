@@ -121,13 +121,13 @@ export const DomainHealthChecker: React.FC = () => {
     const getStatusStyles = (status: DomainHealth['status'] | undefined) => {
         switch (status) {
             case 'Clean':
-                return { icon: <GoodStatusIcon />, text: 'text-green-300', bg: 'bg-green-500/10', border: 'border-green-500/50' };
+                return { icon: <GoodStatusIcon />, text: 'text-green-700 dark:text-green-300', bg: 'bg-green-100 dark:bg-green-500/10', border: 'border-green-300 dark:border-green-500/50' };
             case 'Warning':
-                return { icon: <WarningStatusIcon />, text: 'text-yellow-300', bg: 'bg-yellow-500/10', border: 'border-yellow-500/50' };
+                return { icon: <WarningStatusIcon />, text: 'text-yellow-700 dark:text-yellow-300', bg: 'bg-yellow-100 dark:bg-yellow-500/10', border: 'border-yellow-300 dark:border-yellow-500/50' };
             case 'Blacklisted':
-                return { icon: <BadStatusIcon />, text: 'text-red-300', bg: 'bg-red-500/10', border: 'border-red-500/50' };
+                return { icon: <BadStatusIcon />, text: 'text-red-700 dark:text-red-300', bg: 'bg-red-100 dark:bg-red-500/10', border: 'border-red-300 dark:border-red-500/50' };
             default:
-                return { icon: <InfoIcon className="w-6 h-6 text-gray-400" />, text: 'text-gray-300', bg: 'bg-gray-500/10', border: 'border-gray-500/50' };
+                return { icon: <InfoIcon className="w-6 h-6 text-muted-foreground" />, text: 'text-muted-foreground', bg: 'bg-muted', border: 'border-border' };
         }
     };
 
@@ -170,43 +170,43 @@ export const DomainHealthChecker: React.FC = () => {
                     </div>
                     
                     {formattedReport.introText && (
-                        <p className="text-gray-300 mt-3 text-sm">{formattedReport.introText}</p>
+                        <p className="text-muted-foreground mt-3 text-sm">{formattedReport.introText}</p>
                     )}
                     
                     {formattedReport.sections.length > 0 && (
                         <div className="mt-4 space-y-4">
                             {formattedReport.sections.map((section: { label: string; content: string }, index: number) => (
-                                <div key={index} className="border-l-2 border-white/20 pl-3">
-                                    <h5 className="font-semibold text-gray-200 text-sm mb-1">{section.label}</h5>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{section.content}</p>
+                                <div key={index} className="border-l-2 border-border pl-3">
+                                    <h5 className="font-semibold text-foreground text-sm mb-1">{section.label}</h5>
+                                    <p className="text-muted-foreground text-sm leading-relaxed">{section.content}</p>
                                 </div>
                             ))}
                         </div>
                     )}
                     
                     {formattedReport.sections.length === 0 && result.report && (
-                        <p className="text-gray-300 mt-2 text-sm">{result.report}</p>
+                        <p className="text-muted-foreground mt-2 text-sm">{result.report}</p>
                     )}
                     
                     {result.recommendation && (
-                         <div className="mt-4 pt-4 border-t border-white/10">
-                            <h5 className="font-semibold text-gray-200 mb-3">Recommendations</h5>
+                         <div className="mt-4 pt-4 border-t border-border">
+                            <h5 className="font-semibold text-foreground mb-3">Recommendations</h5>
                             
                             {formattedRecommendation.introText && (
-                                <p className="text-gray-300 text-sm mb-3">{formattedRecommendation.introText}</p>
+                                <p className="text-muted-foreground text-sm mb-3">{formattedRecommendation.introText}</p>
                             )}
                             
                             {formattedRecommendation.sections.length > 0 ? (
                                 <div className="space-y-3">
                                     {formattedRecommendation.sections.map((section: { label: string; content: string }, index: number) => (
-                                        <div key={index} className="border-l-2 border-green-500/30 pl-3">
-                                            <h6 className="font-medium text-green-300 text-sm mb-1">{section.label}</h6>
-                                            <p className="text-gray-400 text-sm leading-relaxed">{section.content}</p>
+                                        <div key={index} className="border-l-2 border-green-300 dark:border-green-500/30 pl-3">
+                                            <h6 className="font-medium text-green-700 dark:text-green-300 text-sm mb-1">{section.label}</h6>
+                                            <p className="text-muted-foreground text-sm leading-relaxed">{section.content}</p>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-300 text-sm">{result.recommendation}</p>
+                                <p className="text-muted-foreground text-sm">{result.recommendation}</p>
                             )}
                         </div>
                     )}

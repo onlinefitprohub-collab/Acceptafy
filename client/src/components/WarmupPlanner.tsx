@@ -8,10 +8,10 @@ import { Link } from 'wouter';
 import type { WarmupPlan, WarmupDay } from '../types';
 
 const PhaseColors: Record<string, { bg: string; border: string; text: string }> = {
-  Foundation: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400' },
-  Growth: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-400' },
-  Scale: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-400' },
-  Optimization: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' }
+  Foundation: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-600 dark:text-blue-400' },
+  Growth: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600 dark:text-green-400' },
+  Scale: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-600 dark:text-purple-400' },
+  Optimization: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-600 dark:text-orange-400' }
 };
 
 const DayCard: React.FC<{ day: WarmupDay; isExpanded: boolean; onToggle: () => void }> = ({ day, isExpanded, onToggle }) => {
@@ -36,7 +36,7 @@ const DayCard: React.FC<{ day: WarmupDay; isExpanded: boolean; onToggle: () => v
                   {day.phase}
                 </Badge>
                 {day.milestone && (
-                  <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                  <Badge className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
                     <Zap className="w-3 h-3 mr-1" />
                     {day.milestone}
                   </Badge>
@@ -68,7 +68,7 @@ const DayCard: React.FC<{ day: WarmupDay; isExpanded: boolean; onToggle: () => v
               <ul className="space-y-1">
                 {day.actions.map((action, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                     {action}
                   </li>
                 ))}
@@ -80,7 +80,7 @@ const DayCard: React.FC<{ day: WarmupDay; isExpanded: boolean; onToggle: () => v
                 <ul className="space-y-1">
                   {day.tips.map((tip, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Flame className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                      <Flame className="w-4 h-4 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
                       {tip}
                     </li>
                   ))}
@@ -250,7 +250,7 @@ export const WarmupPlanner: React.FC = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-400" />
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                   Best Practices
                 </CardTitle>
               </CardHeader>
@@ -258,7 +258,7 @@ export const WarmupPlanner: React.FC = () => {
                 <ul className="space-y-2">
                   {plan.bestPractices.map((practice, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                       {practice}
                     </li>
                   ))}
@@ -269,7 +269,7 @@ export const WarmupPlanner: React.FC = () => {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                   Warning Signals
                 </CardTitle>
               </CardHeader>
@@ -277,7 +277,7 @@ export const WarmupPlanner: React.FC = () => {
                 <ul className="space-y-2">
                   {plan.warningSignals.map((signal, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <AlertTriangle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                       {signal}
                     </li>
                   ))}

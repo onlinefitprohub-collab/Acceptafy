@@ -211,7 +211,7 @@ export const SpellGrammarChecker: React.FC<SpellGrammarCheckerProps> = ({
                     <span className="text-green-600 dark:text-green-400 font-medium">{issue.suggestion}</span>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-muted-foreground">{issue.explanation}</p>
+                <p className="text-xs text-muted-foreground">{issue.explanation}</p>
               </div>
             ))}
           </div>

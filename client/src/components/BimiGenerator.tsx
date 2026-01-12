@@ -37,12 +37,12 @@ export const BimiGenerator: React.FC = () => {
     };
 
     return (
-        <div className="p-4 bg-white/5 rounded-lg border border-white/10" data-testid="bimi-generator">
+        <div className="p-4 bg-muted/50 rounded-lg border border-border" data-testid="bimi-generator">
             <div className="flex items-center gap-3 mb-4">
-                <span className="text-purple-400"><BimiIcon /></span>
-                <h4 className="text-lg font-semibold text-white">BIMI Record Generator</h4>
+                <span className="text-purple-600 dark:text-purple-400"><BimiIcon /></span>
+                <h4 className="text-lg font-semibold text-foreground">BIMI Record Generator</h4>
             </div>
-            <p className="text-sm text-gray-400 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
                 BIMI is an advanced standard that allows your logo to appear next to your email in the inbox, acting as a powerful visual trust signal.
             </p>
 
@@ -59,26 +59,26 @@ export const BimiGenerator: React.FC = () => {
                 <button
                     onClick={handleGenerate}
                     disabled={!domain.trim() || isLoading}
-                    className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 disabled:bg-muted disabled:text-muted-foreground transition-colors flex items-center justify-center gap-2"
                     data-testid="button-generate-bimi"
                 >
-                    {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
+                    {isLoading && <div className="w-4 h-4 border-2 border-white/80 border-t-transparent rounded-full animate-spin"></div>}
                     Generate BIMI Info
                 </button>
             </div>
 
-            {error && <p className="text-red-400 text-sm mt-2" data-testid="text-bimi-error">{error}</p>}
+            {error && <p className="text-red-600 dark:text-red-400 text-sm mt-2" data-testid="text-bimi-error">{error}</p>}
 
             {result && (
-                <div className="mt-4 pt-4 border-t border-white/10 space-y-4 animate-fade-in" data-testid="bimi-result">
-                    <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/50 text-yellow-200">
+                <div className="mt-4 pt-4 border-t border-border space-y-4 animate-fade-in" data-testid="bimi-result">
+                    <div className="flex items-start gap-3 p-3 rounded-md bg-yellow-500/10 border border-yellow-500/50 text-yellow-800 dark:text-yellow-200">
                         <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                         <div>
                             <h5 className="font-bold">Prerequisite: DMARC Enforcement</h5>
                             <p className="text-xs">{result.dmarcPrerequisite}</p>
                         </div>
                     </div>
-                     <div className="flex items-start gap-3 p-3 rounded-md bg-sky-500/10 border border-sky-500/50 text-sky-200">
+                     <div className="flex items-start gap-3 p-3 rounded-md bg-sky-500/10 border border-sky-500/50 text-sky-800 dark:text-sky-200">
                         <InfoIcon className="w-5 h-5 flex-shrink-0 mt-0.5" />
                          <div>
                             <h5 className="font-bold">Logo Requirement</h5>
@@ -93,7 +93,7 @@ export const BimiGenerator: React.FC = () => {
                             </pre>
                             <button 
                                 onClick={() => copy(result.bimiRecord)}
-                                className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${isCopied ? 'bg-green-500/20 text-green-300' : 'bg-white/10 text-gray-300 hover:bg-white/20'}`}
+                                className={`flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md transition-colors ${isCopied ? 'bg-green-500/20 text-green-600 dark:text-green-300' : 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'}`}
                                 data-testid="button-copy-bimi"
                             >
                                 {isCopied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}

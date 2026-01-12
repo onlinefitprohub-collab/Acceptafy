@@ -220,11 +220,11 @@ export function PersonalizedLearningPath({ history, onSelectModule }: Personaliz
               <Sparkles className="w-5 h-5 text-purple-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-white">Personalized Learning Path</h3>
-              <p className="text-sm text-gray-400">Grade some emails to get personalized recommendations</p>
+              <h3 className="font-semibold text-foreground">Personalized Learning Path</h3>
+              <p className="text-sm text-muted-foreground">Grade some emails to get personalized recommendations</p>
             </div>
           </div>
-          <p className="text-gray-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             Once you've graded a few emails, we'll analyze your patterns and suggest the best learning modules to improve your skills.
           </p>
         </CardContent>
@@ -238,7 +238,7 @@ export function PersonalizedLearningPath({ history, onSelectModule }: Personaliz
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-purple-400" />
-            <CardTitle className="text-lg text-white">Your Learning Path</CardTitle>
+            <CardTitle className="text-lg text-foreground">Your Learning Path</CardTitle>
           </div>
           <Badge variant="outline" className="text-purple-400 border-purple-500/30">
             Based on {analysis.totalEmails} graded emails
@@ -248,48 +248,48 @@ export function PersonalizedLearningPath({ history, onSelectModule }: Personaliz
       
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="w-4 h-4 text-purple-400" />
-              <span className="text-sm font-medium text-gray-300">Overall Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">Overall Progress</span>
             </div>
-            <div className="text-2xl font-bold text-white mb-2">{analysis.overallProgress}%</div>
+            <div className="text-2xl font-bold text-foreground mb-2">{analysis.overallProgress}%</div>
             <Progress value={analysis.overallProgress} className="h-2" />
           </div>
           
-          <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-medium text-gray-300">Strengths</span>
+              <span className="text-sm font-medium text-muted-foreground">Strengths</span>
             </div>
             {analysis.strengths.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {analysis.strengths.map(s => (
-                  <Badge key={s} variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <Badge key={s} variant="secondary" className="bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30">
                     {s}
                   </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">Keep grading to discover your strengths</p>
+              <p className="text-sm text-muted-foreground">Keep grading to discover your strengths</p>
             )}
           </div>
           
-          <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="p-4 rounded-lg bg-muted/50 border border-border">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm font-medium text-gray-300">Areas to Improve</span>
+              <span className="text-sm font-medium text-muted-foreground">Areas to Improve</span>
             </div>
             {analysis.weaknesses.length > 0 ? (
               <div className="flex flex-wrap gap-1">
                 {analysis.weaknesses.map(w => (
-                  <Badge key={w} variant="secondary" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                  <Badge key={w} variant="secondary" className="bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30">
                     {w}
                   </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-gray-500">You're doing great across all areas!</p>
+              <p className="text-sm text-muted-foreground">You're doing great across all areas!</p>
             )}
           </div>
         </div>
@@ -298,43 +298,43 @@ export function PersonalizedLearningPath({ history, onSelectModule }: Personaliz
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-purple-400" />
-              <h4 className="font-medium text-white">Recommended Modules</h4>
+              <h4 className="font-medium text-foreground">Recommended Modules</h4>
             </div>
             
             {analysis.recommendations.map((rec, index) => (
               <div 
                 key={rec.id}
-                className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-purple-500/50 transition-colors cursor-pointer group"
+                className="p-4 rounded-lg bg-muted/50 border border-border hover:border-purple-500/50 transition-colors cursor-pointer group"
                 onClick={() => onSelectModule(rec.moduleKey)}
                 data-testid={`recommendation-${rec.id}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      rec.priority === 'high' ? 'bg-red-500/20 text-red-400' :
-                      rec.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-blue-500/20 text-blue-400'
+                      rec.priority === 'high' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
+                      rec.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                      'bg-blue-500/20 text-blue-600 dark:text-blue-400'
                     }`}>
                       {index + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <h5 className="font-medium text-white group-hover:text-purple-400 transition-colors">
+                        <h5 className="font-medium text-foreground group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
                           {rec.title}
                         </h5>
                         <Badge 
                           variant="outline" 
                           className={`text-xs ${
-                            rec.priority === 'high' ? 'border-red-500/30 text-red-400' :
-                            rec.priority === 'medium' ? 'border-yellow-500/30 text-yellow-400' :
-                            'border-blue-500/30 text-blue-400'
+                            rec.priority === 'high' ? 'border-red-500/30 text-red-600 dark:text-red-400' :
+                            rec.priority === 'medium' ? 'border-yellow-500/30 text-yellow-600 dark:text-yellow-400' :
+                            'border-blue-500/30 text-blue-600 dark:text-blue-400'
                           }`}
                         >
                           {rec.priority === 'high' ? 'High Priority' : rec.priority === 'medium' ? 'Recommended' : 'Optional'}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-400 mb-2">{rec.description}</p>
-                      <p className="text-xs text-purple-400">{rec.reason}</p>
+                      <p className="text-sm text-muted-foreground mb-2">{rec.description}</p>
+                      <p className="text-xs text-purple-600 dark:text-purple-400">{rec.reason}</p>
                     </div>
                   </div>
                   <Button 
@@ -354,8 +354,8 @@ export function PersonalizedLearningPath({ history, onSelectModule }: Personaliz
           <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-3">
             <Zap className="w-5 h-5 text-green-400" />
             <div>
-              <h4 className="font-medium text-white">You're a Pro!</h4>
-              <p className="text-sm text-gray-400">Your email skills are excellent. Explore advanced modules to take it even further.</p>
+              <h4 className="font-medium text-foreground">You're a Pro!</h4>
+              <p className="text-sm text-muted-foreground">Your email skills are excellent. Explore advanced modules to take it even further.</p>
             </div>
           </div>
         )}

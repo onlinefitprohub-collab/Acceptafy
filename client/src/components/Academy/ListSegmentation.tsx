@@ -19,11 +19,11 @@ export const ListSegmentation: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Quality Over Quantity"
             >
                 <p>A smaller, highly engaged email list is far more valuable than a massive, unengaged one. Sending emails to inactive or invalid addresses damages your sender reputation, which tells inbox providers (like Gmail and Outlook) to send more of your mail to the spam folder.</p>
-                <p><strong className="text-gray-200">Key Hygiene Practices:</strong></p>
+                <p><strong className="text-foreground">Key Hygiene Practices:</strong></p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong className="text-gray-200">Implement a Sunset Policy:</strong> Regularly remove subscribers who haven't opened or clicked an email in a set period (e.g., 90-120 days). This is the single most effective way to improve deliverability.</li>
-                    <li><strong className="text-gray-200">Use Double Opt-In:</strong> Requiring users to confirm their subscription via email ensures they genuinely want to be on your list and reduces invalid sign-ups.</li>
-                    <li><strong className="text-gray-200">Never Buy an Email List:</strong> Purchased lists are filled with unengaged users, spam traps, and invalid addresses. Using one is the fastest way to destroy your sender reputation.</li>
+                    <li><strong className="text-foreground">Implement a Sunset Policy:</strong> Regularly remove subscribers who haven't opened or clicked an email in a set period (e.g., 90-120 days). This is the single most effective way to improve deliverability.</li>
+                    <li><strong className="text-foreground">Use Double Opt-In:</strong> Requiring users to confirm their subscription via email ensures they genuinely want to be on your list and reduces invalid sign-ups.</li>
+                    <li><strong className="text-foreground">Never Buy an Email List:</strong> Purchased lists are filled with unengaged users, spam traps, and invalid addresses. Using one is the fastest way to destroy your sender reputation.</li>
                 </ul>
             </SectionWrapper>
 
@@ -32,11 +32,11 @@ export const ListSegmentation: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Sending the Right Message to the Right Person"
             >
                 <p>Segmentation is the practice of dividing your email list into smaller groups based on specific criteria. Instead of sending one generic message to everyone, you can tailor your content to be highly relevant to each segment, which dramatically increases engagement.</p>
-                <p><strong className="text-gray-200">Common Segmentation Strategies:</strong></p>
+                <p><strong className="text-foreground">Common Segmentation Strategies:</strong></p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
-                    <li><strong className="text-gray-200">By Demographics:</strong> Group users by location, age, or job title to send relevant offers and content.</li>
-                    <li><strong className="text-gray-200">By Behavior:</strong> Create segments based on past actions, such as purchase history, website activity, or previous email engagement.</li>
-                    <li><strong className="text-gray-200">By Stated Preferences:</strong> Allow users to choose the type of content they want to receive in a preference center.</li>
+                    <li><strong className="text-foreground">By Demographics:</strong> Group users by location, age, or job title to send relevant offers and content.</li>
+                    <li><strong className="text-foreground">By Behavior:</strong> Create segments based on past actions, such as purchase history, website activity, or previous email engagement.</li>
+                    <li><strong className="text-foreground">By Stated Preferences:</strong> Allow users to choose the type of content they want to receive in a preference center.</li>
                 </ul>
             </SectionWrapper>
             

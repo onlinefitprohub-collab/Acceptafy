@@ -21,13 +21,13 @@ export const NewsletterBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 <p>A great newsletter isn't just a random collection of links; it's a product in itself. The most successful newsletters are built on three core pillars that work together to build trust and anticipation.</p>
                  <ul className="list-disc list-inside space-y-2 mt-2">
                     <li>
-                        <strong className="text-gray-200">Consistency is Your Promise:</strong> Whether you send daily, weekly, or monthly, stick to your schedule. Consistency builds anticipation and turns your newsletter into a reliable habit for your readers. Missing sends breaks that trust.
+                        <strong className="text-foreground">Consistency is Your Promise:</strong> Whether you send daily, weekly, or monthly, stick to your schedule. Consistency builds anticipation and turns your newsletter into a reliable habit for your readers. Missing sends breaks that trust.
                     </li>
                     <li>
-                        <strong className="text-gray-200">Value is Your Product:</strong> Every issue must provide tangible value to the reader. This can be through education (teaching them something), curation (saving them time by finding the best content), or entertainment (making them smile). A newsletter that only promotes will quickly be ignored.
+                        <strong className="text-foreground">Value is Your Product:</strong> Every issue must provide tangible value to the reader. This can be through education (teaching them something), curation (saving them time by finding the best content), or entertainment (making them smile). A newsletter that only promotes will quickly be ignored.
                     </li>
                     <li>
-                        <strong className="text-gray-200">Personality is Your Brand:</strong> In a crowded inbox, personality is what makes you stand out. Develop a unique voice and tone. Are you the witty expert, the helpful friend, the insightful analyst? This consistent personality is what builds a loyal community.
+                        <strong className="text-foreground">Personality is Your Brand:</strong> In a crowded inbox, personality is what makes you stand out. Develop a unique voice and tone. Are you the witty expert, the helpful friend, the insightful analyst? This consistent personality is what builds a loyal community.
                     </li>
                 </ul>
             </SectionWrapper>
@@ -37,7 +37,7 @@ export const NewsletterBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Planning for Long-Term Success"
             >
                 <p>Avoid the stress of figuring out what to write each week by creating a simple content strategy and a reusable format.</p>
-                <p><strong className="text-gray-200">Example Weekly Newsletter Format:</strong></p>
+                <p><strong className="text-foreground">Example Weekly Newsletter Format:</strong></p>
                  <ul className="list-decimal list-inside space-y-1 mt-2">
                     <li><strong>A Personal Introduction:</strong> A short, engaging story or thought from you to build a personal connection.</li>
                     <li><strong>One Main Insight:</strong> The core value of the newsletter. A deep dive into one topic, a key lesson, or a detailed tip.</li>
@@ -48,8 +48,8 @@ export const NewsletterBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
 
             <InfoBox icon={<BlueprintIcon />}>
                 <div>
-                    <h4 className="font-bold text-white">Optimize Every Send</h4>
-                    <p className="text-purple-200 text-sm">Before you send each newsletter issue, paste the copy into the <strong className="font-semibold">Email Grader</strong>. It will help you catch any spam triggers, improve clarity, and ensure your CTA is as strong as possible.</p>
+                    <h4 className="font-bold text-foreground">Optimize Every Send</h4>
+                    <p className="text-purple-600 dark:text-purple-200 text-sm">Before you send each newsletter issue, paste the copy into the <strong className="font-semibold">Email Grader</strong>. It will help you catch any spam triggers, improve clarity, and ensure your CTA is as strong as possible.</p>
                 </div>
             </InfoBox>
 

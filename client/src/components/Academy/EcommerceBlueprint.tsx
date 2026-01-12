@@ -19,7 +19,7 @@ export const EcommerceBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Recovering Lost Sales"
             >
                 <p>Nearly 70% of online shopping carts are abandoned. An automated email sequence is your most powerful tool to bring these high-intent customers back to complete their purchase.</p>
-                <p><strong className="text-gray-200">A Simple 3-Part Abandoned Cart Flow:</strong></p>
+                <p><strong className="text-foreground">A Simple 3-Part Abandoned Cart Flow:</strong></p>
                  <ul className="list-decimal list-inside space-y-1 mt-2">
                     <li><strong>Email 1 (Sent after 1-2 hours):</strong> A gentle reminder. "Did you forget something?" Show them the item they left behind and provide a clear link back to their cart.</li>
                     <li><strong>Email 2 (Sent after 24 hours):</strong> Address common concerns. Use social proof like testimonials or answer frequently asked questions about shipping or returns.</li>
@@ -32,7 +32,7 @@ export const EcommerceBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Turning Buyers Into Repeat Customers"
             >
                 <p>The moment after a purchase is when a customer is most engaged with your brand. Use this opportunity to build a relationship, not just send a receipt.</p>
-                <p><strong className="text-gray-200">Post-Purchase Ideas:</strong></p>
+                <p><strong className="text-foreground">Post-Purchase Ideas:</strong></p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
                     <li><strong>Education:</strong> Send an email showing them how to get the most out of their new product with tips or a video tutorial.</li>
                     <li><strong>Cross-Sell:</strong> A week later, suggest a related product that complements their original purchase.</li>
@@ -45,7 +45,7 @@ export const EcommerceBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 subtitle="Re-engaging Lapsed Customers"
             >
                 <p>It's far cheaper to retain an existing customer than to acquire a new one. A win-back campaign automatically targets customers who haven't purchased in a while to encourage their return.</p>
-                <p><strong className="text-gray-200">Example Win-Back Flow (for customers inactive for 90 days):</strong></p>
+                <p><strong className="text-foreground">Example Win-Back Flow (for customers inactive for 90 days):</strong></p>
                 <ul className="list-disc list-inside space-y-2 mt-2">
                      <li><strong>Email 1: The "We Miss You" Email.</strong> A friendly check-in, perhaps highlighting what's new since their last visit.</li>
                      <li><strong>Email 2: The Exclusive Offer.</strong> A compelling, time-sensitive discount that's better than what you offer the general public, making them feel valued.</li>

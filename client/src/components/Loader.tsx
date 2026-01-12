@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { Mail, Shield, Search, Sparkles, Target, Zap, CheckCircle, TrendingUp, Lightbulb, BookOpen, Award, Brain } from 'lucide-react';
 
 const loaderSteps = [
-  { message: "Scanning for spam triggers...", icon: Shield, color: "text-red-400" },
-  { message: "Analyzing subject line impact...", icon: Target, color: "text-purple-400" },
-  { message: "Evaluating call-to-action clarity...", icon: Zap, color: "text-yellow-400" },
-  { message: "Checking personalization elements...", icon: Sparkles, color: "text-pink-400" },
-  { message: "Running deliverability simulations...", icon: TrendingUp, color: "text-blue-400" },
-  { message: "Reviewing link reputation...", icon: Search, color: "text-cyan-400" },
-  { message: "Calculating inbox placement score...", icon: Mail, color: "text-green-400" },
-  { message: "Polishing your results...", icon: CheckCircle, color: "text-emerald-400" },
+  { message: "Scanning for spam triggers...", icon: Shield, color: "text-red-600 dark:text-red-400" },
+  { message: "Analyzing subject line impact...", icon: Target, color: "text-purple-600 dark:text-purple-400" },
+  { message: "Evaluating call-to-action clarity...", icon: Zap, color: "text-yellow-600 dark:text-yellow-400" },
+  { message: "Checking personalization elements...", icon: Sparkles, color: "text-pink-600 dark:text-pink-400" },
+  { message: "Running deliverability simulations...", icon: TrendingUp, color: "text-blue-600 dark:text-blue-400" },
+  { message: "Reviewing link reputation...", icon: Search, color: "text-cyan-600 dark:text-cyan-400" },
+  { message: "Calculating inbox placement score...", icon: Mail, color: "text-green-600 dark:text-green-400" },
+  { message: "Polishing your results...", icon: CheckCircle, color: "text-emerald-600 dark:text-emerald-400" },
 ];
 
 const emailFacts = [
@@ -232,8 +232,8 @@ export const Loader: React.FC<LoaderProps> = ({ messages = loaderSteps }) => {
         className={`w-full max-w-md transition-all duration-500 ${showFact ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         <div className={`relative overflow-hidden rounded-xl border ${fact.borderColor} bg-gradient-to-br ${fact.color} p-4`}>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-black/5 dark:bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-black/5 dark:bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
           
           <div className="relative flex items-start gap-3">
             <div className="flex-shrink-0 p-2 rounded-lg bg-black/10 dark:bg-white/10 backdrop-blur-sm">
@@ -269,13 +269,13 @@ export const Loader: React.FC<LoaderProps> = ({ messages = loaderSteps }) => {
       </div>
 
       <div className="flex items-center gap-3 animate-bounce-slow">
-        <Mail className="w-4 h-4 text-purple-400" />
+        <Mail className="w-4 h-4 text-purple-600 dark:text-purple-400" />
         <div className="flex gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0ms' }} />
           <span className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" style={{ animationDelay: '200ms' }} />
           <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '400ms' }} />
         </div>
-        <Sparkles className="w-4 h-4 text-pink-400" />
+        <Sparkles className="w-4 h-4 text-pink-600 dark:text-pink-400" />
       </div>
     </div>
   );

@@ -182,19 +182,19 @@ function ScoreGauge({ score, size = 'md', label, sublabel }: {
   const uniqueId = useId();
   const getGradient = (s: number) => {
     if (s >= 80) return { 
-      text: 'text-green-400', 
+      text: 'text-green-600 dark:text-green-400', 
       start: '#22c55e', 
       end: '#10b981',
       glow: 'drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]'
     };
     if (s >= 60) return { 
-      text: 'text-yellow-400', 
+      text: 'text-yellow-600 dark:text-yellow-400', 
       start: '#eab308', 
       end: '#f59e0b',
       glow: 'drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]'
     };
     return { 
-      text: 'text-red-400', 
+      text: 'text-red-600 dark:text-red-400', 
       start: '#ef4444', 
       end: '#f97316',
       glow: 'drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]'
@@ -222,7 +222,7 @@ function ScoreGauge({ score, size = 'md', label, sublabel }: {
               <stop offset="100%" stopColor={gradient.end} />
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-white/10" />
+          <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="8" className="text-muted-foreground/20" />
           <circle 
             cx="50" cy="50" r="40" fill="none" 
             stroke={`url(#${gradientId})`} strokeWidth="8" 
@@ -256,13 +256,13 @@ function ProviderPredictionCard({
 }) {
   const getPredictionColor = (pred: string) => {
     const lowerPred = pred.toLowerCase();
-    if (lowerPred.includes('primary') || lowerPred.includes('focused') || lowerPred.includes('inbox')) return 'text-green-400';
-    if (lowerPred.includes('promotions') || lowerPred.includes('other')) return 'text-yellow-400';
-    return 'text-red-400';
+    if (lowerPred.includes('primary') || lowerPred.includes('focused') || lowerPred.includes('inbox')) return 'text-green-600 dark:text-green-400';
+    if (lowerPred.includes('promotions') || lowerPred.includes('other')) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
   
   return (
-    <div className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+    <div className="p-3 rounded-lg bg-muted/50 border border-border space-y-2">
       <div className="flex items-center gap-2">
         <Icon className={`w-4 h-4 ${color}`} />
         <span className="text-sm font-medium">{provider}</span>
@@ -327,19 +327,19 @@ function formatDate(dateString?: string): string {
 
 function getRateColor(rate: number, type: 'open' | 'click' | 'bounce' | 'unsubscribe'): string {
   if (type === 'bounce' || type === 'unsubscribe') {
-    if (rate < 1) return 'text-green-400';
-    if (rate < 3) return 'text-yellow-400';
-    return 'text-red-400';
+    if (rate < 1) return 'text-green-600 dark:text-green-400';
+    if (rate < 3) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   }
   if (type === 'open') {
-    if (rate >= 25) return 'text-green-400';
-    if (rate >= 15) return 'text-yellow-400';
-    return 'text-red-400';
+    if (rate >= 25) return 'text-green-600 dark:text-green-400';
+    if (rate >= 15) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   }
   if (type === 'click') {
-    if (rate >= 3) return 'text-green-400';
-    if (rate >= 1.5) return 'text-yellow-400';
-    return 'text-red-400';
+    if (rate >= 3) return 'text-green-600 dark:text-green-400';
+    if (rate >= 1.5) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   }
   return 'text-muted-foreground';
 }
@@ -362,7 +362,7 @@ function StatCard({
   gradient: string;
 }) {
   return (
-    <Card className="border-white/10 bg-gradient-to-br from-white/5 to-transparent" data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+    <Card className="border-border bg-gradient-to-br from-muted/50 to-transparent" data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -377,13 +377,13 @@ function StatCard({
         {trend && trendValue && (
           <div className="mt-3 flex items-center gap-1 text-xs">
             {trend === 'up' ? (
-              <ArrowUpRight className="w-3 h-3 text-green-400" />
+              <ArrowUpRight className="w-3 h-3 text-green-600 dark:text-green-400" />
             ) : trend === 'down' ? (
-              <ArrowDownRight className="w-3 h-3 text-red-400" />
+              <ArrowDownRight className="w-3 h-3 text-red-600 dark:text-red-400" />
             ) : (
               <Activity className="w-3 h-3 text-muted-foreground" />
             )}
-            <span className={trend === 'up' ? 'text-green-400' : trend === 'down' ? 'text-red-400' : 'text-muted-foreground'}>
+            <span className={trend === 'up' ? 'text-green-600 dark:text-green-400' : trend === 'down' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}>
               {trendValue}
             </span>
           </div>
@@ -406,13 +406,13 @@ function CampaignRow({
     <button 
       type="button"
       onClick={onClick}
-      className="w-full text-left flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 border border-white/10 rounded-xl bg-white/5 hover:bg-white/10 hover:border-purple-500/30 transition-all cursor-pointer group"
+      className="w-full text-left flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-4 border border-border rounded-xl bg-muted/50 hover:bg-muted hover:border-purple-500/30 transition-all cursor-pointer group"
       data-testid={`campaign-row-${campaign.campaignId}`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           {campaign.isManual ? (
-            <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-400" data-testid={`badge-manual-${campaign.campaignId}`}>
+            <Badge variant="outline" className="text-xs border-purple-500/50 text-purple-600 dark:text-purple-400" data-testid={`badge-manual-${campaign.campaignId}`}>
               Manual
             </Badge>
           ) : (
@@ -423,7 +423,7 @@ function CampaignRow({
           <span className="text-xs text-muted-foreground">{formatDate(campaign.sentAt)}</span>
           <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-auto" />
         </div>
-        <p className="font-medium truncate group-hover:text-purple-300 transition-colors" data-testid={`text-campaign-name-${campaign.campaignId}`}>
+        <p className="font-medium truncate group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors" data-testid={`text-campaign-name-${campaign.campaignId}`}>
           {campaign.campaignName}
         </p>
         {campaign.subject && (
@@ -601,7 +601,7 @@ function CampaignDetailModal({
             </div>
             
             {campaign.subject && (
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">Subject Line</p>
                   <Button 
@@ -621,14 +621,14 @@ function CampaignDetailModal({
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Send className="w-4 h-4 text-blue-400" />
               </div>
               <p className="text-xl font-bold">{formatNumber(campaign.totalSent)}</p>
               <p className="text-xs text-muted-foreground">Sent</p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <Eye className="w-4 h-4 text-purple-400" />
               </div>
@@ -637,7 +637,7 @@ function CampaignDetailModal({
               </p>
               <p className="text-xs text-muted-foreground">Open Rate</p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <MousePointerClick className="w-4 h-4 text-green-400" />
               </div>
@@ -646,7 +646,7 @@ function CampaignDetailModal({
               </p>
               <p className="text-xs text-muted-foreground">Click Rate</p>
             </div>
-            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-center">
+            <div className="p-3 rounded-lg bg-muted/50 border border-border text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <AlertTriangle className="w-4 h-4 text-yellow-400" />
               </div>
@@ -672,7 +672,7 @@ function CampaignDetailModal({
             </div>
           </div>
           
-          <div className="pt-4 border-t border-white/10 space-y-3">
+          <div className="pt-4 border-t border-border space-y-3">
             {campaign.subject && (
               <div>
                 <Button 
@@ -1000,7 +1000,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
   if (isAuthLoading) {
     return (
       <div className="space-y-6">
-        <Card className="border-white/10 bg-gradient-to-br from-white/5 to-transparent" data-testid="esp-stats-loading">
+        <Card className="border-border bg-gradient-to-br from-muted/50 to-transparent" data-testid="esp-stats-loading">
           <CardContent className="p-8">
             <div className="flex items-center justify-center gap-3">
               <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
@@ -1027,22 +1027,22 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border">
                 <Target className="w-6 h-6 mx-auto mb-2 text-purple-400" />
                 <p className="font-medium text-sm">Inbox Prediction</p>
                 <p className="text-xs text-muted-foreground">AI-powered analysis</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border">
                 <Activity className="w-6 h-6 mx-auto mb-2 text-pink-400" />
                 <p className="font-medium text-sm">Health Scoring</p>
                 <p className="text-xs text-muted-foreground">Comprehensive grades</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border">
                 <BarChart3 className="w-6 h-6 mx-auto mb-2 text-blue-400" />
                 <p className="font-medium text-sm">Deep Analytics</p>
                 <p className="text-xs text-muted-foreground">Beyond ESP dashboards</p>
               </div>
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="p-4 rounded-xl bg-muted/50 border border-border">
                 <Zap className="w-6 h-6 mx-auto mb-2 text-yellow-400" />
                 <p className="font-medium text-sm">Action Items</p>
                 <p className="text-xs text-muted-foreground">Prioritized steps</p>
@@ -1373,7 +1373,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
           </div>
 
           {analysis && (
-            <Card className="border-white/10 bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 overflow-hidden" data-testid="ai-analysis-section">
+            <Card className="border-border bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 overflow-hidden" data-testid="ai-analysis-section">
               <div className="h-1 w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -1400,7 +1400,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
               {showAnalysis && (
                 <CardContent className="space-y-6">
                   {/* Score Gauges Row */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-xl bg-gradient-to-br from-white/5 to-transparent border border-white/10">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-4 rounded-xl bg-gradient-to-br from-muted/50 to-transparent border border-border">
                     <ScoreGauge 
                       score={analysis.healthScore} 
                       size="lg" 
@@ -1486,7 +1486,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                   {/* Quick Insights Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* Sender Reputation */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-2">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-blue-400" />
                         <span className="text-sm font-medium">Sender Reputation</span>
@@ -1495,7 +1495,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                     </div>
                     
                     {/* Domain Health */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-2">
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-green-400" />
                         <span className="text-sm font-medium">Domain Health</span>
@@ -1505,7 +1505,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                     </div>
                     
                     {/* Engagement Trend */}
-                    <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                    <div className="p-4 rounded-xl bg-muted/50 border border-border space-y-2">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4 text-purple-400" />
                         <span className="text-sm font-medium">Engagement Trend</span>
@@ -1593,7 +1593,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                               ? 'bg-red-500/5 border-red-500/20' 
                               : rec.priority === 'Medium'
                               ? 'bg-yellow-500/5 border-yellow-500/20'
-                              : 'bg-white/5 border-white/10'
+                              : 'bg-muted/50 border-border'
                           }`}
                           data-testid={`recommendation-${i}`}
                         >
@@ -1660,7 +1660,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             {stats.providers.filter(p => p.stats !== null).map(providerStats => (
               <Card 
                 key={providerStats.provider} 
-                className={`border-white/10 bg-gradient-to-br from-white/5 to-transparent overflow-hidden`}
+                className={`border-border bg-gradient-to-br from-muted/50 to-transparent overflow-hidden`}
                 data-testid={`provider-card-${providerStats.provider}`}
               >
                 <div className={`h-1 w-full bg-gradient-to-r ${ESP_PROVIDER_COLORS[providerStats.provider] || 'from-gray-500 to-gray-400'}`} />
@@ -1718,7 +1718,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
 
                       {/* Manual entry form */}
                       {showManualEntryForm ? (
-                        <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-white/10">
+                        <div className="space-y-3 p-3 rounded-lg bg-muted/30 border border-border">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium">Add Campaign Stats</p>
                             <Button 
@@ -1868,7 +1868,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                             {manualCampaigns.map(campaign => (
                               <div 
                                 key={campaign.campaignId}
-                                className="flex items-center justify-between p-2 rounded-md bg-white/5 hover-elevate group"
+                                className="flex items-center justify-between p-2 rounded-md bg-muted/50 hover-elevate group"
                               >
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs font-medium truncate">{campaign.campaignName}</p>
@@ -1935,7 +1935,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             ))}
           </div>
 
-          <Card className="border-white/10" data-testid="campaigns-list">
+          <Card className="border-border" data-testid="campaigns-list">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-purple-400" />

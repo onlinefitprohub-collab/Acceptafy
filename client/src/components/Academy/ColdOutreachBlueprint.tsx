@@ -21,23 +21,23 @@ export const ColdOutreachBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
                 <p>A single cold email is rarely enough. A strategic sequence respects the recipient's time while giving you multiple opportunities to connect. The key is to offer new value in every single email.</p>
                 <ol className="list-decimal list-inside space-y-3 mt-2">
                     <li>
-                        <strong className="text-gray-200">Email 1: The Personalized Hook (Day 1)</strong>
+                        <strong className="text-foreground">Email 1: The Personalized Hook (Day 1)</strong>
                         <p className="text-sm pl-4">Your first email must prove you've done your research. Reference a recent company achievement, a LinkedIn post, or a shared connection. The goal is to establish relevance and ask a simple, low-friction question.</p>
                     </li>
                     <li>
-                        <strong className="text-gray-200">Email 2: The Quick Follow-Up (Day 3)</strong>
+                        <strong className="text-foreground">Email 2: The Quick Follow-Up (Day 3)</strong>
                         <p className="text-sm pl-4">A brief, polite bump. Reply to your original email to keep the context. Offer a short, valuable resource like a relevant article or a one-sentence tip related to their industry.</p>
                     </li>
                     <li>
-                        <strong className="text-gray-200">Email 3: The Value-Add (Day 7)</strong>
+                        <strong className="text-foreground">Email 3: The Value-Add (Day 7)</strong>
                         <p className="text-sm pl-4">This email provides a significant piece of value with no strings attached. Share a mini-case study, a helpful tool, or an insightful statistic that addresses a common pain point for their role.</p>
                     </li>
                      <li>
-                        <strong className="text-gray-200">Email 4: The Social Proof (Day 14)</strong>
+                        <strong className="text-foreground">Email 4: The Social Proof (Day 14)</strong>
                         <p className="text-sm pl-4">Gently introduce your solution by sharing a result you achieved for a similar company. A one-sentence testimonial or a powerful statistic works well here. "We helped [Similar Company] achieve [Result X]..."</p>
                     </li>
                      <li>
-                        <strong className="text-gray-200">Email 5: The Break-Up (Day 21)</strong>
+                        <strong className="text-foreground">Email 5: The Break-Up (Day 21)</strong>
                         <p className="text-sm pl-4">A polite, professional closing. Let them know you'll stop following up to respect their inbox. This often generates a response from prospects who were interested but busy.</p>
                     </li>
                 </ol>
@@ -45,8 +45,8 @@ export const ColdOutreachBlueprint: React.FC<ModuleProps> = ({ onBack }) => {
 
             <InfoBox icon={<BlueprintIcon />}>
                 <div>
-                    <h4 className="font-bold text-white">Generate Your Sequence Instantly</h4>
-                    <p className="text-purple-200 text-sm">Use our AI-powered <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to create a customized version of this blueprint tailored to your specific product and goals.</p>
+                    <h4 className="font-bold text-foreground">Generate Your Sequence Instantly</h4>
+                    <p className="text-purple-600 dark:text-purple-200 text-sm">Use our AI-powered <strong className="font-semibold">10-Email Sequence Generator</strong> in the main app to create a customized version of this blueprint tailored to your specific product and goals.</p>
                 </div>
             </InfoBox>
 

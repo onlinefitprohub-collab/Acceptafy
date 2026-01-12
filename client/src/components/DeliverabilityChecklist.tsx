@@ -6,7 +6,7 @@ import type { DnsRecords } from '../types';
 
 const ChecklistItem: React.FC<{ title: string, children: React.ReactNode }> = ({ title, children }) => (
     <div className="flex items-start gap-3">
-        <div className="w-5 h-5 mt-1 flex-shrink-0 bg-green-500/20 text-green-300 dark:text-green-300 rounded-full flex items-center justify-center">
+        <div className="w-5 h-5 mt-1 flex-shrink-0 bg-green-500/20 text-green-600 dark:text-green-300 rounded-full flex items-center justify-center">
             <CheckIcon className="w-3 h-3" />
         </div>
         <div>

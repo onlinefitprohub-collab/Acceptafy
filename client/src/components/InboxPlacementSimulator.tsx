@@ -75,7 +75,7 @@ export const InboxPlacementSimulator: React.FC<InboxPlacementSimulatorProps> = (
         />
         <ProviderCard 
             providerName="Apple Mail"
-            providerIcon={<AppleMailIcon className="w-6 h-6 text-gray-300" />}
+            providerIcon={<AppleMailIcon className="w-6 h-6 text-gray-600 dark:text-gray-300" />}
             placement={prediction.appleMail.placement}
             reason={prediction.appleMail.reason}
         />
