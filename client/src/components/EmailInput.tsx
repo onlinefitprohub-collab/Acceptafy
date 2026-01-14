@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import type { SpamTrigger } from '../types';
 import { HighlightedTextarea } from './HighlightedTextarea';
 import { HighlightedInput } from './HighlightedInput';
-import { SpellGrammarChecker } from './SpellGrammarChecker';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -491,13 +490,6 @@ export const EmailInput: React.FC<EmailInputProps> = ({
                 className="w-full h-64 bg-muted/50 border border-border rounded-lg focus:outline-none transition-all duration-300 font-sans focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            
-            <SpellGrammarChecker
-              text={body}
-              onApplyCorrection={setBody}
-              debounceMs={2000}
-              minTextLength={30}
-            />
           </div>
 
           <Button

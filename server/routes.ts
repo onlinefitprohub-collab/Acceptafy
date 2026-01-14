@@ -34,7 +34,6 @@ import {
   generateFullArticle,
   generateArticleImage,
   analyzeCampaignRisk,
-  checkSpellGrammar,
   generateContent
 } from "./gemini";
 import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
@@ -1626,21 +1625,6 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Sentiment analysis error:', error);
       res.status(500).json({ error: 'Failed to analyze sentiment' });
-    }
-  });
-
-  // Spell and Grammar Check
-  app.post('/api/spell-grammar/check', async (req, res) => {
-    try {
-      const { text } = req.body;
-      if (!text || typeof text !== 'string') {
-        return res.status(400).json({ error: 'Text is required' });
-      }
-      const result = await checkSpellGrammar(text);
-      res.json(result);
-    } catch (error) {
-      console.error('Spell/grammar check error:', error);
-      res.status(500).json({ error: 'Failed to check spelling and grammar' });
     }
   });
 
