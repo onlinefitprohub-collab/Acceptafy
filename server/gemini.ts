@@ -2581,7 +2581,7 @@ export interface SEOSuggestion {
   tags: string[];
 }
 
-// Full article generation schema
+// Full article generation schema with enhanced SEO fields
 const fullArticleSchema = {
   type: Type.OBJECT,
   properties: {
@@ -2592,7 +2592,10 @@ const fullArticleSchema = {
     featuredImageKeywords: { type: Type.STRING },
     tags: { type: Type.ARRAY, items: { type: Type.STRING } },
     metaTitle: { type: Type.STRING },
-    metaDescription: { type: Type.STRING }
+    metaDescription: { type: Type.STRING },
+    primaryKeyword: { type: Type.STRING },
+    secondaryKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+    articleFormat: { type: Type.STRING }
   },
   required: ['title', 'slug', 'excerpt', 'content', 'featuredImageKeywords', 'tags', 'metaTitle', 'metaDescription']
 };
@@ -2606,83 +2609,483 @@ export interface GeneratedArticle {
   tags: string[];
   metaTitle: string;
   metaDescription: string;
+  primaryKeyword?: string;
+  secondaryKeywords?: string[];
+  articleFormat?: string;
 }
 
-export const generateFullArticle = async (topic: string): Promise<GeneratedArticle> => {
+// Article format definitions for unique, varied content
+const ARTICLE_FORMATS = {
+  'deep-dive': {
+    name: 'Deep Dive Analysis',
+    description: 'Comprehensive, in-depth exploration with expert insights and research',
+    tone: 'authoritative and analytical',
+    structure: `
+<h2>[Compelling Hook Title]</h2>
+<p>Open with a provocative question or surprising statistic that challenges conventional wisdom...</p>
+
+<h2>The Current State of [Topic]</h2>
+<p>Industry context and why this matters now more than ever...</p>
+<blockquote><p><strong>Industry Data:</strong> [Specific statistic from recent study]</p></blockquote>
+
+<h2>Breaking Down the Core Concepts</h2>
+<h3>Understanding [Concept A]</h3>
+<p>Deep technical explanation with examples...</p>
+<h3>The Role of [Concept B]</h3>
+<p>How this interconnects with the broader ecosystem...</p>
+<h3>Advanced Considerations</h3>
+<p>Nuances that separate beginners from experts...</p>
+
+<h2>Expert Strategies That Actually Work</h2>
+<p>Beyond the basics - tactics used by high-performing teams:</p>
+<ol>
+<li><strong>Strategy 1:</strong> Detailed implementation with expected results</li>
+<li><strong>Strategy 2:</strong> Step-by-step with metrics to track</li>
+<li><strong>Strategy 3:</strong> Advanced technique with case example</li>
+</ol>
+
+<h2>The Hidden Pitfalls Nobody Talks About</h2>
+<ul>
+<li><strong>Pitfall 1:</strong> Why most marketers get this wrong</li>
+<li><strong>Pitfall 2:</strong> The counterintuitive truth about...</li>
+<li><strong>Pitfall 3:</strong> What the data actually shows</li>
+</ul>
+
+<h2>Future-Proofing Your Approach</h2>
+<p>Emerging trends and how to stay ahead...</p>
+
+<h2>Key Takeaways</h2>
+<p>Synthesized insights and action framework...</p>`
+  },
+  'case-study': {
+    name: 'Real-World Case Study',
+    description: 'Story-driven analysis with concrete examples and measurable results',
+    tone: 'narrative and evidence-based',
+    structure: `
+<h2>The Challenge: [Problem Statement]</h2>
+<p>Set the scene with a relatable scenario that many readers face...</p>
+
+<h2>Background: Understanding the Stakes</h2>
+<p>What was at risk and why traditional approaches weren't working...</p>
+<blockquote><p><strong>The Reality:</strong> [Specific challenge with numbers]</p></blockquote>
+
+<h2>The Turning Point</h2>
+<p>What changed and the decision to try a new approach...</p>
+
+<h2>The Strategy: Breaking It Down</h2>
+<h3>Phase 1: [Initial Action]</h3>
+<p>What was implemented first and immediate observations...</p>
+<h3>Phase 2: [Optimization]</h3>
+<p>Refinements based on early data...</p>
+<h3>Phase 3: [Scaling]</h3>
+<p>How success was amplified...</p>
+
+<h2>The Results: By the Numbers</h2>
+<ul>
+<li><strong>Metric 1:</strong> Before vs. after comparison</li>
+<li><strong>Metric 2:</strong> Percentage improvement</li>
+<li><strong>Metric 3:</strong> Long-term impact</li>
+</ul>
+
+<h2>Lessons Learned</h2>
+<p>What would be done differently and key insights gained...</p>
+
+<h2>How to Apply This to Your Campaigns</h2>
+<ol>
+<li>Actionable step with context</li>
+<li>Practical implementation tip</li>
+<li>Quick win you can start today</li>
+</ol>
+
+<h2>The Bottom Line</h2>
+<p>Summarized learnings with encouragement to take action...</p>`
+  },
+  'comparison': {
+    name: 'Comparison & Analysis',
+    description: 'Side-by-side evaluation helping readers make informed decisions',
+    tone: 'objective and consultative',
+    structure: `
+<h2>The [Topic] Dilemma: Finding the Right Approach</h2>
+<p>Why this decision matters and what's really at stake...</p>
+
+<h2>Understanding Your Options</h2>
+<p>A quick overview of the landscape before diving deep...</p>
+
+<h2>Option A: [First Approach]</h2>
+<h3>How It Works</h3>
+<p>Core mechanics and methodology...</p>
+<h3>Pros</h3>
+<ul>
+<li>Advantage with specific benefit</li>
+<li>Another strength</li>
+<li>When this shines</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Limitation to consider</li>
+<li>Potential drawback</li>
+</ul>
+
+<h2>Option B: [Second Approach]</h2>
+<h3>How It Works</h3>
+<p>Core mechanics and methodology...</p>
+<h3>Pros</h3>
+<ul>
+<li>Advantage with specific benefit</li>
+<li>Another strength</li>
+<li>When this shines</li>
+</ul>
+<h3>Cons</h3>
+<ul>
+<li>Limitation to consider</li>
+<li>Potential drawback</li>
+</ul>
+
+<h2>Head-to-Head Comparison</h2>
+<p>Critical factors side by side:</p>
+<ul>
+<li><strong>Cost/Effort:</strong> Comparison analysis</li>
+<li><strong>Results Timeline:</strong> What to expect</li>
+<li><strong>Best Use Case:</strong> When to choose each</li>
+</ul>
+
+<h2>Expert Recommendation</h2>
+<p>Based on different scenarios, here's our guidance...</p>
+
+<h2>Making Your Decision</h2>
+<p>Framework for choosing the right path for your situation...</p>`
+  },
+  'problem-solution': {
+    name: 'Problem-Solution Framework',
+    description: 'Focused on specific pain points with targeted, actionable fixes',
+    tone: 'empathetic and solution-oriented',
+    structure: `
+<h2>Why [Problem] Is Costing You More Than You Think</h2>
+<p>The hidden impact that most marketers underestimate...</p>
+<blockquote><p><strong>The Cost:</strong> [Specific impact with data]</p></blockquote>
+
+<h2>Root Causes: What's Really Going Wrong</h2>
+<h3>Cause 1: [Specific Issue]</h3>
+<p>How to identify if this affects you and why it happens...</p>
+<h3>Cause 2: [Another Issue]</h3>
+<p>Signs to look for and common misconceptions...</p>
+<h3>Cause 3: [Third Issue]</h3>
+<p>The least obvious but often most impactful factor...</p>
+
+<h2>The Solution Framework</h2>
+<p>A systematic approach to addressing each root cause...</p>
+
+<h2>Fix 1: [Specific Solution]</h2>
+<p>Step-by-step implementation:</p>
+<ol>
+<li>First action with expected outcome</li>
+<li>Second step building on the first</li>
+<li>Verification and optimization</li>
+</ol>
+
+<h2>Fix 2: [Another Solution]</h2>
+<p>Implementation guide:</p>
+<ol>
+<li>Preparation steps</li>
+<li>Core implementation</li>
+<li>Testing and refinement</li>
+</ol>
+
+<h2>Fix 3: [Third Solution]</h2>
+<p>Advanced remediation:</p>
+<ol>
+<li>When to apply this fix</li>
+<li>How to implement correctly</li>
+<li>Measuring success</li>
+</ol>
+
+<h2>Prevention: Ensuring It Doesn't Happen Again</h2>
+<ul>
+<li>Monitoring practice to adopt</li>
+<li>Regular maintenance task</li>
+<li>Early warning indicators</li>
+</ul>
+
+<h2>Quick Action Checklist</h2>
+<p>Immediate steps you can take right now...</p>`
+  },
+  'trend-analysis': {
+    name: 'Trend & Future Analysis',
+    description: 'Forward-looking insights on industry changes and what they mean',
+    tone: 'visionary and thought-leadership',
+    structure: `
+<h2>The Shift: How [Topic] Is Changing Everything</h2>
+<p>The transformation happening right now and what sparked it...</p>
+
+<h2>Where We Are Today</h2>
+<p>Current landscape assessment with key indicators...</p>
+<blockquote><p><strong>Current State:</strong> [Market data or trend indicator]</p></blockquote>
+
+<h2>The Forces Driving Change</h2>
+<h3>Driver 1: [Technology/Market Shift]</h3>
+<p>How this is reshaping expectations and practices...</p>
+<h3>Driver 2: [Consumer/Industry Evolution]</h3>
+<p>The behavioral changes fueling this trend...</p>
+<h3>Driver 3: [Regulatory/Competitive Pressure]</h3>
+<p>External forces accelerating adoption...</p>
+
+<h2>What the Future Holds</h2>
+<h3>Near-Term (6-12 Months)</h3>
+<p>Changes to expect and prepare for...</p>
+<h3>Medium-Term (1-2 Years)</h3>
+<p>Emerging patterns to watch...</p>
+<h3>Long-Term Vision</h3>
+<p>Where this ultimately leads...</p>
+
+<h2>Winners and Losers</h2>
+<ul>
+<li><strong>Who Will Thrive:</strong> Characteristics of future success</li>
+<li><strong>Who Will Struggle:</strong> Warning signs and pitfalls</li>
+<li><strong>The Opportunity:</strong> Where the smart money is going</li>
+</ul>
+
+<h2>How to Position Yourself</h2>
+<ol>
+<li>Immediate action to gain first-mover advantage</li>
+<li>Strategic investment to make now</li>
+<li>Skills and capabilities to develop</li>
+</ol>
+
+<h2>The Bottom Line</h2>
+<p>Key predictions and call to proactive action...</p>`
+  },
+  'quick-tips': {
+    name: 'Actionable Quick Tips',
+    description: 'Scannable, immediately actionable advice with clear takeaways',
+    tone: 'energetic and practical',
+    structure: `
+<h2>[Number] [Topic] Tips That Actually Move the Needle</h2>
+<p>Skip the fluff - here's what top performers actually do...</p>
+
+<h2>Tip 1: [Powerful First Tip]</h2>
+<p>Why it works and how to implement immediately...</p>
+<p><strong>Quick Win:</strong> Do this today for instant improvement</p>
+
+<h2>Tip 2: [Second Actionable Tip]</h2>
+<p>The reasoning behind this approach...</p>
+<p><strong>Quick Win:</strong> Simple action you can take in 5 minutes</p>
+
+<h2>Tip 3: [Third Tip]</h2>
+<p>How this connects to better results...</p>
+<p><strong>Quick Win:</strong> Immediate implementation step</p>
+
+<h2>Tip 4: [Fourth Tip]</h2>
+<p>The overlooked tactic that makes a difference...</p>
+<p><strong>Quick Win:</strong> Add this to your workflow now</p>
+
+<h2>Tip 5: [Fifth Tip]</h2>
+<p>What separates good from great...</p>
+<p><strong>Quick Win:</strong> Test this in your next campaign</p>
+
+<h2>Tip 6: [Sixth Tip]</h2>
+<p>Advanced insight for maximum impact...</p>
+<p><strong>Quick Win:</strong> Schedule this for implementation</p>
+
+<h2>Tip 7: [Seventh Tip]</h2>
+<p>The multiplier effect of getting this right...</p>
+<p><strong>Quick Win:</strong> Bookmark and reference regularly</p>
+
+<h2>Bonus: The One Thing Most People Miss</h2>
+<p>The counterintuitive insight that changes everything...</p>
+
+<h2>Your Action Plan</h2>
+<ul>
+<li><strong>This Week:</strong> Tips to implement immediately</li>
+<li><strong>This Month:</strong> Deeper integrations to work on</li>
+<li><strong>Ongoing:</strong> Habits to develop</li>
+</ul>`
+  },
+  'myth-busters': {
+    name: 'Myth Busters',
+    description: 'Debunking misconceptions with evidence-based corrections',
+    tone: 'direct and enlightening',
+    structure: `
+<h2>The Myths About [Topic] That Are Hurting Your Results</h2>
+<p>Time to separate fact from fiction and stop making these costly mistakes...</p>
+
+<h2>Myth 1: "[Common Misconception]"</h2>
+<h3>The Reality</h3>
+<p>What the data actually shows and why this belief persists...</p>
+<blockquote><p><strong>The Truth:</strong> [Evidence-based correction with stat]</p></blockquote>
+<p><strong>What to Do Instead:</strong> Correct approach with reasoning</p>
+
+<h2>Myth 2: "[Second Misconception]"</h2>
+<h3>The Reality</h3>
+<p>Where this myth came from and why it's wrong...</p>
+<blockquote><p><strong>The Truth:</strong> [Factual correction]</p></blockquote>
+<p><strong>What to Do Instead:</strong> Better practice to adopt</p>
+
+<h2>Myth 3: "[Third Misconception]"</h2>
+<h3>The Reality</h3>
+<p>The nuance that most people miss...</p>
+<blockquote><p><strong>The Truth:</strong> [Accurate understanding]</p></blockquote>
+<p><strong>What to Do Instead:</strong> Recommended approach</p>
+
+<h2>Myth 4: "[Fourth Misconception]"</h2>
+<h3>The Reality</h3>
+<p>Why experts disagree with popular opinion...</p>
+<blockquote><p><strong>The Truth:</strong> [Research-backed insight]</p></blockquote>
+<p><strong>What to Do Instead:</strong> Evidence-based practice</p>
+
+<h2>Myth 5: "[Fifth Misconception]"</h2>
+<h3>The Reality</h3>
+<p>The most dangerous myth of all...</p>
+<blockquote><p><strong>The Truth:</strong> [Critical correction]</p></blockquote>
+<p><strong>What to Do Instead:</strong> The right way forward</p>
+
+<h2>Why These Myths Persist</h2>
+<p>Understanding the psychology and history behind misinformation...</p>
+
+<h2>Building a Fact-Based Strategy</h2>
+<ul>
+<li>How to evaluate claims critically</li>
+<li>Trusted sources to rely on</li>
+<li>Testing methods to validate approaches</li>
+</ul>
+
+<h2>The Truth Sets You Free</h2>
+<p>Embrace evidence-based practices for real results...</p>`
+  }
+};
+
+// Select article format based on topic analysis or rotation
+const selectArticleFormat = (topic: string, existingFormats?: string[]): string => {
+  const formats = Object.keys(ARTICLE_FORMATS);
+  const topicLower = topic.toLowerCase();
+  
+  // Smart format selection based on topic keywords
+  if (topicLower.includes('vs') || topicLower.includes('versus') || topicLower.includes('compare') || topicLower.includes('difference')) {
+    return 'comparison';
+  }
+  if (topicLower.includes('myth') || topicLower.includes('wrong') || topicLower.includes('mistake') || topicLower.includes('truth')) {
+    return 'myth-busters';
+  }
+  if (topicLower.includes('tip') || topicLower.includes('hack') || topicLower.includes('quick') || topicLower.includes('fast')) {
+    return 'quick-tips';
+  }
+  if (topicLower.includes('future') || topicLower.includes('trend') || topicLower.includes('2025') || topicLower.includes('2026') || topicLower.includes('prediction')) {
+    return 'trend-analysis';
+  }
+  if (topicLower.includes('fix') || topicLower.includes('solve') || topicLower.includes('problem') || topicLower.includes('issue') || topicLower.includes('improve')) {
+    return 'problem-solution';
+  }
+  if (topicLower.includes('case') || topicLower.includes('example') || topicLower.includes('story') || topicLower.includes('how we') || topicLower.includes('success')) {
+    return 'case-study';
+  }
+  if (topicLower.includes('guide') || topicLower.includes('complete') || topicLower.includes('ultimate') || topicLower.includes('everything')) {
+    return 'deep-dive';
+  }
+  
+  // Rotate through formats to ensure variety
+  if (existingFormats && existingFormats.length > 0) {
+    const formatCounts = formats.reduce((acc, f) => {
+      acc[f] = existingFormats.filter(ef => ef === f).length;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Select least used format
+    const minCount = Math.min(...Object.values(formatCounts));
+    const leastUsed = formats.filter(f => formatCounts[f] === minCount);
+    return leastUsed[Math.floor(Math.random() * leastUsed.length)];
+  }
+  
+  // Random selection if no context
+  return formats[Math.floor(Math.random() * formats.length)];
+};
+
+export interface ArticleGenerationOptions {
+  topic: string;
+  existingArticles?: Array<{ title: string; slug: string; }>;
+  existingFormats?: string[];
+  forcedFormat?: string;
+}
+
+export const generateFullArticle = async (topicOrOptions: string | ArticleGenerationOptions): Promise<GeneratedArticle> => {
   try {
-    const prompt = `Create a complete, SEO-optimized blog article about the following topic for an email marketing and deliverability platform:
+    // Handle both string and options object for backward compatibility
+    const options: ArticleGenerationOptions = typeof topicOrOptions === 'string' 
+      ? { topic: topicOrOptions }
+      : topicOrOptions;
+    
+    const { topic, existingArticles = [], existingFormats = [], forcedFormat } = options;
+    
+    // Select format for variety
+    const selectedFormat = forcedFormat || selectArticleFormat(topic, existingFormats);
+    const format = ARTICLE_FORMATS[selectedFormat as keyof typeof ARTICLE_FORMATS] || ARTICLE_FORMATS['deep-dive'];
+    
+    // Build internal linking context
+    let internalLinkingContext = '';
+    if (existingArticles.length > 0) {
+      internalLinkingContext = `
+INTERNAL LINKING REQUIREMENT:
+You MUST include 2-4 internal links to these existing articles where contextually relevant. Use anchor text that flows naturally in the content.
+Available articles to link to:
+${existingArticles.map(a => `- "${a.title}" (link: /resources/${a.slug})`).join('\n')}
+
+When linking, use natural anchor text like: <a href="/resources/slug-here">descriptive text</a>
+Only link where it genuinely adds value to the reader.`;
+    }
+
+    const prompt = `Create a UNIQUE, heavily SEO-optimized blog article about the following topic for an email marketing and deliverability platform.
 
 **Topic:** ${topic}
 
-Generate a comprehensive article with:
-1. A compelling, keyword-rich title (50-60 characters ideal)
-2. A URL-friendly slug (lowercase, hyphens, no special characters)
-3. An engaging excerpt/summary (2-3 sentences, under 200 characters)
-4. Full article content in HTML format with proper structure
-5. Keywords for finding a relevant featured image
-6. 4-6 relevant tags
-7. An optimized meta title (under 60 characters)
-8. A compelling meta description (under 160 characters)`;
+**Required Article Format:** ${format.name}
+${format.description}
 
-    const systemInstruction = `You are an expert content writer for Acceptafy, an email deliverability optimization platform. Create high-quality, SEO-optimized articles that help email marketers improve their campaigns.
+**Writing Tone:** ${format.tone}
 
-CONTENT STRUCTURE (use this exact HTML structure):
-<h2>Introduction: [Hook]</h2>
-<p>Opening paragraph that hooks the reader and introduces the topic value...</p>
+CRITICAL: Create a COMPLETELY UNIQUE article. Do NOT follow generic templates. Find a FRESH ANGLE that hasn't been covered before.
 
-<h2>What is [Topic]?</h2>
-<p>Clear definition and explanation...</p>
-<blockquote><p><strong>Key Insight:</strong> Include a memorable statistic or quote.</p></blockquote>
+Generate with these MANDATORY SEO requirements:
+1. Title: Keyword-rich, compelling, 50-60 characters, include primary keyword near the start
+2. Slug: URL-friendly, contains primary keyword
+3. Excerpt: 2-3 sentences, include primary keyword, under 200 characters, compelling hook
+4. Primary Keyword: The main search term this article targets
+5. Secondary Keywords: 4-6 LSI (related) keywords naturally woven throughout
+6. Content: Minimum 1500 words, heavy keyword density (1-2%), proper H2/H3 hierarchy
+7. Featured Snippet Optimization: Include at least one definition paragraph and one list that could be featured
+8. Meta Title: Under 60 characters, primary keyword first
+9. Meta Description: 150-160 characters, includes primary keyword, has call-to-action
+10. Tags: 5-7 highly relevant, searchable tags
+${internalLinkingContext}`;
 
-<h2>Why [Topic] Matters</h2>
-<p>Explain the importance:</p>
-<ul>
-<li><strong>Benefit 1:</strong> Explanation</li>
-<li><strong>Benefit 2:</strong> Explanation</li>
-<li><strong>Benefit 3:</strong> Explanation</li>
-</ul>
+    const systemInstruction = `You are an elite SEO content strategist and expert copywriter for Acceptafy, an email deliverability optimization platform. Your mission is to create UNIQUE, highly engaging, and SEO-dominant articles.
 
-<h2>Step-by-Step Guide</h2>
-<h3>Step 1: [Action]</h3>
-<p>Detailed explanation...</p>
-<h3>Step 2: [Action]</h3>
-<p>Detailed explanation...</p>
-<h3>Step 3: [Action]</h3>
-<p>Detailed explanation...</p>
+UNIQUENESS MANDATE:
+- Find an angle or perspective NOT commonly covered
+- Use unexpected hooks, surprising data, or contrarian viewpoints
+- Create original frameworks, acronyms, or methodologies
+- Tell stories and use specific scenarios
+- Avoid generic introductions like "In today's digital world..."
 
-<h2>Common Mistakes to Avoid</h2>
-<ol>
-<li><strong>Mistake 1:</strong> What it is and how to prevent it</li>
-<li><strong>Mistake 2:</strong> What it is and how to prevent it</li>
-<li><strong>Mistake 3:</strong> What it is and how to prevent it</li>
-</ol>
+SEO OPTIMIZATION REQUIREMENTS:
+- Primary keyword appears in: title, first 100 words, at least 2 H2s, meta title, meta description, conclusion
+- Secondary/LSI keywords distributed naturally throughout (aim for 1-2% keyword density)
+- Headers follow proper hierarchy (H2 → H3, never skip levels)
+- Include one "featured snippet optimized" paragraph: a clear 40-60 word definition or answer
+- Include schema-ready FAQ section with 2-3 questions
+- Use power words in title: ultimate, proven, essential, complete, master, secret, etc.
 
-<h2>Best Practices</h2>
-<ul>
-<li><strong>Tip 1:</strong> Advanced technique</li>
-<li><strong>Tip 2:</strong> Advanced technique</li>
-<li><strong>Tip 3:</strong> Advanced technique</li>
-</ul>
+CONTENT STRUCTURE - Use this specific format for ${format.name}:
+${format.structure}
 
-<h2>Frequently Asked Questions</h2>
-<h3>Q: [Question 1]?</h3>
-<p>A: [Answer]</p>
-<h3>Q: [Question 2]?</h3>
-<p>A: [Answer]</p>
-
-<h2>Conclusion</h2>
-<p>Summary of key points and call to action...</p>
-
-IMPORTANT RULES:
+CRITICAL RULES:
 - Never use the word "AI" anywhere in the content
-- Focus on email marketing, deliverability, sender reputation, and campaign optimization
-- Write in a friendly, professional tone
-- Use specific numbers and data points where possible
-- Content should be 1200-1500 words
-- Make it actionable and practical
-- For featuredImageKeywords, provide 2-3 words for searching stock photos (e.g., "email marketing laptop")
+- Never use "In today's" or similar cliche openings
+- Every paragraph must provide genuine value
+- Use specific numbers, percentages, and data points
+- Write minimum 1500 words, maximum 2000 words
+- Be actionable - readers should be able to implement immediately
+- For featuredImageKeywords: provide 2-3 descriptive words for stock photo search
+- Return ONLY valid JSON, no markdown code blocks
 
-Return your response as a JSON object.`;
+Return response as JSON with these exact fields: title, slug, excerpt, content, featuredImageKeywords, tags, metaTitle, metaDescription, primaryKeyword, secondaryKeywords, articleFormat`;
 
     const res = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -2694,7 +3097,10 @@ Return your response as a JSON object.`;
       }
     });
 
-    return JSON.parse(res.text || '{}') as GeneratedArticle;
+    const article = JSON.parse(res.text || '{}') as GeneratedArticle;
+    article.articleFormat = selectedFormat;
+    
+    return article;
   } catch (error) {
     console.error("Error generating full article:", error);
     throw new Error("Failed to generate article.");

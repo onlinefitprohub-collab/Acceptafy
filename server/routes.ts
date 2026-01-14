@@ -3885,7 +3885,24 @@ Return your response as a JSON object with this exact structure:
         return res.status(400).json({ message: 'Please provide a topic with at least 5 characters' });
       }
       
-      const rawArticle = await generateFullArticle(topic.trim());
+      // Fetch existing published articles for internal linking and format rotation
+      const existingArticles = await storage.getArticles(true);
+      const existingArticleData = existingArticles.map(a => ({
+        title: a.title,
+        slug: a.slug
+      }));
+      
+      // Track formats used in recent articles for rotation
+      const recentFormats = existingArticles
+        .slice(0, 10)
+        .map((a: any) => a.articleFormat)
+        .filter(Boolean);
+      
+      const rawArticle = await generateFullArticle({
+        topic: topic.trim(),
+        existingArticles: existingArticleData,
+        existingFormats: recentFormats
+      });
       
       // Generate fallbacks for missing fields
       const generateSlug = (title: string): string => {
@@ -3912,7 +3929,10 @@ Return your response as a JSON object with this exact structure:
         featuredImageKeywords: rawArticle.featuredImageKeywords || 'email marketing',
         tags: rawArticle.tags || [],
         metaTitle: rawArticle.metaTitle || (rawArticle.title || topic.trim()).substring(0, 60),
-        metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160)
+        metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160),
+        primaryKeyword: rawArticle.primaryKeyword || '',
+        secondaryKeywords: rawArticle.secondaryKeywords || [],
+        articleFormat: rawArticle.articleFormat || 'deep-dive'
       };
       
       let featuredImage = '';
