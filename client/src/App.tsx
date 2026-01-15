@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { Switch, Route } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
+import type { ImageData } from './components/RichTextEditor';
 import { ResultsHub } from './components/ResultsHub';
 import { Loader } from './components/Loader';
 import { RewriteComparison } from './components/RewriteComparison';
@@ -187,6 +188,7 @@ function AppContent() {
     previewText: EXAMPLE_EMAIL.previewText 
   }]);
   const [body, setBody] = useState(EXAMPLE_EMAIL.body);
+  const [emailImages, setEmailImages] = useState<ImageData[]>([]);
   const [industry, setIndustry] = useState<Industry>('');
   const [emailType, setEmailType] = useState<EmailType>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -318,7 +320,13 @@ function AppContent() {
       const response = await fetch('/api/grade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body, variations, industry: industry || undefined, emailType: emailType || undefined })
+        body: JSON.stringify({ 
+          body, 
+          variations, 
+          industry: industry || undefined, 
+          emailType: emailType || undefined,
+          images: emailImages.length > 0 ? emailImages : undefined
+        })
       });
       
       if (response.ok) {
@@ -2619,6 +2627,7 @@ function AppContent() {
         setIndustry={setIndustry}
         emailType={emailType}
         setEmailType={setEmailType}
+        onImagesChange={setEmailImages}
       />
 
       <div ref={loadingRef}>

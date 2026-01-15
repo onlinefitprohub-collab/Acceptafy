@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { SpamTrigger } from '../types';
-import { HighlightedTextarea } from './HighlightedTextarea';
+import { RichTextEditor, type ImageData } from './RichTextEditor';
 import { HighlightedInput } from './HighlightedInput';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,7 @@ interface EmailInputProps {
   setIndustry: (value: Industry) => void;
   emailType: EmailType;
   setEmailType: (value: EmailType) => void;
+  onImagesChange?: (images: ImageData[]) => void;
 }
 
 const SUBJECT_CHAR_LIMIT = 100;
@@ -89,6 +90,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   setIndustry,
   emailType,
   setEmailType,
+  onImagesChange,
 }) => {
   const [openVariations, setOpenVariations] = useState<Set<number>>(new Set());
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -481,12 +483,14 @@ export const EmailInput: React.FC<EmailInputProps> = ({
               <label htmlFor="body" className="text-sm font-medium text-muted-foreground mb-2 block">
                 Email Body
               </label>
-              <HighlightedTextarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                disabled={isLoading}
-                placeholder="Hi [Name]..."
-                className="w-full h-64 bg-muted/50 border border-border rounded-lg focus:outline-none transition-all duration-300 font-sans focus:border-primary focus:ring-2 focus:ring-primary/20"
+              <p className="text-xs text-muted-foreground mb-2">
+                Paste email content with images, or drag and drop images directly
+              </p>
+              <RichTextEditor
+                content={body}
+                onChange={setBody}
+                placeholder="Hi [Name]... (paste or type your email content, including images)"
+                onImagesChange={onImagesChange}
               />
             </div>
           </div>

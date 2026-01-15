@@ -78,6 +78,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
   const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageMetadataRef = useRef<Map<string, ImageData>>(new Map());
 
   const handleImageFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -152,10 +153,16 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
         const images: ImageData[] = [];
         editor.state.doc.descendants((node) => {
           if (node.type.name === 'image') {
-            images.push({
-              src: node.attrs.src,
-              alt: node.attrs.alt || '',
-            });
+            const src = node.attrs.src;
+            const storedMetadata = imageMetadataRef.current.get(src);
+            if (storedMetadata) {
+              images.push(storedMetadata);
+            } else {
+              images.push({
+                src,
+                alt: node.attrs.alt || '',
+              });
+            }
           }
         });
         onImagesChange(images);
@@ -177,6 +184,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
             if (file) {
               handleImageFile(file).then((imageData) => {
                 if (imageData && editor) {
+                  imageMetadataRef.current.set(imageData.src, imageData);
                   editor.chain().focus().setImage({ 
                     src: imageData.src,
                     alt: imageData.alt,
@@ -202,6 +210,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
           event.preventDefault();
           handleImageFile(file).then((imageData) => {
             if (imageData && editor) {
+              imageMetadataRef.current.set(imageData.src, imageData);
               const { pos } = view.posAtCoords({ left: event.clientX, top: event.clientY }) || { pos: view.state.selection.head };
               editor.chain().focus().setImage({ 
                 src: imageData.src,
@@ -237,9 +246,17 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
     setLinkUrl('');
   }, [editor, linkUrl]);
 
-  const addImage = useCallback(() => {
+  const addImage = useCallback(async () => {
     if (!editor || !imageUrl) return;
     
+    const dimensions = await getImageDimensions(imageUrl);
+    const imageData: ImageData = {
+      src: imageUrl,
+      width: dimensions.width,
+      height: dimensions.height,
+      alt: '',
+    };
+    imageMetadataRef.current.set(imageUrl, imageData);
     editor.chain().focus().setImage({ src: imageUrl }).run();
     setImageUrl('');
   }, [editor, imageUrl]);
@@ -459,6 +476,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
             if (file) {
               const imageData = await handleImageFile(file);
               if (imageData && editor) {
+                imageMetadataRef.current.set(imageData.src, imageData);
                 editor.chain().focus().setImage({ 
                   src: imageData.src,
                   alt: imageData.alt,

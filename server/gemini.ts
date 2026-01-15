@@ -228,11 +228,37 @@ const gradingSchema = {
   }
 };
 
-export const gradeCopy = async (body: string, variations: { subject: string; previewText: string }[]): Promise<GradingResult> => {
+interface ImageData {
+  src: string;
+  width?: number;
+  height?: number;
+  alt?: string;
+  sizeKB?: number;
+}
+
+export const gradeCopy = async (
+  body: string, 
+  variations: { subject: string; previewText: string }[],
+  images?: ImageData[]
+): Promise<GradingResult> => {
   try {
-    const fullEmailCopy = variations.map((v, i) => 
+    let fullEmailCopy = variations.map((v, i) => 
       `---Variation ${i + 1}---\nSubject: ${v.subject}\nPreview: ${v.previewText}`
     ).join('\n\n') + `\n\n---Email Body (Common to all variations)---\n${body}`;
+    
+    if (images && images.length > 0) {
+      const imageDetails = images.map((img, idx) => {
+        const details: string[] = [`Image ${idx + 1}:`];
+        if (img.alt) details.push(`  - Alt text: "${img.alt}"`);
+        else details.push(`  - Alt text: MISSING`);
+        if (img.width && img.height) details.push(`  - Dimensions: ${img.width}x${img.height}px`);
+        if (img.sizeKB) details.push(`  - Size: ${img.sizeKB}KB`);
+        details.push(`  - Source: ${img.src.startsWith('data:') ? 'Embedded base64 image' : img.src}`);
+        return details.join('\n');
+      }).join('\n\n');
+      
+      fullEmailCopy += `\n\n---Images in Email (${images.length} total)---\n${imageDetails}`;
+    }
 
     const systemInstruction = `You are an expert email marketing and deliverability analyst. Your task is to perform a comprehensive analysis of the provided email copy. Your response MUST be a single JSON object matching the provided schema.
 

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Shield, Check, AlertTriangle, X, TrendingUp, Loader2, Gauge } from 'lucide-react';
+import { Shield, Check, AlertTriangle, X, TrendingUp, Loader2, Gauge, Search, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 import type { SenderScoreResult } from '@shared/schema';
 
 const estimateSenderScore = async (input: {
@@ -59,7 +60,10 @@ const getProgressColor = (score: number) => {
 };
 
 export const SenderScoreEstimator: React.FC = () => {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [dnsScanned, setDnsScanned] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SenderScoreResult | null>(null);
   
@@ -78,6 +82,69 @@ export const SenderScoreEstimator: React.FC = () => {
     hasUnsubscribeLink: true,
     sendsFromDedicatedIp: false,
   });
+
+  const handleScanDomain = async () => {
+    const domain = formData.domain.trim();
+    if (!domain) {
+      setError('Please enter your sending domain first');
+      return;
+    }
+    
+    setIsScanning(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('/api/domain/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to scan domain');
+      }
+      
+      const data = await response.json();
+      
+      if (data.domainAnalysis?.records) {
+        const records = data.domainAnalysis.records;
+        const spfRecord = records.find((r: any) => r.type === 'SPF');
+        const dkimRecord = records.find((r: any) => r.type === 'DKIM');
+        const dmarcRecord = records.find((r: any) => r.type === 'DMARC');
+        
+        setFormData(prev => ({
+          ...prev,
+          hasSpf: spfRecord?.found && spfRecord?.status === 'valid',
+          hasDkim: dkimRecord?.found && dkimRecord?.status === 'valid',
+          hasDmarc: dmarcRecord?.found,
+        }));
+        
+        setDnsScanned(true);
+        
+        const configured = [
+          spfRecord?.found && 'SPF',
+          dkimRecord?.found && 'DKIM',
+          dmarcRecord?.found && 'DMARC',
+        ].filter(Boolean);
+        
+        toast({
+          title: 'Domain Scanned',
+          description: configured.length > 0 
+            ? `Found: ${configured.join(', ')}` 
+            : 'No email authentication records found',
+        });
+      }
+    } catch (err) {
+      setError('Failed to scan domain DNS records. Please check the domain and try again.');
+      toast({
+        title: 'Scan Failed',
+        description: 'Could not retrieve DNS records for this domain',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!formData.domain.trim()) {
@@ -120,19 +187,56 @@ export const SenderScoreEstimator: React.FC = () => {
       <div className="space-y-4">
         <div>
           <Label htmlFor="domain" className="text-muted-foreground">Sending Domain</Label>
-          <Input
-            id="domain"
-            data-testid="input-sender-domain"
-            value={formData.domain}
-            onChange={(e) => setFormData({ ...formData, domain: e.target.value })}
-            placeholder="example.com"
-            className="mt-1"
-          />
+          <div className="flex gap-2 mt-1">
+            <Input
+              id="domain"
+              data-testid="input-sender-domain"
+              value={formData.domain}
+              onChange={(e) => {
+                setFormData({ ...formData, domain: e.target.value });
+                setDnsScanned(false);
+              }}
+              placeholder="example.com"
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleScanDomain}
+              disabled={isScanning || !formData.domain.trim()}
+              data-testid="button-scan-domain"
+            >
+              {isScanning ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Scanning...
+                </>
+              ) : dnsScanned ? (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
+                  Scanned
+                </>
+              ) : (
+                <>
+                  <Search className="w-4 h-4 mr-2" />
+                  Scan DNS
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Click "Scan DNS" to automatically detect your SPF, DKIM, and DMARC configuration
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-            <Label htmlFor="hasSpf" className="text-muted-foreground text-sm">SPF Configured</Label>
+          <div className={`flex items-center justify-between p-3 rounded-lg border ${
+            dnsScanned && formData.hasSpf ? 'bg-green-500/10 border-green-500/30' : 'bg-muted/50 border-border'
+          }`}>
+            <Label htmlFor="hasSpf" className="text-muted-foreground text-sm flex items-center gap-2">
+              SPF Configured
+              {dnsScanned && formData.hasSpf && <CheckCircle className="w-3 h-3 text-green-500" />}
+            </Label>
             <Switch
               id="hasSpf"
               data-testid="switch-spf"
@@ -140,8 +244,13 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, hasSpf: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-            <Label htmlFor="hasDkim" className="text-muted-foreground text-sm">DKIM Configured</Label>
+          <div className={`flex items-center justify-between p-3 rounded-lg border ${
+            dnsScanned && formData.hasDkim ? 'bg-green-500/10 border-green-500/30' : 'bg-muted/50 border-border'
+          }`}>
+            <Label htmlFor="hasDkim" className="text-muted-foreground text-sm flex items-center gap-2">
+              DKIM Configured
+              {dnsScanned && formData.hasDkim && <CheckCircle className="w-3 h-3 text-green-500" />}
+            </Label>
             <Switch
               id="hasDkim"
               data-testid="switch-dkim"
@@ -149,8 +258,13 @@ export const SenderScoreEstimator: React.FC = () => {
               onCheckedChange={(checked) => setFormData({ ...formData, hasDkim: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
-            <Label htmlFor="hasDmarc" className="text-muted-foreground text-sm">DMARC Configured</Label>
+          <div className={`flex items-center justify-between p-3 rounded-lg border ${
+            dnsScanned && formData.hasDmarc ? 'bg-green-500/10 border-green-500/30' : 'bg-muted/50 border-border'
+          }`}>
+            <Label htmlFor="hasDmarc" className="text-muted-foreground text-sm flex items-center gap-2">
+              DMARC Configured
+              {dnsScanned && formData.hasDmarc && <CheckCircle className="w-3 h-3 text-green-500" />}
+            </Label>
             <Switch
               id="hasDmarc"
               data-testid="switch-dmarc"

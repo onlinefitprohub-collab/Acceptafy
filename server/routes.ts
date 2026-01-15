@@ -109,6 +109,14 @@ const adminNoteSchema = z.object({
 });
 
 // AI endpoint validation schemas
+const imageDataSchema = z.object({
+  src: z.string(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  alt: z.string().optional(),
+  sizeKB: z.number().optional(),
+});
+
 const gradeRequestSchema = z.object({
   body: z.string().min(1, 'Email body is required').max(50000, 'Email body too long'),
   variations: z.array(z.object({
@@ -117,6 +125,7 @@ const gradeRequestSchema = z.object({
   })).optional(),
   industry: z.string().max(100).optional(),
   emailType: z.string().max(100).optional(),
+  images: z.array(imageDataSchema).max(10).optional(),
 });
 
 const rewriteRequestSchema = z.object({
@@ -1283,12 +1292,12 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { body, variations, industry, emailType } = parseResult.data;
+      const { body, variations, industry, emailType, images } = parseResult.data;
       const normalizedVariations = (variations || []).map(v => ({
         subject: v.subject || '',
         previewText: v.previewText || ''
       }));
-      const result = await gradeCopy(body, normalizedVariations);
+      const result = await gradeCopy(body, normalizedVariations, images);
 
       // Generate benchmark feedback only if industry or emailType is provided
       let benchmarkFeedback = null;
@@ -1640,6 +1649,34 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Warmup plan generation error:', error);
       res.status(500).json({ error: 'Failed to generate warmup plan' });
+    }
+  });
+
+  // Lightweight domain DNS analysis endpoint (no Pro+ required, for Sender Score DNS scan)
+  app.post('/api/domain/analyze', async (req, res) => {
+    try {
+      const { domain } = req.body;
+      if (!domain || typeof domain !== 'string') {
+        return res.status(400).json({ error: 'Domain is required' });
+      }
+
+      const { analyzeDomain } = await import('./services/dnsChecker');
+      
+      const dnsAnalysis = await analyzeDomain(domain).catch(err => {
+        console.warn('DNS analysis failed:', err.message);
+        return null;
+      });
+
+      if (!dnsAnalysis) {
+        return res.status(422).json({ error: 'Could not analyze domain DNS records' });
+      }
+
+      res.json({
+        domainAnalysis: dnsAnalysis
+      });
+    } catch (error) {
+      console.error('Domain analysis error:', error);
+      res.status(500).json({ error: 'Failed to analyze domain' });
     }
   });
 

@@ -1,11 +1,45 @@
 import { useState } from 'react';
-import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap, Crown, Lock, Shield, ShieldCheck, ShieldX, ShieldAlert, Globe, Server, FileKey, Info } from 'lucide-react';
+import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap, Crown, Lock, Shield, ShieldCheck, ShieldX, ShieldAlert, Globe, Server, FileKey, Info, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from 'wouter';
 import type { WarmupPlan, WarmupDay, DomainAnalysis, BlacklistCheck } from '../types';
+
+const DNS_TOOLTIPS: Record<string, { title: string; description: string; importance: string; action: string }> = {
+  SPF: {
+    title: 'SPF Record (Sender Policy Framework)',
+    description: 'Tells email servers which IP addresses are authorized to send email from your domain.',
+    importance: 'CRITICAL - Without SPF, emails are much more likely to be marked as spam.',
+    action: 'If missing: Add an SPF record to your DNS settings. Contact your email provider for the correct values.'
+  },
+  DKIM: {
+    title: 'DKIM Record (DomainKeys Identified Mail)',
+    description: 'Adds a cryptographic signature to your emails to prove they were sent by you and weren\'t altered.',
+    importance: 'CRITICAL - Required by major providers like Gmail and Outlook for good deliverability.',
+    action: 'If missing: Enable DKIM in your email service provider and add the provided DNS records.'
+  },
+  DMARC: {
+    title: 'DMARC Record (Domain-based Message Authentication)',
+    description: 'Tells receiving servers what to do when SPF or DKIM checks fail (none, quarantine, or reject).',
+    importance: 'IMPORTANT - Helps prevent email spoofing and improves sender reputation.',
+    action: 'Warning "p=none": This is monitoring mode. Consider upgrading to "p=quarantine" or "p=reject" after testing.'
+  },
+  MX: {
+    title: 'MX Record (Mail Exchange)',
+    description: 'Specifies which mail server receives incoming email for your domain.',
+    importance: 'CRITICAL for receiving - Required to receive email, but also validates your domain is a real email sender.',
+    action: 'If missing: Add MX records pointing to your email provider\'s mail servers.'
+  },
+  A: {
+    title: 'A Record (Address Record)',
+    description: 'Maps your domain to an IP address. Used primarily for web hosting.',
+    importance: 'LOW for email sending - Not required for email delivery. Many domains use subdomains or CNAME records instead.',
+    action: 'If missing: Usually not a problem for email. This is normal for subdomains or domains using CDN services.'
+  }
+};
 
 const PhaseColors: Record<string, { bg: string; border: string; text: string }> = {
   Foundation: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-600 dark:text-blue-400' },
@@ -89,6 +123,7 @@ const DomainAnalysisCard: React.FC<{ analysis: DomainAnalysis; blacklist: Blackl
               : record.found
                 ? 'bg-yellow-500/5 border-yellow-500/20'
                 : 'bg-red-500/5 border-red-500/20';
+            const tooltip = DNS_TOOLTIPS[record.type];
             
             return (
               <div 
@@ -103,6 +138,27 @@ const DomainAnalysisCard: React.FC<{ analysis: DomainAnalysis; blacklist: Blackl
                     <CheckCircle className={`w-4 h-4 ${record.status === 'valid' ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`} />
                   ) : (
                     <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  )}
+                  {tooltip && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="ml-auto" data-testid={`tooltip-${record.type.toLowerCase()}`}>
+                          <HelpCircle className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs p-3 space-y-2">
+                        <p className="font-semibold text-sm">{tooltip.title}</p>
+                        <p className="text-xs text-muted-foreground">{tooltip.description}</p>
+                        <p className={`text-xs font-medium ${
+                          tooltip.importance.startsWith('CRITICAL') ? 'text-red-500' : 
+                          tooltip.importance.startsWith('IMPORTANT') ? 'text-yellow-500' : 
+                          'text-green-500'
+                        }`}>
+                          {tooltip.importance}
+                        </p>
+                        <p className="text-xs text-muted-foreground italic">{tooltip.action}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">{record.feedback}</p>
