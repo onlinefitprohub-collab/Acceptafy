@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail, Building2, FileType, Download, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
+import { ChevronDown, Plus, X, AlertTriangle, Sparkles, Mail, Building2, FileType, Download, Loader2, CheckCircle2, AlertCircle, ExternalLink, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Variation {
@@ -51,6 +51,7 @@ interface EmailInputProps {
   body: string;
   setBody: (value: string) => void;
   onGrade: () => void;
+  onStartFresh?: () => void;
   isLoading: boolean;
   spamTriggers: SpamTrigger[];
   industry: Industry;
@@ -84,6 +85,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
   body,
   setBody,
   onGrade,
+  onStartFresh,
   isLoading,
   spamTriggers,
   industry,
@@ -523,24 +525,39 @@ export const EmailInput: React.FC<EmailInputProps> = ({
             </div>
           )}
 
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
-            data-testid="button-grade-email"
-          >
-            {isLoading ? (
-              <>
-                <Sparkles className="w-5 h-5 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-5 h-5 mr-2" />
-                Grade My Email
-              </>
+          <div className="flex gap-3">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="flex-1 h-12 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
+              data-testid="button-grade-email"
+            >
+              {isLoading ? (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  Grade My Email
+                </>
+              )}
+            </Button>
+            {onStartFresh && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onStartFresh}
+                disabled={isLoading}
+                className="h-12 px-4"
+                data-testid="button-start-fresh"
+              >
+                <RotateCcw className="w-5 h-5 mr-2" />
+                Start Fresh
+              </Button>
             )}
-          </Button>
+          </div>
         </CardContent>
       </Card>
 

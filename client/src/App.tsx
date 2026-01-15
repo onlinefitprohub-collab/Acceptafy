@@ -359,6 +359,20 @@ function AppContent() {
     }
   };
 
+  const handleStartFresh = () => {
+    setVariations([{ subject: '', previewText: '' }]);
+    setBody('');
+    setEmailImages([]);
+    setIndustry('');
+    setEmailType('');
+    setResult(null);
+    setRewrittenEmail(null);
+    setFollowUpEmail(null);
+    setFollowUpSequence([]);
+    setSpamTriggers([]);
+    setSelectedHistoryItem(null);
+  };
+
   const handleGenerateDns = async (domain: string) => {
     if (!domain.trim()) return;
     
@@ -2620,7 +2634,8 @@ function AppContent() {
         setVariations={setVariations} 
         body={body} 
         setBody={setBody} 
-        onGrade={handleGrade} 
+        onGrade={handleGrade}
+        onStartFresh={handleStartFresh}
         isLoading={isLoading} 
         spamTriggers={spamTriggers}
         industry={industry}
