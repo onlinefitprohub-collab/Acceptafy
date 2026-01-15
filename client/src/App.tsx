@@ -2743,27 +2743,31 @@ function AppContent() {
           />
 
           <div className="grid md:grid-cols-2 gap-4">
-            <Card className="card-lift">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <PersonalizationIcon className="w-5 h-5 text-primary" />
-                  <h4 className="font-semibold text-foreground">Personalization Score</h4>
-                </div>
-                <div className="text-3xl font-bold gradient-text mb-2">{result.personalizationScore.score}/100</div>
-                <p className="text-sm text-muted-foreground">{result.personalizationScore.summary}</p>
-              </CardContent>
-            </Card>
+            {result.personalizationScore && (
+              <Card className="card-lift">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <PersonalizationIcon className="w-5 h-5 text-primary" />
+                    <h4 className="font-semibold text-foreground">Personalization Score</h4>
+                  </div>
+                  <div className="text-3xl font-bold gradient-text mb-2">{result.personalizationScore.score}/100</div>
+                  <p className="text-sm text-muted-foreground">{result.personalizationScore.summary}</p>
+                </CardContent>
+              </Card>
+            )}
 
-            <Card className="card-lift">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <ReplyIcon className="w-5 h-5 text-primary" />
-                  <h4 className="font-semibold text-foreground">Reply-Ability Score</h4>
-                </div>
-                <div className="text-3xl font-bold gradient-text mb-2">{result.replyAbilityAnalysis.score}/100</div>
-                <p className="text-sm text-muted-foreground">{result.replyAbilityAnalysis.summary}</p>
-              </CardContent>
-            </Card>
+            {result.replyAbilityAnalysis && (
+              <Card className="card-lift">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ReplyIcon className="w-5 h-5 text-primary" />
+                    <h4 className="font-semibold text-foreground">Reply-Ability Score</h4>
+                  </div>
+                  <div className="text-3xl font-bold gradient-text mb-2">{result.replyAbilityAnalysis.score}/100</div>
+                  <p className="text-sm text-muted-foreground">{result.replyAbilityAnalysis.summary}</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       )}
