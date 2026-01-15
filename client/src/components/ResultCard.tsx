@@ -28,6 +28,12 @@ const gradeToPercentage = (grade: string): { percent: number; color: string; tra
 
 export const ResultCard: React.FC<ResultCardProps> = ({ title, icon, gradeData, tooltipText }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Handle undefined gradeData gracefully
+  if (!gradeData || !gradeData.grade) {
+    return null;
+  }
+  
   const gradeTextColor = getGradeTextColor(gradeData.grade);
   const { percent, color, trackColor } = gradeToPercentage(gradeData.grade);
   const uniqueId = `feedback-${title.replace(/\s+/g, '-')}`;

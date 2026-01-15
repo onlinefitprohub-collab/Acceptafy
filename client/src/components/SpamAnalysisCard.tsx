@@ -102,7 +102,7 @@ const TriggerGroup: React.FC<{
                                         {trigger.suggestion}
                                         </button>
                                     )}
-                                    {trigger.suggestions.filter(s => s !== trigger.suggestion).map((suggestion, sIndex) => (
+                                    {(trigger.suggestions || []).filter(s => s !== trigger.suggestion).map((suggestion, sIndex) => (
                                         <button
                                         key={sIndex}
                                         onClick={() => onSuggestionClick(trigger.word, suggestion)}
@@ -151,13 +151,16 @@ const TriggerGroup: React.FC<{
 
 export const SpamAnalysisCard: React.FC<SpamAnalysisCardProps> = ({ spamTriggers, onSuggestionClick, onQuickFix }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Handle undefined spamTriggers gracefully
+  const triggers = spamTriggers || [];
 
   const groupedTriggers = useMemo(() => {
-    return spamTriggers.reduce((acc, trigger) => {
+    return triggers.reduce((acc, trigger) => {
       (acc[trigger.severity] = acc[trigger.severity] || []).push(trigger);
       return acc;
     }, {} as Record<SpamTrigger['severity'], SpamTrigger[]>);
-  }, [spamTriggers]);
+  }, [triggers]);
 
   const severityOrder: SpamTrigger['severity'][] = ['High', 'Medium', 'Low'];
 
@@ -182,7 +185,7 @@ export const SpamAnalysisCard: React.FC<SpamAnalysisCardProps> = ({ spamTriggers
         <div className="overflow-hidden">
           <div className="px-4 sm:px-6 pb-4 sm:pb-6">
             <div className="pt-4 mt-4 border-t border-border">
-              {spamTriggers.length === 0 ? (
+              {triggers.length === 0 ? (
                 <div className="text-center py-8 bg-green-100 dark:bg-green-500/10 border border-green-300 dark:border-green-500/20 rounded-lg">
                   <p className="text-lg font-semibold text-green-700 dark:text-green-300">Great news!</p>
                   <p className="text-muted-foreground">No common spam trigger words were found in your copy.</p>
