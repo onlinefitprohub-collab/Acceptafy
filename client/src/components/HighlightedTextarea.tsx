@@ -49,7 +49,7 @@ export const HighlightedTextarea: React.FC<HighlightedTextareaProps> = ({
                 data-testid="textarea-email-body"
             />
             {validTriggers.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+                <div className="relative z-10 flex flex-wrap gap-2 p-3 mb-2 bg-muted/50 rounded-lg border border-border">
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
                         <AlertTriangle className="w-4 h-4" />
                         <span>Spam triggers found:</span>
