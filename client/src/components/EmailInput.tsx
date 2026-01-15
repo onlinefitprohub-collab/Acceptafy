@@ -484,7 +484,6 @@ export const EmailInput: React.FC<EmailInputProps> = ({
               <HighlightedTextarea
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
-                spamTriggers={spamTriggers}
                 disabled={isLoading}
                 placeholder="Hi [Name]..."
                 className="w-full h-64 bg-muted/50 border border-border rounded-lg focus:outline-none transition-all duration-300 font-sans focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -492,10 +491,38 @@ export const EmailInput: React.FC<EmailInputProps> = ({
             </div>
           </div>
 
+          {/* Spam Triggers Section - displayed separately with proper spacing */}
+          {spamTriggers && spamTriggers.filter(t => (t.word || t.phrase || '').trim().length > 0).length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/80 rounded-lg border border-border">
+              <div className="flex items-center gap-1 text-sm text-muted-foreground mr-2">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Spam triggers found:</span>
+              </div>
+              {spamTriggers.filter(t => (t.word || t.phrase || '').trim().length > 0).map((trigger, index) => {
+                const word = (trigger.word || trigger.phrase || '').trim();
+                const severityStyles = trigger.severity === 'High' 
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-300 dark:border-red-700'
+                  : trigger.severity === 'Medium'
+                  ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700'
+                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-300 dark:border-blue-700';
+                return (
+                  <Badge 
+                    key={index} 
+                    variant="outline"
+                    className={`${severityStyles} border`}
+                    title={trigger.reason}
+                  >
+                    {word}
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={isLoading}
-            className="relative z-20 w-full h-12 mt-4 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
+            className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
             data-testid="button-grade-email"
           >
             {isLoading ? (
