@@ -81,6 +81,29 @@ export interface AccessibilityFinding {
     severity: 'High' | 'Medium' | 'Low';
 }
 
+export interface ImageAnalysisItem {
+    index: number;
+    hasAltText: boolean;
+    altTextQuality: 'Excellent' | 'Good' | 'Poor' | 'Missing';
+    dimensionAnalysis: string;
+    sizeAnalysis: string;
+    placementFeedback: string;
+    deliverabilityImpact: string;
+}
+
+export interface ImageAnalysis {
+    score: number;
+    summary: string;
+    textToImageRatio: {
+        textPercent: number;
+        imagePercent: number;
+        status: string;
+        recommendation: string;
+    };
+    images: ImageAnalysisItem[];
+    feedback: string[];
+}
+
 export interface GradingResult {
   inboxPlacementScore: {
     score: number;
@@ -103,6 +126,7 @@ export interface GradingResult {
   plainTextAnalysis: PlainTextAnalysis;
   inboxPlacementPrediction: InboxPlacementPrediction;
   accessibilityAnalysis: AccessibilityFinding[];
+  imageAnalysis?: ImageAnalysis;
   benchmarkFeedback?: BenchmarkFeedback;
 }
 

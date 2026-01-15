@@ -9,6 +9,7 @@ import { LinkAnalysisCard } from './LinkAnalysisCard';
 import { ReplyAbilityCard } from './ReplyAbilityCard';
 import { PlainTextAnalysisCard } from './PlainTextAnalysisCard';
 import { AccessibilityCard } from './AccessibilityCard';
+import { ImageAnalysisCard } from './ImageAnalysisCard';
 import { EmailClientPreview } from './EmailClientPreview';
 import { InboxPlacementSimulator } from './InboxPlacementSimulator';
 import { SubjectIcon, PreviewIcon, BodyIcon, CtaIcon, ChecklistIcon, SpamIcon, MonitorIcon } from './icons/CategoryIcons';
@@ -117,6 +118,7 @@ export const ResultsTabs: React.FC<ResultsTabsProps> = ({
             case 'technical':
                  return (
                      <div className="space-y-8 animate-fade-in">
+                        {result.imageAnalysis && <ImageAnalysisCard analysis={result.imageAnalysis} />}
                         {result.accessibilityAnalysis && <AccessibilityCard findings={result.accessibilityAnalysis} />}
                         {result.plainTextAnalysis && <PlainTextAnalysisCard analysis={result.plainTextAnalysis} />}
                         <EmailClientPreview result={result} body={body} />
