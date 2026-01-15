@@ -63,10 +63,19 @@ const gamificationUpdateSchema = z.object({
   xp: z.number().int().min(0).optional(),
   level: z.number().int().min(1).optional(),
   streak: z.number().int().min(0).optional(),
-  achievements: z.array(z.string()).optional(),
+  lastActiveDate: z.string().optional(),
+  achievements: z.array(z.object({
+    id: z.string(),
+    unlocked: z.boolean(),
+    unlockedAt: z.string().optional(),
+  })).optional(),
   totalGrades: z.number().int().min(0).optional(),
+  totalRewrites: z.number().int().min(0).optional(),
+  totalFollowups: z.number().int().min(0).optional(),
+  totalDeliverabilityChecks: z.number().int().min(0).optional(),
   bestScore: z.number().min(0).max(100).optional(),
-  lastGradeAt: z.string().datetime().optional(),
+  perfectScoreCount: z.number().int().min(0).optional(),
+  aPlusCount: z.number().int().min(0).optional(),
 });
 
 const metricTypeSchema = z.enum(['number', 'percentage']).nullable().optional();
@@ -1179,9 +1188,15 @@ export async function registerRoutes(
           xp: 0,
           level: 1,
           streak: 0,
+          lastActiveDate: null,
           achievements: [],
           totalGrades: 0,
+          totalRewrites: 0,
+          totalFollowups: 0,
+          totalDeliverabilityChecks: 0,
           bestScore: 0,
+          perfectScoreCount: 0,
+          aPlusCount: 0,
         });
       }
 

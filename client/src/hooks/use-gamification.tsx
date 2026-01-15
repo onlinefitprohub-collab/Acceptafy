@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, createContext, useContext, useRef } from 'react';
 import { useToast } from './use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 interface Achievement {
   id: string;
@@ -8,6 +9,12 @@ interface Achievement {
   icon: string;
   unlocked: boolean;
   unlockedAt?: Date;
+}
+
+interface DbAchievement {
+  id: string;
+  unlocked: boolean;
+  unlockedAt?: string;
 }
 
 interface GamificationState {
@@ -174,15 +181,167 @@ function getInitialState(): GamificationState {
 
 const GamificationContext = createContext<GamificationContextType | null>(null);
 
+// Helper to convert DB achievement format to local format
+function mergeAchievementsWithDefaults(dbAchievements: DbAchievement[] | null): Achievement[] {
+  if (!dbAchievements || !Array.isArray(dbAchievements)) {
+    return defaultAchievements;
+  }
+  return defaultAchievements.map(a => {
+    const dbAch = dbAchievements.find((d: DbAchievement) => d.id === a.id);
+    return dbAch ? { ...a, unlocked: dbAch.unlocked, unlockedAt: dbAch.unlockedAt ? new Date(dbAch.unlockedAt) : undefined } : a;
+  });
+}
+
+// Helper to convert local achievements to DB format
+function achievementsToDbFormat(achievements: Achievement[]): DbAchievement[] {
+  return achievements
+    .filter(a => a.unlocked)
+    .map(a => ({
+      id: a.id,
+      unlocked: a.unlocked,
+      unlockedAt: a.unlockedAt?.toISOString(),
+    }));
+}
+
 export function GamificationProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [state, setState] = useState<GamificationState>(getInitialState);
+  const hasInitialized = useRef(false);
+  const hasSavedMerged = useRef(false);
+  const lastSavedState = useRef<string>('');
   const shownAchievementsRef = useRef<Set<string>>(new Set());
   const pendingToastsRef = useRef<Array<{ title: string; description: string }>>([]);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Fetch gamification data from database (enabled for all - will return null if not authenticated)
+  const { data: dbGamification, isSuccess: dbLoaded, isError } = useQuery<any>({
+    queryKey: ['/api/gamification'],
+    retry: false,
+    staleTime: 60000, // Cache for 1 minute
+  });
+
+  // Save function without React Query mutation to avoid loops
+  const saveToDatabase = useCallback(async (data: GamificationState) => {
+    const stateStr = JSON.stringify({
+      xp: data.xp,
+      level: data.level,
+      streak: data.streak,
+      totalGrades: data.totalGrades,
+      totalRewrites: data.totalRewrites,
+      totalFollowups: data.totalFollowups,
+      totalDeliverabilityChecks: data.totalDeliverabilityChecks,
+      bestScore: data.bestScore,
+      perfectScoreCount: data.perfectScoreCount,
+      aPlusCount: data.aPlusCount,
+    });
+    
+    // Skip if state hasn't changed
+    if (stateStr === lastSavedState.current) return;
+    lastSavedState.current = stateStr;
+    
+    try {
+      await fetch('/api/gamification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          xp: data.xp,
+          level: data.level,
+          streak: data.streak,
+          lastActiveDate: data.lastActivityDate,
+          achievements: achievementsToDbFormat(data.achievements || []),
+          totalGrades: data.totalGrades,
+          totalRewrites: data.totalRewrites,
+          totalFollowups: data.totalFollowups,
+          totalDeliverabilityChecks: data.totalDeliverabilityChecks,
+          bestScore: data.bestScore,
+          perfectScoreCount: data.perfectScoreCount,
+          aPlusCount: data.aPlusCount,
+        }),
+      });
+    } catch (err) {
+      // Silently fail - localStorage still has the data
+    }
+  }, []);
+
+  // Merge database data with localStorage on login
+  useEffect(() => {
+    if (dbLoaded && dbGamification && !hasInitialized.current) {
+      hasInitialized.current = true;
+      const localState = getInitialState();
+      
+      // Merge: take the higher value for each stat (keeps user's progress from either source)
+      const mergedState: GamificationState = {
+        xp: Math.max(localState.xp, dbGamification.xp || 0),
+        level: Math.max(localState.level, dbGamification.level || 1),
+        streak: Math.max(localState.streak, dbGamification.streak || 0),
+        lastActivityDate: localState.lastActivityDate || dbGamification.lastActiveDate || null,
+        totalGrades: Math.max(localState.totalGrades, dbGamification.totalGrades || 0),
+        totalRewrites: Math.max(localState.totalRewrites, dbGamification.totalRewrites || 0),
+        totalFollowups: Math.max(localState.totalFollowups, dbGamification.totalFollowups || 0),
+        totalDeliverabilityChecks: Math.max(localState.totalDeliverabilityChecks, dbGamification.totalDeliverabilityChecks || 0),
+        bestScore: Math.max(localState.bestScore, dbGamification.bestScore || 0),
+        perfectScoreCount: Math.max(localState.perfectScoreCount, dbGamification.perfectScoreCount || 0),
+        aPlusCount: Math.max(localState.aPlusCount, dbGamification.aPlusCount || 0),
+        achievements: mergeAchievementsWithDefaults(dbGamification.achievements),
+      };
+
+      // Merge achievements - unlock if unlocked in either source, preserve earliest unlockedAt
+      const localAchMap = new Map(localState.achievements.map(a => [a.id, a]));
+      mergedState.achievements = mergedState.achievements.map(a => {
+        const localAch = localAchMap.get(a.id);
+        const isUnlocked = a.unlocked || (localAch?.unlocked ?? false);
+        // Use the earlier unlockedAt date if both are unlocked
+        let unlockedAt = a.unlockedAt;
+        if (isUnlocked && localAch?.unlockedAt) {
+          if (!unlockedAt || new Date(localAch.unlockedAt) < new Date(unlockedAt)) {
+            unlockedAt = localAch.unlockedAt;
+          }
+        }
+        return { ...a, unlocked: isUnlocked, unlockedAt };
+      });
+
+      setState(mergedState);
+      
+      // Always save merged data back to database to ensure sync
+      if (!hasSavedMerged.current) {
+        hasSavedMerged.current = true;
+        saveToDatabase(mergedState);
+      }
+    }
+  }, [dbLoaded, dbGamification, saveToDatabase]);
+
+  // If not authenticated (query error/401), just use localStorage
+  useEffect(() => {
+    if (isError && !hasInitialized.current) {
+      hasInitialized.current = true;
+      // Already using localStorage state from getInitialState
+    }
+  }, [isError]);
+
+  // Save to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
+
+  // Debounced save to database (only when state actually changes after init)
+  useEffect(() => {
+    if (!hasInitialized.current) return;
+    
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    saveTimeoutRef.current = setTimeout(() => {
+      saveToDatabase(state);
+    }, 3000); // Debounce: save 3 seconds after last change
+    
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [state, saveToDatabase]);
 
   useEffect(() => {
     state.achievements.forEach(a => {

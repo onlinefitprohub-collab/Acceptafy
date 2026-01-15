@@ -104,11 +104,20 @@ export const userGamification = pgTable("user_gamification", {
   lastActiveDate: varchar("last_active_date"),
   achievements: jsonb("achievements").default(sql`'[]'::jsonb`),
   totalGrades: integer("total_grades").default(0),
+  totalRewrites: integer("total_rewrites").default(0),
+  totalFollowups: integer("total_followups").default(0),
+  totalDeliverabilityChecks: integer("total_deliverability_checks").default(0),
   bestScore: integer("best_score").default(0),
+  perfectScoreCount: integer("perfect_score_count").default(0),
+  aPlusCount: integer("a_plus_count").default(0),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export type UserGamification = typeof userGamification.$inferSelect;
 export type InsertUserGamification = typeof userGamification.$inferInsert;
+
+export const insertUserGamificationSchema = createInsertSchema(userGamification).omit({ id: true, updatedAt: true });
+export type NewUserGamification = z.infer<typeof insertUserGamificationSchema>;
 
 // Email templates table (saved emails for reuse)
 export const emailTemplates = pgTable("email_templates", {
