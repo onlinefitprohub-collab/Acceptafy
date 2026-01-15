@@ -364,6 +364,28 @@ export const accessibilityFindingSchema = z.object({
 });
 export type AccessibilityFinding = z.infer<typeof accessibilityFindingSchema>;
 
+export const imageAnalysisSchema = z.object({
+  score: z.number().optional(),
+  summary: z.string().optional(),
+  textToImageRatio: z.object({
+    textPercent: z.number(),
+    imagePercent: z.number(),
+    status: z.string(),
+    recommendation: z.string(),
+  }).optional(),
+  images: z.array(z.object({
+    index: z.number(),
+    hasAltText: z.boolean(),
+    altTextQuality: z.string(),
+    dimensionAnalysis: z.string(),
+    sizeAnalysis: z.string(),
+    placementFeedback: z.string(),
+    deliverabilityImpact: z.string(),
+  })).optional(),
+  feedback: z.array(z.string()).optional(),
+});
+export type ImageAnalysis = z.infer<typeof imageAnalysisSchema>;
+
 export const gradingResultSchema = z.object({
   inboxPlacementScore: z.object({ score: z.number(), summary: z.string() }),
   overallGrade: z.object({ grade: z.string(), summary: z.string() }),
@@ -380,6 +402,7 @@ export const gradingResultSchema = z.object({
   plainTextAnalysis: plainTextAnalysisSchema,
   inboxPlacementPrediction: inboxPlacementPredictionSchema,
   accessibilityAnalysis: z.array(accessibilityFindingSchema),
+  imageAnalysis: imageAnalysisSchema.optional(),
 });
 export type GradingResult = z.infer<typeof gradingResultSchema>;
 

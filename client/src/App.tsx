@@ -25,6 +25,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Landing from './pages/Landing';
 
 // Lazy load non-critical widgets to improve initial load
@@ -2926,33 +2927,35 @@ function AuthenticatedApp() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <SEOHead />
-        <StructuredData />
-        <Suspense fallback={<PageLoader />}>
-          <Switch>
-            <Route path="/pricing" component={Pricing} />
-            <Route path="/account" component={Account} />
-            <Route path="/terms" component={TermsOfService} />
-            <Route path="/privacy" component={PrivacyPolicy} />
-            <Route path="/contact" component={Contact} />
-            <Route path="/admin" component={Admin} />
-            <Route path="/reset-password" component={ResetPassword} />
-            <Route path="/verify-email" component={VerifyEmail} />
-            <Route path="/resources/:slug" component={ResourceArticle} />
-            <Route path="/resources" component={Resources} />
-            <Route path="/" component={AuthenticatedApp} />
-            <Route component={AuthenticatedApp} />
-          </Switch>
-        </Suspense>
-        <Suspense fallback={null}>
-          <CookieConsent />
-          <ContactWidget />
-        </Suspense>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <SEOHead />
+          <StructuredData />
+          <Suspense fallback={<PageLoader />}>
+            <Switch>
+              <Route path="/pricing" component={Pricing} />
+              <Route path="/account" component={Account} />
+              <Route path="/terms" component={TermsOfService} />
+              <Route path="/privacy" component={PrivacyPolicy} />
+              <Route path="/contact" component={Contact} />
+              <Route path="/admin" component={Admin} />
+              <Route path="/reset-password" component={ResetPassword} />
+              <Route path="/verify-email" component={VerifyEmail} />
+              <Route path="/resources/:slug" component={ResourceArticle} />
+              <Route path="/resources" component={Resources} />
+              <Route path="/" component={AuthenticatedApp} />
+              <Route component={AuthenticatedApp} />
+            </Switch>
+          </Suspense>
+          <Suspense fallback={null}>
+            <CookieConsent />
+            <ContactWidget />
+          </Suspense>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

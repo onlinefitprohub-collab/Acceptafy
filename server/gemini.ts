@@ -192,6 +192,38 @@ const gradingSchema = {
           severity: { type: Type.STRING }
         }
       }
+    },
+    imageAnalysis: {
+      type: Type.OBJECT,
+      properties: {
+        score: { type: Type.NUMBER },
+        summary: { type: Type.STRING },
+        textToImageRatio: {
+          type: Type.OBJECT,
+          properties: {
+            textPercent: { type: Type.NUMBER },
+            imagePercent: { type: Type.NUMBER },
+            status: { type: Type.STRING },
+            recommendation: { type: Type.STRING }
+          }
+        },
+        images: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              index: { type: Type.NUMBER },
+              hasAltText: { type: Type.BOOLEAN },
+              altTextQuality: { type: Type.STRING },
+              dimensionAnalysis: { type: Type.STRING },
+              sizeAnalysis: { type: Type.STRING },
+              placementFeedback: { type: Type.STRING },
+              deliverabilityImpact: { type: Type.STRING }
+            }
+          }
+        },
+        feedback: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
     }
   }
 };
@@ -214,7 +246,23 @@ export const gradeCopy = async (body: string, variations: { subject: string; pre
 8.  **Link & Reputation Analysis:** Scan the email body for all hyperlinks. For each link found, analyze it for deliverability red flags. Provide the 'url', the 'anchorText', a 'status' ('Good', 'Warning', 'Bad'), a 'reason' for the status (e.g., "Uses a public URL shortener", "Non-descriptive anchor text"), and a 'suggestion' for improvement. If no links are found, return an empty array.
 9.  **Reply-Ability Analysis:** A reply is a strong positive signal for deliverability. Analyze the email for its likelihood of getting a reply. Provide a 'score' (0-100), a 'summary', and 'feedback' on how to encourage a response (e.g., by asking a question).
 10. **Plain-Text Version Analysis:** A clean plain-text version is crucial for deliverability. Generate a 'plainTextVersion' of the email body, ensuring it's readable and all links are preserved. Provide a 'readabilityScore' (0-100) for this plain-text version and 'feedback' on its quality.
-11. **Accessibility Analysis:** Analyze the email body for common accessibility issues as if it were HTML. Check for missing 'alt' text on implied images, poor color contrast between text and background, non-descriptive link text (like "click here"), and use of non-semantic HTML for layout. Provide a 'type', 'summary', 'suggestion', and 'severity'. If no issues are found, return an empty array.`;
+11. **Accessibility Analysis:** Analyze the email body for common accessibility issues as if it were HTML. Check for missing 'alt' text on implied images, poor color contrast between text and background, non-descriptive link text (like "click here"), and use of non-semantic HTML for layout. Provide a 'type', 'summary', 'suggestion', and 'severity'. If no issues are found, return an empty array.
+12. **Image Analysis (CRITICAL for deliverability):** If images are present in the email, provide comprehensive image analysis:
+    - **Overall Score (0-100):** Rate the overall image usage for email deliverability and engagement
+    - **Summary:** Brief overview of image usage quality
+    - **Text-to-Image Ratio:** Analyze the balance between text content and images:
+      - textPercent/imagePercent: Estimated percentages of email real estate
+      - status: 'Optimal' (60-80% text), 'Warning' (40-60% or 80-90% text), 'Poor' (>90% or <40% text)
+      - recommendation: Specific advice to improve the ratio (ideal is 60% text / 40% images for best deliverability)
+    - **Per-Image Analysis:** For each image found, analyze:
+      - hasAltText: Whether alt text is present
+      - altTextQuality: 'Excellent', 'Good', 'Missing', or 'Poor' (generic alt like "image")
+      - dimensionAnalysis: Comment on image dimensions (should be 600-800px wide max for email)
+      - sizeAnalysis: If size is mentioned/detectable, comment on load time impact (images should be <100KB ideally)
+      - placementFeedback: Is the image placement effective for the email's goal?
+      - deliverabilityImpact: How does this image affect spam filters? (external hosting, tracking pixels, broken links)
+    - **Feedback:** Array of specific, actionable recommendations to improve image usage
+    If no images are found, return an empty imageAnalysis object with score 100 and summary "No images to analyze".`;
 
     const res = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

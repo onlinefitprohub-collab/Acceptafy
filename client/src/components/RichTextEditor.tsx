@@ -25,6 +25,7 @@ import {
   Undo,
   Redo,
   Minus,
+  Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
@@ -36,17 +37,86 @@ import {
 } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  onImagesChange?: (images: ImageData[]) => void;
 }
 
-export function RichTextEditor({ content, onChange, placeholder = 'Start writing...' }: RichTextEditorProps) {
+export interface ImageData {
+  src: string;
+  width?: number;
+  height?: number;
+  alt?: string;
+  sizeKB?: number;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getImageDimensions(src: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = src;
+  });
+}
+
+export function RichTextEditor({ content, onChange, placeholder = 'Start writing...', onImagesChange }: RichTextEditorProps) {
+  const { toast } = useToast();
   const [linkUrl, setLinkUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageFile = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file",
+        description: "Please paste or drop an image file",
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    const maxSizeKB = 5000;
+    const sizeKB = Math.round(file.size / 1024);
+    
+    if (sizeKB > maxSizeKB) {
+      toast({
+        title: "Image too large",
+        description: `Image is ${sizeKB}KB. Maximum allowed is ${maxSizeKB}KB.`,
+        variant: "destructive"
+      });
+      return null;
+    }
+
+    try {
+      const base64 = await fileToBase64(file);
+      const dimensions = await getImageDimensions(base64);
+      
+      return {
+        src: base64,
+        width: dimensions.width,
+        height: dimensions.height,
+        sizeKB,
+        alt: file.name.replace(/\.[^/.]+$/, ''),
+      };
+    } catch (error) {
+      console.error('Error processing image:', error);
+      return null;
+    }
+  }, [toast]);
 
   const editor = useEditor({
     extensions: [
@@ -77,13 +147,78 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      
+      if (onImagesChange) {
+        const images: ImageData[] = [];
+        editor.state.doc.descendants((node) => {
+          if (node.type.name === 'image') {
+            images.push({
+              src: node.attrs.src,
+              alt: node.attrs.alt || '',
+            });
+          }
+        });
+        onImagesChange(images);
+      }
     },
     editorProps: {
       attributes: {
         class: 'prose prose-neutral dark:prose-invert max-w-none min-h-[300px] p-4 focus:outline-none',
       },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+        
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith('image/')) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              handleImageFile(file).then((imageData) => {
+                if (imageData && editor) {
+                  editor.chain().focus().setImage({ 
+                    src: imageData.src,
+                    alt: imageData.alt,
+                  }).run();
+                  toast({
+                    title: "Image added",
+                    description: `${imageData.width}x${imageData.height}px (${imageData.sizeKB}KB)`,
+                  });
+                }
+              });
+            }
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+        
+        const file = files[0];
+        if (file.type.startsWith('image/')) {
+          event.preventDefault();
+          handleImageFile(file).then((imageData) => {
+            if (imageData && editor) {
+              const { pos } = view.posAtCoords({ left: event.clientX, top: event.clientY }) || { pos: view.state.selection.head };
+              editor.chain().focus().setImage({ 
+                src: imageData.src,
+                alt: imageData.alt,
+              }).run();
+              toast({
+                title: "Image added",
+                description: `${imageData.width}x${imageData.height}px (${imageData.sizeKB}KB)`,
+              });
+            }
+          });
+          return true;
+        }
+        return false;
+      },
     },
-  });
+  }, [handleImageFile, onImagesChange, toast]);
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
@@ -293,12 +428,51 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
                 onChange={(e) => setImageUrl(e.target.value)}
                 data-testid="input-image-url"
               />
-              <Button size="sm" onClick={addImage} data-testid="button-add-image">
-                Add Image
-              </Button>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={addImage} data-testid="button-add-image">
+                  Add Image
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  data-testid="button-upload-image"
+                >
+                  <Upload className="w-4 h-4 mr-1" />
+                  Upload
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tip: You can also paste or drag images directly into the editor
+              </p>
             </div>
           </PopoverContent>
         </Popover>
+        
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) {
+              const imageData = await handleImageFile(file);
+              if (imageData && editor) {
+                editor.chain().focus().setImage({ 
+                  src: imageData.src,
+                  alt: imageData.alt,
+                }).run();
+                toast({
+                  title: "Image uploaded",
+                  description: `${imageData.width}x${imageData.height}px (${imageData.sizeKB}KB)`,
+                });
+              }
+            }
+            e.target.value = '';
+          }}
+          data-testid="input-file-upload"
+        />
 
         <Button
           variant="ghost"
