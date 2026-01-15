@@ -275,6 +275,15 @@ export interface DomainRecordAnalysis {
   value?: string;
 }
 
+export interface SubdomainInfo {
+  isSubdomain: boolean;
+  parentDomain?: string;
+  subdomain?: string;
+  parentHasSPF?: boolean;
+  parentHasDMARC?: boolean;
+  recommendation?: string;
+}
+
 export interface DomainAnalysis {
   domain: string;
   overallScore: number;
@@ -282,6 +291,7 @@ export interface DomainAnalysis {
   warmupIntensity: 'conservative' | 'standard' | 'aggressive';
   records: DomainRecordAnalysis[];
   recommendations: string[];
+  subdomainInfo?: SubdomainInfo;
 }
 
 export interface BlacklistCheck {

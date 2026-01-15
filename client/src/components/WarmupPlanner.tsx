@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Link } from 'wouter';
-import type { WarmupPlan, WarmupDay, DomainAnalysis, BlacklistCheck } from '../types';
+import type { WarmupPlan, WarmupDay, DomainAnalysis, BlacklistCheck, SubdomainInfo } from '../types';
 
 const DNS_TOOLTIPS: Record<string, { title: string; description: string; importance: string; action: string }> = {
   SPF: {
@@ -198,6 +198,51 @@ const DomainAnalysisCard: React.FC<{ analysis: DomainAnalysis; blacklist: Blackl
                 Your domain is listed on one or more blacklists. This will significantly impact deliverability. The warm-up plan has been adjusted accordingly.
               </p>
             )}
+          </div>
+        )}
+
+        {/* Subdomain Information */}
+        {analysis.subdomainInfo?.isSubdomain && (
+          <div className="p-3 rounded-lg border bg-blue-500/5 border-blue-500/20" data-testid="subdomain-info">
+            <div className="flex items-center gap-2 mb-2">
+              <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <span className="font-semibold text-foreground">Subdomain Detected</span>
+              <Badge variant="outline" className="text-blue-600 dark:text-blue-400 border-blue-500/30 ml-auto">
+                {analysis.subdomainInfo.subdomain}.{analysis.subdomainInfo.parentDomain}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              {analysis.subdomainInfo.recommendation}
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-muted-foreground">Parent SPF:</span>
+                {analysis.subdomainInfo.parentHasSPF ? (
+                  <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Found
+                  </span>
+                ) : (
+                  <span className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Missing
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-muted-foreground">Parent DMARC:</span>
+                {analysis.subdomainInfo.parentHasDMARC ? (
+                  <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" /> Found
+                  </span>
+                ) : (
+                  <span className="text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3" /> Missing
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="mt-3 p-2 rounded bg-blue-500/10 text-xs text-blue-600 dark:text-blue-400">
+              <strong>Important:</strong> Parent domain email authentication (SPF, DKIM) does NOT automatically apply to subdomains. You must configure DNS records specifically for this subdomain. Additionally, this subdomain builds its own sender reputation independently - even if {analysis.subdomainInfo.parentDomain} has excellent deliverability, this subdomain starts fresh and needs its own warm-up period.
+            </div>
           </div>
         )}
 
