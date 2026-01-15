@@ -1,17 +1,169 @@
 import { useState } from 'react';
-import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap, Crown, Lock } from 'lucide-react';
+import { Calendar, Flame, Target, TrendingUp, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Mail, Zap, Crown, Lock, Shield, ShieldCheck, ShieldX, ShieldAlert, Globe, Server, FileKey, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'wouter';
-import type { WarmupPlan, WarmupDay } from '../types';
+import type { WarmupPlan, WarmupDay, DomainAnalysis, BlacklistCheck } from '../types';
 
 const PhaseColors: Record<string, { bg: string; border: string; text: string }> = {
   Foundation: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-600 dark:text-blue-400' },
   Growth: { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600 dark:text-green-400' },
   Scale: { bg: 'bg-purple-500/10', border: 'border-purple-500/30', text: 'text-purple-600 dark:text-purple-400' },
   Optimization: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-600 dark:text-orange-400' }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'ready':
+      return { bg: 'bg-green-500/10', border: 'border-green-500/30', text: 'text-green-600 dark:text-green-400', icon: ShieldCheck };
+    case 'needs_work':
+      return { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-600 dark:text-yellow-400', icon: ShieldAlert };
+    case 'critical':
+      return { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-600 dark:text-red-400', icon: ShieldX };
+    default:
+      return { bg: 'bg-muted', border: 'border-border', text: 'text-muted-foreground', icon: Shield };
+  }
+};
+
+const getRecordIcon = (type: string) => {
+  switch (type) {
+    case 'SPF':
+    case 'DKIM':
+    case 'DMARC':
+      return FileKey;
+    case 'MX':
+      return Mail;
+    case 'A':
+      return Server;
+    default:
+      return Globe;
+  }
+};
+
+const DomainAnalysisCard: React.FC<{ analysis: DomainAnalysis; blacklist: BlacklistCheck | null }> = ({ analysis, blacklist }) => {
+  const statusColors = getStatusColor(analysis.overallStatus);
+  const StatusIcon = statusColors.icon;
+  
+  return (
+    <Card className={`${statusColors.bg} ${statusColors.border} border`} data-testid="domain-analysis-card">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between gap-2 flex-wrap">
+          <span className="flex items-center gap-2">
+            <StatusIcon className={`w-5 h-5 ${statusColors.text}`} />
+            Domain Analysis: {analysis.domain}
+          </span>
+          <div className="flex items-center gap-2">
+            <Badge className={`${statusColors.bg} ${statusColors.text} border ${statusColors.border}`}>
+              Score: {analysis.overallScore}/100
+            </Badge>
+            <Badge variant="outline" className={statusColors.text}>
+              {analysis.warmupIntensity} warm-up
+            </Badge>
+          </div>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Domain Readiness</span>
+            <span className={`font-medium ${statusColors.text}`}>
+              {analysis.overallStatus === 'ready' ? 'Ready' : 
+               analysis.overallStatus === 'needs_work' ? 'Needs Improvement' : 'Critical Issues'}
+            </span>
+          </div>
+          <Progress value={analysis.overallScore} className="h-2" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {analysis.records.map((record, i) => {
+            const RecordIcon = getRecordIcon(record.type);
+            const recordColor = record.found && record.status === 'valid' 
+              ? 'text-green-600 dark:text-green-400' 
+              : record.found 
+                ? 'text-yellow-600 dark:text-yellow-400' 
+                : 'text-red-600 dark:text-red-400';
+            const bgColor = record.found && record.status === 'valid'
+              ? 'bg-green-500/5 border-green-500/20'
+              : record.found
+                ? 'bg-yellow-500/5 border-yellow-500/20'
+                : 'bg-red-500/5 border-red-500/20';
+            
+            return (
+              <div 
+                key={i} 
+                className={`p-3 rounded-lg border ${bgColor}`}
+                data-testid={`record-${record.type.toLowerCase()}`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <RecordIcon className={`w-4 h-4 ${recordColor}`} />
+                  <span className="font-semibold text-foreground">{record.type}</span>
+                  {record.found ? (
+                    <CheckCircle className={`w-4 h-4 ${record.status === 'valid' ? 'text-green-600 dark:text-green-400' : 'text-yellow-600 dark:text-yellow-400'}`} />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{record.feedback}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {blacklist && (
+          <div className={`p-3 rounded-lg border ${
+            blacklist.status === 'clean' 
+              ? 'bg-green-500/5 border-green-500/20' 
+              : 'bg-red-500/5 border-red-500/20'
+          }`} data-testid="blacklist-status">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                {blacklist.status === 'clean' ? (
+                  <ShieldCheck className="w-5 h-5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <ShieldX className="w-5 h-5 text-red-600 dark:text-red-400" />
+                )}
+                <span className="font-semibold text-foreground">Blacklist Status</span>
+              </div>
+              <Badge variant="outline" className={
+                blacklist.status === 'clean' 
+                  ? 'text-green-600 dark:text-green-400 border-green-500/30' 
+                  : 'text-red-600 dark:text-red-400 border-red-500/30'
+              }>
+                {blacklist.status === 'clean' 
+                  ? `Clean (${blacklist.cleanOn}/${blacklist.totalChecked} checked)`
+                  : `Listed on ${blacklist.listedOn} blacklist(s)`
+                }
+              </Badge>
+            </div>
+            {blacklist.status === 'listed' && (
+              <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                Your domain is listed on one or more blacklists. This will significantly impact deliverability. The warm-up plan has been adjusted accordingly.
+              </p>
+            )}
+          </div>
+        )}
+
+        {analysis.recommendations.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Info className="w-4 h-4 text-purple-400" />
+              Recommendations
+            </h4>
+            <ul className="space-y-1">
+              {analysis.recommendations.map((rec, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  {rec}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const DayCard: React.FC<{ day: WarmupDay; isExpanded: boolean; onToggle: () => void }> = ({ day, isExpanded, onToggle }) => {
@@ -221,6 +373,13 @@ export const WarmupPlanner: React.FC = () => {
 
       {plan && (
         <div className="space-y-6 animate-fade-in" data-testid="warmup-plan-result">
+          {plan.domainAnalysis && (
+            <DomainAnalysisCard 
+              analysis={plan.domainAnalysis} 
+              blacklist={plan.blacklistCheck || null} 
+            />
+          )}
+          
           <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
             <CardContent className="p-6">
               <div className="flex items-center gap-3 mb-4">

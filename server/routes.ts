@@ -1629,13 +1629,13 @@ export async function registerRoutes(
       // Include raw analysis data in response for frontend display
       res.json({
         ...result,
-        domainAnalysis: dnsAnalysis,
+        domainAnalysis: dnsAnalysis || undefined,
         blacklistCheck: blacklistResult ? {
           status: blacklistResult.status,
           listedOn: blacklistResult.listedOn,
           cleanOn: blacklistResult.cleanOn,
           totalChecked: blacklistResult.totalBlacklists
-        } : null
+        } : undefined
       });
     } catch (error) {
       console.error('Warmup plan generation error:', error);

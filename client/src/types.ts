@@ -243,10 +243,40 @@ export interface WarmupDay {
   milestone?: string;
 }
 
+export interface DomainRecordAnalysis {
+  type: string;
+  found: boolean;
+  status: string;
+  feedback: string;
+  value?: string;
+}
+
+export interface DomainAnalysis {
+  domain: string;
+  overallScore: number;
+  overallStatus: 'ready' | 'needs_work' | 'critical';
+  warmupIntensity: 'conservative' | 'standard' | 'aggressive';
+  records: DomainRecordAnalysis[];
+  recommendations: string[];
+}
+
+export interface BlacklistCheck {
+  status: 'clean' | 'listed';
+  listedOn: number;
+  cleanOn: number;
+  totalChecked: number;
+}
+
 export interface WarmupPlan {
   domain: string;
   totalDays: number;
   overview: string;
+  domainReadiness?: {
+    score: number;
+    status: string;
+    authenticationStatus: string;
+    recommendations: string[];
+  };
   phases: {
     name: string;
     days: string;
@@ -256,6 +286,8 @@ export interface WarmupPlan {
   schedule: WarmupDay[];
   bestPractices: string[];
   warningSignals: string[];
+  domainAnalysis?: DomainAnalysis;
+  blacklistCheck?: BlacklistCheck | null;
 }
 
 export interface SpamCheckResult {
