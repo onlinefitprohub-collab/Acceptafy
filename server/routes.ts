@@ -1575,7 +1575,7 @@ export async function registerRoutes(
     }
   });
 
-  // Warmup Plan Generator (Pro+ only)
+  // Warmup Plan Generator (Pro+ only) - Now with real domain analysis
   app.post('/api/warmup/generate', optionalAuth, async (req: any, res) => {
     try {
       const hasAccess = await checkFeatureAccess(req, res, 'warmupPlan');
@@ -1590,8 +1590,53 @@ export async function registerRoutes(
       if (!domain || typeof domain !== 'string') {
         return res.status(400).json({ error: 'Domain is required' });
       }
-      const result = await generateWarmupPlan(domain);
-      res.json(result);
+
+      // Import DNS checker dynamically to avoid circular deps
+      const { analyzeDomain } = await import('./services/dnsChecker');
+      const { checkBlacklists } = await import('./services/blacklistChecker');
+      
+      // Run DNS analysis and blacklist check in parallel
+      const [dnsAnalysis, blacklistResult] = await Promise.all([
+        analyzeDomain(domain).catch(err => {
+          console.warn('DNS analysis failed:', err.message);
+          return null;
+        }),
+        checkBlacklists(domain).catch(err => {
+          console.warn('Blacklist check failed:', err.message);
+          return null;
+        })
+      ]);
+
+      // Build domain analysis input for AI
+      const analysisInput = dnsAnalysis ? {
+        domain: dnsAnalysis.domain,
+        overallScore: dnsAnalysis.overallScore,
+        overallStatus: dnsAnalysis.overallStatus,
+        warmupIntensity: dnsAnalysis.warmupIntensity,
+        records: dnsAnalysis.records.map(r => ({
+          type: r.type,
+          found: r.found,
+          status: r.status,
+          feedback: r.feedback
+        })),
+        recommendations: dnsAnalysis.recommendations,
+        blacklistStatus: blacklistResult?.status === 'listed' ? 'listed' as const : 'clean' as const,
+        blacklistCount: blacklistResult?.listedOn || 0
+      } : undefined;
+
+      const result = await generateWarmupPlan(domain, analysisInput);
+      
+      // Include raw analysis data in response for frontend display
+      res.json({
+        ...result,
+        domainAnalysis: dnsAnalysis,
+        blacklistCheck: blacklistResult ? {
+          status: blacklistResult.status,
+          listedOn: blacklistResult.listedOn,
+          cleanOn: blacklistResult.cleanOn,
+          totalChecked: blacklistResult.totalBlacklists
+        } : null
+      });
     } catch (error) {
       console.error('Warmup plan generation error:', error);
       res.status(500).json({ error: 'Failed to generate warmup plan' });

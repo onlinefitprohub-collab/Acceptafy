@@ -1053,10 +1053,32 @@ export interface WarmupDay {
   milestone?: string;
 }
 
+export interface DomainAnalysisInput {
+  domain: string;
+  overallScore: number;
+  overallStatus: 'ready' | 'needs_work' | 'critical';
+  warmupIntensity: 'conservative' | 'standard' | 'aggressive';
+  records: {
+    type: string;
+    found: boolean;
+    status: string;
+    feedback: string;
+  }[];
+  recommendations: string[];
+  blacklistStatus?: 'clean' | 'listed';
+  blacklistCount?: number;
+}
+
 export interface WarmupPlan {
   domain: string;
   totalDays: number;
   overview: string;
+  domainReadiness: {
+    score: number;
+    status: string;
+    authenticationStatus: string;
+    recommendations: string[];
+  };
   phases: {
     name: string;
     days: string;
@@ -1068,32 +1090,61 @@ export interface WarmupPlan {
   warningSignals: string[];
 }
 
-export const generateWarmupPlan = async (domain: string): Promise<WarmupPlan> => {
-  const prompt = `Generate a comprehensive 30-day email warm-up plan for the domain: ${domain}
+export const generateWarmupPlan = async (domain: string, analysis?: DomainAnalysisInput): Promise<WarmupPlan> => {
+  const analysisContext = analysis ? `
+DOMAIN ANALYSIS RESULTS:
+- Domain: ${analysis.domain}
+- Authentication Score: ${analysis.overallScore}/100
+- Status: ${analysis.overallStatus}
+- Recommended Warm-up Intensity: ${analysis.warmupIntensity}
+- Blacklist Status: ${analysis.blacklistStatus === 'listed' ? `LISTED on ${analysis.blacklistCount} blacklist(s) - CRITICAL` : 'Clean'}
 
+DNS Record Status:
+${analysis.records.map(r => `- ${r.type}: ${r.found ? 'Found' : 'Missing'} (${r.status}) - ${r.feedback}`).join('\n')}
+
+Issues to Address:
+${analysis.recommendations.map(r => `- ${r}`).join('\n')}
+
+IMPORTANT: Customize the warm-up plan based on this analysis:
+- If status is "critical" or blacklisted: Use VERY conservative volume (start with 5-10 emails/day, slower ramp-up)
+- If status is "needs_work": Use conservative volume (start with 10-20 emails/day)
+- If status is "ready": Use standard volume (start with 20-50 emails/day)
+- Include specific actions to fix the authentication issues found
+- Reference the actual DNS status in recommendations
+` : '';
+
+  const prompt = `Generate a comprehensive 30-day email warm-up plan for the domain: ${domain}
+${analysisContext}
 Create a detailed schedule that helps build sender reputation with inbox providers like Gmail, Outlook, and Yahoo.
 
 The plan should include:
-1. An overview explaining the importance of the warm-up process
-2. Four phases: Foundation (Days 1-7), Growth (Days 8-14), Scale (Days 15-21), Optimization (Days 22-30)
-3. A daily schedule with:
-   - Email volume targets (starting very low, gradually increasing)
+1. An overview explaining the importance of the warm-up process AND referencing the domain's current state
+2. Domain readiness assessment based on the analysis above
+3. Four phases: Foundation (Days 1-7), Growth (Days 8-14), Scale (Days 15-21), Optimization (Days 22-30)
+4. A daily schedule with:
+   - Email volume targets ADJUSTED based on the domain's authentication status
    - Target open rates and reply rates
-   - Specific actions to take each day
+   - Specific actions to take each day (including fixing any DNS issues found)
    - Tips for success
    - Milestone markers for key days (Day 1, 7, 14, 21, 30)
-4. Best practices for the warm-up period
-5. Warning signals to watch for
+5. Best practices for the warm-up period
+6. Warning signals to watch for
 
-Make the schedule realistic and follow industry best practices for email deliverability.
+Make the schedule realistic, personalized to this domain's current state, and follow industry best practices.
 
 Return as JSON with this structure:
 {
   "domain": "${domain}",
   "totalDays": 30,
-  "overview": "Brief explanation of why warming up is important",
+  "overview": "Personalized explanation referencing the domain's actual authentication status",
+  "domainReadiness": {
+    "score": ${analysis?.overallScore || 50},
+    "status": "${analysis?.overallStatus || 'needs_work'}",
+    "authenticationStatus": "Summary of SPF/DKIM/DMARC status",
+    "recommendations": ["Specific actions based on the domain analysis"]
+  },
   "phases": [
-    { "name": "Foundation", "days": "Days 1-7", "goal": "Build initial trust", "volumeRange": "10-50 emails/day" }
+    { "name": "Foundation", "days": "Days 1-7", "goal": "Build initial trust", "volumeRange": "Adjusted based on domain status" }
   ],
   "schedule": [
     {
@@ -1122,6 +1173,15 @@ Return as JSON with this structure:
           domain: { type: Type.STRING },
           totalDays: { type: Type.NUMBER },
           overview: { type: Type.STRING },
+          domainReadiness: {
+            type: Type.OBJECT,
+            properties: {
+              score: { type: Type.NUMBER },
+              status: { type: Type.STRING },
+              authenticationStatus: { type: Type.STRING },
+              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } }
+            }
+          },
           phases: {
             type: Type.ARRAY,
             items: {
