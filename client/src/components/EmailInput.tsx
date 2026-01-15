@@ -495,7 +495,7 @@ export const EmailInput: React.FC<EmailInputProps> = ({
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
+            className="relative z-20 w-full h-12 mt-4 text-lg font-bold bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/25"
             data-testid="button-grade-email"
           >
             {isLoading ? (
