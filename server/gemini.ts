@@ -313,10 +313,22 @@ const rewriteSchema = {
   properties: {
     subject: { type: Type.STRING, description: "The rewritten, improved subject line." },
     previewText: { type: Type.STRING, description: "The rewritten, improved preview text." },
-    body: { type: Type.STRING, description: "The rewritten, improved email body." },
+    body: { type: Type.STRING, description: "The rewritten, improved email body with proper paragraph breaks using double newlines (\\n\\n) between paragraphs." },
   },
   required: ["subject", "previewText", "body"],
 };
+
+// Formatting instructions added to every rewrite goal
+const formattingInstructions = `
+
+CRITICAL FORMATTING REQUIREMENTS:
+- The body MUST have proper paragraph structure. Use double newlines (\\n\\n) between paragraphs.
+- Keep the same general paragraph structure as the original email - if the original has 5 paragraphs, the rewrite should have approximately 5 paragraphs.
+- Each distinct thought or topic should be its own paragraph.
+- Bullet points or lists should be preserved with single newlines between items.
+- Signature blocks (e.g., "Best regards, Name") should be on their own lines.
+- NEVER return the body as one long continuous block of text.
+- The body should be formatted for easy reading with clear visual breaks.`;
 
 export const rewriteCopy = async (emailBody: string, subject: string, previewText: string, goal: string): Promise<RewrittenEmail> => {
   try {
@@ -327,13 +339,13 @@ export const rewriteCopy = async (emailBody: string, subject: string, previewTex
 
     switch (goal) {
         case 'urgency':
-            systemInstruction = `${baseInstruction} Your primary goal is to increase the sense of urgency. Focus on using time-sensitive language, scarcity principles, and compelling calls-to-action that encourage immediate response, while still eliminating spam triggers.`;
+            systemInstruction = `${baseInstruction} Your primary goal is to increase the sense of urgency. Focus on using time-sensitive language, scarcity principles, and compelling calls-to-action that encourage immediate response, while still eliminating spam triggers.${formattingInstructions}`;
             break;
         case 'clarity':
-            systemInstruction = `${baseInstruction} Your primary goal is to maximize clarity and readability. Focus on simplifying complex sentences, using direct and unambiguous language, and ensuring the main message is immediately understandable.`;
+            systemInstruction = `${baseInstruction} Your primary goal is to maximize clarity and readability. Focus on simplifying complex sentences, using direct and unambiguous language, and ensuring the main message is immediately understandable.${formattingInstructions}`;
             break;
         case 'concise':
-            systemInstruction = `${baseInstruction} Your primary goal is to make the copy more concise. Focus on eliminating filler words, tightening sentences, and conveying the message in as few words as possible without losing impact.`;
+            systemInstruction = `${baseInstruction} Your primary goal is to make the copy more concise. Focus on eliminating filler words, tightening sentences, and conveying the message in as few words as possible without losing impact.${formattingInstructions}`;
             break;
         case 'general':
         default:
@@ -343,6 +355,7 @@ export const rewriteCopy = async (emailBody: string, subject: string, previewTex
 3.  Improve sentence structure and readability.
 4.  Strengthen the call to action.
 5.  Preserve the core message and intent of the original email.
+${formattingInstructions}
 Return the result as a single JSON object.`;
             break;
     }
@@ -377,7 +390,7 @@ const followUpSchema = {
     type: Type.OBJECT,
     properties: {
         subject: { type: Type.STRING, description: "The concise, effective subject line for the follow-up email." },
-        body: { type: Type.STRING, description: "The full body of the follow-up email, written in a friendly and professional tone." },
+        body: { type: Type.STRING, description: "The full body of the follow-up email with proper paragraph breaks using double newlines (\\n\\n) between paragraphs. Each thought should be its own paragraph. Never return as one continuous block of text." },
     },
     required: ["subject", "body"],
 };
@@ -413,6 +426,13 @@ export const generateFollowUpEmail = async (
         -   AVOID all spam triggers and poor formatting practices identified in the original analysis.
         -   Reference the original email's context subtly, so the recipient knows what it's about. Do not be repetitive.
         -   The call-to-action should be clear and singular.
+        
+        CRITICAL FORMATTING REQUIREMENTS:
+        -   The body MUST have proper paragraph structure with double newlines (\\n\\n) between paragraphs.
+        -   Each distinct thought or topic should be its own paragraph.
+        -   Signature blocks should be on their own lines.
+        -   NEVER return the body as one long continuous block of text.
+        
         -   Return the result as a single JSON object.`;
 
         const result = await ai.models.generateContent({
@@ -448,7 +468,7 @@ const followUpSequenceSchema = {
         properties: {
             timingSuggestion: { type: Type.STRING, description: "When this email should be sent, e.g., 'Day 1', 'Day 3', 'Day 7'." },
             subject: { type: Type.STRING, description: "The concise, effective subject line for this specific email in the sequence." },
-            body: { type: Type.STRING, description: "The full body of the follow-up email, written in a friendly and professional tone." },
+            body: { type: Type.STRING, description: "The full body of the follow-up email with proper paragraph breaks using double newlines (\\n\\n) between paragraphs. Each thought should be its own paragraph. Never return as one continuous block of text. Signature blocks should be on their own lines." },
             rationale: { type: Type.STRING, description: "A brief, one-sentence explanation of this email's purpose within the overall sequence." },
         },
         required: ["timingSuggestion", "subject", "body", "rationale"],
@@ -1039,7 +1059,16 @@ Rewrite the entire email (subject, preview, and body) to match the ${tone} tone 
 1. Maintaining the core message and offer
 2. Avoiding spam trigger words
 3. Keeping it engaging and actionable
-4. Optimizing for inbox placement`;
+4. Optimizing for inbox placement
+
+CRITICAL FORMATTING REQUIREMENTS:
+- The body MUST have proper paragraph structure. Use double newlines (\\n\\n) between paragraphs.
+- Keep the same general paragraph structure as the original email.
+- Each distinct thought or topic should be its own paragraph.
+- Bullet points or lists should be preserved with single newlines between items.
+- Signature blocks (e.g., "Best regards, Name") should be on their own lines.
+- NEVER return the body as one long continuous block of text.
+- The body should be formatted for easy reading with clear visual breaks.`;
 
   const res = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
@@ -1051,7 +1080,7 @@ Rewrite the entire email (subject, preview, and body) to match the ${tone} tone 
         properties: {
           subject: { type: Type.STRING },
           previewText: { type: Type.STRING },
-          body: { type: Type.STRING },
+          body: { type: Type.STRING, description: "The rewritten email body with proper paragraph breaks using double newlines between paragraphs." },
           toneNotes: { type: Type.STRING }
         }
       }
