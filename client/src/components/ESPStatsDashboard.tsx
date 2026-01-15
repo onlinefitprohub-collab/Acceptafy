@@ -246,13 +246,15 @@ function ProviderPredictionCard({
   prediction, 
   confidence,
   icon: Icon,
-  color 
+  color,
+  isNewSender = false
 }: { 
   provider: string;
   prediction: string;
   confidence: number;
   icon: any;
   color: string;
+  isNewSender?: boolean;
 }) {
   const getPredictionColor = (pred: string) => {
     const lowerPred = pred.toLowerCase();
@@ -266,6 +268,11 @@ function ProviderPredictionCard({
       <div className="flex items-center gap-2">
         <Icon className={`w-4 h-4 ${color}`} />
         <span className="text-sm font-medium">{provider}</span>
+        {isNewSender && (
+          <Badge variant="outline" className="text-xs ml-auto px-1.5 py-0 text-blue-400 border-blue-400/30">
+            Content-based
+          </Badge>
+        )}
       </div>
       <div className="flex items-center justify-between">
         <span className={`text-sm font-semibold ${getPredictionColor(prediction)}`}>{prediction}</span>
@@ -1442,28 +1449,55 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                         {analysis.inboxPlacementInsights.estimatedInboxRate}% inbox rate
                       </Badge>
                     </h4>
+                    
+                    {/* New Domain Disclaimer - show when limited sending history */}
+                    {stats.combinedStats && (stats.combinedStats.totals.totalCampaigns < 3 || stats.combinedStats.totals.totalSent < 1000) && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-sm" data-testid="text-new-sender-disclaimer">
+                        <Lightbulb className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
+                        <div>
+                          <span className="font-medium text-blue-400">New Sender Predictions</span>
+                          <p className="text-muted-foreground text-xs mt-1">
+                            With limited sending history, these predictions are based on your email content quality, 
+                            DNS configuration, and industry patterns rather than your actual sender reputation. 
+                            Build your sending history to get more accurate predictions.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <ProviderPredictionCard 
-                        provider="Gmail" 
-                        prediction={analysis.inboxPlacementInsights.gmailPrediction}
-                        confidence={analysis.inboxPlacementInsights.gmailConfidence || 75}
-                        icon={Mail}
-                        color="text-red-400"
-                      />
-                      <ProviderPredictionCard 
-                        provider="Outlook" 
-                        prediction={analysis.inboxPlacementInsights.outlookPrediction}
-                        confidence={analysis.inboxPlacementInsights.outlookConfidence || 75}
-                        icon={Mail}
-                        color="text-blue-400"
-                      />
-                      <ProviderPredictionCard 
-                        provider="Yahoo" 
-                        prediction={analysis.inboxPlacementInsights.yahooPrediction || 'Inbox'}
-                        confidence={analysis.inboxPlacementInsights.yahooConfidence || 70}
-                        icon={Mail}
-                        color="text-purple-400"
-                      />
+                      {(() => {
+                        const isNewSender = stats.combinedStats && (stats.combinedStats.totals.totalCampaigns < 3 || stats.combinedStats.totals.totalSent < 1000);
+                        const confidenceAdjustment = isNewSender ? 0.6 : 1; // Reduce confidence by 40% for new senders
+                        return (
+                          <>
+                            <ProviderPredictionCard 
+                              provider="Gmail" 
+                              prediction={analysis.inboxPlacementInsights.gmailPrediction}
+                              confidence={Math.round((analysis.inboxPlacementInsights.gmailConfidence || 75) * confidenceAdjustment)}
+                              icon={Mail}
+                              color="text-red-400"
+                              isNewSender={!!isNewSender}
+                            />
+                            <ProviderPredictionCard 
+                              provider="Outlook" 
+                              prediction={analysis.inboxPlacementInsights.outlookPrediction}
+                              confidence={Math.round((analysis.inboxPlacementInsights.outlookConfidence || 75) * confidenceAdjustment)}
+                              icon={Mail}
+                              color="text-blue-400"
+                              isNewSender={!!isNewSender}
+                            />
+                            <ProviderPredictionCard 
+                              provider="Yahoo" 
+                              prediction={analysis.inboxPlacementInsights.yahooPrediction || 'Inbox'}
+                              confidence={Math.round((analysis.inboxPlacementInsights.yahooConfidence || 70) * confidenceAdjustment)}
+                              icon={Mail}
+                              color="text-purple-400"
+                              isNewSender={!!isNewSender}
+                            />
+                          </>
+                        );
+                      })()}
                     </div>
                     {(analysis.inboxPlacementInsights.promotionsRisk > 20 || analysis.inboxPlacementInsights.spamRisk > 10) && (
                       <div className="flex flex-wrap gap-3 mt-2">
