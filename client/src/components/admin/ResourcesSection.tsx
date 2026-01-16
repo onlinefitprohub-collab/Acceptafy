@@ -74,6 +74,7 @@ export function ResourcesSection() {
   const [showEditor, setShowEditor] = useState(false);
   const [showTopicDialog, setShowTopicDialog] = useState(false);
   const [topicInput, setTopicInput] = useState('');
+  const [titleInput, setTitleInput] = useState('');
   const [editingArticle, setEditingArticle] = useState<Article | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -194,8 +195,8 @@ export function ResourcesSection() {
   };
 
   const generateArticleMutation = useMutation({
-    mutationFn: async (topic: string) => {
-      const response = await apiRequest('POST', '/api/admin/articles/generate', { topic });
+    mutationFn: async ({ topic, articleTitle }: { topic: string; articleTitle?: string }) => {
+      const response = await apiRequest('POST', '/api/admin/articles/generate', { topic, title: articleTitle });
       return response.json();
     },
     onSuccess: (data: { title: string; slug: string; excerpt: string; content: string; featuredImage: string; tags: string[]; metaTitle: string; metaDescription: string }) => {
@@ -210,6 +211,7 @@ export function ResourcesSection() {
       setPublished(false);
       setShowTopicDialog(false);
       setTopicInput('');
+      setTitleInput('');
       setShowEditor(true);
       toast({ title: 'Article generated', description: 'Review and edit the content, then save when ready.' });
     },
@@ -223,7 +225,10 @@ export function ResourcesSection() {
       toast({ title: 'Topic too short', description: 'Please enter a more descriptive topic.', variant: 'destructive' });
       return;
     }
-    generateArticleMutation.mutate(topicInput.trim());
+    generateArticleMutation.mutate({ 
+      topic: topicInput.trim(), 
+      articleTitle: titleInput.trim() || undefined 
+    });
   };
 
   const resetForm = () => {
@@ -612,27 +617,43 @@ export function ResourcesSection() {
           <DialogHeader>
             <DialogTitle>Generate Article</DialogTitle>
             <DialogDescription>
-              Enter a topic and we'll create a complete, SEO-optimized article for you.
+              Enter a title and topic and we'll create a complete, SEO-optimized article for you.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Label htmlFor="topic">Article Topic</Label>
-            <Input
-              id="topic"
-              placeholder="e.g., How to improve email open rates"
-              value={topicInput}
-              onChange={(e) => setTopicInput(e.target.value)}
-              className="mt-2"
-              data-testid="input-article-topic"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !generateArticleMutation.isPending) {
-                  handleGenerateArticle();
-                }
-              }}
-            />
-            <p className="text-sm text-muted-foreground mt-2">
-              Be specific - better topics create better articles.
-            </p>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label htmlFor="articleTitle">Article Title</Label>
+              <Input
+                id="articleTitle"
+                placeholder="e.g., 10 Proven Ways to Boost Your Email Open Rates"
+                value={titleInput}
+                onChange={(e) => setTitleInput(e.target.value)}
+                className="mt-2"
+                data-testid="input-article-title"
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Optional - leave blank to auto-generate a title
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="topic">Article Topic</Label>
+              <Input
+                id="topic"
+                placeholder="e.g., email open rates, deliverability tips"
+                value={topicInput}
+                onChange={(e) => setTopicInput(e.target.value)}
+                className="mt-2"
+                data-testid="input-article-topic"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !generateArticleMutation.isPending) {
+                    handleGenerateArticle();
+                  }
+                }}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                Keywords or topic focus for the article content
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTopicDialog(false)} data-testid="button-cancel-topic">

@@ -3163,6 +3163,7 @@ const selectArticleFormat = (topic: string, existingFormats?: string[]): string 
 
 export interface ArticleGenerationOptions {
   topic: string;
+  title?: string;
   existingArticles?: Array<{ title: string; slug: string; }>;
   existingFormats?: string[];
   forcedFormat?: string;
@@ -3304,7 +3305,7 @@ export const generateFullArticle = async (topicOrOptions: string | ArticleGenera
       ? { topic: topicOrOptions }
       : topicOrOptions;
     
-    const { topic, existingArticles = [], existingFormats = [], forcedFormat } = options;
+    const { topic, title: providedTitle, existingArticles = [], existingFormats = [], forcedFormat } = options;
     
     // Select format for variety
     const selectedFormat = forcedFormat || selectArticleFormat(topic, existingFormats);
@@ -3353,9 +3354,18 @@ RULES:
 - Only cite real, verifiable statistics (if you're unsure, don't cite it)
 - Use links to back up specific claims with data`;
 
-    const prompt = `Create a UNIQUE, heavily SEO-optimized blog article about the following topic for an email marketing and deliverability platform.
+    // Build title instruction based on whether a title was provided
+    const titleInstruction = providedTitle 
+      ? `**FIXED TITLE (USE EXACTLY AS PROVIDED):** "${providedTitle}"
+The article MUST use this exact title. Generate the slug, content, and all other elements to match this title.`
+      : `**Topic:** ${topic}
+Generate a compelling, keyword-rich title (50-60 characters) with primary keyword near the start.`;
 
-**Topic:** ${topic}
+    const prompt = `Create a UNIQUE, heavily SEO-optimized blog article for an email marketing and deliverability platform.
+
+${titleInstruction}
+
+**Topic Focus:** ${topic}
 
 **Required Article Format:** ${format.name}
 ${format.description}
@@ -3365,8 +3375,8 @@ ${format.description}
 CRITICAL: Create a COMPLETELY UNIQUE article. Do NOT follow generic templates. Find a FRESH ANGLE that hasn't been covered before.
 
 Generate with these MANDATORY SEO requirements:
-1. Title: Keyword-rich, compelling, 50-60 characters, include primary keyword near the start
-2. Slug: URL-friendly, contains primary keyword
+1. Title: ${providedTitle ? `Use EXACTLY: "${providedTitle}"` : 'Keyword-rich, compelling, 50-60 characters, include primary keyword near the start'}
+2. Slug: URL-friendly, contains primary keyword${providedTitle ? `, derived from the fixed title` : ''}
 3. Excerpt: 2-3 sentences, include primary keyword, under 200 characters, compelling hook
 4. Primary Keyword: The main search term this article targets (target LONG-TAIL keywords like "how to improve cold email deliverability" not just "email deliverability")
 5. Secondary Keywords: 4-6 LSI (related) keywords naturally woven throughout

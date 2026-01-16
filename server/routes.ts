@@ -3976,7 +3976,7 @@ Return your response as a JSON object with this exact structure:
   // Admin: Generate full article from topic
   app.post('/api/admin/articles/generate', isAdmin, async (req: any, res) => {
     try {
-      const { topic } = req.body;
+      const { topic, title: providedTitle } = req.body;
       
       if (!topic || topic.trim().length < 5) {
         return res.status(400).json({ message: 'Please provide a topic with at least 5 characters' });
@@ -3997,6 +3997,7 @@ Return your response as a JSON object with this exact structure:
       
       const rawArticle = await generateFullArticle({
         topic: topic.trim(),
+        title: providedTitle?.trim() || undefined,
         existingArticles: existingArticleData,
         existingFormats: recentFormats
       });
@@ -4018,14 +4019,17 @@ Return your response as a JSON object with this exact structure:
         return text.length > 150 ? text.substring(0, 147) + '...' : text;
       };
       
+      // Use provided title if specified, otherwise use generated title
+      const finalTitle = providedTitle?.trim() || rawArticle.title || topic.trim();
+      
       const article = {
-        title: rawArticle.title || topic.trim(),
-        slug: rawArticle.slug || generateSlug(rawArticle.title || topic.trim()),
+        title: finalTitle,
+        slug: rawArticle.slug || generateSlug(finalTitle),
         excerpt: rawArticle.excerpt || extractExcerpt(rawArticle.content || ''),
         content: rawArticle.content || '',
         featuredImageKeywords: rawArticle.featuredImageKeywords || 'email marketing',
         tags: rawArticle.tags || [],
-        metaTitle: rawArticle.metaTitle || (rawArticle.title || topic.trim()).substring(0, 60),
+        metaTitle: rawArticle.metaTitle || finalTitle.substring(0, 60),
         metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160),
         primaryKeyword: rawArticle.primaryKeyword || '',
         secondaryKeywords: rawArticle.secondaryKeywords || [],
