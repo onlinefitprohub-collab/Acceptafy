@@ -3170,22 +3170,37 @@ export interface ArticleGenerationOptions {
 
 // Helper function to detect if article content is incomplete
 const detectIncompleteContent = (content: string): boolean => {
-  if (!content || content.length < 500) return true;
-  
-  const trimmedContent = content.trim();
-  const wordCount = content.split(/\s+/).length;
-  
-  // CRITICAL: Articles must be at least 1500 words - this is the primary check
-  // Even if content ends properly, if it's too short, it's incomplete
-  if (wordCount < 1400) {
-    console.log(`Article incomplete: only ${wordCount} words (minimum 1500 required)`);
+  if (!content || content.length < 500) {
+    console.log(`Article incomplete: content too short (${content?.length || 0} chars)`);
     return true;
   }
   
-  // Check for common signs of mid-sentence truncation
+  const trimmedContent = content.trim();
+  
+  // Strip HTML tags to get plain text for analysis
+  const plainText = trimmedContent.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const wordCount = plainText.split(/\s+/).filter(w => w.length > 0).length;
+  
+  console.log(`Article analysis: ${wordCount} words`);
+  
+  // CRITICAL: Articles must be at least 1500 words - this is the primary check
+  if (wordCount < 1400) {
+    console.log(`Article incomplete: only ${wordCount} words (minimum 1400 required)`);
+    return true;
+  }
+  
+  // Check the PLAIN TEXT (not HTML) for proper sentence endings
+  // This catches cases where HTML is properly closed but text is truncated mid-sentence
+  const lastChars = plainText.slice(-50);
+  const endsWithProperPunctuation = /[.!?]["']?\s*$/.test(lastChars);
+  
+  if (!endsWithProperPunctuation) {
+    console.log(`Article incomplete: text ends mid-sentence. Last chars: "${lastChars}"`);
+    return true;
+  }
+  
+  // Check for common signs of mid-content truncation in HTML
   const incompletePatterns = [
-    // Ends mid-sentence (no proper ending punctuation before last few chars)
-    /[a-zA-Z,]\s*$/,
     // Unclosed HTML tags at the end
     /<[^>]*$/,
     // Ends with opening patterns that suggest more content was expected
@@ -3197,15 +3212,14 @@ const detectIncompleteContent = (content: string): boolean => {
     /<h[2-4][^>]*>[^<]*$/,
   ];
   
-  // Check if content ends with incomplete patterns
   for (const pattern of incompletePatterns) {
     if (pattern.test(trimmedContent)) {
-      console.log(`Article incomplete: truncated mid-content (pattern match)`);
+      console.log(`Article incomplete: truncated mid-HTML (pattern match)`);
       return true;
     }
   }
   
-  // Check for required structural elements - articles should have FAQ section
+  // Check for required structural elements - articles should have FAQ or conclusion
   const hasFAQSection = /<h[23][^>]*>.*(?:FAQ|Frequently Asked|Common Questions)/i.test(content);
   const hasConclusion = /<h[23][^>]*>.*(?:Conclusion|Final|Summary|Wrap|Key Takeaway)/i.test(content);
   
@@ -3215,21 +3229,7 @@ const detectIncompleteContent = (content: string): boolean => {
     return true;
   }
   
-  // Check for proper ending tags
-  const hasProperEnding = 
-    trimmedContent.endsWith('</p>') ||
-    trimmedContent.endsWith('</section>') ||
-    trimmedContent.endsWith('</div>') ||
-    trimmedContent.endsWith('</ul>') ||
-    trimmedContent.endsWith('</ol>') ||
-    /[.!?]["']?\s*<\/p>\s*$/.test(trimmedContent) ||
-    /[.!?]["']?\s*$/.test(trimmedContent);
-  
-  if (!hasProperEnding) {
-    console.log(`Article incomplete: no proper ending punctuation/tag`);
-    return true;
-  }
-  
+  console.log(`Article complete: ${wordCount} words, proper ending, has FAQ/conclusion: ${hasFAQSection || hasConclusion}`);
   return false;
 };
 
@@ -3449,14 +3449,26 @@ Return response as JSON with these exact fields: title, slug, excerpt, content, 
     article.articleFormat = selectedFormat;
     
     // Check if article content is incomplete and needs continuation
-    if (article.content) {
-      const content = article.content;
-      const isIncomplete = detectIncompleteContent(content);
+    // Allow up to 3 continuation attempts to complete the article
+    const MAX_CONTINUATION_ATTEMPTS = 3;
+    let attemptCount = 0;
+    
+    while (article.content && attemptCount < MAX_CONTINUATION_ATTEMPTS) {
+      const isIncomplete = detectIncompleteContent(article.content);
       
-      if (isIncomplete) {
-        console.log('Article appears incomplete, attempting continuation...');
-        article = await continueArticleGeneration(article, topic, format);
+      if (!isIncomplete) {
+        console.log(`Article complete after ${attemptCount} continuation attempt(s)`);
+        break;
       }
+      
+      attemptCount++;
+      console.log(`Article incomplete, continuation attempt ${attemptCount}/${MAX_CONTINUATION_ATTEMPTS}...`);
+      article = await continueArticleGeneration(article, topic, format);
+    }
+    
+    // Final check - log warning if still incomplete after all attempts
+    if (article.content && detectIncompleteContent(article.content)) {
+      console.warn(`WARNING: Article still incomplete after ${MAX_CONTINUATION_ATTEMPTS} continuation attempts`);
     }
     
     return article;
