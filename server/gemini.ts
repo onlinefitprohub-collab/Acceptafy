@@ -3168,6 +3168,135 @@ export interface ArticleGenerationOptions {
   forcedFormat?: string;
 }
 
+// Helper function to detect if article content is incomplete
+const detectIncompleteContent = (content: string): boolean => {
+  if (!content || content.length < 500) return true;
+  
+  const trimmedContent = content.trim();
+  const wordCount = content.split(/\s+/).length;
+  
+  // CRITICAL: Articles must be at least 1500 words - this is the primary check
+  // Even if content ends properly, if it's too short, it's incomplete
+  if (wordCount < 1400) {
+    console.log(`Article incomplete: only ${wordCount} words (minimum 1500 required)`);
+    return true;
+  }
+  
+  // Check for common signs of mid-sentence truncation
+  const incompletePatterns = [
+    // Ends mid-sentence (no proper ending punctuation before last few chars)
+    /[a-zA-Z,]\s*$/,
+    // Unclosed HTML tags at the end
+    /<[^>]*$/,
+    // Ends with opening patterns that suggest more content was expected
+    /:\s*$/,
+    /\.\.\.\s*$/,
+    // Ends mid-list item
+    /<li>[^<]*$/,
+    // Cut off in middle of heading
+    /<h[2-4][^>]*>[^<]*$/,
+  ];
+  
+  // Check if content ends with incomplete patterns
+  for (const pattern of incompletePatterns) {
+    if (pattern.test(trimmedContent)) {
+      console.log(`Article incomplete: truncated mid-content (pattern match)`);
+      return true;
+    }
+  }
+  
+  // Check for required structural elements - articles should have FAQ section
+  const hasFAQSection = /<h[23][^>]*>.*(?:FAQ|Frequently Asked|Common Questions)/i.test(content);
+  const hasConclusion = /<h[23][^>]*>.*(?:Conclusion|Final|Summary|Wrap|Key Takeaway)/i.test(content);
+  
+  // If missing both FAQ and conclusion, likely incomplete
+  if (!hasFAQSection && !hasConclusion && wordCount < 1800) {
+    console.log(`Article incomplete: missing FAQ/conclusion sections and only ${wordCount} words`);
+    return true;
+  }
+  
+  // Check for proper ending tags
+  const hasProperEnding = 
+    trimmedContent.endsWith('</p>') ||
+    trimmedContent.endsWith('</section>') ||
+    trimmedContent.endsWith('</div>') ||
+    trimmedContent.endsWith('</ul>') ||
+    trimmedContent.endsWith('</ol>') ||
+    /[.!?]["']?\s*<\/p>\s*$/.test(trimmedContent) ||
+    /[.!?]["']?\s*$/.test(trimmedContent);
+  
+  if (!hasProperEnding) {
+    console.log(`Article incomplete: no proper ending punctuation/tag`);
+    return true;
+  }
+  
+  return false;
+};
+
+// Helper function to continue generating an incomplete article
+const continueArticleGeneration = async (
+  partialArticle: GeneratedArticle,
+  topic: string,
+  format: { name: string; description: string; structure: string; tone: string }
+): Promise<GeneratedArticle> => {
+  try {
+    const lastContent = partialArticle.content || '';
+    const lastParagraphs = lastContent.slice(-2000); // Get last ~2000 chars for better context
+    const currentWordCount = lastContent.split(/\s+/).length;
+    const wordsNeeded = Math.max(600, 1600 - currentWordCount);
+    
+    const continuationPrompt = `Continue writing this article about "${topic}". The article was cut off mid-way and needs ${wordsNeeded} more words.
+
+Here's how the article ends currently (continue from here):
+---
+${lastParagraphs}
+---
+
+CRITICAL INSTRUCTIONS:
+1. Continue EXACTLY where the content left off - don't repeat anything already written
+2. Write at least ${wordsNeeded} more words to complete the article
+3. Maintain the EXACT same HTML formatting: use <h2>, <h3>, <p>, <ul>, <li>, <strong>, <a> tags
+4. Match the same writing style, tone, and voice
+5. Include these required sections if not already present:
+   - FAQ section with <h2>Frequently Asked Questions</h2> and 2-3 Q&A pairs
+   - Conclusion section with <h2>Conclusion</h2> or similar
+6. End with a proper closing paragraph wrapped in <p> tags
+
+FORMAT REQUIREMENTS:
+- All paragraphs must be wrapped in <p> tags
+- All headings use <h2> for main sections, <h3> for subsections
+- Lists use <ul> or <ol> with <li> items
+- Important terms use <strong>
+- Links use <a href="...">text</a>
+
+Return ONLY the continuation HTML content (the new content to append), not the full article. Do not include any preamble or explanation.`;
+
+    const continuationSystemInstruction = `You are continuing an incomplete HTML article. Match the existing style, formatting, and HTML structure exactly. Write naturally as if you were the original author. Output only the HTML content to append - no preamble, no markdown, no explanation.`;
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: continuationPrompt,
+      config: {
+        systemInstruction: continuationSystemInstruction,
+        maxOutputTokens: 8192
+      }
+    });
+
+    const continuation = res.text || '';
+    
+    if (continuation.length > 100) {
+      // Append the continuation to the original content
+      partialArticle.content = lastContent + '\n\n' + continuation;
+      console.log(`Article continued successfully. Added ${continuation.split(/\s+/).length} words.`);
+    }
+    
+    return partialArticle;
+  } catch (error) {
+    console.error('Error continuing article:', error);
+    return partialArticle; // Return original if continuation fails
+  }
+};
+
 export const generateFullArticle = async (topicOrOptions: string | ArticleGenerationOptions): Promise<GeneratedArticle> => {
   try {
     // Handle both string and options object for backward compatibility
@@ -3311,12 +3440,24 @@ Return response as JSON with these exact fields: title, slug, excerpt, content, 
       config: {
         systemInstruction,
         responseMimeType: 'application/json',
-        responseSchema: fullArticleSchema
+        responseSchema: fullArticleSchema,
+        maxOutputTokens: 16384
       }
     });
 
-    const article = JSON.parse(res.text || '{}') as GeneratedArticle;
+    let article = JSON.parse(res.text || '{}') as GeneratedArticle;
     article.articleFormat = selectedFormat;
+    
+    // Check if article content is incomplete and needs continuation
+    if (article.content) {
+      const content = article.content;
+      const isIncomplete = detectIncompleteContent(content);
+      
+      if (isIncomplete) {
+        console.log('Article appears incomplete, attempting continuation...');
+        article = await continueArticleGeneration(article, topic, format);
+      }
+    }
     
     return article;
   } catch (error) {
