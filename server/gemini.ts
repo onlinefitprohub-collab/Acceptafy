@@ -3181,18 +3181,48 @@ export const generateFullArticle = async (topicOrOptions: string | ArticleGenera
     const selectedFormat = forcedFormat || selectArticleFormat(topic, existingFormats);
     const format = ARTICLE_FORMATS[selectedFormat as keyof typeof ARTICLE_FORMATS] || ARTICLE_FORMATS['deep-dive'];
     
-    // Build internal linking context
+    // Build internal linking context for other articles
     let internalLinkingContext = '';
     if (existingArticles.length > 0) {
       internalLinkingContext = `
-INTERNAL LINKING REQUIREMENT:
-You MUST include 2-4 internal links to these existing articles where contextually relevant. Use anchor text that flows naturally in the content.
-Available articles to link to:
+INTERNAL ARTICLE LINKING:
+Include 2-4 internal links to these existing articles where contextually relevant:
 ${existingArticles.map(a => `- "${a.title}" (link: /resources/${a.slug})`).join('\n')}
-
-When linking, use natural anchor text like: <a href="/resources/slug-here">descriptive text</a>
-Only link where it genuinely adds value to the reader.`;
+Use natural anchor text like: <a href="/resources/slug-here">descriptive text</a>`;
     }
+
+    // Acceptafy feature linking - contextual CTAs to platform tools
+    const featureLinkingContext = `
+ACCEPTAFY FEATURE LINKING (CRITICAL FOR CONVERSIONS):
+Naturally weave in 2-4 contextual links to Acceptafy's tools where they genuinely help the reader. Use conversational CTAs, not salesy language.
+
+Available features to link (use when contextually relevant):
+- Email Grader: When discussing email optimization, content quality, or spam triggers → "Want to see how your email scores? <a href="/">Try our free email grader</a>"
+- Warmup Planner: When discussing domain reputation, new domains, or warming up IPs → "Need a warmup strategy? <a href="/?view=deliverability&sub=warmup">Get a personalized warmup plan</a>"
+- DNS Record Generator: When discussing SPF, DKIM, DMARC, or authentication → "Not sure if your records are set up right? <a href="/?view=deliverability&sub=dns">Generate your DNS records</a>"
+- Sender Score Estimator: When discussing reputation or deliverability scores → "Curious about your sender reputation? <a href="/?view=deliverability&sub=reputation">Check your sender score</a>"
+- Blacklist Monitor: When discussing blacklists or IP reputation → "Want to check if you're blacklisted? <a href="/?view=deliverability&sub=blacklist">Run a blacklist check</a>"
+- Subject Line Analyzer: When discussing open rates or subject lines → "Test your subject line before sending: <a href="/?view=tools&sub=subject">Analyze your subject line</a>"
+
+LINKING RULES:
+- Only link where it genuinely adds value (don't force it)
+- Use conversational language: "you might want to check...", "here's a quick way to...", "if you're not sure..."
+- Spread links throughout the article, not clustered together
+- Never link the same feature twice`;
+
+    // External linking to authoritative sources
+    const externalLinkingContext = `
+EXTERNAL AUTHORITY LINKING:
+Include 2-3 external links to authoritative, non-competing sources to boost credibility:
+- Industry research: Return Path, Validity, Litmus, HubSpot Research, Campaign Monitor studies
+- Data sources: Statista, Radicati Group, DMA (Data & Marketing Association)
+- Technical references: RFC documents, M3AAWG best practices, Google Postmaster guidelines
+
+FORMAT: <a href="URL" target="_blank" rel="noopener">descriptive anchor text</a>
+RULES:
+- NEVER link to competing email marketing tools (Mailchimp, Constant Contact, SendGrid, Klaviyo, ActiveCampaign, ConvertKit, etc.)
+- Only cite real, verifiable statistics (if you're unsure, don't cite it)
+- Use links to back up specific claims with data`;
 
     const prompt = `Create a UNIQUE, heavily SEO-optimized blog article about the following topic for an email marketing and deliverability platform.
 
@@ -3209,30 +3239,53 @@ Generate with these MANDATORY SEO requirements:
 1. Title: Keyword-rich, compelling, 50-60 characters, include primary keyword near the start
 2. Slug: URL-friendly, contains primary keyword
 3. Excerpt: 2-3 sentences, include primary keyword, under 200 characters, compelling hook
-4. Primary Keyword: The main search term this article targets
+4. Primary Keyword: The main search term this article targets (target LONG-TAIL keywords like "how to improve cold email deliverability" not just "email deliverability")
 5. Secondary Keywords: 4-6 LSI (related) keywords naturally woven throughout
 6. Content: Minimum 1500 words, heavy keyword density (1-2%), proper H2/H3 hierarchy
 7. Featured Snippet Optimization: Include at least one definition paragraph and one list that could be featured
 8. Meta Title: Under 60 characters, primary keyword first
 9. Meta Description: 150-160 characters, includes primary keyword, has call-to-action
 10. Tags: 5-7 highly relevant, searchable tags
-${internalLinkingContext}`;
+${internalLinkingContext}
+${featureLinkingContext}
+${externalLinkingContext}`;
 
-    const systemInstruction = `You are an elite SEO content strategist and expert copywriter for Acceptafy, an email deliverability optimization platform. Your mission is to create UNIQUE, highly engaging, and SEO-dominant articles.
+    const systemInstruction = `You are an elite SEO content strategist and expert copywriter for Acceptafy, an email deliverability optimization platform. Your mission is to create UNIQUE, highly engaging, and SEO-dominant articles that rank on page 1 of Google AND get cited by AI search engines.
 
-UNIQUENESS MANDATE:
-- Find an angle or perspective NOT commonly covered
-- Use unexpected hooks, surprising data, or contrarian viewpoints
-- Create original frameworks, acronyms, or methodologies
-- Tell stories and use specific scenarios
-- Avoid generic introductions like "In today's digital world..."
+HUMAN WRITING STYLE (CRITICAL - DO NOT SOUND LIKE AI):
+- Vary sentence length dramatically: mix punchy 5-word sentences with longer explanatory ones
+- Use first person: "I've seen this mistake destroy campaigns" not "This mistake can destroy campaigns"
+- Include personal anecdotes: "When I worked with a SaaS client last year..." or "I remember when..."
+- Add opinions and takes: "Here's the thing most marketers get wrong..." or "Honestly, this advice is outdated..."
+- Use conversational transitions: "Look,", "Here's the deal:", "But wait—", "Now, here's where it gets interesting"
+- Break "rules" occasionally: start sentences with "And" or "But", use sentence fragments for emphasis
+- Avoid AI patterns: never list exactly 3 things, vary list lengths (2, 5, 7 items), don't use "Here are X ways to..."
+- No corporate speak: say "mess up" not "negatively impact", say "works great" not "is highly effective"
+- Add specific details: real numbers, specific scenarios, named examples (even if hypothetical: "Let's call her Sarah")
+
+AI SEARCH ENGINE OPTIMIZATION (FOR CHATGPT, PERPLEXITY, GOOGLE AI):
+- Include 2-3 "Answer Box" paragraphs: definitive 40-60 word answers that directly answer a question
+- Start key sections with the question, then immediately answer it
+- Use clear, quotable statements that AI can cite: "Email deliverability is [clear definition]"
+- Structure FAQs with question as H3, answer as concise paragraph
+- Include specific, citable statistics with context
+- Write authoritative, confident statements (AI prefers definitive over hedged language)
+
+FEATURED SNIPPET OPTIMIZATION:
+- Include ONE "definition box": Start a paragraph with "[Term] is..." and provide a 40-60 word definition
+- Include ONE numbered list with 5-8 actionable steps
+- Include ONE comparison or "vs" section if relevant to topic
+- Use H2s that match common search queries: "How to...", "What is...", "Why does..."
+
+LONG-TAIL KEYWORD STRATEGY:
+- Target specific queries: "how to warm up a new email domain" not just "email warmup"
+- Include question-based keywords naturally in H2s and H3s
+- Address the "People Also Ask" angle: what related questions would someone have?
 
 SEO OPTIMIZATION REQUIREMENTS:
 - Primary keyword appears in: title, first 100 words, at least 2 H2s, meta title, meta description, conclusion
 - Secondary/LSI keywords distributed naturally throughout (aim for 1-2% keyword density)
 - Headers follow proper hierarchy (H2 → H3, never skip levels)
-- Include one "featured snippet optimized" paragraph: a clear 40-60 word definition or answer
-- Include schema-ready FAQ section with 2-3 questions
 - Use power words in title: ultimate, proven, essential, complete, master, secret, etc.
 
 CONTENT STRUCTURE - Use this specific format for ${format.name}:
@@ -3241,6 +3294,8 @@ ${format.structure}
 CRITICAL RULES:
 - Never use the word "AI" anywhere in the content
 - Never use "In today's" or similar cliche openings
+- Never use "landscape", "realm", "dive in", "let's explore", "without further ado"
+- Never use "comprehensive", "robust", "leverage", "utilize" (use simple words instead)
 - Every paragraph must provide genuine value
 - Use specific numbers, percentages, and data points
 - Write minimum 1500 words, maximum 2000 words
