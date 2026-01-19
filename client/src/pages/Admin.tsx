@@ -2703,7 +2703,7 @@ export default function Admin() {
               data-testid="iframe-website-analytics"
               width="100%" 
               height="2125" 
-              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/kIV1C" 
+              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/p_kx1rbu54bd" 
               frameBorder="0" 
               style={{ border: 0 }} 
               allowFullScreen 
