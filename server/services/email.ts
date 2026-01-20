@@ -227,6 +227,60 @@ This link will expire in 24 hours.
 If you didn't create an account with Acceptafy, you can safely ignore this email.`
   }),
 
+  adminNewSignup: (firstName: string, lastName: string, userEmail: string, signupDate: string) => ({
+    subject: `New Signup: ${firstName} ${lastName}`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="background: linear-gradient(135deg, #22c55e, #16a34a); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">New User Signup!</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">A new user has signed up for Acceptafy:</p>
+          <div style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8; font-size: 14px;">First Name:</td>
+                <td style="padding: 8px 0; font-size: 16px; font-weight: 600;">${firstName || 'Not provided'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8; font-size: 14px;">Last Name:</td>
+                <td style="padding: 8px 0; font-size: 16px; font-weight: 600;">${lastName || 'Not provided'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8; font-size: 14px;">Email:</td>
+                <td style="padding: 8px 0; font-size: 16px; font-weight: 600;"><a href="mailto:${userEmail}" style="color: #a855f7; text-decoration: none;">${userEmail}</a></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #94a3b8; font-size: 14px;">Signed Up:</td>
+                <td style="padding: 8px 0; font-size: 16px;">${signupDate}</td>
+              </tr>
+            </table>
+          </div>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://acceptafy.com/admin" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">View in Admin Dashboard</a>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `New User Signup!
+
+A new user has signed up for Acceptafy:
+
+First Name: ${firstName || 'Not provided'}
+Last Name: ${lastName || 'Not provided'}
+Email: ${userEmail}
+Signed Up: ${signupDate}
+
+View in Admin Dashboard: https://acceptafy.com/admin`
+  }),
+
   paymentFailed: (email: string, amountDue: string) => ({
     subject: 'Action Required: Payment Failed for Your Acceptafy Subscription',
     html: `
@@ -394,6 +448,42 @@ export async function sendEmailVerification(toEmail: string, verifyUrl: string):
     return true;
   } catch (error) {
     console.error('Failed to send email verification:', error);
+    return false;
+  }
+}
+
+export async function sendAdminNewSignupNotification(
+  firstName: string,
+  lastName: string,
+  userEmail: string
+): Promise<boolean> {
+  const adminEmail = 'hello@acceptafy.com';
+  
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const signupDate = new Date().toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+    const template = templates.adminNewSignup(firstName, lastName, userEmail, signupDate);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
+      to: adminEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Admin signup notification sent for ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send admin signup notification:', error);
     return false;
   }
 }

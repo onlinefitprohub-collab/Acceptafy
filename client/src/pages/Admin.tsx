@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResourcesSection } from "@/components/admin/ResourcesSection";
+import { UserDetailModal } from "@/components/admin/UserDetailModal";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -353,6 +354,10 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  
+  // User detail modal state
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
   
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showNotesDialog, setShowNotesDialog] = useState(false);
@@ -873,9 +878,22 @@ export default function Admin() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{item.user.email}</p>
                     <p className="text-xs text-muted-foreground">{item.reason}</p>
-                    <Badge variant="outline" className="mt-1 text-xs">
-                      {item.suggestedAction}
-                    </Badge>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-xs">
+                        {item.suggestedAction}
+                      </Badge>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUserId(item.user.id);
+                          setIsUserDetailOpen(true);
+                        }}
+                        data-testid={`review-account-${index}`}
+                      >
+                        Review account
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -2703,7 +2721,7 @@ export default function Admin() {
               data-testid="iframe-website-analytics"
               width="100%" 
               height="2125" 
-              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/p_kx1rbu54bd" 
+              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/kIV1C" 
               frameBorder="0" 
               style={{ border: 0 }} 
               allowFullScreen 
@@ -3296,6 +3314,16 @@ export default function Admin() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Detail Modal */}
+      <UserDetailModal
+        userId={selectedUserId}
+        isOpen={isUserDetailOpen}
+        onClose={() => {
+          setIsUserDetailOpen(false);
+          setSelectedUserId(null);
+        }}
+      />
     </>
   );
 }

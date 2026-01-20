@@ -41,7 +41,7 @@ import { randomUUID } from "crypto";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification } from "./services/email";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification, sendAdminNewSignupNotification } from "./services/email";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -484,6 +484,13 @@ export async function registerRoutes(
         : 'https://acceptafy.com';
       const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
       sendEmailVerification(email, verifyUrl).catch(err => console.error('Verification email failed:', err));
+
+      // Send admin notification for new signup (don't block registration)
+      sendAdminNewSignupNotification(
+        user.firstName || '',
+        user.lastName || '',
+        email
+      ).catch(err => console.error('Admin signup notification failed:', err));
 
       // Create session for newly registered user
       (req as any).login({ 
@@ -2634,6 +2641,54 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin user activity error:', error);
       res.status(500).json({ error: 'Failed to fetch user activity' });
+    }
+  });
+
+  // User Detail View - comprehensive user data for admin
+  app.get('/api/admin/users/:userId/detail', isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      
+      // Get user profile
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      // Get email analyses (graded emails)
+      const emailAnalyses = await storage.getEmailAnalyses(userId);
+
+      // Get gamification data
+      const gamification = await storage.getUserGamification(userId);
+
+      // Get usage counters
+      const usage = await storage.getUsageCounter(userId);
+
+      // Get admin notes
+      const notes = await storage.getAdminNotes(userId);
+
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          subscriptionTier: user.subscriptionTier,
+          subscriptionStatus: user.subscriptionStatus,
+          role: user.role,
+          emailVerified: user.emailVerified,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+          companyName: user.companyName,
+        },
+        emailAnalyses: emailAnalyses || [],
+        gamification: gamification || null,
+        usage: usage || null,
+        notes: notes || [],
+      });
+    } catch (error) {
+      console.error('Admin user detail error:', error);
+      res.status(500).json({ error: 'Failed to fetch user details' });
     }
   });
 
