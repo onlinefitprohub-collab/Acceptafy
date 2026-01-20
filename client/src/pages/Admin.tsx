@@ -2721,7 +2721,7 @@ export default function Admin() {
               data-testid="iframe-website-analytics"
               width="100%" 
               height="2125" 
-              src="https://lookerstudio.google.com/embed/reporting/b22af213-f272-49a3-9213-34c781f9c96a/page/kIV1C" 
+              src="https://lookerstudio.google.com/embed/reporting/815ad940-f416-4428-aa06-0e34e1a7d3ae/page/kIV1C" 
               frameBorder="0" 
               style={{ border: 0 }} 
               allowFullScreen 
