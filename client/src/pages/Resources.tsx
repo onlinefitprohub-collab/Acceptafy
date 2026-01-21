@@ -86,28 +86,36 @@ export default function Resources() {
           </div>
 
           {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-8" role="group" aria-label="Filter articles by tag">
-              <Button
-                variant={selectedTag === null ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedTag(null)}
-                data-testid="tag-all"
-                aria-pressed={selectedTag === null}
+            <div className="relative mb-8" role="group" aria-label="Filter articles by tag">
+              <div 
+                className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-1"
               >
-                All
-              </Button>
-              {allTags.map(tag => (
                 <Button
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "outline"}
+                  variant={selectedTag === null ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  data-testid={`tag-${tag}`}
-                  aria-pressed={selectedTag === tag}
+                  onClick={() => setSelectedTag(null)}
+                  data-testid="tag-all"
+                  aria-pressed={selectedTag === null}
+                  className="flex-shrink-0"
                 >
-                  {tag}
+                  All
                 </Button>
-              ))}
+                {allTags.map(tag => (
+                  <Button
+                    key={tag}
+                    variant={selectedTag === tag ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    data-testid={`tag-${tag}`}
+                    aria-pressed={selectedTag === tag}
+                    className="flex-shrink-0 whitespace-nowrap"
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
             </div>
           )}
 
