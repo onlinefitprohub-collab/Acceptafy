@@ -4,8 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Search, Calendar, Eye, Loader2, BookOpen } from "lucide-react";
-import { useState } from "react";
+import { Mail, ArrowRight, Search, Calendar, Eye, Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
 import { format } from "date-fns";
 
 interface Article {
@@ -22,10 +22,21 @@ interface Article {
 export default function Resources() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const tagsContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: articles, isLoading } = useQuery<Article[]>({
     queryKey: ['/api/articles'],
   });
+
+  const scrollTags = (direction: 'left' | 'right') => {
+    if (tagsContainerRef.current) {
+      const scrollAmount = 300;
+      tagsContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const allTags = articles?.flatMap(a => a.tags || []).filter((tag, index, arr) => arr.indexOf(tag) === index) || [];
 
@@ -86,9 +97,20 @@ export default function Resources() {
           </div>
 
           {allTags.length > 0 && (
-            <div className="relative mb-8" role="group" aria-label="Filter articles by tag">
+            <div className="flex items-center gap-2 mb-8" role="group" aria-label="Filter articles by tag">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollTags('left')}
+                data-testid="button-scroll-tags-left"
+                aria-label="Scroll tags left"
+                className="flex-shrink-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
               <div 
-                className="flex gap-2 overflow-x-auto scrollbar-hide py-2 px-1"
+                ref={tagsContainerRef}
+                className="flex gap-2 overflow-x-auto scrollbar-hide py-2 flex-1"
               >
                 <Button
                   variant={selectedTag === null ? "default" : "outline"}
@@ -114,8 +136,16 @@ export default function Resources() {
                   </Button>
                 ))}
               </div>
-              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => scrollTags('right')}
+                data-testid="button-scroll-tags-right"
+                aria-label="Scroll tags right"
+                className="flex-shrink-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           )}
 
