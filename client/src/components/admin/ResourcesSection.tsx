@@ -40,6 +40,8 @@ import {
   Search,
   Copy,
   Wand2,
+  RefreshCw,
+  ImageIcon,
 } from 'lucide-react';
 
 interface Article {
@@ -83,6 +85,7 @@ export function ResourcesSection() {
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [featuredImage, setFeaturedImage] = useState('');
+  const [imageError, setImageError] = useState(false);
   const [tags, setTags] = useState('');
   const [metaTitle, setMetaTitle] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
@@ -231,12 +234,66 @@ export function ResourcesSection() {
     });
   };
 
+  const regenerateImageMutation = useMutation({
+    mutationFn: async ({ topic, keywords }: { topic: string; keywords?: string }) => {
+      const response = await apiRequest('POST', '/api/admin/articles/regenerate-image', { topic, keywords });
+      return response.json();
+    },
+    onSuccess: (data: { featuredImage: string }) => {
+      setFeaturedImage(data.featuredImage || '');
+      setImageError(false);
+      toast({ title: 'Image regenerated', description: 'New featured image has been generated.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to regenerate image', variant: 'destructive' });
+    },
+  });
+
+  const rewriteContentMutation = useMutation({
+    mutationFn: async ({ topic, articleTitle }: { topic: string; articleTitle?: string }) => {
+      const response = await apiRequest('POST', '/api/admin/articles/rewrite', { topic, title: articleTitle });
+      return response.json();
+    },
+    onSuccess: (data: { title: string; slug: string; excerpt: string; content: string; tags: string[]; metaTitle: string; metaDescription: string }) => {
+      setTitle(data.title || title);
+      setSlug(data.slug || slug);
+      setExcerpt(data.excerpt || '');
+      setContent(data.content || '');
+      setTags(Array.isArray(data.tags) ? data.tags.join(', ') : tags);
+      setMetaTitle(data.metaTitle || '');
+      setMetaDescription(data.metaDescription || '');
+      toast({ title: 'Content rewritten', description: 'Article content has been regenerated with fresh text.' });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to rewrite content', variant: 'destructive' });
+    },
+  });
+
+  const handleRegenerateImage = () => {
+    // Use title, or fallback to slug (for existing articles), or default topic
+    const topic = title || (editingArticle?.title) || slug || 'email marketing';
+    // Limit keywords length for safety
+    const safeKeywords = tags.substring(0, 200);
+    regenerateImageMutation.mutate({ topic, keywords: safeKeywords });
+  };
+
+  const handleRewriteContent = () => {
+    // Use title first, or for existing articles fallback to original title/slug
+    const topic = title || (editingArticle?.title) || slug;
+    if (!topic || topic.trim().length < 5) {
+      toast({ title: 'Title needed', description: 'Please enter a title first so the content can be rewritten for that topic.', variant: 'destructive' });
+      return;
+    }
+    rewriteContentMutation.mutate({ topic: topic.trim(), articleTitle: title.trim() || undefined });
+  };
+
   const resetForm = () => {
     setTitle('');
     setSlug('');
     setExcerpt('');
     setContent('');
     setFeaturedImage('');
+    setImageError(false);
     setTags('');
     setMetaTitle('');
     setMetaDescription('');
@@ -250,6 +307,7 @@ export function ResourcesSection() {
     setExcerpt(article.excerpt || '');
     setContent(article.content);
     setFeaturedImage(article.featuredImage || '');
+    setImageError(false);
     setTags(article.tags?.join(', ') || '');
     setMetaTitle(article.metaTitle || '');
     setMetaDescription(article.metaDescription || '');
@@ -501,7 +559,27 @@ export function ResourcesSection() {
             </div>
 
             <div className="space-y-2">
-              <Label>Content</Label>
+              <div className="flex items-center justify-between">
+                <Label>Content</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRewriteContent}
+                  disabled={
+                    rewriteContentMutation.isPending || 
+                    (!(title && title.trim().length >= 5) && !(editingArticle?.title && editingArticle.title.trim().length >= 5) && !(slug && slug.trim().length >= 5))
+                  }
+                  className="gap-2"
+                  data-testid="button-rewrite-content"
+                >
+                  {rewriteContentMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Rewrite Content
+                </Button>
+              </div>
               <RichTextEditor
                 content={content}
                 onChange={setContent}
@@ -509,27 +587,67 @@ export function ResourcesSection() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="featuredImage">Featured Image URL</Label>
-                <Input
-                  id="featuredImage"
-                  placeholder="https://example.com/image.jpg"
-                  value={featuredImage}
-                  onChange={(e) => setFeaturedImage(e.target.value)}
-                  data-testid="input-article-image"
-                />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Featured Image</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRegenerateImage}
+                  disabled={regenerateImageMutation.isPending}
+                  className="gap-2"
+                  data-testid="button-regenerate-image"
+                >
+                  {regenerateImageMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Regenerate Image
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="tags">Tags (comma separated)</Label>
-                <Input
-                  id="tags"
-                  placeholder="email marketing, deliverability, tips"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  data-testid="input-article-tags"
-                />
-              </div>
+              
+              {featuredImage && !imageError ? (
+                <div className="relative rounded-lg overflow-hidden border bg-muted">
+                  <img 
+                    src={featuredImage} 
+                    alt="Featured image preview" 
+                    className="w-full h-48 object-cover"
+                    onError={() => setImageError(true)}
+                    onLoad={() => setImageError(false)}
+                  />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-48 rounded-lg border border-dashed bg-muted/50">
+                  <div className="text-center text-muted-foreground">
+                    <ImageIcon className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">{imageError ? 'Image failed to load' : 'No image set'}</p>
+                    <p className="text-xs">{imageError ? 'Try regenerating or use a different URL' : 'Generate or paste a URL below'}</p>
+                  </div>
+                </div>
+              )}
+              
+              <Input
+                id="featuredImage"
+                placeholder="https://example.com/image.jpg"
+                value={featuredImage}
+                onChange={(e) => {
+                  setFeaturedImage(e.target.value);
+                  setImageError(false);
+                }}
+                data-testid="input-article-image"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tags">Tags (comma separated)</Label>
+              <Input
+                id="tags"
+                placeholder="email marketing, deliverability, tips"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                data-testid="input-article-tags"
+              />
             </div>
 
             <div className="border-t pt-4">

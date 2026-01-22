@@ -4172,6 +4172,123 @@ Return your response as a JSON object with this exact structure:
     }
   });
   
+  // Admin: Regenerate featured image for article
+  app.post('/api/admin/articles/regenerate-image', aiRateLimiter, isAdmin, async (req: any, res) => {
+    try {
+      const { topic, keywords } = req.body;
+      
+      if (!topic || typeof topic !== 'string' || topic.trim().length < 3) {
+        return res.status(400).json({ message: 'Topic is required (at least 3 characters)' });
+      }
+      
+      // Validate and sanitize keywords - limit length to prevent excessively long prompts
+      const rawKeywords = typeof keywords === 'string' ? keywords : '';
+      const imageKeywords = rawKeywords.substring(0, 200) || 'email marketing';
+      let featuredImage = '';
+      
+      const imageResult = await generateArticleImage(topic, imageKeywords);
+      
+      if (imageResult) {
+        const privateDir = process.env.PRIVATE_OBJECT_DIR || '';
+        
+        if (privateDir) {
+          const imageId = randomUUID();
+          const extension = imageResult.mimeType === 'image/jpeg' ? 'jpg' : 'png';
+          const objectName = `uploads/${imageId}.${extension}`;
+          
+          const fullPath = privateDir.startsWith('/') ? privateDir.slice(1) : privateDir;
+          const pathParts = fullPath.split('/');
+          const bucketName = pathParts[0];
+          const basePath = pathParts.slice(1).join('/');
+          
+          const bucket = objectStorageClient.bucket(bucketName);
+          const filePath = basePath ? `${basePath}/${objectName}` : objectName;
+          const file = bucket.file(filePath);
+          
+          await file.save(imageResult.imageData, {
+            contentType: imageResult.mimeType,
+            metadata: {
+              'custom:aclPolicy': JSON.stringify({ owner: 'system', visibility: 'public' })
+            }
+          });
+          
+          featuredImage = `/objects/${objectName}`;
+        }
+      }
+      
+      if (!featuredImage) {
+        const imageQuery = encodeURIComponent(imageKeywords);
+        featuredImage = `https://source.unsplash.com/1200x630/?${imageQuery}`;
+      }
+      
+      res.json({ featuredImage });
+    } catch (error) {
+      console.error('Regenerate image error:', error);
+      res.status(500).json({ message: 'Failed to regenerate image' });
+    }
+  });
+  
+  // Admin: Rewrite article content (keeps same topic but generates fresh content)
+  app.post('/api/admin/articles/rewrite', aiRateLimiter, isAdmin, async (req: any, res) => {
+    try {
+      const { topic, title } = req.body;
+      
+      if (!topic || typeof topic !== 'string' || topic.trim().length < 5) {
+        return res.status(400).json({ message: 'Topic is required (at least 5 characters)' });
+      }
+      
+      if (title && typeof title !== 'string') {
+        return res.status(400).json({ message: 'Title must be a string' });
+      }
+      
+      // Fetch existing published articles for internal linking and format rotation
+      const existingArticles = await storage.getArticles(true);
+      const existingArticleData = existingArticles.map(a => ({
+        title: a.title,
+        slug: a.slug
+      }));
+      
+      // Track formats used in recent articles for rotation
+      const recentFormats = existingArticles
+        .slice(0, 10)
+        .map((a: any) => a.articleFormat)
+        .filter(Boolean);
+      
+      const rawArticle = await generateFullArticle({
+        topic: topic.trim(),
+        title: title?.trim() || undefined,
+        existingArticles: existingArticleData,
+        existingFormats: recentFormats
+      });
+      
+      const generateSlug = (t: string): string => {
+        return t.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').substring(0, 60).trim();
+      };
+      
+      const extractExcerpt = (content: string): string => {
+        const text = content.replace(/<[^>]*>/g, '').trim();
+        return text.length > 150 ? text.substring(0, 147) + '...' : text;
+      };
+      
+      const finalTitle = title?.trim() || rawArticle.title || topic.trim();
+      
+      const article = {
+        title: finalTitle,
+        slug: rawArticle.slug || generateSlug(finalTitle),
+        excerpt: rawArticle.excerpt || extractExcerpt(rawArticle.content || ''),
+        content: rawArticle.content || '',
+        tags: rawArticle.tags || [],
+        metaTitle: rawArticle.metaTitle || finalTitle.substring(0, 60),
+        metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160)
+      };
+      
+      res.json(article);
+    } catch (error) {
+      console.error('Rewrite article error:', error);
+      res.status(500).json({ message: 'Failed to rewrite article' });
+    }
+  });
+  
   // Admin: Create article
   app.post('/api/admin/articles', isAdmin, async (req: any, res) => {
     try {
