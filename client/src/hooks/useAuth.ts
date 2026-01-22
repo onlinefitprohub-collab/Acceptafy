@@ -17,7 +17,7 @@ interface AuthResponse {
   message?: string;
 }
 
-async function authRequest(url: string, credentials: { email: string; password: string }): Promise<AuthResponse> {
+async function authRequest(url: string, credentials: { email: string; password: string; firstName?: string; lastName?: string }): Promise<AuthResponse> {
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -49,7 +49,7 @@ export function useAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: (credentials: { email: string; password: string }) => 
+    mutationFn: (credentials: { email: string; password: string; firstName?: string; lastName?: string }) => 
       authRequest("/api/auth/register", credentials),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/session"] });

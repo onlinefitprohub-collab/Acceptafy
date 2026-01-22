@@ -431,10 +431,14 @@ export async function registerRoutes(
   // Email/Password Registration (rate limited to prevent spam)
   app.post('/api/auth/register', authRateLimiter, async (req, res) => {
     try {
-      const { email, password } = req.body;
+      const { email, password, firstName, lastName } = req.body;
       
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
+      }
+
+      if (!firstName || !lastName) {
+        return res.status(400).json({ message: "First name and last name are required" });
       }
 
       // Validate email format
@@ -456,7 +460,7 @@ export async function registerRoutes(
 
       // Hash password and create user
       const passwordHash = await bcrypt.hash(password, 10);
-      const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter');
+      const user = await storage.createUserWithPassword(email, passwordHash, 'user', 'starter', firstName, lastName);
 
       // Generate email verification token
       const verificationToken = randomUUID();

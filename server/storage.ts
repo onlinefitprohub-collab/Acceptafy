@@ -98,7 +98,7 @@ export interface IStorage {
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   getUserByVerificationToken(token: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
-  createUserWithPassword(email: string, passwordHash: string, role?: string, subscriptionTier?: string): Promise<User>;
+  createUserWithPassword(email: string, passwordHash: string, role?: string, subscriptionTier?: string, firstName?: string, lastName?: string): Promise<User>;
   updateUser(userId: string, updates: Partial<User>): Promise<User>;
   deleteUser(userId: string): Promise<boolean>;
   updateUserStripeInfo(userId: string, stripeInfo: {
@@ -298,7 +298,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async createUserWithPassword(email: string, passwordHash: string, role: string = 'user', subscriptionTier: string = 'starter'): Promise<User> {
+  async createUserWithPassword(email: string, passwordHash: string, role: string = 'user', subscriptionTier: string = 'starter', firstName?: string, lastName?: string): Promise<User> {
     const [user] = await db
       .insert(users)
       .values({
@@ -307,6 +307,8 @@ export class DatabaseStorage implements IStorage {
         role,
         subscriptionTier,
         subscriptionStatus: 'active',
+        firstName,
+        lastName,
       })
       .returning();
     return user;

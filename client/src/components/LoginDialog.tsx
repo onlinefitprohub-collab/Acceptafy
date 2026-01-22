@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
-import { Loader2, Mail, Lock, LogIn, UserPlus } from "lucide-react";
+import { Loader2, Mail, Lock, LogIn, UserPlus, User } from "lucide-react";
 
 interface LoginDialogProps {
   trigger?: React.ReactNode;
@@ -18,6 +18,8 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
   const [currentMode, setCurrentMode] = useState(mode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [error, setError] = useState("");
   const { login, isLoggingIn, register, isRegistering } = useAuth();
 
@@ -29,13 +31,22 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
     setError("");
     
     try {
-      const authFn = isSignup ? register : login;
-      const result = await authFn({ email, password });
-      if (result.success) {
-        setOpen(false);
-        window.location.reload();
+      if (isSignup) {
+        const result = await register({ email, password, firstName, lastName });
+        if (result.success) {
+          setOpen(false);
+          window.location.reload();
+        } else {
+          setError(result.message || "Registration failed");
+        }
       } else {
-        setError(result.message || (isSignup ? "Registration failed" : "Login failed"));
+        const result = await login({ email, password });
+        if (result.success) {
+          setOpen(false);
+          window.location.reload();
+        } else {
+          setError(result.message || "Login failed");
+        }
       }
     } catch (err: any) {
       setError(err.message || (isSignup ? "Registration failed" : "Login failed"));
@@ -64,6 +75,43 @@ export function LoginDialog({ trigger, children, mode = "signin" }: LoginDialogP
         
         <div className="space-y-4 py-4">
           <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignup && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-signup-firstname"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="pl-10"
+                      data-testid="input-signup-lastname"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
