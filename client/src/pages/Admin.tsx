@@ -1087,8 +1087,10 @@ export default function Admin() {
                     dataKey="date" 
                     tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                     tickFormatter={(value) => {
-                      const date = new Date(value);
-                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                      const weekStart = new Date(value);
+                      const weekEnd = new Date(weekStart);
+                      weekEnd.setDate(weekEnd.getDate() + 6);
+                      return `${weekStart.getMonth() + 1}/${weekStart.getDate()}-${weekEnd.getDate()}`;
                     }}
                   />
                   <YAxis 
@@ -1101,7 +1103,12 @@ export default function Admin() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '6px'
                     }}
-                    labelFormatter={(value) => format(new Date(value), 'MMM d, yyyy')}
+                    labelFormatter={(value) => {
+                      const weekStart = new Date(value);
+                      const weekEnd = new Date(weekStart);
+                      weekEnd.setDate(weekEnd.getDate() + 6);
+                      return `Week of ${format(weekStart, 'MMM d')} - ${format(weekEnd, 'MMM d, yyyy')}`;
+                    }}
                   />
                   <Area 
                     type="monotone" 
