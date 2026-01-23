@@ -2199,7 +2199,21 @@ Return your response as a JSON object with this exact structure:
 
   app.get('/api/admin/metrics', isAdmin, async (req: any, res) => {
     try {
-      const metrics = await storage.getBusinessMetrics();
+      const { startDate, endDate } = req.query;
+      let start: Date | undefined;
+      let end: Date | undefined;
+      
+      if (startDate) {
+        const [year, month, day] = (startDate as string).split('-').map(Number);
+        start = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      }
+      
+      if (endDate) {
+        const [year, month, day] = (endDate as string).split('-').map(Number);
+        end = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+      }
+      
+      const metrics = await storage.getBusinessMetrics(start, end);
       res.json(metrics);
     } catch (error) {
       console.error('Admin metrics error:', error);

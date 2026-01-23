@@ -448,8 +448,17 @@ export default function Admin() {
   });
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<BusinessMetrics>({
-    queryKey: ["/api/admin/metrics"],
-    enabled: isAdmin,
+    queryKey: ["/api/admin/metrics", dateRangeDates.start, dateRangeDates.end],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        startDate: dateRangeDates.start,
+        endDate: dateRangeDates.end,
+      });
+      const res = await fetch(`/api/admin/metrics?${params}`);
+      if (!res.ok) throw new Error('Failed to fetch metrics');
+      return res.json();
+    },
+    enabled: isAdmin && isCustomDateValid,
   });
 
   const { data: contentAnalytics, isLoading: contentAnalyticsLoading } = useQuery<ContentAnalytics>({
@@ -1059,10 +1068,10 @@ export default function Admin() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              User Growth (12 Weeks)
+              User Growth
             </CardTitle>
             <CardDescription>
-              New user signups per week
+              New user signups per week {dateRange !== 'custom' ? `(${DATE_RANGE_OPTIONS.find(o => o.value === dateRange)?.label || 'Last 30 days'})` : '(Custom range)'}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1134,38 +1143,38 @@ export default function Admin() {
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
             ) : metrics.subscriptionBreakdown && metrics.subscriptionBreakdown.length > 0 && metrics.subscriptionBreakdown.some(s => s.count > 0) ? (
-              <div className="flex gap-4">
-                <ResponsiveContainer width="50%" height={250}>
-                  <PieChart>
-                    <Pie
-                      data={metrics.subscriptionBreakdown}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      dataKey="count"
-                      nameKey="tier"
-                      label={({ tier, percent }) => `${tier} (${(percent * 100).toFixed(0)}%)`}
-                      labelLine={false}
-                    >
-                      {metrics.subscriptionBreakdown.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={TIER_COLORS[entry.tier] || '#64748b'}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px'
-                      }}
-                      formatter={(value: number, name: string) => [`${value} users`, name]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="w-1/2 flex flex-col justify-center space-y-3">
+              <div className="flex gap-6 items-center">
+                <div className="w-[160px] h-[160px] flex-shrink-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={metrics.subscriptionBreakdown}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        dataKey="count"
+                        nameKey="tier"
+                      >
+                        {metrics.subscriptionBreakdown.map((entry, index) => (
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={TIER_COLORS[entry.tier] || '#64748b'}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px'
+                        }}
+                        formatter={(value: number, name: string) => [`${value} users`, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex-1 flex flex-col justify-center space-y-3">
                   {metrics.subscriptionBreakdown.map((item) => (
                     <div key={item.tier} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

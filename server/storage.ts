@@ -169,7 +169,7 @@ export interface IStorage {
     totalGrades: number;
     recentSignups: number;
   }>;
-  getBusinessMetrics(): Promise<{
+  getBusinessMetrics(startDate?: Date, endDate?: Date): Promise<{
     mrr: number;
     userGrowth: { date: string; count: number }[];
     churnRate: number;
@@ -864,7 +864,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getBusinessMetrics(): Promise<{
+  async getBusinessMetrics(startDate?: Date, endDate?: Date): Promise<{
     mrr: number;
     userGrowth: { date: string; count: number }[];
     churnRate: number;
@@ -876,6 +876,15 @@ export class DatabaseStorage implements IStorage {
     const nonAdminUsers = allUsers.filter(u => u.role !== 'admin');
     const nonAdminUserIds = new Set(nonAdminUsers.map(u => u.id));
     
+    // Filter users by date range if provided (for subscription breakdown)
+    const usersInRange = startDate && endDate 
+      ? nonAdminUsers.filter(u => {
+          if (!u.createdAt) return false;
+          const created = new Date(u.createdAt);
+          return created >= startDate && created <= endDate;
+        })
+      : nonAdminUsers;
+    
     // MRR calculation based on subscription tiers (pro = $59/mo, scale = $149/mo)
     const tierPrices: Record<string, number> = {
       'pro': 5900, // cents
@@ -886,6 +895,7 @@ export class DatabaseStorage implements IStorage {
     let mrr = 0;
     const subscriptionCounts: Record<string, { count: number; revenue: number }> = {};
     
+    // Use all users for MRR (current subscriptions) but usersInRange for breakdown display
     for (const user of nonAdminUsers) {
       const tier = user.subscriptionTier || 'starter';
       const price = tierPrices[tier] || 0;
@@ -893,6 +903,12 @@ export class DatabaseStorage implements IStorage {
       if (user.subscriptionStatus === 'active' && tier !== 'starter') {
         mrr += price;
       }
+    }
+    
+    // Use usersInRange for subscription breakdown (reflects selected date range)
+    for (const user of usersInRange) {
+      const tier = user.subscriptionTier || 'starter';
+      const price = tierPrices[tier] || 0;
       
       if (!subscriptionCounts[tier]) {
         subscriptionCounts[tier] = { count: 0, revenue: 0 };
@@ -909,26 +925,72 @@ export class DatabaseStorage implements IStorage {
       revenue: data.revenue / 100, // Convert to dollars
     }));
     
-    // User growth over last 12 weeks
+    // User growth - use date range if provided, otherwise last 12 weeks
     const userGrowth: { date: string; count: number }[] = [];
-    for (let i = 11; i >= 0; i--) {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - (i * 7));
-      weekStart.setHours(0, 0, 0, 0);
+    const now = new Date();
+    
+    // Helper to get UTC date string (YYYY-MM-DD) from a date
+    const getUTCDateString = (date: Date): string => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    // Helper to get user's signup date as UTC date string for comparison
+    const getUserDateString = (createdAt: Date): string => {
+      return createdAt.toISOString().split('T')[0];
+    };
+    
+    if (startDate && endDate) {
+      // Calculate weeks within the provided date range using UTC
+      const rangeStart = new Date(startDate);
+      const dayOfWeek = rangeStart.getUTCDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      rangeStart.setUTCDate(rangeStart.getUTCDate() - daysToMonday);
+      rangeStart.setUTCHours(0, 0, 0, 0);
       
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 7);
+      let weekStart = new Date(rangeStart);
+      while (weekStart <= endDate) {
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+        
+        const count = nonAdminUsers.filter(u => {
+          if (!u.createdAt) return false;
+          const created = new Date(u.createdAt);
+          return created >= weekStart && created < weekEnd;
+        }).length;
+        
+        userGrowth.push({
+          date: getUTCDateString(weekStart),
+          count,
+        });
+        
+        weekStart = new Date(weekEnd);
+      }
+    } else {
+      // Default: last 12 weeks using ISO week boundaries (Monday to Sunday) in UTC
+      const currentWeekStart = new Date(now);
+      const dayOfWeek = currentWeekStart.getUTCDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      currentWeekStart.setUTCDate(currentWeekStart.getUTCDate() - daysToMonday);
+      currentWeekStart.setUTCHours(0, 0, 0, 0);
       
-      const count = nonAdminUsers.filter(u => {
-        if (!u.createdAt) return false;
-        const created = new Date(u.createdAt);
-        return created >= weekStart && created < weekEnd;
-      }).length;
-      
-      userGrowth.push({
-        date: weekStart.toISOString().split('T')[0],
-        count,
-      });
+      for (let i = 11; i >= 0; i--) {
+        const weekStart = new Date(currentWeekStart);
+        weekStart.setUTCDate(weekStart.getUTCDate() - (i * 7));
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
+        
+        const count = nonAdminUsers.filter(u => {
+          if (!u.createdAt) return false;
+          const created = new Date(u.createdAt);
+          return created >= weekStart && created < weekEnd;
+        }).length;
+        
+        userGrowth.push({
+          date: getUTCDateString(weekStart),
+          count,
+        });
+      }
     }
     
     // Churn rate: canceled paid users / (active + canceled paid users)
