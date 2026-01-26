@@ -226,9 +226,11 @@ const espStatsAnalysisRequestSchema = z.object({
     totalDelivered: z.number().min(0).optional(),
     totalOpened: z.number().min(0).optional(),
     totalClicked: z.number().min(0).optional(),
+    totalSkipped: z.number().min(0).optional(),
     avgOpenRate: z.number().min(0).max(100),
     avgClickRate: z.number().min(0).max(100),
     avgBounceRate: z.number().min(0).max(100),
+    avgSkipRate: z.number().min(0).max(100).optional(),
     campaigns: z.array(z.object({
       campaignName: z.string(),
       subject: z.string().optional(),
@@ -3043,15 +3045,22 @@ Return your response as a JSON object with this exact structure:
       const allCampaigns = [...espCampaigns, ...normalizedManualCampaigns];
       
       if (allCampaigns.length > 0) {
+        const totalSent = allCampaigns.reduce((sum, c) => sum + c.totalSent, 0);
+        const totalDelivered = allCampaigns.reduce((sum, c) => sum + c.delivered, 0);
+        const totalBounced = allCampaigns.reduce((sum, c) => sum + c.bounced, 0);
+        const totalSkipped = Math.max(0, totalSent - totalDelivered - totalBounced);
+        
         const totals = {
           totalCampaigns: allCampaigns.length,
-          totalSent: allCampaigns.reduce((sum, c) => sum + c.totalSent, 0),
-          totalDelivered: allCampaigns.reduce((sum, c) => sum + c.delivered, 0),
+          totalSent,
+          totalDelivered,
           totalOpened: allCampaigns.reduce((sum, c) => sum + c.opened, 0),
           totalClicked: allCampaigns.reduce((sum, c) => sum + c.clicked, 0),
+          totalSkipped,
           avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
           avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
           avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
+          avgSkipRate: totalSent > 0 ? (totalSkipped / totalSent) * 100 : 0,
           manualCampaignCount: normalizedManualCampaigns.length,
           espCampaignCount: espCampaigns.length,
         };
@@ -3081,6 +3090,8 @@ Return your response as a JSON object with this exact structure:
         totalDelivered: validation.data.stats.totalDelivered ?? 0,
         totalOpened: validation.data.stats.totalOpened ?? 0,
         totalClicked: validation.data.stats.totalClicked ?? 0,
+        totalSkipped: Math.max(0, validation.data.stats.totalSkipped ?? 0),
+        avgSkipRate: validation.data.stats.avgSkipRate ?? 0,
       };
       const analysis = await analyzeESPStats(normalizedStats);
       

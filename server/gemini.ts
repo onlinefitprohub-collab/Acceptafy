@@ -2638,9 +2638,11 @@ export const analyzeESPStats = async (stats: {
   totalDelivered: number;
   totalOpened: number;
   totalClicked: number;
+  totalSkipped?: number;
   avgOpenRate: number;
   avgClickRate: number;
   avgBounceRate: number;
+  avgSkipRate?: number;
   campaigns?: Array<{
     campaignName: string;
     subject?: string;
@@ -2655,17 +2657,21 @@ export const analyzeESPStats = async (stats: {
       `- "${c.campaignName}": ${c.totalSent} sent, ${c.openRate.toFixed(1)}% opens, ${c.clickRate.toFixed(1)}% clicks, ${c.bounceRate.toFixed(1)}% bounces`
     ).join('\n') || 'No campaign details available';
 
+    const skipRate = stats.avgSkipRate ?? (stats.totalSent > 0 ? ((stats.totalSkipped ?? 0) / stats.totalSent) * 100 : 0);
+    
     const prompt = `Analyze these email campaign stats and provide comprehensive deliverability insights.
 
 **Email Performance Data:**
 - Total Campaigns: ${stats.totalCampaigns}
 - Total Sent: ${stats.totalSent}
 - Total Delivered: ${stats.totalDelivered}
+- Total Skipped: ${stats.totalSkipped ?? 0} (${skipRate.toFixed(1)}% of sent emails never attempted delivery)
 - Total Opened: ${stats.totalOpened}
 - Total Clicked: ${stats.totalClicked}
 - Open Rate: ${stats.avgOpenRate.toFixed(1)}%
 - Click Rate: ${stats.avgClickRate.toFixed(1)}%
 - Bounce Rate: ${stats.avgBounceRate.toFixed(1)}%
+- Skip Rate: ${skipRate.toFixed(1)}%
 
 **Individual Campaign Performance:**
 ${campaignDetails}
@@ -2674,15 +2680,24 @@ ${campaignDetails}
 - Good open rate: 20-25%
 - Good click rate: 2-3%
 - Acceptable bounce rate: Under 2%
+- Acceptable skip rate: Under 5% (high skip rate indicates list quality issues - invalid emails, suppressed addresses, or ESP filtering)
 - Spam complaint threshold: Under 0.1%
+
+**IMPORTANT: Skip Rate Analysis**
+Skip rate represents emails that were never attempted to be delivered. Unlike bounces (which are rejected by the receiving server), skipped emails are filtered out by your ESP before sending. High skip rates indicate:
+- Invalid or malformed email addresses in your list
+- Addresses on suppression lists
+- Previously bounced addresses
+- Spam trap detection by your ESP
+A high skip rate is a significant list quality concern that should be addressed.
 
 Provide a complete deliverability analysis including:
 1. Sender reputation score based on engagement patterns
-2. Domain health assessment based on bounce rates
+2. Domain health assessment based on bounce rates AND skip rates (skip rate is critical for list quality)
 3. Spam risk evaluation
 4. Inbox placement predictions for Gmail (Primary/Promotions/Spam), Outlook (Focused/Other/Junk), and Yahoo
 5. Overall engagement score and trend
-6. Prioritized recommendations`;
+6. Prioritized recommendations (include list hygiene recommendations if skip rate is above 5%)`;
 
     const systemInstruction = `You are Acceptafy's email deliverability expert. Your job is to analyze email campaign data and provide comprehensive insights about inbox placement, sender reputation, and deliverability.
 

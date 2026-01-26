@@ -98,9 +98,11 @@ interface CombinedStats {
     totalDelivered: number;
     totalOpened: number;
     totalClicked: number;
+    totalSkipped?: number;
     avgOpenRate: number;
     avgClickRate: number;
     avgBounceRate: number;
+    avgSkipRate?: number;
     manualCampaignCount?: number;
     espCampaignCount?: number;
   };
@@ -1342,7 +1344,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <StatCard
               title="Total Sent"
               value={formatNumber(totals?.totalSent || 0)}
@@ -1376,6 +1378,15 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
               trend={(totals?.avgBounceRate ?? 0) < 1 ? 'up' : (totals?.avgBounceRate ?? 0) < 3 ? 'neutral' : 'down'}
               trendValue={(totals?.avgBounceRate ?? 0) < 1 ? 'Excellent' : (totals?.avgBounceRate ?? 0) < 3 ? 'Acceptable' : 'Needs attention'}
               gradient="from-orange-500 to-red-500"
+            />
+            <StatCard
+              title="Avg Skip Rate"
+              value={`${(totals?.avgSkipRate || 0).toFixed(1)}%`}
+              subValue={`${formatNumber(totals?.totalSkipped || 0)} skipped`}
+              icon={XCircle}
+              trend={(totals?.avgSkipRate ?? 0) < 5 ? 'up' : (totals?.avgSkipRate ?? 0) < 15 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgSkipRate ?? 0) < 5 ? 'Excellent' : (totals?.avgSkipRate ?? 0) < 15 ? 'Acceptable' : 'List quality issue'}
+              gradient="from-yellow-500 to-amber-500"
             />
           </div>
 
