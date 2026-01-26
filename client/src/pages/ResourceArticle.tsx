@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Mail, ArrowLeft, Eye, Loader2, BookOpen, Share2, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
+import { Mail, ArrowLeft, Loader2, BookOpen, Share2, Twitter, Linkedin, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import {
@@ -179,14 +179,7 @@ export default function ResourceArticle() {
               </p>
             )}
 
-            <div className="flex items-center justify-between border-y py-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
-                  {article.viewCount} views
-                </span>
-              </div>
-
+            <div className="flex items-center justify-end border-y py-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" data-testid="button-share">

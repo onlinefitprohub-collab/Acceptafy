@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Search, Eye, Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mail, ArrowRight, Search, Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
 
 interface Article {
@@ -194,13 +194,7 @@ export default function Resources() {
                             {article.excerpt}
                           </p>
                         )}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Eye className="h-4 w-4" />
-                              {article.viewCount} views
-                            </span>
-                          </div>
+                        <div className="flex items-center justify-end">
                           <span className="flex items-center gap-1 text-purple-500 text-sm font-medium group-hover:gap-2 transition-all">
                             Read more <ArrowRight className="h-4 w-4" />
                           </span>
