@@ -179,6 +179,12 @@ export const manualCampaignStats = pgTable("manual_campaign_stats", {
   skippedType: varchar("skipped_type").default("number"),
   spam: integer("spam"),
   spamType: varchar("spam_type").default("number"),
+  forwards: integer("forwards"),
+  forwardsType: varchar("forwards_type").default("number"),
+  revenue: integer("revenue"), // Revenue in cents
+  revenueType: varchar("revenue_type").default("number"),
+  avgTimeToOpen: integer("avg_time_to_open"), // Average time to open in minutes
+  avgTimeToOpenType: varchar("avg_time_to_open_type").default("number"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
