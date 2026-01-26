@@ -4,9 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mail, ArrowRight, Search, Calendar, Eye, Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { Mail, ArrowRight, Search, Eye, Loader2, BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
-import { format } from "date-fns";
 
 interface Article {
   id: string;
@@ -197,12 +196,6 @@ export default function Resources() {
                         )}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            {article.publishedAt && (
-                              <span className="flex items-center gap-1">
-                                <Calendar className="h-4 w-4" />
-                                {format(new Date(article.publishedAt), 'MMM d, yyyy')}
-                              </span>
-                            )}
                             <span className="flex items-center gap-1">
                               <Eye className="h-4 w-4" />
                               {article.viewCount} views
