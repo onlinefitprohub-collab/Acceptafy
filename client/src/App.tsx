@@ -417,9 +417,21 @@ function AppContent() {
         const data = await response.json();
         setRewrittenEmail(data);
         recordRewrite();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        toast({
+          title: "Rewrite failed",
+          description: errorData?.error || "Unable to rewrite email. Please try again.",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Error rewriting email:', error);
+      toast({
+        title: "Connection error",
+        description: "Failed to connect to the server. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsRewriting(false);
     }
