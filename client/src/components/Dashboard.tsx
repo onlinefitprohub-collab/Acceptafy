@@ -24,7 +24,7 @@ import type { HistoryItem } from '../types';
 
 interface DashboardProps {
   history: HistoryItem[];
-  onNavigate: (view: 'grader' | 'history' | 'tools' | 'deliverability', subView?: string) => void;
+  onNavigate: (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => void;
   onOpenAcademy: () => void;
   onReplayTutorial?: () => void;
 }
@@ -181,7 +181,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                 <span className="font-semibold">Grade Email</span>
               </Button>
               <Button 
-                onClick={() => onNavigate('tools', 'rewrite')}
+                onClick={() => onNavigate('create', 'rewrite')}
                 variant="secondary"
                 className="h-auto py-5 flex flex-col gap-2.5 hover:shadow-md transition-all duration-300"
                 data-testid="quick-action-rewrite"
@@ -219,7 +219,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                       Use AI Rewrite to improve them!
                     </p>
                     <Button 
-                      onClick={() => onNavigate('tools', 'rewrite')} 
+                      onClick={() => onNavigate('create', 'rewrite')} 
                       size="sm"
                       className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-black shadow-md shadow-yellow-500/25"
                     >
@@ -318,7 +318,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
               {totalGrades > 0 && bestScore < 80 && (
                 <div 
                   className="group p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 cursor-pointer hover-elevate transition-all duration-300"
-                  onClick={() => onNavigate('tools', 'rewrite')}
+                  onClick={() => onNavigate('create', 'rewrite')}
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow duration-300">
