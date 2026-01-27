@@ -227,10 +227,25 @@ const espStatsAnalysisRequestSchema = z.object({
     totalOpened: z.number().min(0).optional(),
     totalClicked: z.number().min(0).optional(),
     totalSkipped: z.number().min(0).optional(),
+    totalBounced: z.number().min(0).optional(),
+    totalSoftBounced: z.number().min(0).optional(),
+    totalHardBounced: z.number().min(0).optional(),
+    totalUnsubscribed: z.number().min(0).optional(),
+    totalSpamReports: z.number().min(0).optional(),
+    totalForwards: z.number().min(0).optional(),
+    totalRevenue: z.number().min(0).optional(),
     avgOpenRate: z.number().min(0).max(100),
     avgClickRate: z.number().min(0).max(100),
     avgBounceRate: z.number().min(0).max(100),
     avgSkipRate: z.number().min(0).max(100).optional(),
+    avgSoftBounceRate: z.number().min(0).max(100).optional(),
+    avgHardBounceRate: z.number().min(0).max(100).optional(),
+    avgUnsubscribeRate: z.number().min(0).max(100).optional(),
+    avgSpamRate: z.number().min(0).max(100).optional(),
+    avgForwardRate: z.number().min(0).max(100).optional(),
+    avgRevenuePerEmail: z.number().min(0).optional(),
+    avgTimeToOpen: z.number().min(0).optional(),
+    clickToOpenRate: z.number().min(0).max(100).optional(),
     campaigns: z.array(z.object({
       campaignName: z.string(),
       subject: z.string().optional(),
@@ -290,12 +305,23 @@ interface NormalizedManualCampaign {
   opened: number;
   clicked: number;
   bounced: number;
+  softBounced?: number;
+  hardBounced?: number;
   unsubscribed: number;
   spamReports: number;
+  forwards?: number;
+  revenue?: number;
+  avgTimeToOpen?: number;
   openRate: number;
   clickRate: number;
   bounceRate: number;
+  softBounceRate?: number;
+  hardBounceRate?: number;
   unsubscribeRate: number;
+  spamRate?: number;
+  forwardRate?: number;
+  revenuePerEmail?: number;
+  clickToOpenRate?: number;
   isManual: boolean;
 }
 
@@ -336,11 +362,20 @@ function normalizeManualCampaignStats(manual: any): NormalizedManualCampaign | n
   const clicked = convertValue(manual.clicked, manual.clickedType, opened > 0 ? opened : effectiveDelivered);
   const unsubscribed = convertValue(manual.unsubscribed, manual.unsubscribedType, effectiveDelivered);
   const spamReports = convertValue(manual.spam, manual.spamType, effectiveDelivered);
+  const forwards = manual.forwards || 0;
+  const revenue = manual.revenue || 0;
+  const avgTimeToOpen = manual.avgTimeToOpen || 0;
 
   const openRate = effectiveDelivered > 0 ? (opened / effectiveDelivered) * 100 : 0;
   const clickRate = effectiveDelivered > 0 ? (clicked / effectiveDelivered) * 100 : 0;
   const bounceRate = totalSent > 0 ? (bounced / totalSent) * 100 : 0;
+  const softBounceRate = totalSent > 0 ? (softBounced / totalSent) * 100 : 0;
+  const hardBounceRate = totalSent > 0 ? (hardBounced / totalSent) * 100 : 0;
   const unsubscribeRate = effectiveDelivered > 0 ? (unsubscribed / effectiveDelivered) * 100 : 0;
+  const spamRate = effectiveDelivered > 0 ? (spamReports / effectiveDelivered) * 100 : 0;
+  const forwardRate = effectiveDelivered > 0 ? (forwards / effectiveDelivered) * 100 : 0;
+  const revenuePerEmail = totalSent > 0 ? revenue / totalSent / 100 : 0;
+  const clickToOpenRate = opened > 0 ? (clicked / opened) * 100 : 0;
 
   return {
     campaignId: `manual-${manual.id}`,
@@ -352,12 +387,23 @@ function normalizeManualCampaignStats(manual: any): NormalizedManualCampaign | n
     opened,
     clicked,
     bounced,
+    softBounced,
+    hardBounced,
     unsubscribed,
     spamReports,
+    forwards,
+    revenue,
+    avgTimeToOpen,
     openRate: Math.round(openRate * 100) / 100,
     clickRate: Math.round(clickRate * 100) / 100,
     bounceRate: Math.round(bounceRate * 100) / 100,
+    softBounceRate: Math.round(softBounceRate * 100) / 100,
+    hardBounceRate: Math.round(hardBounceRate * 100) / 100,
     unsubscribeRate: Math.round(unsubscribeRate * 100) / 100,
+    spamRate: Math.round(spamRate * 100) / 100,
+    forwardRate: Math.round(forwardRate * 100) / 100,
+    revenuePerEmail: Math.round(revenuePerEmail * 100) / 100,
+    clickToOpenRate: Math.round(clickToOpenRate * 100) / 100,
     isManual: true,
   };
 }
@@ -3048,19 +3094,47 @@ Return your response as a JSON object with this exact structure:
         const totalSent = allCampaigns.reduce((sum, c) => sum + c.totalSent, 0);
         const totalDelivered = allCampaigns.reduce((sum, c) => sum + c.delivered, 0);
         const totalBounced = allCampaigns.reduce((sum, c) => sum + c.bounced, 0);
+        const totalOpened = allCampaigns.reduce((sum, c) => sum + c.opened, 0);
+        const totalClicked = allCampaigns.reduce((sum, c) => sum + c.clicked, 0);
         const totalSkipped = Math.max(0, totalSent - totalDelivered - totalBounced);
+        const totalSoftBounced = allCampaigns.reduce((sum, c) => sum + (c.softBounced || 0), 0);
+        const totalHardBounced = allCampaigns.reduce((sum, c) => sum + (c.hardBounced || 0), 0);
+        const totalUnsubscribed = allCampaigns.reduce((sum, c) => sum + (c.unsubscribed || 0), 0);
+        const totalSpamReports = allCampaigns.reduce((sum, c) => sum + (c.spamReports || 0), 0);
+        const totalForwards = allCampaigns.reduce((sum, c) => sum + (c.forwards || 0), 0);
+        const totalRevenue = allCampaigns.reduce((sum, c) => sum + (c.revenue || 0), 0);
+        
+        const campaignsWithTimeToOpen = allCampaigns.filter(c => c.avgTimeToOpen && c.avgTimeToOpen > 0);
+        const avgTimeToOpen = campaignsWithTimeToOpen.length > 0 
+          ? campaignsWithTimeToOpen.reduce((sum, c) => sum + (c.avgTimeToOpen || 0), 0) / campaignsWithTimeToOpen.length 
+          : 0;
         
         const totals = {
           totalCampaigns: allCampaigns.length,
           totalSent,
           totalDelivered,
-          totalOpened: allCampaigns.reduce((sum, c) => sum + c.opened, 0),
-          totalClicked: allCampaigns.reduce((sum, c) => sum + c.clicked, 0),
+          totalOpened,
+          totalClicked,
           totalSkipped,
+          totalBounced,
+          totalSoftBounced,
+          totalHardBounced,
+          totalUnsubscribed,
+          totalSpamReports,
+          totalForwards,
+          totalRevenue,
           avgOpenRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.openRate, 0) / allCampaigns.length : 0,
           avgClickRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.clickRate, 0) / allCampaigns.length : 0,
           avgBounceRate: allCampaigns.length > 0 ? allCampaigns.reduce((sum, c) => sum + c.bounceRate, 0) / allCampaigns.length : 0,
           avgSkipRate: totalSent > 0 ? (totalSkipped / totalSent) * 100 : 0,
+          avgSoftBounceRate: totalSent > 0 ? (totalSoftBounced / totalSent) * 100 : 0,
+          avgHardBounceRate: totalSent > 0 ? (totalHardBounced / totalSent) * 100 : 0,
+          avgUnsubscribeRate: totalDelivered > 0 ? (totalUnsubscribed / totalDelivered) * 100 : 0,
+          avgSpamRate: totalDelivered > 0 ? (totalSpamReports / totalDelivered) * 100 : 0,
+          avgForwardRate: totalDelivered > 0 ? (totalForwards / totalDelivered) * 100 : 0,
+          avgRevenuePerEmail: totalSent > 0 ? totalRevenue / totalSent / 100 : 0,
+          avgTimeToOpen,
+          clickToOpenRate: totalOpened > 0 ? (totalClicked / totalOpened) * 100 : 0,
           manualCampaignCount: normalizedManualCampaigns.length,
           espCampaignCount: espCampaigns.length,
         };
@@ -3091,7 +3165,21 @@ Return your response as a JSON object with this exact structure:
         totalOpened: validation.data.stats.totalOpened ?? 0,
         totalClicked: validation.data.stats.totalClicked ?? 0,
         totalSkipped: Math.max(0, validation.data.stats.totalSkipped ?? 0),
+        totalSoftBounced: Math.max(0, validation.data.stats.totalSoftBounced ?? 0),
+        totalHardBounced: Math.max(0, validation.data.stats.totalHardBounced ?? 0),
+        totalUnsubscribed: Math.max(0, validation.data.stats.totalUnsubscribed ?? 0),
+        totalSpamReports: Math.max(0, validation.data.stats.totalSpamReports ?? 0),
+        totalForwards: Math.max(0, validation.data.stats.totalForwards ?? 0),
+        totalRevenue: Math.max(0, validation.data.stats.totalRevenue ?? 0),
         avgSkipRate: validation.data.stats.avgSkipRate ?? 0,
+        avgSoftBounceRate: validation.data.stats.avgSoftBounceRate ?? 0,
+        avgHardBounceRate: validation.data.stats.avgHardBounceRate ?? 0,
+        avgUnsubscribeRate: validation.data.stats.avgUnsubscribeRate ?? 0,
+        avgSpamRate: validation.data.stats.avgSpamRate ?? 0,
+        avgForwardRate: validation.data.stats.avgForwardRate ?? 0,
+        avgRevenuePerEmail: validation.data.stats.avgRevenuePerEmail ?? 0,
+        avgTimeToOpen: validation.data.stats.avgTimeToOpen ?? 0,
+        clickToOpenRate: validation.data.stats.clickToOpenRate ?? 0,
       };
       const analysis = await analyzeESPStats(normalizedStats);
       

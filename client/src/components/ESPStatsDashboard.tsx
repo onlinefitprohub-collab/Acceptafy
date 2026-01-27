@@ -42,7 +42,13 @@ import {
   Plus,
   Trash2,
   Save,
-  Filter
+  Filter,
+  UserMinus,
+  Share2,
+  XOctagon,
+  DollarSign,
+  Clock,
+  Inbox
 } from 'lucide-react';
 import {
   Tooltip,
@@ -61,12 +67,23 @@ interface ESPCampaignStats {
   opened: number;
   clicked: number;
   bounced: number;
+  softBounced?: number;
+  hardBounced?: number;
   unsubscribed: number;
   spamReports: number;
+  forwards?: number;
+  revenue?: number;
+  avgTimeToOpen?: number;
   openRate: number;
   clickRate: number;
   bounceRate: number;
+  softBounceRate?: number;
+  hardBounceRate?: number;
   unsubscribeRate: number;
+  spamRate?: number;
+  forwardRate?: number;
+  revenuePerEmail?: number;
+  clickToOpenRate?: number;
   isManual?: boolean;
 }
 
@@ -99,10 +116,25 @@ interface CombinedStats {
     totalOpened: number;
     totalClicked: number;
     totalSkipped?: number;
+    totalBounced?: number;
+    totalSoftBounced?: number;
+    totalHardBounced?: number;
+    totalUnsubscribed?: number;
+    totalSpamReports?: number;
+    totalForwards?: number;
+    totalRevenue?: number;
     avgOpenRate: number;
     avgClickRate: number;
     avgBounceRate: number;
     avgSkipRate?: number;
+    avgSoftBounceRate?: number;
+    avgHardBounceRate?: number;
+    avgUnsubscribeRate?: number;
+    avgSpamRate?: number;
+    avgForwardRate?: number;
+    avgRevenuePerEmail?: number;
+    avgTimeToOpen?: number;
+    clickToOpenRate?: number;
     manualCampaignCount?: number;
     espCampaignCount?: number;
   };
@@ -772,8 +804,13 @@ interface ManualCampaignForm {
   opened: string;
   clicked: string;
   bounced: string;
+  softBounced: string;
+  hardBounced: string;
   unsubscribed: string;
   spamReports: string;
+  forwards: string;
+  revenue: string;
+  avgTimeToOpen: string;
 }
 
 const emptyManualCampaignForm: ManualCampaignForm = {
@@ -785,8 +822,13 @@ const emptyManualCampaignForm: ManualCampaignForm = {
   opened: '',
   clicked: '',
   bounced: '',
+  softBounced: '',
+  hardBounced: '',
   unsubscribed: '',
   spamReports: '',
+  forwards: '',
+  revenue: '',
+  avgTimeToOpen: '',
 };
 
 export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) {
@@ -823,8 +865,13 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
     const opened = parseInt(manualCampaignForm.opened) || 0;
     const clicked = parseInt(manualCampaignForm.clicked) || 0;
     const bounced = parseInt(manualCampaignForm.bounced) || 0;
+    const softBounced = parseInt(manualCampaignForm.softBounced) || 0;
+    const hardBounced = parseInt(manualCampaignForm.hardBounced) || 0;
     const unsubscribed = parseInt(manualCampaignForm.unsubscribed) || 0;
     const spamReports = parseInt(manualCampaignForm.spamReports) || 0;
+    const forwards = parseInt(manualCampaignForm.forwards) || 0;
+    const revenue = parseFloat(manualCampaignForm.revenue) || 0;
+    const avgTimeToOpen = parseFloat(manualCampaignForm.avgTimeToOpen) || 0;
 
     if (!manualCampaignForm.campaignName.trim()) {
       toast({
@@ -844,6 +891,9 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
       return;
     }
 
+    const openRate = delivered > 0 ? (opened / delivered) * 100 : 0;
+    const clickRate = delivered > 0 ? (clicked / delivered) * 100 : 0;
+
     const newCampaign: ESPCampaignStats = {
       campaignId: `hl-manual-${Date.now()}`,
       campaignName: manualCampaignForm.campaignName.trim(),
@@ -854,12 +904,23 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
       opened,
       clicked,
       bounced,
+      softBounced,
+      hardBounced,
       unsubscribed,
       spamReports,
-      openRate: delivered > 0 ? (opened / delivered) * 100 : 0,
-      clickRate: delivered > 0 ? (clicked / delivered) * 100 : 0,
+      forwards,
+      revenue: Math.round(revenue * 100),
+      avgTimeToOpen: Math.round(avgTimeToOpen * 60),
+      openRate,
+      clickRate,
       bounceRate: sent > 0 ? (bounced / sent) * 100 : 0,
+      softBounceRate: sent > 0 ? (softBounced / sent) * 100 : 0,
+      hardBounceRate: sent > 0 ? (hardBounced / sent) * 100 : 0,
       unsubscribeRate: delivered > 0 ? (unsubscribed / delivered) * 100 : 0,
+      spamRate: delivered > 0 ? (spamReports / delivered) * 100 : 0,
+      forwardRate: delivered > 0 ? (forwards / delivered) * 100 : 0,
+      revenuePerEmail: sent > 0 ? revenue / sent : 0,
+      clickToOpenRate: opened > 0 ? (clicked / opened) * 100 : 0,
     };
 
     const updatedCampaigns = [...manualCampaigns, newCampaign];
@@ -1390,6 +1451,93 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             />
           </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatCard
+              title="Unsubscribe Rate"
+              value={`${(totals?.avgUnsubscribeRate || 0).toFixed(2)}%`}
+              subValue={`${formatNumber(totals?.totalUnsubscribed || 0)} unsubscribes`}
+              icon={UserMinus}
+              trend={(totals?.avgUnsubscribeRate ?? 0) < 0.5 ? 'up' : (totals?.avgUnsubscribeRate ?? 0) < 2 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgUnsubscribeRate ?? 0) < 0.5 ? 'Excellent' : (totals?.avgUnsubscribeRate ?? 0) < 2 ? 'Acceptable' : 'High unsubs'}
+              gradient="from-amber-500 to-orange-500"
+            />
+            <StatCard
+              title="Spam Complaint Rate"
+              value={`${(totals?.avgSpamRate || 0).toFixed(3)}%`}
+              subValue={`${formatNumber(totals?.totalSpamReports || 0)} complaints`}
+              icon={AlertTriangle}
+              trend={(totals?.avgSpamRate ?? 0) < 0.1 ? 'up' : (totals?.avgSpamRate ?? 0) < 0.3 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgSpamRate ?? 0) < 0.1 ? 'Safe zone' : (totals?.avgSpamRate ?? 0) < 0.3 ? 'Warning' : 'Critical'}
+              gradient="from-red-500 to-rose-600"
+            />
+            <StatCard
+              title="Forward Rate"
+              value={`${(totals?.avgForwardRate || 0).toFixed(2)}%`}
+              subValue={`${formatNumber(totals?.totalForwards || 0)} forwards`}
+              icon={Share2}
+              trend={(totals?.avgForwardRate ?? 0) > 1 ? 'up' : (totals?.avgForwardRate ?? 0) > 0.5 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgForwardRate ?? 0) > 1 ? 'Viral content' : (totals?.avgForwardRate ?? 0) > 0.5 ? 'Good' : 'Low sharing'}
+              gradient="from-cyan-500 to-blue-500"
+            />
+            <StatCard
+              title="Soft Bounce Rate"
+              value={`${(totals?.avgSoftBounceRate || 0).toFixed(2)}%`}
+              subValue={`${formatNumber(totals?.totalSoftBounced || 0)} soft bounces`}
+              icon={RefreshCw}
+              trend={(totals?.avgSoftBounceRate ?? 0) < 2 ? 'up' : (totals?.avgSoftBounceRate ?? 0) < 5 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgSoftBounceRate ?? 0) < 2 ? 'Normal' : (totals?.avgSoftBounceRate ?? 0) < 5 ? 'Elevated' : 'High'}
+              gradient="from-yellow-400 to-orange-400"
+            />
+            <StatCard
+              title="Hard Bounce Rate"
+              value={`${(totals?.avgHardBounceRate || 0).toFixed(2)}%`}
+              subValue={`${formatNumber(totals?.totalHardBounced || 0)} hard bounces`}
+              icon={XOctagon}
+              trend={(totals?.avgHardBounceRate ?? 0) < 0.5 ? 'up' : (totals?.avgHardBounceRate ?? 0) < 2 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgHardBounceRate ?? 0) < 0.5 ? 'Clean list' : (totals?.avgHardBounceRate ?? 0) < 2 ? 'Needs cleaning' : 'Critical'}
+              gradient="from-red-600 to-red-700"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Click-to-Open Rate"
+              value={`${(totals?.clickToOpenRate || 0).toFixed(1)}%`}
+              subValue="Content effectiveness"
+              icon={Target}
+              trend={(totals?.clickToOpenRate ?? 0) > 15 ? 'up' : (totals?.clickToOpenRate ?? 0) > 10 ? 'neutral' : 'down'}
+              trendValue={(totals?.clickToOpenRate ?? 0) > 15 ? 'Excellent' : (totals?.clickToOpenRate ?? 0) > 10 ? 'Good' : 'Improve content'}
+              gradient="from-emerald-500 to-green-600"
+            />
+            <StatCard
+              title="Revenue per Email"
+              value={`$${(totals?.avgRevenuePerEmail || 0).toFixed(2)}`}
+              subValue={`$${formatNumber((totals?.totalRevenue || 0) / 100)} total`}
+              icon={DollarSign}
+              trend={(totals?.avgRevenuePerEmail ?? 0) > 0.1 ? 'up' : (totals?.avgRevenuePerEmail ?? 0) > 0.05 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgRevenuePerEmail ?? 0) > 0.1 ? 'High ROI' : (totals?.avgRevenuePerEmail ?? 0) > 0.05 ? 'Moderate' : 'Low ROI'}
+              gradient="from-green-500 to-emerald-500"
+            />
+            <StatCard
+              title="Avg Time to Open"
+              value={totals?.avgTimeToOpen ? `${Math.floor((totals.avgTimeToOpen || 0) / 60)}h ${Math.round((totals.avgTimeToOpen || 0) % 60)}m` : 'N/A'}
+              subValue="From send to open"
+              icon={Clock}
+              trend={(totals?.avgTimeToOpen ?? 0) > 0 && (totals?.avgTimeToOpen ?? 0) < 120 ? 'up' : (totals?.avgTimeToOpen ?? 0) < 360 ? 'neutral' : 'down'}
+              trendValue={(totals?.avgTimeToOpen ?? 0) > 0 && (totals?.avgTimeToOpen ?? 0) < 120 ? 'Quick opens' : (totals?.avgTimeToOpen ?? 0) < 360 ? 'Normal' : 'Slow opens'}
+              gradient="from-indigo-500 to-violet-500"
+            />
+            <StatCard
+              title="Inbox Placement"
+              value={`${Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10).toFixed(0)}%`}
+              subValue="Estimated inbox rate"
+              icon={Inbox}
+              trend={Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 95 ? 'up' : Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 85 ? 'neutral' : 'down'}
+              trendValue={Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 95 ? 'Excellent' : Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 85 ? 'Good' : 'Needs work'}
+              gradient="from-blue-500 to-indigo-500"
+            />
+          </div>
+
           {analysis && (
             <Card className="border-border bg-gradient-to-br from-purple-500/5 via-transparent to-pink-500/5 overflow-hidden" data-testid="ai-analysis-section">
               <div className="h-1 w-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500" />
@@ -1877,6 +2025,66 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
                                   onChange={(e) => setManualCampaignForm(prev => ({ ...prev, spamReports: e.target.value }))}
                                   className="h-8 text-sm"
                                   data-testid="input-spam-reports"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs">Soft Bounces</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="10"
+                                  value={manualCampaignForm.softBounced}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, softBounced: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-soft-bounced"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Hard Bounces</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="5"
+                                  value={manualCampaignForm.hardBounced}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, hardBounced: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-hard-bounced"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                              <div>
+                                <Label className="text-xs">Forwards</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="12"
+                                  value={manualCampaignForm.forwards}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, forwards: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-forwards"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Revenue ($)</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="250"
+                                  value={manualCampaignForm.revenue}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, revenue: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-revenue"
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Avg Open (hrs)</Label>
+                                <Input 
+                                  type="number"
+                                  placeholder="2.5"
+                                  step="0.1"
+                                  value={manualCampaignForm.avgTimeToOpen}
+                                  onChange={(e) => setManualCampaignForm(prev => ({ ...prev, avgTimeToOpen: e.target.value }))}
+                                  className="h-8 text-sm"
+                                  data-testid="input-avg-time-to-open"
                                 />
                               </div>
                             </div>
