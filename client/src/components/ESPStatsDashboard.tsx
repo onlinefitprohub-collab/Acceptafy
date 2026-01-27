@@ -1557,36 +1557,116 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               tooltip="Average time between sending and first open. Ideal: Under 2 hours. Helps optimize send times for your audience."
             />
             {(() => {
-              // Calculate inbox placement considering promotions tab penalty
-              const baseDeliverability = Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10);
+              // Comprehensive inbox placement score based on all metrics that affect deliverability
+              // Start with 100 and apply penalties for each factor
               
-              // If AI analysis is available, use its predictions to adjust for tab placement
-              let inboxPlacement = baseDeliverability;
+              let score = 100;
               let sublabel = "Estimated inbox rate";
+              const issues: string[] = [];
               
+              // === HARD BOUNCE PENALTY (Heavy weight - damages reputation significantly) ===
+              // Ideal: <0.5%, Warning: 0.5-2%, Critical: >2%
+              const hardBounceRate = totals?.avgHardBounceRate || 0;
+              if (hardBounceRate > 0) {
+                if (hardBounceRate >= 2) {
+                  score -= 30 + (hardBounceRate - 2) * 5; // Critical: -30 base + 5 per % over 2
+                  issues.push('hard bounces');
+                } else if (hardBounceRate >= 0.5) {
+                  score -= 10 + (hardBounceRate - 0.5) * 10; // Warning: -10 to -25
+                  issues.push('hard bounces');
+                } else {
+                  score -= hardBounceRate * 10; // Minor: up to -5
+                }
+              }
+              
+              // === SOFT BOUNCE PENALTY (Moderate weight) ===
+              // Ideal: <2%, Warning: 2-5%, High: >5%
+              const softBounceRate = totals?.avgSoftBounceRate || 0;
+              if (softBounceRate > 2) {
+                score -= (softBounceRate - 2) * 2; // -2 per % over 2
+              }
+              
+              // === SPAM COMPLAINT PENALTY (Extremely heavy - can get you blocklisted) ===
+              // Ideal: <0.1%, Warning: 0.1-0.3%, Critical: >0.3%
+              const spamRate = totals?.avgSpamRate || 0;
+              if (spamRate > 0) {
+                if (spamRate >= 0.3) {
+                  score -= 40 + (spamRate - 0.3) * 50; // Critical: -40 base
+                  issues.push('spam complaints');
+                } else if (spamRate >= 0.1) {
+                  score -= 15 + (spamRate - 0.1) * 50; // Warning: -15 to -25
+                } else {
+                  score -= spamRate * 50; // Minor: up to -5
+                }
+              }
+              
+              // === UNSUBSCRIBE PENALTY (Moderate - signals poor engagement) ===
+              // Ideal: <0.5%, Warning: 0.5-2%, High: >2%
+              const unsubscribeRate = totals?.avgUnsubscribeRate || 0;
+              if (unsubscribeRate > 0.5) {
+                score -= (unsubscribeRate - 0.5) * 3; // -3 per % over 0.5
+              }
+              
+              // === ENGAGEMENT SIGNALS (Positive/negative based on benchmarks) ===
+              // Open rate: Ideal >20%, Average 15-20%, Poor <15%
+              const openRate = totals?.avgOpenRate || 0;
+              if (openRate < 15) {
+                score -= (15 - openRate) * 1.5; // Penalty for low opens
+                issues.push('low engagement');
+              } else if (openRate >= 25) {
+                score += 5; // Bonus for excellent opens
+              }
+              
+              // Click rate: Ideal >2.5%, Average 1.5-2.5%, Poor <1.5%
+              const clickRate = totals?.avgClickRate || 0;
+              if (clickRate < 1.5) {
+                score -= (1.5 - clickRate) * 3; // Penalty for low clicks
+              } else if (clickRate >= 3) {
+                score += 3; // Bonus for excellent clicks
+              }
+              
+              // Click-to-open rate: Ideal >10%, Poor <5%
+              const ctor = totals?.clickToOpenRate || 0;
+              if (ctor > 0 && ctor < 5) {
+                score -= (5 - ctor) * 1; // Penalty for poor CTOR
+              }
+              
+              // === AI PREDICTION ADJUSTMENTS (when available) ===
               if (analysis?.inboxPlacementInsights) {
                 const gmailPrediction = analysis.inboxPlacementInsights.gmailPrediction?.toLowerCase() || '';
                 const promotionsRisk = analysis.inboxPlacementInsights.promotionsRisk || 0;
                 
-                // Penalize for non-Primary tab placement
-                if (gmailPrediction.includes('promotions') || gmailPrediction.includes('promo')) {
-                  // Promotions tab = ~75% effective placement (still delivered, but lower visibility)
-                  inboxPlacement = Math.min(inboxPlacement, 75);
-                  sublabel = "Promotions tab likely";
-                } else if (gmailPrediction.includes('spam') || gmailPrediction.includes('junk')) {
-                  inboxPlacement = Math.min(inboxPlacement, 30);
+                if (gmailPrediction.includes('spam') || gmailPrediction.includes('junk')) {
+                  score = Math.min(score, 25);
                   sublabel = "Spam folder risk";
+                } else if (gmailPrediction.includes('promotions') || gmailPrediction.includes('promo')) {
+                  score = Math.min(score, 70);
+                  sublabel = "Promotions tab likely";
                 } else if (gmailPrediction.includes('primary') || gmailPrediction.includes('inbox')) {
                   sublabel = "Primary inbox likely";
                 }
                 
-                // Additional penalty based on promotions risk percentage
-                if (promotionsRisk > 40) {
-                  inboxPlacement = Math.min(inboxPlacement, 80 - (promotionsRisk - 40) * 0.5);
+                // Additional penalty for high promotions risk
+                if (promotionsRisk > 50) {
+                  score -= (promotionsRisk - 50) * 0.3;
                 }
               }
               
-              inboxPlacement = Math.max(0, Math.min(100, inboxPlacement));
+              // Determine sublabel based on score if not set by AI
+              if (sublabel === "Estimated inbox rate") {
+                if (issues.length > 0) {
+                  sublabel = `Issues: ${issues.slice(0, 2).join(', ')}`;
+                } else if (score >= 85) {
+                  sublabel = "Strong deliverability";
+                } else if (score >= 70) {
+                  sublabel = "Moderate deliverability";
+                } else {
+                  sublabel = "At risk";
+                }
+              }
+              
+              // Clamp to 0-100
+              const inboxPlacement = Math.max(0, Math.min(100, score));
               
               return (
                 <StatCard
@@ -1597,7 +1677,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
                   trend={inboxPlacement > 85 ? 'up' : inboxPlacement > 70 ? 'neutral' : 'down'}
                   trendValue={inboxPlacement > 85 ? 'Excellent' : inboxPlacement > 70 ? 'Good' : 'Needs work'}
                   gradient="from-blue-500 to-indigo-500"
-                  tooltip="Chance of landing in the Primary inbox (not Promotions/Spam). Ideal: Above 85%. Factors in tab predictions and engagement signals."
+                  tooltip="Estimated inbox placement based on bounce rates, spam complaints, engagement metrics, and AI predictions. Ideal: Above 85%."
                 />
               );
             })()}
