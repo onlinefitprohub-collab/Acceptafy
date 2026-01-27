@@ -843,7 +843,7 @@ function AppContent() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {history.map((item) => (
+          {history.filter(item => item?.result?.overallGrade?.grade).map((item) => (
             <Card 
               key={item.id} 
               className="card-lift cursor-pointer"
@@ -853,12 +853,12 @@ function AppContent() {
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
-                    <div className={`text-2xl font-bold ${getGradeColor(item.result.overallGrade.grade)}`}>
-                      {item.result.overallGrade.grade}
+                    <div className={`text-2xl font-bold ${getGradeColor(item.result?.overallGrade?.grade || 'N/A')}`}>
+                      {item.result?.overallGrade?.grade || 'N/A'}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-foreground font-medium truncate">
-                        {item.content.variations[0]?.subject || 'No subject'}
+                        {item.content?.variations?.[0]?.subject || 'No subject'}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(item.date).toLocaleDateString('en-US', { 

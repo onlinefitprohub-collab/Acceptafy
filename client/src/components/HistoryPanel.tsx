@@ -53,22 +53,23 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onView, onL
                 </div>
               ) : (
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                  {history.map((item, index) => {
-                    const winner = item.result.subjectLineAnalysis?.find(v => v.isWinner) || item.result.subjectLineAnalysis?.[0];
-                    const previousItem = history[index + 1];
+                  {history.filter(item => item?.result?.overallGrade?.grade).map((item, index) => {
+                    const winner = item.result?.subjectLineAnalysis?.find(v => v.isWinner) || item.result?.subjectLineAnalysis?.[0];
+                    const validHistory = history.filter(h => h?.result?.overallGrade?.grade);
+                    const previousItem = validHistory[index + 1];
                     let scoreDiff: number | null = null;
-                    if (previousItem) {
+                    if (previousItem && item.result?.inboxPlacementScore?.score !== undefined && previousItem.result?.inboxPlacementScore?.score !== undefined) {
                         scoreDiff = item.result.inboxPlacementScore.score - previousItem.result.inboxPlacementScore.score;
                     }
 
                     return (
                       <div key={item.id} className="bg-muted/50 p-3 rounded-lg border border-border flex items-center justify-between gap-4 animate-fade-in" data-testid={`history-item-${item.id}`}>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{winner?.subject || item.content.variations?.[0]?.subject || 'Untitled Analysis'}</p>
+                            <p className="text-sm font-semibold text-foreground truncate">{winner?.subject || item.content?.variations?.[0]?.subject || 'Untitled Analysis'}</p>
                             <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
                                 <span>{formatDate(item.date)}</span>
                                 <span className="w-1 h-1 bg-muted-foreground/50 rounded-full"></span>
-                                <span>Score: <b className="text-purple-600 dark:text-purple-300">{item.result.inboxPlacementScore.score}</b></span>
+                                <span>Score: <b className="text-purple-600 dark:text-purple-300">{item.result?.inboxPlacementScore?.score ?? 0}</b></span>
                                 
                                 {scoreDiff !== null && scoreDiff !== 0 && (
                                     <span className={`flex items-center font-bold ${scoreDiff > 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
@@ -77,7 +78,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, onView, onL
                                 )}
 
                                 <span className="w-1 h-1 bg-muted-foreground/50 rounded-full"></span>
-                                <span>Grade: <b className="text-purple-600 dark:text-purple-300">{item.result.overallGrade.grade}</b></span>
+                                <span>Grade: <b className="text-purple-600 dark:text-purple-300">{item.result?.overallGrade?.grade || 'N/A'}</b></span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
