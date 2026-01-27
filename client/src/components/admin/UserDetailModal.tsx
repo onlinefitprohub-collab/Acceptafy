@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import DOMPurify from "dompurify";
 import { 
   User, Mail, Calendar, Trophy, Target, FileText, 
   Star, Zap, TrendingUp, Clock, CheckCircle, XCircle,
-  Loader2
+  Loader2, Eye, X
 } from "lucide-react";
 
 interface UserDetailModalProps {
@@ -68,6 +71,13 @@ interface UserDetail {
 
 export function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProps) {
   const [activeTab, setActiveTab] = useState("overview");
+  const [previewEmail, setPreviewEmail] = useState<{
+    subject?: string;
+    body?: string;
+    score?: number;
+    grade?: string;
+    createdAt: string;
+  } | null>(null);
 
   const { data: userDetail, isLoading } = useQuery<UserDetail>({
     queryKey: [`/api/admin/users/${userId}/detail`],
@@ -307,10 +317,19 @@ export function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProp
                             </div>
                             {analysis.body && (
                               <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
-                                {analysis.body.substring(0, 200)}...
+                                {analysis.body.substring(0, 200).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()}...
                               </p>
                             )}
                           </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setPreviewEmail(analysis)}
+                            data-testid={`preview-email-${analysis.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Preview
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -385,6 +404,38 @@ export function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProp
           </div>
         )}
       </DialogContent>
+
+      {/* Email Preview Sheet (separate from Dialog to avoid nesting issues) */}
+      <Sheet open={!!previewEmail} onOpenChange={() => setPreviewEmail(null)}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto" data-testid="email-preview-sheet">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0 ${getGradeColor(previewEmail?.grade)}`}>
+                {previewEmail?.grade || "?"}
+              </div>
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{previewEmail?.subject || "No subject"}</p>
+                <p className="text-sm text-muted-foreground font-normal">
+                  Score: {previewEmail?.score ?? "N/A"} | {previewEmail ? formatDate(previewEmail.createdAt) : ""}
+                </p>
+              </div>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            <div className="bg-white dark:bg-slate-900 rounded-lg p-6 border">
+              <div 
+                className="prose prose-sm max-w-none dark:prose-invert [&_a]:text-purple-500 [&_a]:underline [&_p]:mb-3 [&_ul]:list-disc [&_ul]:ml-4 [&_ol]:list-decimal [&_ol]:ml-4"
+                dangerouslySetInnerHTML={{ 
+                  __html: DOMPurify.sanitize(previewEmail?.body || '<p>No email content</p>', {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'span', 'div', 'table', 'tr', 'td', 'th', 'thead', 'tbody'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style']
+                  })
+                }}
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </Dialog>
   );
 }

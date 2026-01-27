@@ -1364,3 +1364,13 @@ export interface GeneratedContent {
   suggestions: string[];
 }
 
+// System Configuration table for scheduler state and app settings
+export const systemConfig = pgTable("system_config", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type SystemConfig = typeof systemConfig.$inferSelect;
+export type InsertSystemConfig = typeof systemConfig.$inferInsert;
+

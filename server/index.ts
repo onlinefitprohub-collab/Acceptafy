@@ -6,6 +6,7 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 import { startScheduler } from "./services/blacklistScheduler";
+import { startMonthlyResetScheduler } from "./services/monthlyResetScheduler";
 
 const app = express();
 const httpServer = createServer(app);
@@ -161,6 +162,7 @@ async function initStripe() {
     () => {
       log(`serving on port ${port}`);
       startScheduler();
+      startMonthlyResetScheduler();
     },
   );
 })();

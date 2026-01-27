@@ -88,6 +88,7 @@ import {
   type InsertManualCampaignStats,
   type ContentDraft,
   type InsertContentDraft,
+  systemConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -275,6 +276,10 @@ export interface IStorage {
   createContentDraft(data: InsertContentDraft): Promise<ContentDraft>;
   updateContentDraft(id: string, userId: string, updates: Partial<ContentDraft>): Promise<ContentDraft | undefined>;
   deleteContentDraft(id: string, userId: string): Promise<boolean>;
+  
+  // System Config
+  getSystemConfig(key: string): Promise<string | undefined>;
+  setSystemConfig(key: string, value: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2781,6 +2786,21 @@ export class DatabaseStorage implements IStorage {
       .delete(contentDrafts)
       .where(and(eq(contentDrafts.id, id), eq(contentDrafts.userId, userId)));
     return true;
+  }
+
+  async getSystemConfig(key: string): Promise<string | undefined> {
+    const [config] = await db.select().from(systemConfig).where(eq(systemConfig.key, key));
+    return config?.value;
+  }
+
+  async setSystemConfig(key: string, value: string): Promise<void> {
+    await db
+      .insert(systemConfig)
+      .values({ key, value, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: systemConfig.key,
+        set: { value, updatedAt: new Date() }
+      });
   }
 }
 
