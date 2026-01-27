@@ -17,6 +17,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -69,6 +82,8 @@ import {
   Lightbulb,
   ChevronRight,
   PanelLeftClose,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
@@ -374,6 +389,8 @@ export default function Admin() {
   const [emailBody, setEmailBody] = useState("");
   const [emailSegment, setEmailSegment] = useState<string>("all");
   const [isBulkEmail, setIsBulkEmail] = useState(false);
+  const [userSelectorOpen, setUserSelectorOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
   // Announcement management state
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -3104,12 +3121,84 @@ export default function Admin() {
                   </SelectContent>
                 </Select>
               ) : (
-                <Input
-                  placeholder="Recipient email"
-                  value={emailRecipient}
-                  onChange={(e) => setEmailRecipient(e.target.value)}
-                  data-testid="input-recipient-email"
-                />
+                <div className="flex gap-2">
+                  <Popover open={userSelectorOpen} onOpenChange={setUserSelectorOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={userSelectorOpen}
+                        className="flex-1 justify-between"
+                        data-testid="button-user-selector"
+                      >
+                        {selectedUserId && users ? (
+                          (() => {
+                            const user = users.find(u => u.id === selectedUserId);
+                            return user ? (
+                              <span className="truncate">
+                                {user.firstName || user.lastName 
+                                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                                  : user.email}
+                              </span>
+                            ) : 'Select user...';
+                          })()
+                        ) : (
+                          <span className="text-muted-foreground">Select user...</span>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[400px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search users by name or email..." data-testid="input-user-search" />
+                        <CommandList>
+                          <CommandEmpty>No users found.</CommandEmpty>
+                          <CommandGroup>
+                            {users?.filter(u => u.email && u.role !== 'admin').map((user) => (
+                              <CommandItem
+                                key={user.id}
+                                value={`${user.firstName || ''} ${user.lastName || ''} ${user.email}`.toLowerCase()}
+                                onSelect={() => {
+                                  setSelectedUserId(user.id);
+                                  setEmailRecipient(user.email || '');
+                                  setUserSelectorOpen(false);
+                                }}
+                                data-testid={`user-option-${user.id}`}
+                              >
+                                <Check
+                                  className={`mr-2 h-4 w-4 ${selectedUserId === user.id ? 'opacity-100' : 'opacity-0'}`}
+                                />
+                                <div className="flex flex-col">
+                                  <span className="font-medium">
+                                    {user.firstName || user.lastName 
+                                      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                                      : user.email}
+                                  </span>
+                                  {(user.firstName || user.lastName) && (
+                                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                                  )}
+                                </div>
+                                <Badge variant="outline" className="ml-auto text-xs">
+                                  {user.subscriptionTier || 'starter'}
+                                </Badge>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    placeholder="Or type email manually"
+                    value={emailRecipient}
+                    onChange={(e) => {
+                      setEmailRecipient(e.target.value);
+                      setSelectedUserId(null);
+                    }}
+                    className="flex-1"
+                    data-testid="input-recipient-email"
+                  />
+                </div>
               )}
               
               <Input
