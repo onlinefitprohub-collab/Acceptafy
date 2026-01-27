@@ -139,7 +139,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3 } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -192,6 +192,7 @@ function AppContent() {
   const [industry, setIndustry] = useState<Industry>('');
   const [emailType, setEmailType] = useState<EmailType>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [gradingError, setGradingError] = useState<string | null>(null);
   const [result, setResult] = useState<GradingResult | null>(null);
   const [spamTriggers, setSpamTriggers] = useState<SpamTrigger[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -307,6 +308,7 @@ function AppContent() {
     
     setIsLoading(true);
     setResult(null);
+    setGradingError(null);
     setRewrittenEmail(null);
     setFollowUpEmail(null);
     setFollowUpSequence([]);
@@ -315,6 +317,10 @@ function AppContent() {
     setTimeout(() => {
       loadingRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
+    
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
     
     try {
       const response = await fetch('/api/grade', {
@@ -326,8 +332,11 @@ function AppContent() {
           industry: industry || undefined, 
           emailType: emailType || undefined,
           images: emailImages.length > 0 ? emailImages : undefined
-        })
+        }),
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
       
       if (response.ok) {
         const data = await response.json();
@@ -350,9 +359,17 @@ function AppContent() {
           }, 500);
         }
       } else {
-        console.error('Grading failed');
+        const errorData = await response.json().catch(() => ({}));
+        setGradingError(errorData.error || 'Grading failed. Please try again.');
+        console.error('Grading failed:', errorData);
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        setGradingError('The analysis is taking longer than expected. Please try again.');
+      } else {
+        setGradingError('Something went wrong. Please try again.');
+      }
       console.error('Error grading email:', error);
     } finally {
       setIsLoading(false);
@@ -2670,6 +2687,41 @@ function AppContent() {
       <div ref={loadingRef}>
         {isLoading && <Loader />}
       </div>
+
+      {gradingError && !isLoading && (
+        <div className="mt-8 flex flex-col items-center justify-center space-y-6 animate-fade-in px-4" data-testid="grading-error">
+          <div className="relative w-20 h-20">
+            <div className="absolute inset-0 rounded-full bg-red-500/20 animate-pulse" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <AlertCircle className="w-10 h-10 text-red-500" />
+            </div>
+          </div>
+          <div className="text-center space-y-2 max-w-md">
+            <h3 className="text-lg font-semibold text-foreground">Grading Failed</h3>
+            <p className="text-sm text-muted-foreground">{gradingError}</p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              onClick={handleGrade}
+              className="bg-gradient-to-r from-purple-500 to-pink-500"
+              data-testid="button-retry-grading"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Try Again
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setGradingError(null)}
+              data-testid="button-dismiss-error"
+            >
+              Dismiss
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Your email content has been preserved. Click "Try Again" to retry.
+          </p>
+        </div>
+      )}
 
       {result && !isLoading && (
         <div className="mt-8 space-y-8 animate-fade-in">
