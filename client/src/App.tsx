@@ -2033,7 +2033,7 @@ function AppContent() {
 
       {analyticsSubView === 'stats' && (
         <Suspense fallback={<ComponentLoader />}>
-          <ESPStatsDashboard />
+          <ESPStatsDashboard onNavigateToFunnel={() => setAnalyticsSubView('funnel')} />
         </Suspense>
       )}
 

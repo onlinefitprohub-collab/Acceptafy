@@ -791,6 +791,7 @@ function CampaignDetailModal({
 
 interface ESPStatsDashboardProps {
   onAnalyzeSubject?: (subject: string) => void;
+  onNavigateToFunnel?: () => void;
 }
 
 const HIGHLEVEL_MANUAL_CAMPAIGNS_KEY = 'highlevel_manual_campaigns';
@@ -831,7 +832,7 @@ const emptyManualCampaignForm: ManualCampaignForm = {
   avgTimeToOpen: '',
 };
 
-export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) {
+export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPStatsDashboardProps) {
   const { toast } = useToast();
   const { user, isLoading: isAuthLoading } = useAuth();
   const [stats, setStats] = useState<ESPStatsResponse | null>(null);
@@ -1369,16 +1370,15 @@ export function ESPStatsDashboard({ onAnalyzeSubject }: ESPStatsDashboardProps) 
             )}
             Analyze with AI
           </Button>
-          <Link href="/integrations/funnel-analysis">
-            <Button 
-              variant="outline"
-              className="gap-2"
-              data-testid="button-funnel-analysis"
-            >
-              <Filter className="w-4 h-4" />
-              Funnel Analysis
-            </Button>
-          </Link>
+          <Button 
+            variant="outline"
+            className="gap-2"
+            onClick={onNavigateToFunnel}
+            data-testid="button-funnel-analysis"
+          >
+            <Filter className="w-4 h-4" />
+            Funnel Analysis
+          </Button>
         </div>
       </div>
 
