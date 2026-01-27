@@ -392,7 +392,8 @@ function StatCard({
   icon: Icon, 
   trend,
   trendValue,
-  gradient 
+  gradient,
+  tooltip
 }: { 
   title: string;
   value: string | number;
@@ -401,9 +402,10 @@ function StatCard({
   trend?: 'up' | 'down' | 'neutral';
   trendValue?: string;
   gradient: string;
+  tooltip?: string;
 }) {
-  return (
-    <Card className="border-border bg-gradient-to-br from-muted/50 to-transparent" data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+  const cardContent = (
+    <Card className="border-border bg-gradient-to-br from-muted/50 to-transparent cursor-help" data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, '-')}`}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -432,6 +434,21 @@ function StatCard({
       </CardContent>
     </Card>
   );
+
+  if (tooltip) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {cardContent}
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-sm" side="top">
+          <p>{tooltip}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return cardContent;
 }
 
 function CampaignRow({ 
@@ -1421,6 +1438,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={totals?.avgOpenRate && totals.avgOpenRate >= 20 ? 'up' : totals?.avgOpenRate && totals.avgOpenRate >= 15 ? 'neutral' : 'down'}
               trendValue={totals?.avgOpenRate && totals.avgOpenRate >= 20 ? 'Above average' : totals?.avgOpenRate && totals.avgOpenRate >= 15 ? 'Average' : 'Below average'}
               gradient="from-blue-500 to-cyan-500"
+              tooltip="Percentage of delivered emails that were opened. Ideal: Above 20%. Industry average is 15-25% depending on your niche."
             />
             <StatCard
               title="Avg Click Rate"
@@ -1430,6 +1448,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={totals?.avgClickRate && totals.avgClickRate >= 2.5 ? 'up' : totals?.avgClickRate && totals.avgClickRate >= 1.5 ? 'neutral' : 'down'}
               trendValue={totals?.avgClickRate && totals.avgClickRate >= 2.5 ? 'Above average' : totals?.avgClickRate && totals.avgClickRate >= 1.5 ? 'Average' : 'Below average'}
               gradient="from-emerald-500 to-green-500"
+              tooltip="Percentage of delivered emails where a link was clicked. Ideal: Above 2.5%. Shows how effective your calls-to-action are."
             />
             <StatCard
               title="Avg Bounce Rate"
@@ -1439,6 +1458,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgBounceRate ?? 0) < 1 ? 'up' : (totals?.avgBounceRate ?? 0) < 3 ? 'neutral' : 'down'}
               trendValue={(totals?.avgBounceRate ?? 0) < 1 ? 'Excellent' : (totals?.avgBounceRate ?? 0) < 3 ? 'Acceptable' : 'Needs attention'}
               gradient="from-orange-500 to-red-500"
+              tooltip="Percentage of emails that failed to deliver. Ideal: Below 2%. High rates damage sender reputation with email providers."
             />
             <StatCard
               title="Avg Skip Rate"
@@ -1448,6 +1468,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgSkipRate ?? 0) < 5 ? 'up' : (totals?.avgSkipRate ?? 0) < 15 ? 'neutral' : 'down'}
               trendValue={(totals?.avgSkipRate ?? 0) < 5 ? 'Excellent' : (totals?.avgSkipRate ?? 0) < 15 ? 'Acceptable' : 'List quality issue'}
               gradient="from-yellow-500 to-amber-500"
+              tooltip="Emails not sent due to invalid addresses or opt-outs. Ideal: Below 5%. High rates indicate list hygiene issues."
             />
           </div>
 
@@ -1460,6 +1481,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgUnsubscribeRate ?? 0) < 0.5 ? 'up' : (totals?.avgUnsubscribeRate ?? 0) < 2 ? 'neutral' : 'down'}
               trendValue={(totals?.avgUnsubscribeRate ?? 0) < 0.5 ? 'Excellent' : (totals?.avgUnsubscribeRate ?? 0) < 2 ? 'Acceptable' : 'High unsubs'}
               gradient="from-amber-500 to-orange-500"
+              tooltip="Percentage of recipients who clicked unsubscribe. Ideal: Below 0.5%. High rates signal content mismatch or sending too frequently."
             />
             <StatCard
               title="Spam Complaint Rate"
@@ -1469,6 +1491,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgSpamRate ?? 0) < 0.1 ? 'up' : (totals?.avgSpamRate ?? 0) < 0.3 ? 'neutral' : 'down'}
               trendValue={(totals?.avgSpamRate ?? 0) < 0.1 ? 'Safe zone' : (totals?.avgSpamRate ?? 0) < 0.3 ? 'Warning' : 'Critical'}
               gradient="from-red-500 to-rose-600"
+              tooltip="Percentage of recipients marking your email as spam. Ideal: Below 0.1%. Above 0.3% risks blocklisting by major providers."
             />
             <StatCard
               title="Forward Rate"
@@ -1478,6 +1501,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgForwardRate ?? 0) > 1 ? 'up' : (totals?.avgForwardRate ?? 0) > 0.5 ? 'neutral' : 'down'}
               trendValue={(totals?.avgForwardRate ?? 0) > 1 ? 'Viral content' : (totals?.avgForwardRate ?? 0) > 0.5 ? 'Good' : 'Low sharing'}
               gradient="from-cyan-500 to-blue-500"
+              tooltip="Percentage of recipients who forwarded your email. Ideal: Above 0.5%. High rates indicate highly shareable, valuable content."
             />
             <StatCard
               title="Soft Bounce Rate"
@@ -1487,6 +1511,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgSoftBounceRate ?? 0) < 2 ? 'up' : (totals?.avgSoftBounceRate ?? 0) < 5 ? 'neutral' : 'down'}
               trendValue={(totals?.avgSoftBounceRate ?? 0) < 2 ? 'Normal' : (totals?.avgSoftBounceRate ?? 0) < 5 ? 'Elevated' : 'High'}
               gradient="from-yellow-400 to-orange-400"
+              tooltip="Temporary delivery failures (full inbox, server issues). Ideal: Below 2%. These may succeed on retry but high rates suggest list quality issues."
             />
             <StatCard
               title="Hard Bounce Rate"
@@ -1496,6 +1521,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgHardBounceRate ?? 0) < 0.5 ? 'up' : (totals?.avgHardBounceRate ?? 0) < 2 ? 'neutral' : 'down'}
               trendValue={(totals?.avgHardBounceRate ?? 0) < 0.5 ? 'Clean list' : (totals?.avgHardBounceRate ?? 0) < 2 ? 'Needs cleaning' : 'Critical'}
               gradient="from-red-600 to-red-700"
+              tooltip="Permanent delivery failures (invalid addresses). Ideal: Below 0.5%. Remove these addresses immediately to protect sender reputation."
             />
           </div>
 
@@ -1508,6 +1534,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.clickToOpenRate ?? 0) > 15 ? 'up' : (totals?.clickToOpenRate ?? 0) > 10 ? 'neutral' : 'down'}
               trendValue={(totals?.clickToOpenRate ?? 0) > 15 ? 'Excellent' : (totals?.clickToOpenRate ?? 0) > 10 ? 'Good' : 'Improve content'}
               gradient="from-emerald-500 to-green-600"
+              tooltip="Clicks divided by opens - measures content engagement. Ideal: Above 10%. Shows how compelling your email content is once opened."
             />
             <StatCard
               title="Revenue per Email"
@@ -1517,6 +1544,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgRevenuePerEmail ?? 0) > 0.1 ? 'up' : (totals?.avgRevenuePerEmail ?? 0) > 0.05 ? 'neutral' : 'down'}
               trendValue={(totals?.avgRevenuePerEmail ?? 0) > 0.1 ? 'High ROI' : (totals?.avgRevenuePerEmail ?? 0) > 0.05 ? 'Moderate' : 'Low ROI'}
               gradient="from-green-500 to-emerald-500"
+              tooltip="Average revenue generated per email sent. Track ROI of your campaigns by entering revenue in campaign data."
             />
             <StatCard
               title="Avg Time to Open"
@@ -1526,16 +1554,53 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgTimeToOpen ?? 0) > 0 && (totals?.avgTimeToOpen ?? 0) < 120 ? 'up' : (totals?.avgTimeToOpen ?? 0) < 360 ? 'neutral' : 'down'}
               trendValue={(totals?.avgTimeToOpen ?? 0) > 0 && (totals?.avgTimeToOpen ?? 0) < 120 ? 'Quick opens' : (totals?.avgTimeToOpen ?? 0) < 360 ? 'Normal' : 'Slow opens'}
               gradient="from-indigo-500 to-violet-500"
+              tooltip="Average time between sending and first open. Ideal: Under 2 hours. Helps optimize send times for your audience."
             />
-            <StatCard
-              title="Inbox Placement"
-              value={`${Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10).toFixed(0)}%`}
-              subValue="Estimated inbox rate"
-              icon={Inbox}
-              trend={Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 95 ? 'up' : Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 85 ? 'neutral' : 'down'}
-              trendValue={Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 95 ? 'Excellent' : Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10) > 85 ? 'Good' : 'Needs work'}
-              gradient="from-blue-500 to-indigo-500"
-            />
+            {(() => {
+              // Calculate inbox placement considering promotions tab penalty
+              const baseDeliverability = Math.max(0, 100 - (totals?.avgBounceRate || 0) - (totals?.avgSpamRate || 0) * 10);
+              
+              // If AI analysis is available, use its predictions to adjust for tab placement
+              let inboxPlacement = baseDeliverability;
+              let sublabel = "Estimated inbox rate";
+              
+              if (analysis?.inboxPlacementInsights) {
+                const gmailPrediction = analysis.inboxPlacementInsights.gmailPrediction?.toLowerCase() || '';
+                const promotionsRisk = analysis.inboxPlacementInsights.promotionsRisk || 0;
+                
+                // Penalize for non-Primary tab placement
+                if (gmailPrediction.includes('promotions') || gmailPrediction.includes('promo')) {
+                  // Promotions tab = ~75% effective placement (still delivered, but lower visibility)
+                  inboxPlacement = Math.min(inboxPlacement, 75);
+                  sublabel = "Promotions tab likely";
+                } else if (gmailPrediction.includes('spam') || gmailPrediction.includes('junk')) {
+                  inboxPlacement = Math.min(inboxPlacement, 30);
+                  sublabel = "Spam folder risk";
+                } else if (gmailPrediction.includes('primary') || gmailPrediction.includes('inbox')) {
+                  sublabel = "Primary inbox likely";
+                }
+                
+                // Additional penalty based on promotions risk percentage
+                if (promotionsRisk > 40) {
+                  inboxPlacement = Math.min(inboxPlacement, 80 - (promotionsRisk - 40) * 0.5);
+                }
+              }
+              
+              inboxPlacement = Math.max(0, Math.min(100, inboxPlacement));
+              
+              return (
+                <StatCard
+                  title="Inbox Placement"
+                  value={`${inboxPlacement.toFixed(0)}%`}
+                  subValue={sublabel}
+                  icon={Inbox}
+                  trend={inboxPlacement > 85 ? 'up' : inboxPlacement > 70 ? 'neutral' : 'down'}
+                  trendValue={inboxPlacement > 85 ? 'Excellent' : inboxPlacement > 70 ? 'Good' : 'Needs work'}
+                  gradient="from-blue-500 to-indigo-500"
+                  tooltip="Chance of landing in the Primary inbox (not Promotions/Spam). Ideal: Above 85%. Factors in tab predictions and engagement signals."
+                />
+              );
+            })()}
           </div>
 
           {analysis && (
