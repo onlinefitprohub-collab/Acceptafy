@@ -281,6 +281,57 @@ Signed Up: ${signupDate}
 View in Admin Dashboard: https://acceptafy.com/admin`
   }),
 
+  starterMonthlyReset: (firstName: string, totalGrades: number) => ({
+    subject: 'Your Monthly Grades Have Been Renewed!',
+    html: `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+        <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Fresh Grades Ready!</h1>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Hi ${firstName || 'there'}!</p>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Great news - your monthly email grades have been renewed! You now have <strong style="color: #a855f7;">3 free grades</strong> ready to use this month.</p>
+          ${totalGrades > 0 ? `<p style="font-size: 14px; color: #94a3b8; margin-bottom: 24px;">You've graded ${totalGrades} email${totalGrades !== 1 ? 's' : ''} so far. Keep up the great work!</p>` : ''}
+          <div style="background: rgba(168, 85, 247, 0.1); border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid rgba(168, 85, 247, 0.2);">
+            <p style="font-size: 14px; color: #e2e8f0; margin: 0; text-align: center;">
+              <strong>Your Starter Plan includes:</strong><br>
+              <span style="color: #a855f7;">3 email grades per month</span>
+            </p>
+          </div>
+          <p style="font-size: 16px; line-height: 1.6; margin-bottom: 24px;">Need more grades? Upgrade to Pro for unlimited grading plus AI rewrites, follow-up generation, and advanced deliverability tools.</p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="https://acceptafy.com" style="display: inline-block; background: linear-gradient(135deg, #a855f7, #ec4899); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-right: 12px;">Start Grading</a>
+            <a href="https://acceptafy.com/pricing" style="display: inline-block; background: transparent; color: #a855f7; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; border: 1px solid #a855f7;">View Plans</a>
+          </div>
+          <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Just reply to this email and we'll help you out.</p>
+        </div>
+      </body>
+      </html>
+    `,
+    text: `Fresh Grades Ready!
+
+Hi ${firstName || 'there'}!
+
+Great news - your monthly email grades have been renewed! You now have 3 free grades ready to use this month.
+
+${totalGrades > 0 ? `You've graded ${totalGrades} email${totalGrades !== 1 ? 's' : ''} so far. Keep up the great work!` : ''}
+
+Your Starter Plan includes: 3 email grades per month
+
+Need more grades? Upgrade to Pro for unlimited grading plus AI rewrites, follow-up generation, and advanced deliverability tools.
+
+Start grading: https://acceptafy.com
+View plans: https://acceptafy.com/pricing
+
+Questions? Just reply to this email and we'll help you out.`
+  }),
+
   paymentFailed: (email: string, amountDue: string) => ({
     subject: 'Action Required: Payment Failed for Your Acceptafy Subscription',
     html: `
@@ -484,6 +535,31 @@ export async function sendAdminNewSignupNotification(
     return true;
   } catch (error) {
     console.error('Failed to send admin signup notification:', error);
+    return false;
+  }
+}
+
+export async function sendStarterMonthlyResetEmail(
+  toEmail: string,
+  firstName: string,
+  gradesUsed: number
+): Promise<boolean> {
+  try {
+    const { client, fromEmail } = await getUncachableResendClient();
+    const template = templates.starterMonthlyReset(firstName, gradesUsed);
+    
+    await client.emails.send({
+      from: fromEmail || 'Acceptafy <hello@updates.acceptafy.com>',
+      to: toEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text
+    });
+    
+    console.log(`Starter monthly reset email sent to ${toEmail}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send starter monthly reset email:', error);
     return false;
   }
 }

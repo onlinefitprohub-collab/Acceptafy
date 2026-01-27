@@ -58,6 +58,8 @@ async function upsertUser(claims: any) {
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    emailVerified: true, // Replit OAuth users have verified emails
+    lastLoginAt: new Date(), // Track login time
   });
 }
 

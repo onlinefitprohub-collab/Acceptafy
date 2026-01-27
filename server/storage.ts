@@ -846,8 +846,11 @@ export class DatabaseStorage implements IStorage {
     }
     const tierBreakdown = Object.entries(tierCounts).map(([tier, count]) => ({ tier, count }));
     
+    // Get admin user IDs to exclude their grades from stats
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
     const allAnalyses = await db.select().from(emailAnalyses);
-    const totalGrades = allAnalyses.length;
+    // Exclude admin grades from total count
+    const totalGrades = allAnalyses.filter(a => !adminUserIds.has(a.userId)).length;
     
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);

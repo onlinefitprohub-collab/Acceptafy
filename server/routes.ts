@@ -41,7 +41,7 @@ import { randomUUID } from "crypto";
 import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/schema";
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification, sendAdminNewSignupNotification } from "./services/email";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification, sendAdminNewSignupNotification, sendStarterMonthlyResetEmail } from "./services/email";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -2578,6 +2578,62 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin bulk email error:', error);
       res.status(500).json({ error: 'Failed to send bulk email' });
+    }
+  });
+
+  // Send Monthly Reset Reminder Emails to Starter Users
+  app.post('/api/admin/send-starter-reset-reminders', isAdmin, async (req: any, res) => {
+    try {
+      const adminId = req.user.claims.sub;
+      const allUsers = await storage.getAllUsers();
+      
+      // Filter for starter plan users with verified emails (exclude admins)
+      const starterUsers = allUsers.filter(u => 
+        u.role !== 'admin' && 
+        (u.subscriptionTier || 'starter') === 'starter' &&
+        u.email &&
+        u.emailVerified !== false
+      );
+
+      let sentCount = 0;
+      let failedCount = 0;
+
+      for (const user of starterUsers) {
+        try {
+          // Get lifetime total grades from gamification
+          const gamification = await storage.getUserGamification(user.id);
+          const totalGrades = gamification?.totalGrades || 0;
+          
+          await sendStarterMonthlyResetEmail(
+            user.email!,
+            user.firstName || '',
+            totalGrades
+          );
+          
+          sentCount++;
+        } catch (e) {
+          console.error(`Failed to send reset email to ${user.email}:`, e);
+          failedCount++;
+        }
+      }
+
+      // Log admin activity
+      await storage.logAdminActivity(adminId, 'starter_reset_emails_sent', undefined, { 
+        sentCount, 
+        failedCount,
+        totalTargeted: starterUsers.length
+      });
+
+      res.json({ 
+        success: true, 
+        sentCount, 
+        failedCount, 
+        totalTargeted: starterUsers.length,
+        message: `Monthly reset reminder emails sent to ${sentCount} Starter plan users`
+      });
+    } catch (error) {
+      console.error('Starter reset email error:', error);
+      res.status(500).json({ error: 'Failed to send starter reset emails' });
     }
   });
 
