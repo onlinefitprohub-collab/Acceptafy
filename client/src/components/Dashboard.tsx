@@ -266,14 +266,14 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {recentGrades.map((item) => (
+                  {recentGrades.filter(item => item?.result?.overallGrade?.grade).map((item) => (
                     <div 
                       key={item.id} 
                       className="flex items-center gap-4 p-3 rounded-lg bg-muted/50 hover-elevate cursor-pointer"
                       onClick={() => onNavigate('history')}
                     >
-                      <div className={`text-2xl font-bold ${getGradeColor(item.result.overallGrade.grade)}`}>
-                        {item.result.overallGrade.grade}
+                      <div className={`text-2xl font-bold ${getGradeColor(item.result?.overallGrade?.grade || 'N/A')}`}>
+                        {item.result?.overallGrade?.grade || 'N/A'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{item.content.variations[0]?.subject || 'No subject'}</p>
