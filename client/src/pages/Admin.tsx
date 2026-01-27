@@ -390,7 +390,7 @@ export default function Admin() {
   const [emailSegment, setEmailSegment] = useState<string>("all");
   const [isBulkEmail, setIsBulkEmail] = useState(false);
   const [userSelectorOpen, setUserSelectorOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [emailSelectedUserId, setEmailSelectedUserId] = useState<string | null>(null);
   
   // Announcement management state
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -3131,9 +3131,9 @@ export default function Admin() {
                         className="flex-1 justify-between"
                         data-testid="button-user-selector"
                       >
-                        {selectedUserId && users ? (
+                        {emailSelectedUserId && users ? (
                           (() => {
-                            const user = users.find(u => u.id === selectedUserId);
+                            const user = users.find(u => u.id === emailSelectedUserId);
                             return user ? (
                               <span className="truncate">
                                 {user.firstName || user.lastName 
@@ -3159,14 +3159,14 @@ export default function Admin() {
                                 key={user.id}
                                 value={`${user.firstName || ''} ${user.lastName || ''} ${user.email}`.toLowerCase()}
                                 onSelect={() => {
-                                  setSelectedUserId(user.id);
+                                  setEmailSelectedUserId(user.id);
                                   setEmailRecipient(user.email || '');
                                   setUserSelectorOpen(false);
                                 }}
                                 data-testid={`user-option-${user.id}`}
                               >
                                 <Check
-                                  className={`mr-2 h-4 w-4 ${selectedUserId === user.id ? 'opacity-100' : 'opacity-0'}`}
+                                  className={`mr-2 h-4 w-4 ${emailSelectedUserId === user.id ? 'opacity-100' : 'opacity-0'}`}
                                 />
                                 <div className="flex flex-col">
                                   <span className="font-medium">
@@ -3193,7 +3193,7 @@ export default function Admin() {
                     value={emailRecipient}
                     onChange={(e) => {
                       setEmailRecipient(e.target.value);
-                      setSelectedUserId(null);
+                      setEmailSelectedUserId(null);
                     }}
                     className="flex-1"
                     data-testid="input-recipient-email"
