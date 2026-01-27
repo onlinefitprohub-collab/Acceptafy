@@ -1,7 +1,7 @@
 import { storage } from '../storage';
 import { sendStarterMonthlyResetEmail } from './email';
 
-const MONTHLY_RESET_LAST_SENT_KEY = 'monthly_reset_last_sent_month';
+const LAST_SENT_PREFIX = 'monthly_reset_user_';
 let isRunning = false;
 let schedulerInterval: NodeJS.Timeout | null = null;
 
@@ -13,26 +13,12 @@ async function checkAndSendMonthlyResetEmails(): Promise<void> {
 
   isRunning = true;
   const today = new Date();
-  const dayOfMonth = today.getDate();
+  const todayDayOfMonth = today.getDate();
   const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
-  // Only run on the 1st of each month
-  if (dayOfMonth !== 1) {
-    isRunning = false;
-    return;
-  }
+  console.log(`[MonthlyReset] Checking for users with signup day ${todayDayOfMonth}...`);
 
   try {
-    // Check if we already sent for this month (persistent idempotency)
-    const lastSentMonth = await storage.getSystemConfig(MONTHLY_RESET_LAST_SENT_KEY);
-    if (lastSentMonth === currentMonth) {
-      console.log(`[MonthlyReset] Already sent for ${currentMonth}, skipping...`);
-      isRunning = false;
-      return;
-    }
-
-    console.log('[MonthlyReset] Running monthly reset email job...');
-
     const allUsers = await storage.getAllUsers();
     
     // Filter for starter plan users with verified emails (exclude admins)
@@ -40,16 +26,39 @@ async function checkAndSendMonthlyResetEmails(): Promise<void> {
       u.role !== 'admin' && 
       (u.subscriptionTier || 'starter') === 'starter' &&
       u.email &&
-      u.emailVerified !== false
+      u.emailVerified !== false &&
+      u.createdAt // Must have a signup date
     );
 
-    console.log(`[MonthlyReset] Found ${starterUsers.length} starter users to notify`);
+    // Filter to users whose signup day matches today
+    const usersToNotify = starterUsers.filter(u => {
+      const signupDate = new Date(u.createdAt!);
+      const signupDay = signupDate.getDate();
+      return signupDay === todayDayOfMonth;
+    });
+
+    if (usersToNotify.length === 0) {
+      console.log(`[MonthlyReset] No users with signup day ${todayDayOfMonth} to notify`);
+      isRunning = false;
+      return;
+    }
+
+    console.log(`[MonthlyReset] Found ${usersToNotify.length} users with signup day ${todayDayOfMonth}`);
 
     let sentCount = 0;
+    let skippedCount = 0;
     let failedCount = 0;
 
-    for (const user of starterUsers) {
+    for (const user of usersToNotify) {
       try {
+        // Check if we already sent to this user this month (per-user idempotency)
+        const lastSentMonth = await storage.getSystemConfig(`${LAST_SENT_PREFIX}${user.id}`);
+        if (lastSentMonth === currentMonth) {
+          console.log(`[MonthlyReset] Already sent to ${user.email} for ${currentMonth}, skipping`);
+          skippedCount++;
+          continue;
+        }
+
         // Get lifetime total grades from gamification
         const gamification = await storage.getUserGamification(user.id);
         const totalGrades = gamification?.totalGrades || 0;
@@ -60,7 +69,11 @@ async function checkAndSendMonthlyResetEmails(): Promise<void> {
           totalGrades
         );
         
+        // Mark this user as sent for this month
+        await storage.setSystemConfig(`${LAST_SENT_PREFIX}${user.id}`, currentMonth);
+        
         sentCount++;
+        console.log(`[MonthlyReset] Sent reminder to ${user.email}`);
         
         // Small delay between emails to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -70,10 +83,7 @@ async function checkAndSendMonthlyResetEmails(): Promise<void> {
       }
     }
 
-    console.log(`[MonthlyReset] Completed: ${sentCount} sent, ${failedCount} failed`);
-    
-    // Mark this month as sent for persistent idempotency
-    await storage.setSystemConfig(MONTHLY_RESET_LAST_SENT_KEY, currentMonth);
+    console.log(`[MonthlyReset] Completed: ${sentCount} sent, ${skippedCount} skipped, ${failedCount} failed`);
   } catch (error) {
     console.error('[MonthlyReset] Error in monthly reset job:', error);
   } finally {
@@ -82,17 +92,17 @@ async function checkAndSendMonthlyResetEmails(): Promise<void> {
 }
 
 export function startMonthlyResetScheduler(): void {
-  console.log('[MonthlyReset] Starting monthly reset email scheduler...');
+  console.log('[MonthlyReset] Starting per-user monthly reset email scheduler...');
   
-  // Run immediately on startup to check if it's the 1st
+  // Run immediately on startup
   checkAndSendMonthlyResetEmails().catch(console.error);
   
-  // Check every 6 hours (will only send on the 1st of the month)
+  // Check every 6 hours to catch users whose signup day matches today
   schedulerInterval = setInterval(() => {
     checkAndSendMonthlyResetEmails().catch(console.error);
   }, 6 * 60 * 60 * 1000); // 6 hours in milliseconds
   
-  console.log('[MonthlyReset] Scheduler started - will check every 6 hours');
+  console.log('[MonthlyReset] Scheduler started - will check every 6 hours for user signup anniversaries');
 }
 
 export function stopMonthlyResetScheduler(): void {
