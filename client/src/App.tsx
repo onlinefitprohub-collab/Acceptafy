@@ -589,9 +589,18 @@ function AppContent() {
     }
   };
 
+  const convertPlainTextToHtml = (text: string): string => {
+    if (!text) return '';
+    return text
+      .split('\n\n')
+      .map(paragraph => `<p>${paragraph.replace(/\n/g, '<br>')}</p>`)
+      .join('');
+  };
+
   const handleAcceptRewrite = () => {
     if (rewrittenEmail) {
-      setBody(rewrittenEmail.body);
+      const htmlBody = convertPlainTextToHtml(rewrittenEmail.body);
+      setBody(htmlBody);
       setVariations([{ 
         subject: rewrittenEmail.subject, 
         previewText: rewrittenEmail.previewText 
@@ -602,7 +611,8 @@ function AppContent() {
   };
 
   const handleLoadFollowUp = (email: { subject: string; body: string }) => {
-    setBody(email.body);
+    const htmlBody = convertPlainTextToHtml(email.body);
+    setBody(htmlBody);
     setVariations([{ 
       subject: email.subject, 
       previewText: '' 
