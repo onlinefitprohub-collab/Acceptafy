@@ -1488,6 +1488,17 @@ export default function Admin() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() => {
+                                  setSelectedUserId(u.id);
+                                  setIsUserDetailOpen(true);
+                                }}
+                                data-testid={`action-review-account-${u.id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Review Account
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
                                   setSelectedUser(u);
                                   resetPasswordMutation.mutate(u.id);
                                 }}
