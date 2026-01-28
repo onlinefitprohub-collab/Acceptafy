@@ -3333,6 +3333,7 @@ export default function Admin() {
                             .replace(/\{\{firstName\}\}/g, 'John')
                             .replace(/\{\{lastName\}\}/g, 'Doe')
                             .replace(/\{\{email\}\}/g, 'john@example.com')
+                            .replace(/\n/g, '<br>')
                         }}
                       />
                     </div>
