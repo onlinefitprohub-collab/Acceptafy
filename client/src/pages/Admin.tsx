@@ -386,11 +386,13 @@ export default function Admin() {
   const [showSendEmailDialog, setShowSendEmailDialog] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
+  const [emailPreviewLine, setEmailPreviewLine] = useState("");
   const [emailBody, setEmailBody] = useState("");
   const [emailSegment, setEmailSegment] = useState<string>("all");
   const [isBulkEmail, setIsBulkEmail] = useState(false);
   const [userSelectorOpen, setUserSelectorOpen] = useState(false);
   const [emailSelectedUserId, setEmailSelectedUserId] = useState<string | null>(null);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
   
   // Announcement management state
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -626,11 +628,12 @@ export default function Admin() {
   });
 
   const sendEmailMutation = useMutation({
-    mutationFn: async (data: { recipientEmail?: string; recipientUserId?: string; subject: string; body: string; segment?: string; isBulk: boolean }) => {
+    mutationFn: async (data: { recipientEmail?: string; recipientUserId?: string; subject: string; previewLine?: string; body: string; segment?: string; isBulk: boolean }) => {
       if (data.isBulk) {
         const res = await apiRequest("POST", "/api/admin/send-bulk-email", {
           segment: data.segment,
           subject: data.subject,
+          previewLine: data.previewLine,
           body: data.body,
         });
         return res.json();
@@ -639,6 +642,7 @@ export default function Admin() {
           recipientEmail: data.recipientEmail,
           recipientUserId: data.recipientUserId,
           subject: data.subject,
+          previewLine: data.previewLine,
           body: data.body,
         });
         return res.json();
@@ -649,8 +653,10 @@ export default function Admin() {
       setShowSendEmailDialog(false);
       setEmailRecipient("");
       setEmailSubject("");
+      setEmailPreviewLine("");
       setEmailBody("");
       setEmailSegment("all");
+      setShowEmailPreview(false);
       if (data.sentCount !== undefined) {
         toast({ 
           title: "Bulk email sent", 
@@ -3219,35 +3225,148 @@ export default function Admin() {
                 data-testid="input-email-subject"
               />
               
+              <div className="space-y-1">
+                <Input
+                  placeholder="Preview line (preheader text)"
+                  value={emailPreviewLine}
+                  onChange={(e) => setEmailPreviewLine(e.target.value)}
+                  data-testid="input-email-preview-line"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Appears after subject in inbox preview
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-muted-foreground">Available merge tags:</Label>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {['{{firstName}}', '{{lastName}}', '{{email}}'].map((tag) => (
+                    <Badge 
+                      key={tag}
+                      variant="secondary" 
+                      className="cursor-pointer text-xs hover-elevate"
+                      onClick={() => setEmailBody(prev => prev + tag)}
+                      data-testid={`tag-${tag.replace(/[{}]/g, '')}`}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              
               <Textarea
-                placeholder="Email body (HTML supported)"
+                placeholder="Email body (HTML supported). Use merge tags like {{firstName}} for personalization."
                 value={emailBody}
                 onChange={(e) => setEmailBody(e.target.value)}
                 rows={4}
                 data-testid="input-email-body"
               />
               
-              <Button
-                className="w-full"
-                onClick={() => {
-                  sendEmailMutation.mutate({
-                    recipientEmail: isBulkEmail ? undefined : emailRecipient,
-                    subject: emailSubject,
-                    body: emailBody,
-                    segment: isBulkEmail ? emailSegment : undefined,
-                    isBulk: isBulkEmail,
-                  });
-                }}
-                disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
-                data-testid="button-send-email"
-              >
-                {sendEmailMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Mail className="h-4 w-4 mr-2" />
-                )}
-                {isBulkEmail ? 'Send Bulk Email' : 'Send Email'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowEmailPreview(true)}
+                  disabled={!emailSubject || !emailBody}
+                  data-testid="button-preview-email"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    sendEmailMutation.mutate({
+                      recipientEmail: isBulkEmail ? undefined : emailRecipient,
+                      recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
+                      subject: emailSubject,
+                      previewLine: emailPreviewLine || undefined,
+                      body: emailBody,
+                      segment: isBulkEmail ? emailSegment : undefined,
+                      isBulk: isBulkEmail,
+                    });
+                  }}
+                  disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
+                  data-testid="button-send-email"
+                >
+                  {sendEmailMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  {isBulkEmail ? 'Send Bulk' : 'Send'}
+                </Button>
+              </div>
+              
+              <Dialog open={showEmailPreview} onOpenChange={setShowEmailPreview}>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Email Preview</DialogTitle>
+                    <DialogDescription>
+                      Preview how your email will appear. Merge tags show sample values.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="border rounded-lg p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground font-medium">To:</span>
+                        <span>{isBulkEmail ? `${emailSegment} segment` : (emailRecipient || 'recipient@example.com')}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="text-muted-foreground font-medium">Subject:</span>
+                        <span className="font-semibold">{emailSubject.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe').replace(/\{\{email\}\}/g, 'john@example.com')}</span>
+                      </div>
+                      {emailPreviewLine && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground font-medium">Preview:</span>
+                          <span className="text-muted-foreground italic">{emailPreviewLine.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe').replace(/\{\{email\}\}/g, 'john@example.com')}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="border rounded-lg p-4">
+                      <div 
+                        className="prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{ 
+                          __html: emailBody
+                            .replace(/\{\{firstName\}\}/g, 'John')
+                            .replace(/\{\{lastName\}\}/g, 'Doe')
+                            .replace(/\{\{email\}\}/g, 'john@example.com')
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEmailPreview(false)} data-testid="button-close-preview">
+                      Close
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setShowEmailPreview(false);
+                        sendEmailMutation.mutate({
+                          recipientEmail: isBulkEmail ? undefined : emailRecipient,
+                          recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
+                          subject: emailSubject,
+                          previewLine: emailPreviewLine || undefined,
+                          body: emailBody,
+                          segment: isBulkEmail ? emailSegment : undefined,
+                          isBulk: isBulkEmail,
+                        });
+                      }}
+                      disabled={sendEmailMutation.isPending || (!isBulkEmail && !emailRecipient)}
+                      data-testid="button-send-from-preview"
+                    >
+                      {sendEmailMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Mail className="h-4 w-4 mr-2" />
+                      )}
+                      Send Now
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>

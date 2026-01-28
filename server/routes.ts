@@ -2413,10 +2413,49 @@ Return your response as a JSON object with this exact structure:
   app.post('/api/admin/send-email', isAdmin, async (req: any, res) => {
     try {
       const adminId = req.user.claims.sub;
-      const { recipientUserId, recipientEmail, subject, body } = req.body;
+      const { recipientUserId, recipientEmail, subject, previewLine, body } = req.body;
       
       if (!recipientEmail || !subject || !body) {
         return res.status(400).json({ error: 'recipientEmail, subject, and body are required' });
+      }
+
+      // Get user data for variable replacement
+      // Try to find user by ID first, then by email
+      let firstName = '';
+      let lastName = '';
+      let email = recipientEmail;
+      
+      if (recipientUserId) {
+        const user = await storage.getUser(recipientUserId);
+        if (user) {
+          firstName = user.firstName || '';
+          lastName = user.lastName || '';
+          email = user.email || recipientEmail;
+        }
+      } else if (recipientEmail) {
+        // Look up user by email for merge tag replacement
+        const user = await storage.getUserByEmail(recipientEmail);
+        if (user) {
+          firstName = user.firstName || '';
+          lastName = user.lastName || '';
+        }
+      }
+      
+      // Replace merge tags in subject and body
+      const replaceVars = (text: string) => text
+        .replace(/\{\{firstName\}\}/g, firstName)
+        .replace(/\{\{lastName\}\}/g, lastName)
+        .replace(/\{\{email\}\}/g, email);
+      
+      const processedSubject = replaceVars(subject);
+      const processedBody = replaceVars(body);
+      const processedPreviewLine = previewLine ? replaceVars(previewLine) : '';
+      
+      // Build HTML with preheader if provided
+      let finalHtml = processedBody;
+      if (processedPreviewLine) {
+        const preheaderHtml = `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`;
+        finalHtml = preheaderHtml + processedBody;
       }
 
       // Send email using Resend
@@ -2426,8 +2465,8 @@ Return your response as a JSON object with this exact structure:
       await resend.emails.send({
         from: 'Acceptafy <hello@updates.acceptafy.com>',
         to: recipientEmail,
-        subject,
-        html: body,
+        subject: processedSubject,
+        html: finalHtml,
       });
 
       // Log the email
@@ -2435,14 +2474,14 @@ Return your response as a JSON object with this exact structure:
         adminId,
         recipientUserId,
         recipientEmail,
-        subject,
-        body,
+        subject: processedSubject,
+        body: processedBody,
         emailType: 'individual',
         status: 'sent',
       });
 
       // Log admin activity
-      await storage.logAdminActivity(adminId, 'email_sent', recipientUserId, { subject });
+      await storage.logAdminActivity(adminId, 'email_sent', recipientUserId, { subject: processedSubject });
 
       res.json({ success: true, emailId: emailRecord.id });
     } catch (error) {
@@ -2455,11 +2494,17 @@ Return your response as a JSON object with this exact structure:
   app.post('/api/admin/send-bulk-email', isAdmin, async (req: any, res) => {
     try {
       const adminId = req.user.claims.sub;
-      const { segment, subject, body } = req.body;
+      const { segment, subject, previewLine, body } = req.body;
       
       if (!segment || !subject || !body) {
         return res.status(400).json({ error: 'segment, subject, and body are required' });
       }
+      
+      // Helper to replace merge tags with user data
+      const replaceVars = (text: string, user: { firstName?: string | null; lastName?: string | null; email?: string | null }) => text
+        .replace(/\{\{firstName\}\}/g, user.firstName || '')
+        .replace(/\{\{lastName\}\}/g, user.lastName || '')
+        .replace(/\{\{email\}\}/g, user.email || '');
 
       // Get users based on segment
       const allUsers = await storage.getAllUsersWithUsage();
@@ -2542,19 +2587,31 @@ Return your response as a JSON object with this exact structure:
 
       for (const user of usersWithEmails) {
         try {
+          // Replace merge tags for this user
+          const processedSubject = replaceVars(subject, user);
+          const processedBody = replaceVars(body, user);
+          const processedPreviewLine = previewLine ? replaceVars(previewLine, user) : '';
+          
+          // Build HTML with preheader if provided
+          let finalHtml = processedBody;
+          if (processedPreviewLine) {
+            const preheaderHtml = `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`;
+            finalHtml = preheaderHtml + processedBody;
+          }
+          
           await resend.emails.send({
             from: 'Acceptafy <hello@updates.acceptafy.com>',
             to: user.email!,
-            subject,
-            html: body,
+            subject: processedSubject,
+            html: finalHtml,
           });
           
           await storage.createAdminEmail({
             adminId,
             recipientUserId: user.id,
             recipientEmail: user.email!,
-            subject,
-            body,
+            subject: processedSubject,
+            body: processedBody,
             emailType: 'bulk',
             segment,
             status: 'sent',
