@@ -414,14 +414,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   // Helper function to get base URL securely (prevents host header injection)
+  // Always use acceptafy.com for email links
   function getBaseUrl(req: any): string {
-    if (process.env.REPLIT_DEV_DOMAIN) {
-      return `https://${process.env.REPLIT_DEV_DOMAIN}`;
-    }
-    if (process.env.APP_URL) {
-      return process.env.APP_URL;
-    }
-    return `${req.protocol}://${req.get('host')}`;
+    return 'https://acceptafy.com';
   }
 
   await setupAuth(app);
@@ -531,9 +526,8 @@ export async function registerRoutes(
       }
 
       // Send email verification (don't block registration if email fails)
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-        : 'https://acceptafy.com';
+      // Always use acceptafy.com for email links
+      const baseUrl = 'https://acceptafy.com';
       const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
       sendEmailVerification(email, verifyUrl).catch(err => console.error('Verification email failed:', err));
 
@@ -848,9 +842,8 @@ export async function registerRoutes(
         emailVerificationExpires: verificationExpires,
       });
 
-      const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
-        : 'https://acceptafy.com';
+      // Always use acceptafy.com for email links
+      const baseUrl = 'https://acceptafy.com';
       const verifyUrl = `${baseUrl}/verify-email?token=${verificationToken}`;
       
       await sendEmailVerification(user.email, verifyUrl);
@@ -2451,12 +2444,32 @@ Return your response as a JSON object with this exact structure:
       const processedBody = replaceVars(body);
       const processedPreviewLine = previewLine ? replaceVars(previewLine) : '';
       
-      // Build HTML with preheader if provided
-      let finalHtml = processedBody;
-      if (processedPreviewLine) {
-        const preheaderHtml = `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`;
-        finalHtml = preheaderHtml + processedBody;
-      }
+      // Build styled HTML email matching the Acceptafy design
+      const preheaderHtml = processedPreviewLine 
+        ? `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`
+        : '';
+      
+      // Convert newlines to <br> for proper formatting and wrap in styled template
+      const formattedBody = processedBody.replace(/\n/g, '<br>');
+      const finalHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+  ${preheaderHtml}
+  <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Acceptafy</h1>
+    </div>
+    <div style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">
+      ${formattedBody}
+    </div>
+    <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Reply to this email for assistance.</p>
+  </div>
+</body>
+</html>`;
 
       // Send email using Resend
       const { Resend } = await import('resend');
@@ -2592,12 +2605,32 @@ Return your response as a JSON object with this exact structure:
           const processedBody = replaceVars(body, user);
           const processedPreviewLine = previewLine ? replaceVars(previewLine, user) : '';
           
-          // Build HTML with preheader if provided
-          let finalHtml = processedBody;
-          if (processedPreviewLine) {
-            const preheaderHtml = `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`;
-            finalHtml = preheaderHtml + processedBody;
-          }
+          // Build styled HTML email matching the Acceptafy design
+          const preheaderHtml = processedPreviewLine 
+            ? `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`
+            : '';
+          
+          // Convert newlines to <br> for proper formatting and wrap in styled template
+          const formattedBody = processedBody.replace(/\n/g, '<br>');
+          const finalHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #0f0a1e; color: #e2e8f0; padding: 40px 20px; margin: 0;">
+  ${preheaderHtml}
+  <div style="max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1033 0%, #0f0a1e 100%); border-radius: 16px; padding: 40px; border: 1px solid #2d2150;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <h1 style="background: linear-gradient(135deg, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 28px; margin: 0;">Acceptafy</h1>
+    </div>
+    <div style="font-size: 16px; line-height: 1.6; color: #e2e8f0;">
+      ${formattedBody}
+    </div>
+    <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Reply to this email for assistance.</p>
+  </div>
+</body>
+</html>`;
           
           await resend.emails.send({
             from: 'Acceptafy <hello@updates.acceptafy.com>',

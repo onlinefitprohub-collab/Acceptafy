@@ -3325,17 +3325,16 @@ export default function Admin() {
                         </div>
                       )}
                     </div>
-                    <div className="border rounded-lg p-4">
+                    <div className="border rounded-lg p-4 bg-[#0f0a1e]">
                       <div 
-                        className="prose prose-sm dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ 
-                          __html: emailBody
-                            .replace(/\{\{firstName\}\}/g, 'John')
-                            .replace(/\{\{lastName\}\}/g, 'Doe')
-                            .replace(/\{\{email\}\}/g, 'john@example.com')
-                            .replace(/\n/g, '<br>')
-                        }}
-                      />
+                        className="text-[#e2e8f0] text-sm leading-relaxed whitespace-pre-wrap"
+                        style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
+                      >
+                        {emailBody
+                          .replace(/\{\{firstName\}\}/g, 'John')
+                          .replace(/\{\{lastName\}\}/g, 'Doe')
+                          .replace(/\{\{email\}\}/g, 'john@example.com')}
+                      </div>
                     </div>
                   </div>
                   <DialogFooter>

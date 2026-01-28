@@ -111,8 +111,6 @@ Questions? Just reply to this email and we'll help you out.`
           </div>
           <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">This link will expire in 1 hour.</p>
           <p style="font-size: 14px; color: #94a3b8;">If you didn't request this, you can safely ignore this email. Your password won't be changed.</p>
-          <hr style="border: none; border-top: 1px solid #2d2150; margin: 32px 0;">
-          <p style="font-size: 12px; color: #64748b; text-align: center;">Can't click the button? Copy and paste this URL into your browser:<br><span style="color: #a855f7; word-break: break-all;">${resetUrl}</span></p>
         </div>
       </body>
       </html>
@@ -210,8 +208,6 @@ Visit https://acceptafy.com/pricing to view plans.`
           </div>
           <p style="font-size: 14px; color: #94a3b8; margin-bottom: 16px;">This link will expire in 24 hours.</p>
           <p style="font-size: 14px; color: #94a3b8;">If you didn't create an account with Acceptafy, you can safely ignore this email.</p>
-          <hr style="border: none; border-top: 1px solid #2d2150; margin: 32px 0;">
-          <p style="font-size: 12px; color: #64748b; text-align: center;">Can't click the button? Copy and paste this URL into your browser:<br><span style="color: #a855f7; word-break: break-all;">${verifyUrl}</span></p>
         </div>
       </body>
       </html>
