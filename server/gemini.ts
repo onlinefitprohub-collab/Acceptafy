@@ -225,7 +225,17 @@ const gradingSchema = {
         feedback: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
     }
-  }
+  },
+  required: [
+    'inboxPlacementScore',
+    'overallGrade', 
+    'subjectLine',
+    'previewText',
+    'bodyCopy',
+    'callToAction',
+    'inboxPlacementPrediction',
+    'subjectLineAnalysis'
+  ]
 };
 
 interface ImageData {
@@ -301,7 +311,30 @@ export const gradeCopy = async (
     });
 
     const jsonString = res.text?.trim() || '{}';
-    return JSON.parse(jsonString) as GradingResult;
+    const result = JSON.parse(jsonString) as GradingResult;
+    
+    // Defensive: Ensure inboxPlacementPrediction has all required fields with fallbacks
+    // Use valid placement values per type definition
+    if (!result.inboxPlacementPrediction) {
+      result.inboxPlacementPrediction = {
+        gmail: { placement: 'Primary', reason: 'Unable to determine - defaulting to Primary' },
+        outlook: { placement: 'Focused', reason: 'Unable to determine - defaulting to Focused' },
+        appleMail: { placement: 'Inbox', reason: 'Unable to determine - defaulting to Inbox' }
+      };
+    } else {
+      // Ensure each provider has values with valid placements
+      if (!result.inboxPlacementPrediction.gmail) {
+        result.inboxPlacementPrediction.gmail = { placement: 'Primary', reason: 'Unable to determine - defaulting to Primary' };
+      }
+      if (!result.inboxPlacementPrediction.outlook) {
+        result.inboxPlacementPrediction.outlook = { placement: 'Focused', reason: 'Unable to determine - defaulting to Focused' };
+      }
+      if (!result.inboxPlacementPrediction.appleMail) {
+        result.inboxPlacementPrediction.appleMail = { placement: 'Inbox', reason: 'Unable to determine - defaulting to Inbox' };
+      }
+    }
+    
+    return result;
   } catch (error) {
     console.error("Error calling AI service:", error);
     throw new Error("An error occurred while grading the email. Please try again.");

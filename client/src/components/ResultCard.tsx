@@ -2,6 +2,59 @@ import { useState } from 'react';
 import type { SectionGrade } from '../types';
 import { ChevronDownIcon } from './icons/CategoryIcons';
 import { InfoTooltip } from './InfoTooltip';
+import { Check, AlertTriangle, Lightbulb } from 'lucide-react';
+
+// Parse a long summary into structured sections
+const parseSummaryIntoSections = (summary: string): { strengths: string[]; improvements: string[]; notes: string[] } => {
+  const strengths: string[] = [];
+  const improvements: string[] = [];
+  const notes: string[] = [];
+
+  // Split by sentence endings, handling multiple punctuation types
+  const sentences = summary
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 10);
+
+  sentences.forEach(sentence => {
+    const lower = sentence.toLowerCase();
+    // Identify strengths (positive indicators)
+    if (
+      lower.includes('good') ||
+      lower.includes('effective') ||
+      lower.includes('strong') ||
+      lower.includes('clear') ||
+      lower.includes('appropriate') ||
+      lower.includes('avoids') ||
+      lower.includes('plus') ||
+      lower.includes('main strength') ||
+      lower.includes('intriguing') ||
+      lower.includes('suggests value')
+    ) {
+      strengths.push(sentence);
+    }
+    // Identify areas for improvement (negative indicators)
+    else if (
+      lower.includes('could') ||
+      lower.includes('should') ||
+      lower.includes('but') ||
+      lower.includes('however') ||
+      lower.includes('missing') ||
+      lower.includes('not personalized') ||
+      lower.includes('might not') ||
+      lower.includes('leaves a gap') ||
+      lower.includes('improve')
+    ) {
+      improvements.push(sentence);
+    }
+    // Everything else goes to notes
+    else {
+      notes.push(sentence);
+    }
+  });
+
+  return { strengths, improvements, notes };
+};
 
 interface ResultCardProps {
   title: string;
@@ -66,7 +119,64 @@ export const ResultCard: React.FC<ResultCardProps> = ({ title, icon, gradeData, 
         </div>
       </button>
 
-      <p className="text-muted-foreground italic my-4" data-testid={`text-summary-${title.toLowerCase().replace(/\s+/g, '-')}`}>"{gradeData.summary}"</p>
+      {/* Structured Summary Display */}
+      <div className="my-4 space-y-3" data-testid={`text-summary-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+        {(() => {
+          const { strengths, improvements, notes } = parseSummaryIntoSections(gradeData.summary);
+          const hasStructure = strengths.length > 0 || improvements.length > 0;
+          
+          if (!hasStructure) {
+            // Fallback to simple display for short summaries
+            return <p className="text-muted-foreground italic">"{gradeData.summary}"</p>;
+          }
+          
+          return (
+            <div className="space-y-3">
+              {strengths.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-green-600 dark:text-green-400">
+                    <Check className="w-4 h-4" />
+                    <span>Strengths</span>
+                  </div>
+                  <ul className="space-y-1 pl-6">
+                    {strengths.map((s, i) => (
+                      <li key={i} className="text-sm text-muted-foreground list-disc">{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {improvements.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Areas for Improvement</span>
+                  </div>
+                  <ul className="space-y-1 pl-6">
+                    {improvements.map((s, i) => (
+                      <li key={i} className="text-sm text-muted-foreground list-disc">{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {notes.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
+                    <Lightbulb className="w-4 h-4" />
+                    <span>Notes</span>
+                  </div>
+                  <ul className="space-y-1 pl-6">
+                    {notes.map((s, i) => (
+                      <li key={i} className="text-sm text-muted-foreground list-disc">{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+      </div>
 
       <div
         id={uniqueId}

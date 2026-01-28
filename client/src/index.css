@@ -406,6 +406,48 @@
   filter: invert(1) hue-rotate(180deg);
 }
 
+/* Email preview body styles for proper HTML rendering */
+.email-preview-body {
+  line-height: 1.6;
+}
+
+.email-preview-body p {
+  margin-bottom: 1em;
+}
+
+.email-preview-body ul,
+.email-preview-body ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.email-preview-body li {
+  margin-bottom: 0.25em;
+}
+
+.email-preview-body a {
+  color: #6366f1;
+  text-decoration: underline;
+}
+
+.email-preview-body strong,
+.email-preview-body b {
+  font-weight: 600;
+}
+
+.email-preview-body em,
+.email-preview-body i {
+  font-style: italic;
+}
+
+.email-preview-body h1,
+.email-preview-body h2,
+.email-preview-body h3 {
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  margin-top: 0.75em;
+}
+
 /* EmailInput focus glow */
 .input-glow-focus:focus {
   border-color: rgba(168, 85, 247, 0.8);

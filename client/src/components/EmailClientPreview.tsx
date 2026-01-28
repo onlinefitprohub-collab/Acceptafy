@@ -2,6 +2,33 @@ import { useState } from 'react';
 import type { GradingResult } from '../types';
 import { MonitorIcon, ChevronDownIcon, GmailIcon, OutlookIcon, AppleMailIcon, SunIcon, MoonIcon } from './icons/CategoryIcons';
 import { InfoTooltip } from './InfoTooltip';
+import DOMPurify from 'dompurify';
+
+// Configure DOMPurify hooks for link safety (runs once on module load)
+// Use hooks to avoid DOM manipulation during render
+DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+  // Force safe link attributes on anchor tags
+  if (node.tagName === 'A') {
+    node.setAttribute('target', '_blank');
+    node.setAttribute('rel', 'noopener noreferrer');
+    // Only allow http/https/mailto links
+    const href = node.getAttribute('href') || '';
+    if (href && !href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('mailto:')) {
+      node.removeAttribute('href');
+    }
+  }
+});
+
+// Sanitize and prepare HTML body for display (strict security config, DOM-free)
+const sanitizeEmailBody = (body: string): string => {
+  // Configure DOMPurify with strict settings - no style/class to prevent CSS attacks
+  // Link safety is handled by the hook above
+  return DOMPurify.sanitize(body, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'b', 'i', 'u', 'a', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'div', 'table', 'tr', 'td', 'th', 'tbody', 'thead', 'img', 'blockquote', 'hr'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'width', 'height'],
+    ALLOW_DATA_ATTR: false,
+  });
+};
 
 interface EmailClientPreviewProps {
   result: GradingResult;
@@ -28,73 +55,109 @@ const ClientTab: React.FC<{
   );
 };
 
-const GmailPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => (
-  <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#f2f2f2] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-gmail">
-    <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
-      <div className="flex items-center gap-2 mb-4">
-        <GmailIcon className="w-6 h-6 text-[#db4437] re-invert" />
-        <span className="font-bold text-gray-700">Inbox</span>
-      </div>
-      <div className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-lg mr-3 re-invert">
-            Y
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-gray-800 truncate">Your Name</p>
-            <p className="font-bold text-gray-600 truncate">{subject}</p>
-            <p className="text-gray-500 truncate">{previewText} - {body.substring(0, 50)}...</p>
+// Extract plain text preview from HTML for inbox list (safe for SSR/non-DOM)
+const getPlainTextPreview = (html: string, maxLength: number = 50): string => {
+  // Use DOMPurify to strip all tags and get text content (safe approach)
+  const textOnly = DOMPurify.sanitize(html, { ALLOWED_TAGS: [] });
+  // Clean up whitespace and entities
+  const cleaned = textOnly
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned.substring(0, maxLength).trim();
+};
+
+const GmailPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => {
+  const sanitizedBody = sanitizeEmailBody(body);
+  const plainTextSnippet = getPlainTextPreview(body, 50);
+  
+  return (
+    <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#f2f2f2] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-gmail">
+      <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <GmailIcon className="w-6 h-6 text-[#db4437] re-invert" />
+          <span className="font-bold text-gray-700">Inbox</span>
+        </div>
+        <div className="bg-white p-3 rounded-md shadow-sm border border-gray-200">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-lg mr-3 re-invert">
+              Y
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-gray-800 truncate">Your Name</p>
+              <p className="font-bold text-gray-600 truncate">{subject}</p>
+              <p className="text-gray-500 truncate">{previewText} - {plainTextSnippet}...</p>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="mt-4 p-3 bg-white border border-gray-200 rounded-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">{subject}</h2>
-        <div className="text-gray-700 whitespace-pre-wrap">{body}</div>
+        <div className="mt-4 p-3 bg-white border border-gray-200 rounded-lg">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">{subject}</h2>
+          <div 
+            className="text-gray-700 email-preview-body"
+            dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+          />
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
-const OutlookPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => (
-  <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#f3f2f1] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-outlook">
-    <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
+const OutlookPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => {
+  const sanitizedBody = sanitizeEmailBody(body);
+  
+  return (
+    <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#f3f2f1] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-outlook">
+      <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
         <div className="flex items-center gap-2 mb-4">
-        <OutlookIcon className="w-6 h-6 text-[#0078d4] re-invert" />
-        <span className="font-bold text-gray-800">Outlook</span>
+          <OutlookIcon className="w-6 h-6 text-[#0078d4] re-invert" />
+          <span className="font-bold text-gray-800">Outlook</span>
         </div>
         <div className="bg-white p-3 shadow-sm border-l-4 border-blue-500 re-invert">
-        <p className="font-semibold text-gray-800">Your Name</p>
-        <p className="font-semibold text-gray-700">{subject}</p>
-        <p className="text-gray-600 truncate">{previewText}...</p>
+          <p className="font-semibold text-gray-800">Your Name</p>
+          <p className="font-semibold text-gray-700">{subject}</p>
+          <p className="text-gray-600 truncate">{previewText}...</p>
         </div>
         <div className="mt-4 p-4 bg-white border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Calibri, sans-serif' }}>{subject}</h2>
-        <p className="text-xs text-gray-600 mb-4" style={{ fontFamily: 'Calibri, sans-serif' }}>From: Your Name &lt;you@yourdomain.com&gt;</p>
-        <div className="text-gray-800 whitespace-pre-wrap" style={{ fontFamily: 'Calibri, sans-serif' }}>{body}</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2" style={{ fontFamily: 'Calibri, sans-serif' }}>{subject}</h2>
+          <p className="text-xs text-gray-600 mb-4" style={{ fontFamily: 'Calibri, sans-serif' }}>From: Your Name &lt;you@yourdomain.com&gt;</p>
+          <div 
+            className="text-gray-800 email-preview-body" 
+            style={{ fontFamily: 'Calibri, sans-serif' }}
+            dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+          />
         </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
-const AppleMailPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => (
-  <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#fafafa] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-apple-mail">
-    <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
+const AppleMailPreview: React.FC<{ subject: string, previewText: string, body: string, isDark: boolean }> = ({ subject, previewText, body, isDark }) => {
+  const sanitizedBody = sanitizeEmailBody(body);
+  
+  return (
+    <div className={`dark-preview-container ${isDark ? 'dark' : ''} bg-[#fafafa] text-black rounded-lg p-3 font-sans text-sm`} data-testid="preview-apple-mail">
+      <div className={`dark-preview-content ${isDark ? 'dark' : ''}`}>
         <div className="flex items-center gap-2 mb-4">
-        <AppleMailIcon className="w-6 h-6 text-blue-500 re-invert" />
-        <span className="font-bold text-gray-800">Mail</span>
+          <AppleMailIcon className="w-6 h-6 text-blue-500 re-invert" />
+          <span className="font-bold text-gray-800">Mail</span>
         </div>
         <div className="bg-white p-3 border-b border-gray-200">
-        <p className="font-semibold text-gray-900">Your Name</p>
-        <p className="font-semibold text-gray-800">{subject}</p>
-        <p className="text-gray-600 truncate">{previewText}...</p>
+          <p className="font-semibold text-gray-900">Your Name</p>
+          <p className="font-semibold text-gray-800">{subject}</p>
+          <p className="text-gray-600 truncate">{previewText}...</p>
         </div>
         <div className="mt-4 p-4 bg-white">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">{subject}</h2>
-        <div className="text-gray-800 whitespace-pre-wrap text-base" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif' }}>{body}</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">{subject}</h2>
+          <div 
+            className="text-gray-800 email-preview-body text-base" 
+            style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif' }}
+            dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+          />
         </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const DarkModeToggle: React.FC<{ isDark: boolean; setIsDark: (isDark: boolean) => void }> = ({ isDark, setIsDark }) => (
     <div className="flex items-center gap-2 p-1 rounded-lg bg-muted border border-border">
