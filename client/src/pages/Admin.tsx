@@ -381,6 +381,8 @@ export default function Admin() {
   const [showResetLinkDialog, setShowResetLinkDialog] = useState(false);
   const [resetLink, setResetLink] = useState("");
   const [dateRange, setDateRange] = useState<string>("30d");
+  const [viewEmailDialog, setViewEmailDialog] = useState(false);
+  const [selectedEmail, setSelectedEmail] = useState<AdminEmail | null>(null);
   
   // Email sending state
   const [showSendEmailDialog, setShowSendEmailDialog] = useState(false);
@@ -3396,6 +3398,7 @@ export default function Admin() {
                       <TableHead>Subject</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Sent</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -3416,6 +3419,19 @@ export default function Admin() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {format(new Date(email.sentAt), 'MMM d, h:mm a')}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-view-email-${email.id}`}
+                            onClick={() => {
+                              setSelectedEmail(email);
+                              setViewEmailDialog(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -3545,6 +3561,57 @@ export default function Admin() {
               toast({ title: "Copied", description: "Link copied to clipboard" });
             }}>
               Copy Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Email Dialog */}
+      <Dialog open={viewEmailDialog} onOpenChange={setViewEmailDialog}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Email Details
+            </DialogTitle>
+            {selectedEmail && (
+              <DialogDescription className="text-left">
+                Sent on {format(new Date(selectedEmail.sentAt), 'MMMM d, yyyy \'at\' h:mm a')}
+              </DialogDescription>
+            )}
+          </DialogHeader>
+          {selectedEmail && (
+            <div className="flex-1 overflow-auto space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground w-20">To:</span>
+                  <span className="text-sm">{selectedEmail.recipientEmail}</span>
+                  <Badge variant={selectedEmail.emailType === 'bulk' ? 'default' : 'outline'} className="text-xs ml-auto">
+                    {selectedEmail.emailType}
+                  </Badge>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-muted-foreground w-20">Subject:</span>
+                  <span className="text-sm font-medium">{selectedEmail.subject}</span>
+                </div>
+                {selectedEmail.segment && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-muted-foreground w-20">Segment:</span>
+                    <Badge variant="secondary" className="capitalize">{selectedEmail.segment}</Badge>
+                  </div>
+                )}
+              </div>
+              <div className="border-t pt-4">
+                <span className="text-sm font-medium text-muted-foreground">Message:</span>
+                <div className="mt-2 p-4 rounded-lg bg-muted/30 text-sm whitespace-pre-wrap">
+                  {selectedEmail.body}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewEmailDialog(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
