@@ -269,7 +269,7 @@ export const HighLevelAuthentication = ({ onBack }: SectionProps) => (
         <p><span className="text-muted-foreground">Name:</span> _dmarc</p>
         <p><span className="text-muted-foreground">Content:</span> v=DMARC1; p=reject</p>
       </div>
-      <Button variant="outline" size="sm" className="mt-3" asChild>
+      <Button variant="outline" size="sm" className="mt-3" asChild data-testid="link-verify-dmarc">
         <a href="https://dmarcian.com/domain-checker/" target="_blank" rel="noopener noreferrer">
           <ExternalLink className="w-3 h-3 mr-2" />
           Verify Your DMARC

@@ -2139,12 +2139,12 @@ function AppContent() {
         <p className="text-muted-foreground">Your complete guide to email deliverability in GoHighLevel</p>
       </div>
 
-      {highlevelSubView === 'getting-started' && <HighLevelGettingStarted />}
-      {highlevelSubView === 'warmup' && <HighLevelWarmup />}
-      {highlevelSubView === 'authentication' && <HighLevelAuthentication />}
-      {highlevelSubView === 'deliverability' && <HighLevelDeliverability />}
-      {highlevelSubView === 'troubleshooting' && <HighLevelTroubleshooting />}
-      {highlevelSubView === 'advanced' && <HighLevelAdvanced />}
+      {highlevelSubView === 'getting-started' && <HighLevelGettingStarted onBack={() => setHighlevelSubView(null)} />}
+      {highlevelSubView === 'warmup' && <HighLevelWarmup onBack={() => setHighlevelSubView(null)} />}
+      {highlevelSubView === 'authentication' && <HighLevelAuthentication onBack={() => setHighlevelSubView(null)} />}
+      {highlevelSubView === 'deliverability' && <HighLevelDeliverability onBack={() => setHighlevelSubView(null)} />}
+      {highlevelSubView === 'troubleshooting' && <HighLevelTroubleshooting onBack={() => setHighlevelSubView(null)} />}
+      {highlevelSubView === 'advanced' && <HighLevelAdvanced onBack={() => setHighlevelSubView(null)} />}
 
       {!highlevelSubView && (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
