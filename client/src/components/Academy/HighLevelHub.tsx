@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,8 @@ import {
   Clock,
   AlertTriangle,
   Info,
-  DollarSign
+  DollarSign,
+  Layers
 } from 'lucide-react';
 
 interface SectionProps {
@@ -572,3 +574,127 @@ export const HighLevelAdvanced = ({ onBack }: SectionProps) => (
     </InfoCard>
   </div>
 );
+
+type HighLevelView = 'overview' | 'getting-started' | 'warmup' | 'authentication' | 'deliverability' | 'troubleshooting' | 'advanced';
+
+interface HighLevelHubProps {
+  onBack: () => void;
+}
+
+export const HighLevelHub: React.FC<HighLevelHubProps> = ({ onBack }) => {
+  const [activeView, setActiveView] = useState<HighLevelView>('overview');
+
+  const handleBack = () => {
+    if (activeView === 'overview') {
+      onBack();
+    } else {
+      setActiveView('overview');
+    }
+  };
+
+  if (activeView === 'getting-started') return <HighLevelGettingStarted onBack={handleBack} />;
+  if (activeView === 'warmup') return <HighLevelWarmup onBack={handleBack} />;
+  if (activeView === 'authentication') return <HighLevelAuthentication onBack={handleBack} />;
+  if (activeView === 'deliverability') return <HighLevelDeliverability onBack={handleBack} />;
+  if (activeView === 'troubleshooting') return <HighLevelTroubleshooting onBack={handleBack} />;
+  if (activeView === 'advanced') return <HighLevelAdvanced onBack={handleBack} />;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={onBack}
+        className="mb-4"
+        data-testid="button-highlevel-back-to-academy"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Academy
+      </Button>
+
+      <div className="space-y-2">
+        <h3 className="text-2xl font-bold flex items-center gap-2">
+          <Layers className="w-6 h-6 text-orange-500" />
+          HighLevel Email Hub
+        </h3>
+        <p className="text-muted-foreground">
+          Your complete guide to email deliverability in GoHighLevel. Master LC Email setup, authentication, and best practices.
+        </p>
+      </div>
+
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-orange-500/30" onClick={() => setActiveView('getting-started')} data-testid="card-highlevel-getting-started">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-500">
+              <Rocket className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Getting Started</h4>
+              <p className="text-xs text-muted-foreground">Introduction to LC Email</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-red-500/30" onClick={() => setActiveView('warmup')} data-testid="card-highlevel-warmup">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-orange-500">
+              <Thermometer className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Domain Warm-Up</h4>
+              <p className="text-xs text-muted-foreground">Ramp-up schedule & limits</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-purple-500/30" onClick={() => setActiveView('authentication')} data-testid="card-highlevel-authentication">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
+              <Key className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Authentication</h4>
+              <p className="text-xs text-muted-foreground">DMARC, SPF & DKIM setup</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-green-500/30" onClick={() => setActiveView('deliverability')} data-testid="card-highlevel-deliverability">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+              <CheckCircle className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Best Practices</h4>
+              <p className="text-xs text-muted-foreground">Deliverability tips</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-amber-500/30" onClick={() => setActiveView('troubleshooting')} data-testid="card-highlevel-troubleshooting">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500">
+              <Wrench className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Troubleshooting</h4>
+              <p className="text-xs text-muted-foreground">Fix common issues</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-500/30" onClick={() => setActiveView('advanced')} data-testid="card-highlevel-advanced">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+              <Zap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-foreground">Advanced Features</h4>
+              <p className="text-xs text-muted-foreground">Dedicated IPs & more</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};

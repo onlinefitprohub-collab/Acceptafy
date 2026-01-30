@@ -18,6 +18,7 @@ import { SenderReputation } from './SenderReputation';
 import { AdvancedAutomation } from './AdvancedAutomation';
 import { ReEngagementBlueprint } from './ReEngagementBlueprint';
 import { PersonalizedLearningPath } from './PersonalizedLearningPath';
+import { HighLevelHub } from './HighLevelHub';
 import { HistoryItem } from '../../types';
 
 interface AcademyHubProps {
@@ -26,7 +27,7 @@ interface AcademyHubProps {
 }
 
 type ActiveTab = 'modules' | 'glossary';
-type SelectedModule = 'foundations' | 'art' | 'strategy' | 'teardowns' | 'segmentation' | 'automation' | 'analytics' | 'legal' | 'simulator' | 'cold' | 'newsletter' | 'ecommerce' | 'senderReputation' | 'advancedAutomation' | 'reEngagement' | null;
+type SelectedModule = 'foundations' | 'art' | 'strategy' | 'teardowns' | 'segmentation' | 'automation' | 'analytics' | 'legal' | 'simulator' | 'cold' | 'newsletter' | 'ecommerce' | 'senderReputation' | 'advancedAutomation' | 'reEngagement' | 'highlevel' | null;
 
 const AcademyModuleSection: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
     <div>
@@ -66,6 +67,7 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] })
             case 'senderReputation': return <SenderReputation onBack={() => setSelectedModule(null)} />;
             case 'advancedAutomation': return <AdvancedAutomation onBack={() => setSelectedModule(null)} />;
             case 'reEngagement': return <ReEngagementBlueprint onBack={() => setSelectedModule(null)} />;
+            case 'highlevel': return <HighLevelHub onBack={() => setSelectedModule(null)} />;
             default:
                 return (
                     <div className="animate-fade-in space-y-8">
@@ -120,6 +122,13 @@ export const AcademyHub: React.FC<AcademyHubProps> = ({ onClose, history = [] })
                             subtitle="Test your knowledge in real-world situations and see the impact of your decisions."
                         >
                             <ModuleCard icon={<BranchingIcon />} title="Scenario Simulator: Test Your Skills" description="Apply your knowledge in interactive, real-world email marketing challenges and get instant feedback on your decisions." onClick={() => setSelectedModule('simulator')} />
+                        </AcademyModuleSection>
+
+                        <AcademyModuleSection
+                            title="Platform Guides"
+                            subtitle="Platform-specific guides to help you master email deliverability in your preferred CRM or marketing tool."
+                        >
+                            <ModuleCard icon={<ChecklistIcon />} title="HighLevel Email Hub" description="Your complete guide to LC Email in GoHighLevel—from setup and warm-up to authentication and troubleshooting." onClick={() => setSelectedModule('highlevel')} />
                         </AcademyModuleSection>
                     </div>
                 );
