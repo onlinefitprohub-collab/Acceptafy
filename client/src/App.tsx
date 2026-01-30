@@ -139,7 +139,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw, Rocket, Thermometer, Key, CheckCircle, Wrench } from 'lucide-react';
+import { HighLevelGettingStarted, HighLevelWarmup, HighLevelAuthentication, HighLevelDeliverability, HighLevelTroubleshooting, HighLevelAdvanced } from './components/HighLevelHub';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -159,12 +160,13 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'highlevel' | 'account';
 type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
 type ConnectionsSubView = 'esp' | 'contact-export' | null;
+type HighLevelSubView = 'getting-started' | 'warmup' | 'authentication' | 'deliverability' | 'troubleshooting' | 'advanced' | null;
 
 const EXAMPLE_EMAIL = {
   subject: "",
@@ -202,6 +204,7 @@ function AppContent() {
   const [analyticsSubView, setAnalyticsSubView] = useState<AnalyticsSubView>(null);
   const [deliverabilitySubView, setDeliverabilitySubView] = useState<DeliverabilitySubView>(null);
   const [connectionsSubView, setConnectionsSubView] = useState<ConnectionsSubView>(null);
+  const [highlevelSubView, setHighlevelSubView] = useState<HighLevelSubView>(null);
   const [espConnections, setEspConnections] = useState<{ provider: ESPProvider; connected: boolean; accountName?: string; lastSync?: string }[]>([]);
   const [showAcademy, setShowAcademy] = useState(false);
   const [prevLevel, setPrevLevel] = useState(level);
@@ -285,6 +288,7 @@ function AppContent() {
     setAnalyticsSubView(null);
     setDeliverabilitySubView(null);
     setConnectionsSubView(null);
+    setHighlevelSubView(null);
   };
 
   const handleDashboardNavigate = (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => {
@@ -2128,6 +2132,93 @@ function AppContent() {
     </div>
   );
 
+  const renderHighlevelView = () => (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">HighLevel Email Hub</h2>
+        <p className="text-muted-foreground">Your complete guide to email deliverability in GoHighLevel</p>
+      </div>
+
+      {highlevelSubView === 'getting-started' && <HighLevelGettingStarted />}
+      {highlevelSubView === 'warmup' && <HighLevelWarmup />}
+      {highlevelSubView === 'authentication' && <HighLevelAuthentication />}
+      {highlevelSubView === 'deliverability' && <HighLevelDeliverability />}
+      {highlevelSubView === 'troubleshooting' && <HighLevelTroubleshooting />}
+      {highlevelSubView === 'advanced' && <HighLevelAdvanced />}
+
+      {!highlevelSubView && (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('getting-started')} data-testid="card-highlevel-getting-started">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-yellow-500">
+                <Rocket className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Getting Started</h3>
+                <p className="text-sm text-muted-foreground">Introduction to LC Email</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('warmup')} data-testid="card-highlevel-warmup">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-red-500 to-orange-500">
+                <Thermometer className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Domain Warm-Up</h3>
+                <p className="text-sm text-muted-foreground">Ramp-up schedule & limits</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('authentication')} data-testid="card-highlevel-authentication">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
+                <Key className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Authentication</h3>
+                <p className="text-sm text-muted-foreground">DMARC, SPF & DKIM setup</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('deliverability')} data-testid="card-highlevel-deliverability">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Best Practices</h3>
+                <p className="text-sm text-muted-foreground">Deliverability tips</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('troubleshooting')} data-testid="card-highlevel-troubleshooting">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500">
+                <Wrench className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Troubleshooting</h3>
+                <p className="text-sm text-muted-foreground">Fix common issues</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="card-lift cursor-pointer" onClick={() => setHighlevelSubView('advanced')} data-testid="card-highlevel-advanced">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Advanced Features</h3>
+                <p className="text-sm text-muted-foreground">Dedicated IPs & more</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+
   const renderConnectionsView = () => (
     <div className="animate-fade-in space-y-6">
       <div>
@@ -2880,6 +2971,8 @@ function AppContent() {
           setDeliverabilitySubView={setDeliverabilitySubView}
           connectionsSubView={connectionsSubView}
           setConnectionsSubView={setConnectionsSubView}
+          highlevelSubView={highlevelSubView}
+          setHighlevelSubView={setHighlevelSubView}
           clearAllSubViews={clearAllSubViews}
         />
         
@@ -2903,6 +2996,7 @@ function AppContent() {
                   {activeView === 'analytics' && 'Analytics'}
                   {activeView === 'deliverability' && 'Deliverability'}
                   {activeView === 'connections' && 'Connections'}
+                  {activeView === 'highlevel' && 'HighLevel Hub'}
                   {activeView === 'account' && 'Account Settings'}
                 </h2>
               </div>
@@ -2973,6 +3067,7 @@ function AppContent() {
               {activeView === 'analytics' && renderAnalyticsView()}
               {activeView === 'deliverability' && renderDeliverabilityView()}
               {activeView === 'connections' && renderConnectionsView()}
+              {activeView === 'highlevel' && renderHighlevelView()}
               {activeView === 'account' && <AccountView />}
             </div>
           </main>

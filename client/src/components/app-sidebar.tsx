@@ -41,6 +41,12 @@ import {
   FileUp,
   PieChart,
   TrendingUp,
+  Rocket,
+  Thermometer,
+  Key,
+  CheckCircle,
+  Wrench,
+  Layers,
   type LucideIcon
 } from 'lucide-react';
 
@@ -75,12 +81,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'highlevel' | 'account';
 type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
 type DeliverabilitySubView = 'dns' | 'domain-health' | 'list-quality' | 'bimi' | 'warmup' | 'sender-score' | 'blacklist' | 'campaign-risk' | null;
 type ConnectionsSubView = 'esp' | 'contact-export' | null;
+type HighLevelSubView = 'getting-started' | 'warmup' | 'authentication' | 'deliverability' | 'troubleshooting' | 'advanced' | null;
 
 interface AppSidebarProps {
   activeView: ActiveView;
@@ -96,6 +103,8 @@ interface AppSidebarProps {
   setDeliverabilitySubView: (view: DeliverabilitySubView) => void;
   connectionsSubView: ConnectionsSubView;
   setConnectionsSubView: (view: ConnectionsSubView) => void;
+  highlevelSubView: HighLevelSubView;
+  setHighlevelSubView: (view: HighLevelSubView) => void;
   clearAllSubViews: () => void;
 }
 
@@ -113,6 +122,8 @@ export function AppSidebar({
   setDeliverabilitySubView,
   connectionsSubView,
   setConnectionsSubView,
+  highlevelSubView,
+  setHighlevelSubView,
   clearAllSubViews
 }: AppSidebarProps) {
   const [createOpen, setCreateOpen] = useState(false);
@@ -120,6 +131,7 @@ export function AppSidebar({
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [deliverabilityOpen, setDeliverabilityOpen] = useState(false);
   const [connectionsOpen, setConnectionsOpen] = useState(false);
+  const [highlevelOpen, setHighlevelOpen] = useState(false);
   const { xp, level, streak, nextLevelXp, achievements } = useGamification();
 
   useEffect(() => {
@@ -128,7 +140,8 @@ export function AppSidebar({
     if (activeView === 'analytics' || analyticsSubView) setAnalyticsOpen(true);
     if (activeView === 'deliverability' || deliverabilitySubView) setDeliverabilityOpen(true);
     if (activeView === 'connections' || connectionsSubView) setConnectionsOpen(true);
-  }, [activeView, createSubView, optimizeSubView, analyticsSubView, deliverabilitySubView, connectionsSubView]);
+    if (activeView === 'highlevel' || highlevelSubView) setHighlevelOpen(true);
+  }, [activeView, createSubView, optimizeSubView, analyticsSubView, deliverabilitySubView, connectionsSubView, highlevelSubView]);
   
   const xpProgress = (xp / nextLevelXp) * 100;
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -833,6 +846,150 @@ export function AppSidebar({
                           </TooltipTrigger>
                           <TooltipContent side="right">
                             <p>Export and clean contact lists from ESPs</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              <Collapsible open={highlevelOpen} onOpenChange={setHighlevelOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`group transition-all duration-200 ${activeView === 'highlevel' ? 'bg-gradient-to-r from-orange-500/15 to-yellow-500/15 border border-orange-500/20' : ''}`} data-testid="nav-highlevel">
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'highlevel' ? 'bg-gradient-to-br from-orange-500 to-yellow-500 shadow-md shadow-orange-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <Layers className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">HighLevel Hub</span>
+                      <ChevronDown className={`w-4 h-4 ml-auto transition-transform duration-300 ${highlevelOpen ? 'rotate-180' : ''}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'getting-started'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('getting-started');
+                              }}
+                              data-testid="nav-highlevel-getting-started"
+                            >
+                              <Rocket className="w-3 h-3" />
+                              <span>Getting Started</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Introduction to LC Email in HighLevel</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'warmup'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('warmup');
+                              }}
+                              data-testid="nav-highlevel-warmup"
+                            >
+                              <Thermometer className="w-3 h-3" />
+                              <span>Domain Warm-Up</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Ramp-up schedule and sending limits</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'authentication'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('authentication');
+                              }}
+                              data-testid="nav-highlevel-authentication"
+                            >
+                              <Key className="w-3 h-3" />
+                              <span>Authentication</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>DMARC, SPF, DKIM setup for HighLevel</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'deliverability'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('deliverability');
+                              }}
+                              data-testid="nav-highlevel-deliverability"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              <span>Best Practices</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Email deliverability tips for HighLevel</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'troubleshooting'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('troubleshooting');
+                              }}
+                              data-testid="nav-highlevel-troubleshooting"
+                            >
+                              <Wrench className="w-3 h-3" />
+                              <span>Troubleshooting</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Fix common HighLevel email issues</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </SidebarMenuSubItem>
+                      <SidebarMenuSubItem>
+                        <Tooltip delayDuration={300}>
+                          <TooltipTrigger asChild>
+                            <SidebarMenuSubButton 
+                              isActive={highlevelSubView === 'advanced'}
+                              onClick={() => {
+                                setActiveView('highlevel');
+                                clearAllSubViews();
+                                setHighlevelSubView('advanced');
+                              }}
+                              data-testid="nav-highlevel-advanced"
+                            >
+                              <Zap className="w-3 h-3" />
+                              <span>Advanced Features</span>
+                            </SidebarMenuSubButton>
+                          </TooltipTrigger>
+                          <TooltipContent side="right">
+                            <p>Dedicated IPs, high-volume sending</p>
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuSubItem>
