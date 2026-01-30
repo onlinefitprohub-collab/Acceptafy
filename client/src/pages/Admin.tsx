@@ -84,6 +84,10 @@ import {
   PanelLeftClose,
   Check,
   ChevronsUpDown,
+  Trophy,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
@@ -139,6 +143,18 @@ interface AdminStats {
   tierBreakdown: { tier: string; count: number }[];
   totalGrades: number;
   recentSignups: number;
+}
+
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  xp: number;
+  level: number;
+  previousRank: number | null;
+  rankChange: number;
 }
 
 interface AdminCheckResponse {
@@ -465,6 +481,11 @@ export default function Admin() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ["/api/admin/stats"],
+    enabled: isAdmin,
+  });
+
+  const { data: leaderboard, isLoading: leaderboardLoading } = useQuery<LeaderboardEntry[]>({
+    queryKey: ["/api/admin/leaderboard"],
     enabled: isAdmin,
   });
 
@@ -1003,6 +1024,108 @@ export default function Admin() {
           </CardContent>
               </Card>
             </div>
+
+            {/* XP Leaderboard */}
+            <Card data-testid="xp-leaderboard-card" className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-yellow-500" />
+                  XP Leaderboard
+                </CardTitle>
+                <CardDescription>
+                  Users ranked by experience points
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {leaderboardLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : leaderboard && leaderboard.length > 0 ? (
+                  <ScrollArea className="h-[300px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[60px]">Rank</TableHead>
+                          <TableHead>User</TableHead>
+                          <TableHead className="text-right">XP</TableHead>
+                          <TableHead className="text-right">Level</TableHead>
+                          <TableHead className="w-[80px] text-center">Change</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leaderboard.map((entry) => (
+                          <TableRow key={entry.userId}>
+                            <TableCell className="font-bold">
+                              {entry.rank === 1 && (
+                                <div className="flex items-center gap-1">
+                                  <Trophy className="h-4 w-4 text-yellow-500" />
+                                  <span className="text-yellow-500">1st</span>
+                                </div>
+                              )}
+                              {entry.rank === 2 && (
+                                <div className="flex items-center gap-1">
+                                  <Trophy className="h-4 w-4 text-gray-400" />
+                                  <span className="text-gray-400">2nd</span>
+                                </div>
+                              )}
+                              {entry.rank === 3 && (
+                                <div className="flex items-center gap-1">
+                                  <Trophy className="h-4 w-4 text-amber-600" />
+                                  <span className="text-amber-600">3rd</span>
+                                </div>
+                              )}
+                              {entry.rank > 3 && <span className="text-muted-foreground">#{entry.rank}</span>}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col">
+                                <span className="font-medium text-sm">
+                                  {entry.firstName && entry.lastName 
+                                    ? `${entry.firstName} ${entry.lastName}`
+                                    : entry.email}
+                                </span>
+                                {entry.firstName && entry.lastName && (
+                                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">{entry.email}</span>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-purple-500">
+                              {entry.xp.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Badge variant="secondary" className="text-xs">
+                                Lv. {entry.level}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {entry.rankChange > 0 ? (
+                                <div className="flex items-center justify-center gap-1 text-green-500">
+                                  <ArrowUp className="h-4 w-4" />
+                                  <span className="text-xs font-medium">{entry.rankChange}</span>
+                                </div>
+                              ) : entry.rankChange < 0 ? (
+                                <div className="flex items-center justify-center gap-1 text-red-500">
+                                  <ArrowDown className="h-4 w-4" />
+                                  <span className="text-xs font-medium">{Math.abs(entry.rankChange)}</span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center text-muted-foreground">
+                                  <Minus className="h-4 w-4" />
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                ) : (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    No users with XP yet
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             </>
           )}
 

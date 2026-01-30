@@ -110,6 +110,7 @@ export const userGamification = pgTable("user_gamification", {
   bestScore: integer("best_score").default(0),
   perfectScoreCount: integer("perfect_score_count").default(0),
   aPlusCount: integer("a_plus_count").default(0),
+  previousRank: integer("previous_rank"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 

@@ -1383,6 +1383,9 @@ export async function registerRoutes(
 
         const gamification = await storage.getUserGamification(userId);
         if (gamification) {
+          // Save current ranks for ALL users before XP update for leaderboard position tracking
+          await storage.updateLeaderboardRanks();
+          
           const newTotalGrades = (gamification.totalGrades || 0) + 1;
           const newBestScore = Math.max(gamification.bestScore || 0, result.inboxPlacementScore?.score || 0);
           const newXp = (gamification.xp || 0) + 10;
@@ -2235,6 +2238,27 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin stats error:', error);
       res.status(500).json({ error: 'Failed to fetch admin stats' });
+    }
+  });
+
+  app.get('/api/admin/leaderboard', isAdmin, async (req: any, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 20;
+      const leaderboard = await storage.getXPLeaderboard(limit);
+      res.json(leaderboard);
+    } catch (error) {
+      console.error('Admin leaderboard error:', error);
+      res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+  });
+
+  app.post('/api/admin/leaderboard/update-ranks', isAdmin, async (req: any, res) => {
+    try {
+      await storage.updateLeaderboardRanks();
+      res.json({ success: true, message: 'Leaderboard ranks updated' });
+    } catch (error) {
+      console.error('Update ranks error:', error);
+      res.status(500).json({ error: 'Failed to update ranks' });
     }
   });
 

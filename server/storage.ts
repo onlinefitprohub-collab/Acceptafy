@@ -170,6 +170,18 @@ export interface IStorage {
     totalGrades: number;
     recentSignups: number;
   }>;
+  getXPLeaderboard(limit?: number): Promise<Array<{
+    rank: number;
+    userId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    xp: number;
+    level: number;
+    previousRank: number | null;
+    rankChange: number;
+  }>>;
+  updateLeaderboardRanks(): Promise<void>;
   getBusinessMetrics(startDate?: Date, endDate?: Date): Promise<{
     mrr: number;
     userGrowth: { date: string; count: number }[];
@@ -851,11 +863,13 @@ export class DatabaseStorage implements IStorage {
     }
     const tierBreakdown = Object.entries(tierCounts).map(([tier, count]) => ({ tier, count }));
     
-    // Get admin user IDs to exclude their grades from stats
+    // Get total grades from usage counters (same source as user management for consistency)
     const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
-    const allAnalyses = await db.select().from(emailAnalyses);
-    // Exclude admin grades from total count
-    const totalGrades = allAnalyses.filter(a => !adminUserIds.has(a.userId)).length;
+    const allUsage = await db.select().from(usageCounters);
+    // Sum up grades from non-admin users
+    const totalGrades = allUsage
+      .filter(u => !adminUserIds.has(u.userId))
+      .reduce((sum, u) => sum + (u.gradeCount || 0), 0);
     
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -870,6 +884,75 @@ export class DatabaseStorage implements IStorage {
       totalGrades,
       recentSignups,
     };
+  }
+
+  async getXPLeaderboard(limit: number = 20): Promise<Array<{
+    rank: number;
+    userId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    xp: number;
+    level: number;
+    previousRank: number | null;
+    rankChange: number;
+  }>> {
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    
+    const allGamification = await db
+      .select()
+      .from(userGamification)
+      .orderBy(desc(userGamification.xp));
+    
+    const userMap = new Map(allUsers.map(u => [u.id, u]));
+    
+    let rank = 0;
+    const leaderboard = allGamification
+      .filter(g => !adminUserIds.has(g.userId) && (g.xp || 0) > 0)
+      .map(g => {
+        rank++;
+        const user = userMap.get(g.userId);
+        const previousRank = g.previousRank;
+        const rankChange = previousRank ? previousRank - rank : 0;
+        
+        return {
+          rank,
+          userId: g.userId,
+          email: user?.email || '',
+          firstName: user?.firstName || null,
+          lastName: user?.lastName || null,
+          xp: g.xp || 0,
+          level: g.level || 1,
+          previousRank,
+          rankChange,
+        };
+      })
+      .slice(0, limit);
+    
+    return leaderboard;
+  }
+
+  async updateLeaderboardRanks(): Promise<void> {
+    const allUsers = await db.select().from(users);
+    const adminUserIds = new Set(allUsers.filter(u => u.role === 'admin').map(u => u.id));
+    
+    const allGamification = await db
+      .select()
+      .from(userGamification)
+      .orderBy(desc(userGamification.xp));
+    
+    let rank = 0;
+    for (const g of allGamification) {
+      if (adminUserIds.has(g.userId)) continue;
+      if ((g.xp || 0) === 0) continue;
+      
+      rank++;
+      await db
+        .update(userGamification)
+        .set({ previousRank: rank })
+        .where(eq(userGamification.id, g.id));
+    }
   }
 
   async getBusinessMetrics(startDate?: Date, endDate?: Date): Promise<{
