@@ -78,6 +78,7 @@ import {
   Heart,
   Target,
   ChevronDown,
+  ChevronUp,
   CalendarDays,
   Lightbulb,
   ChevronRight,
@@ -94,6 +95,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   RefreshCw,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
@@ -426,26 +429,22 @@ export default function Admin() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
-  // Blog announcement state
-  const [blogSubject, setBlogSubject] = useState("");
-  const [blogPreviewText, setBlogPreviewText] = useState("");
-  const [blogTitle, setBlogTitle] = useState("");
-  const [blogSummary, setBlogSummary] = useState("");
-  const [blogUrl, setBlogUrl] = useState("");
-  const [showBlogPreview, setShowBlogPreview] = useState(false);
-  
-  // Email rewriter state
-  const [rewriterSubject, setRewriterSubject] = useState("");
-  const [rewriterPreview, setRewriterPreview] = useState("");
-  const [rewriterBody, setRewriterBody] = useState("");
-  const [rewriterGuidance, setRewriterGuidance] = useState("");
-  const [rewriterResult, setRewriterResult] = useState<{
+  // Unified Email Composer state
+  const [composerTab, setComposerTab] = useState<'compose' | 'automation'>('compose');
+  const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
+  const [showAiRewrite, setShowAiRewrite] = useState(false);
+  const [rewriteGuidance, setRewriteGuidance] = useState("");
+  const [rewriteResult, setRewriteResult] = useState<{
     rewritten: { subject: string; previewText: string; body: string };
     score: number;
     inboxLikelihood: string;
     factors: { name: string; impact: string; description: string }[];
     suggestions: string[];
   } | null>(null);
+  const [selectedAutomation, setSelectedAutomation] = useState<string>('onboarding');
+  const [automationUserIds, setAutomationUserIds] = useState<string[]>([]);
+  const [automationSegment, setAutomationSegment] = useState<string>('all');
+  const [automationMode, setAutomationMode] = useState<'individual' | 'segment'>('segment');
   
   // Custom date range state
   const getDefaultCustomDates = () => {
@@ -781,12 +780,10 @@ export default function Admin() {
       return res.json();
     },
     onSuccess: (data) => {
-      setBlogSubject("");
-      setBlogPreviewText("");
-      setBlogTitle("");
-      setBlogSummary("");
-      setBlogUrl("");
-      setShowBlogPreview(false);
+      setEmailSubject("");
+      setEmailPreviewLine("");
+      setEmailBody("");
+      setSelectedArticleId(null);
       queryClient.invalidateQueries({ queryKey: ["/api/admin/email-analytics"] });
       toast({ 
         title: "Blog announcement sent", 
@@ -809,7 +806,7 @@ export default function Admin() {
       return res.json();
     },
     onSuccess: (data) => {
-      setRewriterResult(data);
+      setRewriteResult(data);
       toast({ 
         title: "Email analyzed and rewritten", 
         description: `Inbox likelihood: ${data.inboxLikelihood}` 
@@ -822,6 +819,34 @@ export default function Admin() {
         variant: "destructive" 
       });
     },
+  });
+
+  // Trigger automation mutation
+  const triggerAutomationMutation = useMutation({
+    mutationFn: async (data: { automation: string; userIds?: string[]; segment?: string }) => {
+      const res = await apiRequest("POST", "/api/admin/trigger-automation", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ 
+        title: "Automation triggered", 
+        description: data.message || "Automation sequence started successfully" 
+      });
+      setAutomationUserIds([]);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to trigger automation", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Published articles for blog announcement dropdown
+  const { data: publishedArticles } = useQuery<{ id: number; title: string; slug: string; metaDescription: string }[]>({
+    queryKey: ["/api/articles"],
+    enabled: isAdmin,
   });
 
   // Email analytics query
@@ -3250,383 +3275,629 @@ export default function Admin() {
               </CardContent>
             </Card>
 
-            {/* Blog Announcement Email Card */}
-            <Card data-testid="blog-announcement-card" className="mb-6">
+            {/* Unified Email Composer */}
+            <Card data-testid="email-composer-card" className="mb-6">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Blog Announcement Email
+                  <Mail className="h-5 w-5" />
+                  Email Composer
                 </CardTitle>
                 <CardDescription>
-                  Send an email to all verified users announcing a new blog post
+                  Send emails, announce blog posts, or trigger automations
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="blog-subject">Email Subject</Label>
-                      <Input
-                        id="blog-subject"
-                        placeholder="New on the Acceptafy Blog: [Title]"
-                        value={blogSubject}
-                        onChange={(e) => setBlogSubject(e.target.value)}
-                        data-testid="input-blog-subject"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="blog-preview">Preview Text</Label>
-                      <Input
-                        id="blog-preview"
-                        placeholder="Quick summary for inbox preview..."
-                        value={blogPreviewText}
-                        onChange={(e) => setBlogPreviewText(e.target.value)}
-                        data-testid="input-blog-preview"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="blog-title">Blog Post Title</Label>
-                    <Input
-                      id="blog-title"
-                      placeholder="The title of your blog post"
-                      value={blogTitle}
-                      onChange={(e) => setBlogTitle(e.target.value)}
-                      data-testid="input-blog-title"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="blog-summary">Blog Summary</Label>
-                    <Textarea
-                      id="blog-summary"
-                      placeholder="A brief summary of what the blog post covers (2-3 sentences)..."
-                      value={blogSummary}
-                      onChange={(e) => setBlogSummary(e.target.value)}
-                      rows={3}
-                      data-testid="input-blog-summary"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="blog-url">Blog Post URL</Label>
-                    <Input
-                      id="blog-url"
-                      placeholder="https://acceptafy.com/blog/your-post-slug"
-                      value={blogUrl}
-                      onChange={(e) => setBlogUrl(e.target.value)}
-                      data-testid="input-blog-url"
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowBlogPreview(true)}
-                      disabled={!blogSubject || !blogTitle || !blogUrl}
-                      data-testid="button-preview-blog-email"
-                    >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Preview Email
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        sendBlogAnnouncementMutation.mutate({
-                          subject: blogSubject,
-                          previewText: blogPreviewText,
-                          blogTitle: blogTitle,
-                          blogSummary: blogSummary,
-                          blogUrl: blogUrl,
-                        });
-                      }}
-                      disabled={sendBlogAnnouncementMutation.isPending || !blogSubject || !blogTitle || !blogUrl}
-                      data-testid="button-send-blog-announcement"
-                    >
-                      {sendBlogAnnouncementMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Send className="h-4 w-4 mr-2" />
-                      )}
-                      Send to All Users
-                    </Button>
-                  </div>
+                {/* Tabs for Compose vs Automation */}
+                <div className="flex gap-2 mb-6">
+                  <Button
+                    variant={composerTab === 'compose' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setComposerTab('compose')}
+                    data-testid="tab-compose-email"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Compose Email
+                  </Button>
+                  <Button
+                    variant={composerTab === 'automation' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setComposerTab('automation')}
+                    data-testid="tab-automation"
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Start Automation
+                  </Button>
                 </div>
-                
-                {/* Blog Email Preview Dialog */}
-                <Dialog open={showBlogPreview} onOpenChange={setShowBlogPreview}>
-                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Blog Announcement Preview</DialogTitle>
-                      <DialogDescription>
-                        Preview how your blog announcement email will appear
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="border rounded-lg p-4 space-y-2 bg-slate-900">
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground font-medium">Subject:</span>
-                          <span className="font-semibold">{blogSubject}</span>
+
+                {composerTab === 'compose' ? (
+                  <div className="space-y-4">
+                    {/* Load from Blog Post */}
+                    {publishedArticles && publishedArticles.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Quick Load from Blog Post</Label>
+                        <Select 
+                          value={selectedArticleId?.toString() || "scratch"} 
+                          onValueChange={(value) => {
+                            if (value && value !== "scratch") {
+                              const article = publishedArticles.find(a => a.id === parseInt(value));
+                              if (article) {
+                                setSelectedArticleId(article.id);
+                                setEmailSubject(`New on the Acceptafy Blog: ${article.title}`);
+                                setEmailPreviewLine(article.metaDescription || '');
+                                setEmailBody(`Hi {{firstName}},\n\nWe just published a new article you'll love:\n\n**${article.title}**\n\n${article.metaDescription || ''}\n\nRead the full article: https://acceptafy.com/academy/${article.slug}\n\nHappy learning!\nThe Acceptafy Team`);
+                              }
+                            } else {
+                              setSelectedArticleId(null);
+                            }
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-blog-post">
+                            <SelectValue placeholder="Load content from a blog post..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="scratch">Write from scratch</SelectItem>
+                            {publishedArticles.map((article) => (
+                              <SelectItem key={article.id} value={article.id.toString()}>
+                                {article.title}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Recipient Selection */}
+                    <div className="space-y-2">
+                      <Label>Recipients</Label>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          variant={!isBulkEmail ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setIsBulkEmail(false)}
+                          data-testid="button-individual-email"
+                        >
+                          Individual
+                        </Button>
+                        <Button
+                          variant={isBulkEmail ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setIsBulkEmail(true)}
+                          data-testid="button-bulk-email"
+                        >
+                          Bulk Send
+                        </Button>
+                      </div>
+                      
+                      {isBulkEmail ? (
+                        <Select value={emailSegment} onValueChange={setEmailSegment}>
+                          <SelectTrigger data-testid="select-email-segment">
+                            <SelectValue placeholder="Select audience" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Users</SelectItem>
+                            <SelectItem value="starter">Starter Users</SelectItem>
+                            <SelectItem value="pro">Pro Users</SelectItem>
+                            <SelectItem value="scale">Scale Users</SelectItem>
+                            <SelectItem value="paid">All Paid Users</SelectItem>
+                            <SelectItem value="new-signups">New Signups (7 days)</SelectItem>
+                            <SelectItem value="inactive">Inactive Users (14+ days)</SelectItem>
+                            <SelectItem value="power-users">Power Users (50+ grades/month)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Popover open={userSelectorOpen} onOpenChange={setUserSelectorOpen}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={userSelectorOpen}
+                                className="flex-1 justify-between"
+                                data-testid="button-user-selector"
+                              >
+                                {emailSelectedUserId && users ? (
+                                  (() => {
+                                    const user = users.find(u => u.id === emailSelectedUserId);
+                                    return user ? (
+                                      <span className="truncate">
+                                        {user.firstName || user.lastName 
+                                          ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                                          : user.email}
+                                      </span>
+                                    ) : 'Select user...';
+                                  })()
+                                ) : (
+                                  <span className="text-muted-foreground">Select user...</span>
+                                )}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[400px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search users..." data-testid="input-user-search" />
+                                <CommandList>
+                                  <CommandEmpty>No users found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {users?.filter(u => u.email && u.role !== 'admin').slice(0, 50).map((user) => (
+                                      <CommandItem
+                                        key={user.id}
+                                        value={`${user.firstName || ''} ${user.lastName || ''} ${user.email}`.toLowerCase()}
+                                        onSelect={() => {
+                                          setEmailSelectedUserId(user.id);
+                                          setEmailRecipient(user.email || '');
+                                          setUserSelectorOpen(false);
+                                        }}
+                                        data-testid={`user-option-${user.id}`}
+                                      >
+                                        <Check className={`mr-2 h-4 w-4 ${emailSelectedUserId === user.id ? 'opacity-100' : 'opacity-0'}`} />
+                                        <div className="flex flex-col">
+                                          <span className="font-medium">
+                                            {user.firstName || user.lastName 
+                                              ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                                              : user.email}
+                                          </span>
+                                          {(user.firstName || user.lastName) && (
+                                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                                          )}
+                                        </div>
+                                        <Badge variant="outline" className="ml-auto text-xs">
+                                          {user.subscriptionTier || 'starter'}
+                                        </Badge>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <Input
+                            placeholder="Or type email"
+                            value={emailRecipient}
+                            onChange={(e) => {
+                              setEmailRecipient(e.target.value);
+                              setEmailSelectedUserId(null);
+                            }}
+                            className="flex-1"
+                            data-testid="input-recipient-email"
+                          />
                         </div>
-                        {blogPreviewText && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-muted-foreground font-medium">Preview:</span>
-                            <span className="text-muted-foreground italic">{blogPreviewText}</span>
-                          </div>
-                        )}
-                        <div className="border-t border-slate-700 pt-4 mt-4">
-                          <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-center rounded-t-lg">
-                            <h2 className="text-xl font-bold text-white">New on the Blog</h2>
-                            <p className="text-white/80 text-sm">Fresh insights for email marketers</p>
-                          </div>
-                          <div className="bg-slate-800 p-6 space-y-4">
-                            <p className="text-slate-300">Hi there,</p>
-                            <p className="text-slate-300">We just published a new article you'll love:</p>
-                            <div className="border border-purple-500/30 bg-purple-500/10 rounded-lg p-4">
-                              <h3 className="text-purple-400 font-semibold">{blogTitle || 'Your Blog Title'}</h3>
-                              <p className="text-slate-400 text-sm mt-2">{blogSummary || 'Your blog summary will appear here...'}</p>
-                            </div>
-                            <div className="text-center">
-                              <a href={blogUrl || '#'} className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg">
-                                Read the Article
-                              </a>
-                            </div>
-                          </div>
-                        </div>
+                      )}
+                    </div>
+
+                    {/* Email Content */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="composer-subject">Subject</Label>
+                        <Input
+                          id="composer-subject"
+                          placeholder="Email subject line..."
+                          value={emailSubject}
+                          onChange={(e) => setEmailSubject(e.target.value)}
+                          data-testid="input-email-subject"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="composer-preview">Preview Text</Label>
+                        <Input
+                          id="composer-preview"
+                          placeholder="Appears after subject in inbox..."
+                          value={emailPreviewLine}
+                          onChange={(e) => setEmailPreviewLine(e.target.value)}
+                          data-testid="input-email-preview-line"
+                        />
                       </div>
                     </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => setShowBlogPreview(false)}>
-                        Close
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="composer-body">Email Body</Label>
+                        <div className="flex flex-wrap gap-1">
+                          {['{{firstName}}', '{{lastName}}', '{{email}}'].map((tag) => (
+                            <Badge 
+                              key={tag}
+                              variant="secondary" 
+                              className="cursor-pointer text-xs hover-elevate"
+                              onClick={() => setEmailBody(prev => prev + tag)}
+                              data-testid={`tag-${tag.replace(/[{}]/g, '')}`}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <Textarea
+                        id="composer-body"
+                        placeholder="Write your email content here. Use merge tags for personalization."
+                        value={emailBody}
+                        onChange={(e) => setEmailBody(e.target.value)}
+                        rows={6}
+                        data-testid="input-email-body"
+                      />
+                    </div>
+
+                    {/* AI Rewrite & Score Section */}
+                    <div className="border rounded-lg">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between p-3 hover-elevate rounded-lg"
+                        onClick={() => setShowAiRewrite(!showAiRewrite)}
+                        data-testid="toggle-ai-rewrite"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Wand2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                          <span className="font-medium">AI Rewrite & Score</span>
+                        </div>
+                        {showAiRewrite ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      </button>
+                      
+                      {showAiRewrite && (
+                        <div className="p-4 pt-0 space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="rewrite-guidance">Rewrite Guidance</Label>
+                            <Textarea
+                              id="rewrite-guidance"
+                              placeholder="E.g., 'Make it more conversational', 'Add urgency', 'Target enterprise clients'..."
+                              value={rewriteGuidance}
+                              onChange={(e) => setRewriteGuidance(e.target.value)}
+                              rows={2}
+                              data-testid="input-rewrite-guidance"
+                            />
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                emailRewriterMutation.mutate({
+                                  subject: emailSubject,
+                                  previewText: emailPreviewLine,
+                                  body: emailBody,
+                                  guidance: rewriteGuidance,
+                                });
+                              }}
+                              disabled={emailRewriterMutation.isPending || !emailBody}
+                              data-testid="button-rewrite-score"
+                            >
+                              {emailRewriterMutation.isPending ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              ) : (
+                                <Wand2 className="h-4 w-4 mr-2" />
+                              )}
+                              Rewrite & Score
+                            </Button>
+                            {rewriteResult && (
+                              <Button
+                                variant="outline"
+                                onClick={() => {
+                                  setEmailSubject(rewriteResult.rewritten.subject);
+                                  setEmailPreviewLine(rewriteResult.rewritten.previewText);
+                                  setEmailBody(rewriteResult.rewritten.body);
+                                  setRewriteResult(null);
+                                }}
+                                data-testid="button-apply-rewrite"
+                              >
+                                <Check className="h-4 w-4 mr-2" />
+                                Apply Changes
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Rewrite Results */}
+                          {rewriteResult && (
+                            <div className="space-y-4 border-t pt-4">
+                              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                                <div className="flex items-center gap-2">
+                                  <Inbox className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                                  <span className="font-medium">Inbox Likelihood</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xl font-bold ${
+                                    rewriteResult.score >= 80 ? 'text-green-600 dark:text-green-400' :
+                                    rewriteResult.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
+                                    'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {rewriteResult.score}%
+                                  </span>
+                                  <Badge variant={
+                                    rewriteResult.inboxLikelihood === 'High' ? 'default' :
+                                    rewriteResult.inboxLikelihood === 'Medium' ? 'secondary' : 'destructive'
+                                  }>
+                                    {rewriteResult.inboxLikelihood}
+                                  </Badge>
+                                </div>
+                              </div>
+
+                              {rewriteResult.factors.length > 0 && (
+                                <div className="space-y-2">
+                                  <h4 className="text-sm font-medium flex items-center gap-2">
+                                    <Target className="h-4 w-4" />
+                                    Key Factors
+                                  </h4>
+                                  <div className="grid gap-2">
+                                    {rewriteResult.factors.slice(0, 3).map((factor, idx) => (
+                                      <div key={idx} className="flex items-start gap-2 text-sm p-2 rounded bg-muted/30">
+                                        {factor.impact === 'Positive' ? (
+                                          <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
+                                        ) : factor.impact === 'Negative' ? (
+                                          <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                                        ) : (
+                                          <Minus className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                                        )}
+                                        <div>
+                                          <span className="font-medium">{factor.name}:</span>{' '}
+                                          <span className="text-muted-foreground">{factor.description}</span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {rewriteResult.suggestions.length > 0 && (
+                                <div className="space-y-2">
+                                  <h4 className="text-sm font-medium flex items-center gap-2">
+                                    <Lightbulb className="h-4 w-4" />
+                                    Suggestions
+                                  </h4>
+                                  <ul className="text-sm text-muted-foreground space-y-1">
+                                    {rewriteResult.suggestions.slice(0, 3).map((s, idx) => (
+                                      <li key={idx} className="flex items-start gap-2">
+                                        <span className="text-purple-600 dark:text-purple-400">•</span>
+                                        {s}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowEmailPreview(true)}
+                        disabled={!emailSubject || !emailBody}
+                        data-testid="button-preview-email"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Preview
                       </Button>
                       <Button
                         onClick={() => {
-                          setShowBlogPreview(false);
-                          sendBlogAnnouncementMutation.mutate({
-                            subject: blogSubject,
-                            previewText: blogPreviewText,
-                            blogTitle: blogTitle,
-                            blogSummary: blogSummary,
-                            blogUrl: blogUrl,
+                          sendEmailMutation.mutate({
+                            recipientEmail: isBulkEmail ? undefined : emailRecipient,
+                            recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
+                            subject: emailSubject,
+                            previewLine: emailPreviewLine || undefined,
+                            body: emailBody,
+                            segment: isBulkEmail ? emailSegment : undefined,
+                            isBulk: isBulkEmail,
                           });
                         }}
-                        disabled={sendBlogAnnouncementMutation.isPending || !blogSubject || !blogTitle || !blogUrl}
+                        disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
+                        data-testid="button-send-email"
                       >
-                        {sendBlogAnnouncementMutation.isPending ? (
+                        {sendEmailMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         ) : (
                           <Send className="h-4 w-4 mr-2" />
                         )}
-                        Send Now
+                        {isBulkEmail ? 'Send to Segment' : 'Send Email'}
                       </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </CardContent>
-            </Card>
+                    </div>
 
-            {/* Email Writer/Rewriter Card */}
-            <Card data-testid="email-rewriter-card" className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="h-5 w-5" />
-                  Email Writer & Deliverability Scorer
-                </CardTitle>
-                <CardDescription>
-                  Rewrite emails with custom guidance and predict inbox landing likelihood
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="rewriter-subject">Subject Line</Label>
-                      <Input
-                        id="rewriter-subject"
-                        placeholder="Enter your email subject..."
-                        value={rewriterSubject}
-                        onChange={(e) => setRewriterSubject(e.target.value)}
-                        data-testid="input-rewriter-subject"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="rewriter-preview">Preview Text</Label>
-                      <Input
-                        id="rewriter-preview"
-                        placeholder="Appears after subject in inbox..."
-                        value={rewriterPreview}
-                        onChange={(e) => setRewriterPreview(e.target.value)}
-                        data-testid="input-rewriter-preview"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="rewriter-body">Email Body</Label>
-                    <Textarea
-                      id="rewriter-body"
-                      placeholder="Paste your email content here..."
-                      value={rewriterBody}
-                      onChange={(e) => setRewriterBody(e.target.value)}
-                      rows={6}
-                      data-testid="input-rewriter-body"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="rewriter-guidance">Rewrite Guidance</Label>
-                    <Textarea
-                      id="rewriter-guidance"
-                      placeholder="E.g., 'Make it more conversational', 'Add urgency for Black Friday sale', 'Target enterprise clients', 'Shorten for mobile readers'..."
-                      value={rewriterGuidance}
-                      onChange={(e) => setRewriterGuidance(e.target.value)}
-                      rows={2}
-                      data-testid="input-rewriter-guidance"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Describe how you want the email rewritten. Be specific about tone, goals, or target audience.
-                    </p>
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => {
-                        emailRewriterMutation.mutate({
-                          subject: rewriterSubject,
-                          previewText: rewriterPreview,
-                          body: rewriterBody,
-                          guidance: rewriterGuidance,
-                        });
-                      }}
-                      disabled={emailRewriterMutation.isPending || !rewriterBody}
-                      data-testid="button-rewrite-score"
-                    >
-                      {emailRewriterMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Wand2 className="h-4 w-4 mr-2" />
-                      )}
-                      Rewrite & Score
-                    </Button>
-                    {rewriterResult && (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setRewriterSubject(rewriterResult.rewritten.subject);
-                          setRewriterPreview(rewriterResult.rewritten.previewText);
-                          setRewriterBody(rewriterResult.rewritten.body);
-                          setRewriterResult(null);
-                        }}
-                        data-testid="button-apply-rewrite"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Apply & Rerun
-                      </Button>
-                    )}
-                  </div>
-                  
-                  {/* Results Display */}
-                  {rewriterResult && (
-                    <div className="mt-6 space-y-4 border-t pt-4">
-                      {/* Inbox Likelihood Score */}
-                      <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
-                        <div className="flex items-center gap-3">
-                          <Inbox className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                          <div>
-                            <div className="font-semibold">Inbox Likelihood</div>
-                            <div className="text-sm text-muted-foreground">
-                              Predicted landing placement
+                    {/* Email Preview Dialog */}
+                    <Dialog open={showEmailPreview} onOpenChange={setShowEmailPreview}>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Email Preview</DialogTitle>
+                          <DialogDescription>
+                            Preview how your email will appear
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="border rounded-lg p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-muted-foreground font-medium">To:</span>
+                              <span>{isBulkEmail ? `${emailSegment} segment` : (emailRecipient || 'recipient@example.com')}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-muted-foreground font-medium">Subject:</span>
+                              <span className="font-semibold">{emailSubject.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe')}</span>
+                            </div>
+                            {emailPreviewLine && (
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="text-muted-foreground font-medium">Preview:</span>
+                                <span className="text-muted-foreground italic">{emailPreviewLine}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="border rounded-lg p-4 bg-muted/30">
+                            <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                              {emailBody
+                                .replace(/\{\{firstName\}\}/g, 'John')
+                                .replace(/\{\{lastName\}\}/g, 'Doe')
+                                .replace(/\{\{email\}\}/g, 'john@example.com')}
                             </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className={`text-2xl font-bold ${
-                            rewriterResult.score >= 80 ? 'text-green-600 dark:text-green-400' :
-                            rewriterResult.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
-                            'text-red-600 dark:text-red-400'
-                          }`}>
-                            {rewriterResult.score}%
-                          </div>
-                          <Badge variant={
-                            rewriterResult.inboxLikelihood === 'High' ? 'default' :
-                            rewriterResult.inboxLikelihood === 'Medium' ? 'secondary' : 'destructive'
-                          }>
-                            {rewriterResult.inboxLikelihood} Likelihood
-                          </Badge>
-                        </div>
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setShowEmailPreview(false)}>
+                            Close
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setShowEmailPreview(false);
+                              sendEmailMutation.mutate({
+                                recipientEmail: isBulkEmail ? undefined : emailRecipient,
+                                recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
+                                subject: emailSubject,
+                                previewLine: emailPreviewLine || undefined,
+                                body: emailBody,
+                                segment: isBulkEmail ? emailSegment : undefined,
+                                isBulk: isBulkEmail,
+                              });
+                            }}
+                            disabled={sendEmailMutation.isPending}
+                            data-testid="button-send-from-preview"
+                          >
+                            {sendEmailMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : (
+                              <Send className="h-4 w-4 mr-2" />
+                            )}
+                            Send Now
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                ) : (
+                  /* Automation Tab */
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Select Automation</Label>
+                      <Select value={selectedAutomation} onValueChange={setSelectedAutomation}>
+                        <SelectTrigger data-testid="select-automation">
+                          <SelectValue placeholder="Choose an automation..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="onboarding">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="h-4 w-4" />
+                              Onboarding Welcome Sequence
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedAutomation === 'onboarding' && 'Sends the 3-email welcome sequence to introduce users to Acceptafy features.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Target Users</Label>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          variant={automationMode === 'segment' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setAutomationMode('segment')}
+                          data-testid="button-automation-segment"
+                        >
+                          By Segment
+                        </Button>
+                        <Button
+                          variant={automationMode === 'individual' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setAutomationMode('individual')}
+                          data-testid="button-automation-individual"
+                        >
+                          Individual Users
+                        </Button>
                       </div>
-                      
-                      {/* Factors */}
-                      {rewriterResult.factors.length > 0 && (
+
+                      {automationMode === 'segment' ? (
+                        <Select value={automationSegment} onValueChange={setAutomationSegment}>
+                          <SelectTrigger data-testid="select-automation-segment">
+                            <SelectValue placeholder="Select user segment" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Users</SelectItem>
+                            <SelectItem value="starter">Starter Users</SelectItem>
+                            <SelectItem value="pro">Pro Users</SelectItem>
+                            <SelectItem value="scale">Scale Users</SelectItem>
+                            <SelectItem value="new-signups">New Signups (7 days)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
                         <div className="space-y-2">
-                          <h4 className="font-medium flex items-center gap-2">
-                            <Target className="h-4 w-4" />
-                            Key Factors
-                          </h4>
-                          <div className="space-y-2">
-                            {rewriterResult.factors.map((factor, idx) => (
-                              <div key={idx} className="flex items-start gap-3 p-2 rounded-lg bg-muted/30">
-                                {factor.impact === 'Positive' ? (
-                                  <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
-                                ) : factor.impact === 'Negative' ? (
-                                  <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
-                                ) : (
-                                  <Minus className="h-4 w-4 text-muted-foreground mt-0.5" />
-                                )}
-                                <div>
-                                  <div className="font-medium text-sm">{factor.name}</div>
-                                  <div className="text-xs text-muted-foreground">{factor.description}</div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Suggestions */}
-                      {rewriterResult.suggestions.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="font-medium flex items-center gap-2">
-                            <Lightbulb className="h-4 w-4" />
-                            Improvement Suggestions
-                          </h4>
-                          <ul className="space-y-1 text-sm text-muted-foreground">
-                            {rewriterResult.suggestions.map((suggestion, idx) => (
-                              <li key={idx} className="flex items-start gap-2">
-                                <span className="text-purple-600 dark:text-purple-400">•</span>
-                                {suggestion}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {/* Rewritten Email */}
-                      <div className="space-y-2">
-                        <h4 className="font-medium flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          Rewritten Email
-                        </h4>
-                        <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase">Subject</span>
-                            <p className="font-medium">{rewriterResult.rewritten.subject}</p>
-                          </div>
-                          {rewriterResult.rewritten.previewText && (
-                            <div>
-                              <span className="text-xs text-muted-foreground uppercase">Preview</span>
-                              <p className="text-sm">{rewriterResult.rewritten.previewText}</p>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between"
+                                data-testid="button-add-automation-user"
+                              >
+                                <span className="text-muted-foreground">Add users to automation...</span>
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[400px] p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search users..." />
+                                <CommandList>
+                                  <CommandEmpty>No users found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {users?.filter(u => u.email && u.role !== 'admin' && !automationUserIds.includes(u.id)).slice(0, 20).map((user) => (
+                                      <CommandItem
+                                        key={user.id}
+                                        value={`${user.firstName || ''} ${user.lastName || ''} ${user.email}`.toLowerCase()}
+                                        onSelect={() => {
+                                          setAutomationUserIds(prev => [...prev, user.id]);
+                                        }}
+                                      >
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        <div className="flex flex-col">
+                                          <span>{user.firstName || user.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : user.email}</span>
+                                          {(user.firstName || user.lastName) && (
+                                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                                          )}
+                                        </div>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+
+                          {automationUserIds.length > 0 && (
+                            <div className="flex flex-wrap gap-2 p-2 border rounded-lg bg-muted/30">
+                              {automationUserIds.map((userId) => {
+                                const user = users?.find(u => u.id === userId);
+                                return (
+                                  <Badge key={userId} variant="secondary" className="flex items-center gap-1">
+                                    {user?.firstName || user?.lastName ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : user?.email}
+                                    <button
+                                      type="button"
+                                      onClick={() => setAutomationUserIds(prev => prev.filter(id => id !== userId))}
+                                      className="ml-1 hover:text-destructive"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </Badge>
+                                );
+                              })}
                             </div>
                           )}
-                          <div>
-                            <span className="text-xs text-muted-foreground uppercase">Body</span>
-                            <p className="text-sm whitespace-pre-wrap">{rewriterResult.rewritten.body}</p>
-                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
+
+                    <Button
+                      onClick={() => {
+                        triggerAutomationMutation.mutate({
+                          automation: selectedAutomation,
+                          userIds: automationMode === 'individual' ? automationUserIds : undefined,
+                          segment: automationMode === 'segment' ? automationSegment : undefined,
+                        });
+                      }}
+                      disabled={triggerAutomationMutation.isPending || (automationMode === 'individual' && automationUserIds.length === 0)}
+                      data-testid="button-trigger-automation"
+                    >
+                      {triggerAutomationMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Zap className="h-4 w-4 mr-2" />
+                      )}
+                      Start Automation
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -3750,293 +4021,6 @@ export default function Admin() {
                 No contact messages
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Admin Email Sender */}
-        <Card data-testid="send-email-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Send Admin Email
-            </CardTitle>
-            <CardDescription>
-              Send individual or bulk emails to users
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Button
-                  variant={!isBulkEmail ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setIsBulkEmail(false)}
-                  data-testid="button-individual-email"
-                >
-                  Individual
-                </Button>
-                <Button
-                  variant={isBulkEmail ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setIsBulkEmail(true)}
-                  data-testid="button-bulk-email"
-                >
-                  Bulk Send
-                </Button>
-              </div>
-              
-              {isBulkEmail ? (
-                <Select value={emailSegment} onValueChange={setEmailSegment}>
-                  <SelectTrigger data-testid="select-email-segment">
-                    <SelectValue placeholder="Select audience" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>
-                    <SelectItem value="starter">Starter Users</SelectItem>
-                    <SelectItem value="pro">Pro Users</SelectItem>
-                    <SelectItem value="scale">Scale Users</SelectItem>
-                    <SelectItem value="paid">All Paid Users</SelectItem>
-                    <SelectItem value="approaching-limits">Approaching Usage Limits (80%+)</SelectItem>
-                    <SelectItem value="inactive">Inactive Users (14+ days)</SelectItem>
-                    <SelectItem value="power-users">Power Users (50+ grades/month)</SelectItem>
-                    <SelectItem value="at-risk">At-Risk (Churn Signals)</SelectItem>
-                    <SelectItem value="high-graders">Active Graders (10+ this week)</SelectItem>
-                    <SelectItem value="high-rewriters">Active Rewriters (10+ this week)</SelectItem>
-                    <SelectItem value="esp-connected">ESP Connected Users</SelectItem>
-                    <SelectItem value="new-signups">New Signups (7 days)</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="flex gap-2">
-                  <Popover open={userSelectorOpen} onOpenChange={setUserSelectorOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={userSelectorOpen}
-                        className="flex-1 justify-between"
-                        data-testid="button-user-selector"
-                      >
-                        {emailSelectedUserId && users ? (
-                          (() => {
-                            const user = users.find(u => u.id === emailSelectedUserId);
-                            return user ? (
-                              <span className="truncate">
-                                {user.firstName || user.lastName 
-                                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                                  : user.email}
-                              </span>
-                            ) : 'Select user...';
-                          })()
-                        ) : (
-                          <span className="text-muted-foreground">Select user...</span>
-                        )}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search users by name or email..." data-testid="input-user-search" />
-                        <CommandList>
-                          <CommandEmpty>No users found.</CommandEmpty>
-                          <CommandGroup>
-                            {users?.filter(u => u.email && u.role !== 'admin').map((user) => (
-                              <CommandItem
-                                key={user.id}
-                                value={`${user.firstName || ''} ${user.lastName || ''} ${user.email}`.toLowerCase()}
-                                onSelect={() => {
-                                  setEmailSelectedUserId(user.id);
-                                  setEmailRecipient(user.email || '');
-                                  setUserSelectorOpen(false);
-                                }}
-                                data-testid={`user-option-${user.id}`}
-                              >
-                                <Check
-                                  className={`mr-2 h-4 w-4 ${emailSelectedUserId === user.id ? 'opacity-100' : 'opacity-0'}`}
-                                />
-                                <div className="flex flex-col">
-                                  <span className="font-medium">
-                                    {user.firstName || user.lastName 
-                                      ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
-                                      : user.email}
-                                  </span>
-                                  {(user.firstName || user.lastName) && (
-                                    <span className="text-xs text-muted-foreground">{user.email}</span>
-                                  )}
-                                </div>
-                                <Badge variant="outline" className="ml-auto text-xs">
-                                  {user.subscriptionTier || 'starter'}
-                                </Badge>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <Input
-                    placeholder="Or type email manually"
-                    value={emailRecipient}
-                    onChange={(e) => {
-                      setEmailRecipient(e.target.value);
-                      setEmailSelectedUserId(null);
-                    }}
-                    className="flex-1"
-                    data-testid="input-recipient-email"
-                  />
-                </div>
-              )}
-              
-              <Input
-                placeholder="Subject"
-                value={emailSubject}
-                onChange={(e) => setEmailSubject(e.target.value)}
-                data-testid="input-email-subject"
-              />
-              
-              <div className="space-y-1">
-                <Input
-                  placeholder="Preview line (preheader text)"
-                  value={emailPreviewLine}
-                  onChange={(e) => setEmailPreviewLine(e.target.value)}
-                  data-testid="input-email-preview-line"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Appears after subject in inbox preview
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-sm text-muted-foreground">Available merge tags:</Label>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {['{{firstName}}', '{{lastName}}', '{{email}}'].map((tag) => (
-                    <Badge 
-                      key={tag}
-                      variant="secondary" 
-                      className="cursor-pointer text-xs hover-elevate"
-                      onClick={() => setEmailBody(prev => prev + tag)}
-                      data-testid={`tag-${tag.replace(/[{}]/g, '')}`}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              
-              <Textarea
-                placeholder="Email body (HTML supported). Use merge tags like {{firstName}} for personalization."
-                value={emailBody}
-                onChange={(e) => setEmailBody(e.target.value)}
-                rows={4}
-                data-testid="input-email-body"
-              />
-              
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowEmailPreview(true)}
-                  disabled={!emailSubject || !emailBody}
-                  data-testid="button-preview-email"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => {
-                    sendEmailMutation.mutate({
-                      recipientEmail: isBulkEmail ? undefined : emailRecipient,
-                      recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
-                      subject: emailSubject,
-                      previewLine: emailPreviewLine || undefined,
-                      body: emailBody,
-                      segment: isBulkEmail ? emailSegment : undefined,
-                      isBulk: isBulkEmail,
-                    });
-                  }}
-                  disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
-                  data-testid="button-send-email"
-                >
-                  {sendEmailMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Mail className="h-4 w-4 mr-2" />
-                  )}
-                  {isBulkEmail ? 'Send Bulk' : 'Send'}
-                </Button>
-              </div>
-              
-              <Dialog open={showEmailPreview} onOpenChange={setShowEmailPreview}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Email Preview</DialogTitle>
-                    <DialogDescription>
-                      Preview how your email will appear. Merge tags show sample values.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="border rounded-lg p-4 space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground font-medium">To:</span>
-                        <span>{isBulkEmail ? `${emailSegment} segment` : (emailRecipient || 'recipient@example.com')}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-muted-foreground font-medium">Subject:</span>
-                        <span className="font-semibold">{emailSubject.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe').replace(/\{\{email\}\}/g, 'john@example.com')}</span>
-                      </div>
-                      {emailPreviewLine && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground font-medium">Preview:</span>
-                          <span className="text-muted-foreground italic">{emailPreviewLine.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe').replace(/\{\{email\}\}/g, 'john@example.com')}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="border rounded-lg p-4 bg-[#0f0a1e]">
-                      <div 
-                        className="text-[#e2e8f0] text-sm leading-relaxed whitespace-pre-wrap"
-                        style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}
-                      >
-                        {emailBody
-                          .replace(/\{\{firstName\}\}/g, 'John')
-                          .replace(/\{\{lastName\}\}/g, 'Doe')
-                          .replace(/\{\{email\}\}/g, 'john@example.com')}
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowEmailPreview(false)} data-testid="button-close-preview">
-                      Close
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        setShowEmailPreview(false);
-                        sendEmailMutation.mutate({
-                          recipientEmail: isBulkEmail ? undefined : emailRecipient,
-                          recipientUserId: isBulkEmail ? undefined : (emailSelectedUserId || undefined),
-                          subject: emailSubject,
-                          previewLine: emailPreviewLine || undefined,
-                          body: emailBody,
-                          segment: isBulkEmail ? emailSegment : undefined,
-                          isBulk: isBulkEmail,
-                        });
-                      }}
-                      disabled={sendEmailMutation.isPending || (!isBulkEmail && !emailRecipient)}
-                      data-testid="button-send-from-preview"
-                    >
-                      {sendEmailMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Mail className="h-4 w-4 mr-2" />
-                      )}
-                      Send Now
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
           </CardContent>
         </Card>
 

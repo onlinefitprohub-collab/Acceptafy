@@ -4980,6 +4980,77 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Admin trigger automation endpoint
+  app.post('/api/admin/trigger-automation', isAdmin, async (req: any, res) => {
+    try {
+      const { automation, userIds, segment } = req.body;
+
+      if (!automation) {
+        return res.status(400).json({ message: 'Automation type is required' });
+      }
+
+      let targetUsers: { id: string; email: string | null }[] = [];
+
+      if (userIds && userIds.length > 0) {
+        // Get specific users (userIds are UUID strings)
+        const allUsers = await storage.getAllUsers();
+        targetUsers = allUsers
+          .filter(u => userIds.includes(u.id) && u.email && u.role !== 'admin')
+          .map(u => ({ id: u.id, email: u.email }));
+      } else if (segment) {
+        // Get users by segment
+        const allUsers = await storage.getAllUsers();
+        targetUsers = allUsers
+          .filter(u => u.email && u.role !== 'admin')
+          .filter(u => {
+            switch (segment) {
+              case 'all': return true;
+              case 'starter': return (u.subscriptionTier || 'starter') === 'starter';
+              case 'pro': return u.subscriptionTier === 'pro';
+              case 'scale': return u.subscriptionTier === 'scale';
+              case 'paid': return ['pro', 'scale'].includes(u.subscriptionTier || 'starter');
+              case 'new-signups':
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                return u.createdAt ? new Date(u.createdAt) >= sevenDaysAgo : false;
+              default: return true;
+            }
+          })
+          .map(u => ({ id: u.id, email: u.email }));
+      }
+
+      if (targetUsers.length === 0) {
+        return res.status(400).json({ message: 'No users found for the selected criteria' });
+      }
+
+      let triggeredCount = 0;
+      let failedCount = 0;
+
+      if (automation === 'onboarding') {
+        // Trigger onboarding sequence for each user
+        for (const user of targetUsers) {
+          try {
+            await sendOnboardingEmail(user.id, 1, 'welcome');
+            triggeredCount++;
+          } catch (error) {
+            console.error(`Failed to trigger onboarding for user ${user.id}:`, error);
+            failedCount++;
+          }
+        }
+      } else {
+        return res.status(400).json({ message: `Unknown automation type: ${automation}` });
+      }
+
+      res.json({
+        message: `Automation "${automation}" triggered for ${triggeredCount} users${failedCount > 0 ? ` (${failedCount} failed)` : ''}`,
+        triggered: triggeredCount,
+        failed: failedCount
+      });
+    } catch (error) {
+      console.error('Trigger automation error:', error);
+      res.status(500).json({ message: 'Failed to trigger automation' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   
