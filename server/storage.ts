@@ -27,6 +27,7 @@ import {
   blacklistCheckHistory,
   articles,
   contentDrafts,
+  blogAnnouncementEmails,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -292,6 +293,9 @@ export interface IStorage {
   // System Config
   getSystemConfig(key: string): Promise<string | undefined>;
   setSystemConfig(key: string, value: string): Promise<void>;
+  
+  // Blog Announcements
+  getBlogAnnouncementHistory(): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2884,6 +2888,14 @@ export class DatabaseStorage implements IStorage {
         target: systemConfig.key,
         set: { value, updatedAt: new Date() }
       });
+  }
+
+  async getBlogAnnouncementHistory(): Promise<any[]> {
+    return db
+      .select()
+      .from(blogAnnouncementEmails)
+      .orderBy(desc(blogAnnouncementEmails.sentAt))
+      .limit(50);
   }
 }
 

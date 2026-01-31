@@ -88,6 +88,7 @@ import {
   ArrowUp,
   ArrowDown,
   Minus,
+  Send,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
@@ -419,6 +420,14 @@ export default function Admin() {
   const [announcementAudience, setAnnouncementAudience] = useState<string>("all");
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+
+  // Blog announcement state
+  const [blogSubject, setBlogSubject] = useState("");
+  const [blogPreviewText, setBlogPreviewText] = useState("");
+  const [blogTitle, setBlogTitle] = useState("");
+  const [blogSummary, setBlogSummary] = useState("");
+  const [blogUrl, setBlogUrl] = useState("");
+  const [showBlogPreview, setShowBlogPreview] = useState(false);
   
   // Custom date range state
   const getDefaultCustomDates = () => {
@@ -745,6 +754,32 @@ export default function Admin() {
     onError: (error: any) => {
       setShowDeleteConfirm(null);
       toast({ title: "Error", description: error.message || "Failed to delete announcement", variant: "destructive" });
+    },
+  });
+
+  const sendBlogAnnouncementMutation = useMutation({
+    mutationFn: async (data: { subject: string; previewText: string; blogTitle: string; blogSummary: string; blogUrl: string }) => {
+      const res = await apiRequest("POST", "/api/admin/blog-announcement", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setBlogSubject("");
+      setBlogPreviewText("");
+      setBlogTitle("");
+      setBlogSummary("");
+      setBlogUrl("");
+      setShowBlogPreview(false);
+      toast({ 
+        title: "Blog announcement sent", 
+        description: `Email sent to ${data.recipientCount} users` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to send blog announcement", 
+        variant: "destructive" 
+      });
     },
   });
 
@@ -3162,6 +3197,181 @@ export default function Admin() {
                     <p className="text-xs">Create your first announcement above</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* Blog Announcement Email Card */}
+            <Card data-testid="blog-announcement-card" className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Blog Announcement Email
+                </CardTitle>
+                <CardDescription>
+                  Send an email to all verified users announcing a new blog post
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="blog-subject">Email Subject</Label>
+                      <Input
+                        id="blog-subject"
+                        placeholder="New on the Acceptafy Blog: [Title]"
+                        value={blogSubject}
+                        onChange={(e) => setBlogSubject(e.target.value)}
+                        data-testid="input-blog-subject"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="blog-preview">Preview Text</Label>
+                      <Input
+                        id="blog-preview"
+                        placeholder="Quick summary for inbox preview..."
+                        value={blogPreviewText}
+                        onChange={(e) => setBlogPreviewText(e.target.value)}
+                        data-testid="input-blog-preview"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="blog-title">Blog Post Title</Label>
+                    <Input
+                      id="blog-title"
+                      placeholder="The title of your blog post"
+                      value={blogTitle}
+                      onChange={(e) => setBlogTitle(e.target.value)}
+                      data-testid="input-blog-title"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="blog-summary">Blog Summary</Label>
+                    <Textarea
+                      id="blog-summary"
+                      placeholder="A brief summary of what the blog post covers (2-3 sentences)..."
+                      value={blogSummary}
+                      onChange={(e) => setBlogSummary(e.target.value)}
+                      rows={3}
+                      data-testid="input-blog-summary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="blog-url">Blog Post URL</Label>
+                    <Input
+                      id="blog-url"
+                      placeholder="https://acceptafy.com/blog/your-post-slug"
+                      value={blogUrl}
+                      onChange={(e) => setBlogUrl(e.target.value)}
+                      data-testid="input-blog-url"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowBlogPreview(true)}
+                      disabled={!blogSubject || !blogTitle || !blogUrl}
+                      data-testid="button-preview-blog-email"
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview Email
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        sendBlogAnnouncementMutation.mutate({
+                          subject: blogSubject,
+                          previewText: blogPreviewText,
+                          blogTitle: blogTitle,
+                          blogSummary: blogSummary,
+                          blogUrl: blogUrl,
+                        });
+                      }}
+                      disabled={sendBlogAnnouncementMutation.isPending || !blogSubject || !blogTitle || !blogUrl}
+                      data-testid="button-send-blog-announcement"
+                    >
+                      {sendBlogAnnouncementMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Send to All Users
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Blog Email Preview Dialog */}
+                <Dialog open={showBlogPreview} onOpenChange={setShowBlogPreview}>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Blog Announcement Preview</DialogTitle>
+                      <DialogDescription>
+                        Preview how your blog announcement email will appear
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="border rounded-lg p-4 space-y-2 bg-slate-900">
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground font-medium">Subject:</span>
+                          <span className="font-semibold">{blogSubject}</span>
+                        </div>
+                        {blogPreviewText && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground font-medium">Preview:</span>
+                            <span className="text-muted-foreground italic">{blogPreviewText}</span>
+                          </div>
+                        )}
+                        <div className="border-t border-slate-700 pt-4 mt-4">
+                          <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-6 text-center rounded-t-lg">
+                            <h2 className="text-xl font-bold text-white">New on the Blog</h2>
+                            <p className="text-white/80 text-sm">Fresh insights for email marketers</p>
+                          </div>
+                          <div className="bg-slate-800 p-6 space-y-4">
+                            <p className="text-slate-300">Hi there,</p>
+                            <p className="text-slate-300">We just published a new article you'll love:</p>
+                            <div className="border border-purple-500/30 bg-purple-500/10 rounded-lg p-4">
+                              <h3 className="text-purple-400 font-semibold">{blogTitle || 'Your Blog Title'}</h3>
+                              <p className="text-slate-400 text-sm mt-2">{blogSummary || 'Your blog summary will appear here...'}</p>
+                            </div>
+                            <div className="text-center">
+                              <a href={blogUrl || '#'} className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg">
+                                Read the Article
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowBlogPreview(false)}>
+                        Close
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowBlogPreview(false);
+                          sendBlogAnnouncementMutation.mutate({
+                            subject: blogSubject,
+                            previewText: blogPreviewText,
+                            blogTitle: blogTitle,
+                            blogSummary: blogSummary,
+                            blogUrl: blogUrl,
+                          });
+                        }}
+                        disabled={sendBlogAnnouncementMutation.isPending || !blogSubject || !blogTitle || !blogUrl}
+                      >
+                        {sendBlogAnnouncementMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Send className="h-4 w-4 mr-2" />
+                        )}
+                        Send Now
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
 

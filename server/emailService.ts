@@ -1,0 +1,489 @@
+import { Resend } from 'resend';
+import { db } from './db';
+import { users, onboardingEmails, blogAnnouncementEmails } from '@shared/schema';
+import { eq, and, lt, isNull, sql } from 'drizzle-orm';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+const ACCEPTAFY_URL = process.env.REPLIT_DEV_DOMAIN 
+  ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+  : 'https://acceptafy.replit.app';
+
+const FROM_EMAIL = 'Acceptafy <hello@acceptafy.com>';
+
+const baseEmailStyles = `
+  body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f0f23; color: #e2e8f0; }
+  .container { max-width: 600px; margin: 0 auto; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+  .header { padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%); }
+  .header h1 { margin: 0; font-size: 28px; font-weight: 700; color: #ffffff; }
+  .header p { margin: 10px 0 0; font-size: 16px; color: rgba(255,255,255,0.9); }
+  .content { padding: 40px 30px; }
+  .content h2 { margin: 0 0 20px; font-size: 24px; color: #f8fafc; }
+  .content p { margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #cbd5e1; }
+  .content ul { margin: 0 0 20px; padding-left: 20px; }
+  .content li { margin-bottom: 10px; color: #cbd5e1; line-height: 1.5; }
+  .cta-button { display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 10px 0 20px; }
+  .feature-box { background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.3); border-radius: 12px; padding: 20px; margin: 20px 0; }
+  .feature-box h3 { margin: 0 0 10px; color: #a78bfa; font-size: 18px; }
+  .footer { padding: 30px; text-align: center; border-top: 1px solid rgba(255,255,255,0.1); }
+  .footer p { margin: 5px 0; font-size: 12px; color: #64748b; }
+  .footer a { color: #a78bfa; text-decoration: none; }
+  .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent); margin: 30px 0; }
+`;
+
+const emailWrapper = (content: string, previewText: string = '') => `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Acceptafy</title>
+  <style>${baseEmailStyles}</style>
+</head>
+<body>
+  <div style="display:none;max-height:0;overflow:hidden;">${previewText}</div>
+  <div class="container">
+    ${content}
+    <div class="footer">
+      <p>Acceptafy - Email Marketing Intelligence</p>
+      <p><a href="${ACCEPTAFY_URL}/api/unsubscribe/{{userId}}">Unsubscribe</a> | <a href="${ACCEPTAFY_URL}">Visit Acceptafy</a></p>
+      <p style="margin-top: 15px;">This email was sent by Acceptafy.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+export const onboardingEmailTemplates = {
+  welcome: (firstName: string) => ({
+    subject: `Welcome to Acceptafy, ${firstName}!`,
+    previewText: 'Your journey to email marketing mastery starts now',
+    html: emailWrapper(`
+      <div class="header">
+        <h1>Welcome to Acceptafy!</h1>
+        <p>Your email marketing journey starts here</p>
+      </div>
+      <div class="content">
+        <h2>Hi ${firstName},</h2>
+        <p>Thank you for joining Acceptafy! We're excited to help you master email marketing and achieve inbox success.</p>
+        
+        <p>Here's what you can do right now:</p>
+        <ul>
+          <li><strong>Grade your emails</strong> - Get instant AI-powered feedback on your email content</li>
+          <li><strong>Improve deliverability</strong> - Learn what makes emails land in the inbox</li>
+          <li><strong>Track your progress</strong> - Earn XP and unlock achievements as you learn</li>
+        </ul>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}" class="cta-button">Start Grading Emails</a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p>Over the next two weeks, we'll send you helpful tips to get the most out of Acceptafy. Stay tuned!</p>
+        
+        <p>Best,<br>The Acceptafy Team</p>
+      </div>
+    `, 'Your journey to email marketing mastery starts now')
+  }),
+
+  gettingStarted: (firstName: string) => ({
+    subject: `${firstName}, here's how to get the most out of your Email Grader`,
+    previewText: 'Quick tips to improve your email scores instantly',
+    html: emailWrapper(`
+      <div class="header">
+        <h1>Getting Started Guide</h1>
+        <p>Master the Email Grader in 5 minutes</p>
+      </div>
+      <div class="content">
+        <h2>Hi ${firstName},</h2>
+        <p>Ready to start improving your emails? Here's how to use the Email Grader like a pro:</p>
+
+        <div class="feature-box">
+          <h3>Step 1: Paste Your Email</h3>
+          <p style="margin: 0; color: #cbd5e1;">Copy your email content into the grader. Include your subject line for the best results.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>Step 2: Review Your Score</h3>
+          <p style="margin: 0; color: #cbd5e1;">Get detailed feedback on deliverability, engagement, and content quality.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>Step 3: Apply the Fixes</h3>
+          <p style="margin: 0; color: #cbd5e1;">Use our AI-powered suggestions to rewrite and improve your email.</p>
+        </div>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}" class="cta-button">Grade Your First Email</a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p><strong>Pro tip:</strong> Check your History tab to track your progress over time. You'll see your scores improving!</p>
+        
+        <p>Happy grading,<br>The Acceptafy Team</p>
+      </div>
+    `, 'Quick tips to improve your email scores instantly')
+  }),
+
+  academy: (firstName: string) => ({
+    subject: `${firstName}, unlock the secrets of email marketing`,
+    previewText: 'Free courses inside the Acceptafy Academy',
+    html: emailWrapper(`
+      <div class="header">
+        <h1>Discover the Academy</h1>
+        <p>Your free email marketing education</p>
+      </div>
+      <div class="content">
+        <h2>Hi ${firstName},</h2>
+        <p>Did you know Acceptafy includes a complete email marketing education platform?</p>
+
+        <p>Inside the <strong>Academy</strong>, you'll find:</p>
+        <ul>
+          <li><strong>Deliverability Foundations</strong> - Master SPF, DKIM, and DMARC</li>
+          <li><strong>The Art of the Inbox</strong> - Write emails that get opened and clicked</li>
+          <li><strong>Campaign Blueprints</strong> - Ready-to-use strategies for cold outreach, newsletters, and e-commerce</li>
+          <li><strong>Scenario Simulator</strong> - Test your skills with real-world challenges</li>
+        </ul>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}" class="cta-button">Explore the Academy</a>
+        </div>
+
+        <div class="divider"></div>
+
+        <p>Each module you complete earns you XP and unlocks achievements. Can you reach the top of the leaderboard?</p>
+        
+        <p>Keep learning,<br>The Acceptafy Team</p>
+      </div>
+    `, 'Free courses inside the Acceptafy Academy')
+  }),
+
+  deliverabilityTips: (firstName: string) => ({
+    subject: `${firstName}, 5 quick wins for better email deliverability`,
+    previewText: 'Boost your inbox placement with these proven tactics',
+    html: emailWrapper(`
+      <div class="header">
+        <h1>Pro Deliverability Tips</h1>
+        <p>Get more emails into the inbox</p>
+      </div>
+      <div class="content">
+        <h2>Hi ${firstName},</h2>
+        <p>Want to boost your email deliverability? Here are 5 quick wins you can implement today:</p>
+
+        <div class="feature-box">
+          <h3>1. Authenticate Your Domain</h3>
+          <p style="margin: 0; color: #cbd5e1;">Set up SPF, DKIM, and DMARC records. Our Deliverability Checklist tool can help!</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>2. Clean Your List Regularly</h3>
+          <p style="margin: 0; color: #cbd5e1;">Remove inactive subscribers every 6 months. Quality beats quantity.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>3. Watch Your Sender Reputation</h3>
+          <p style="margin: 0; color: #cbd5e1;">Use our Sender Score tool to monitor your domain health.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>4. Avoid Spam Triggers</h3>
+          <p style="margin: 0; color: #cbd5e1;">Skip ALL CAPS, excessive punctuation, and spammy phrases.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>5. Always Include an Unsubscribe Link</h3>
+          <p style="margin: 0; color: #cbd5e1;">It's not just good practice - it's the law.</p>
+        </div>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}" class="cta-button">Check Your Deliverability</a>
+        </div>
+        
+        <p>To your inbox success,<br>The Acceptafy Team</p>
+      </div>
+    `, 'Boost your inbox placement with these proven tactics')
+  }),
+
+  upgrade: (firstName: string, tier: string) => ({
+    subject: `${firstName}, unlock unlimited email grades`,
+    previewText: 'Get Pro features and take your email marketing to the next level',
+    html: emailWrapper(`
+      <div class="header">
+        <h1>Ready for More?</h1>
+        <p>Upgrade to unlock your full potential</p>
+      </div>
+      <div class="content">
+        <h2>Hi ${firstName},</h2>
+        <p>You've been using Acceptafy for two weeks now - how's it going?</p>
+
+        ${tier === 'starter' ? `
+        <p>As a Starter member, you have access to 3 email grades per month. Ready to do more?</p>
+
+        <p><strong>Upgrade to Pro</strong> and get:</p>
+        <ul>
+          <li>Unlimited email grades</li>
+          <li>Advanced AI rewriting tools</li>
+          <li>Competitor analysis features</li>
+          <li>Priority support</li>
+          <li>And much more!</li>
+        </ul>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}/account" class="cta-button">View Upgrade Options</a>
+        </div>
+        ` : `
+        <p>Thank you for being a valued ${tier} member! We appreciate your support.</p>
+
+        <p>Don't forget to explore all the features available to you:</p>
+        <ul>
+          <li>Unlimited email grades</li>
+          <li>Advanced AI tools</li>
+          <li>Full Academy access</li>
+          <li>Deliverability monitoring</li>
+        </ul>
+
+        <div style="text-align: center;">
+          <a href="${ACCEPTAFY_URL}" class="cta-button">Continue Learning</a>
+        </div>
+        `}
+
+        <div class="divider"></div>
+
+        <p>Have questions? Reply to this email - we're here to help!</p>
+        
+        <p>Best,<br>The Acceptafy Team</p>
+      </div>
+    `, 'Get Pro features and take your email marketing to the next level')
+  }),
+};
+
+export const blogAnnouncementTemplate = (
+  blogTitle: string,
+  blogSummary: string,
+  blogUrl: string,
+  firstName: string
+) => ({
+  html: emailWrapper(`
+    <div class="header">
+      <h1>New on the Blog</h1>
+      <p>Fresh insights for email marketers</p>
+    </div>
+    <div class="content">
+      <h2>Hi ${firstName},</h2>
+      <p>We just published a new article you'll love:</p>
+
+      <div class="feature-box">
+        <h3>${blogTitle}</h3>
+        <p style="margin: 0; color: #cbd5e1;">${blogSummary}</p>
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${blogUrl}" class="cta-button">Read the Article</a>
+      </div>
+
+      <div class="divider"></div>
+
+      <p>We publish new content regularly to help you master email marketing. Stay tuned for more!</p>
+      
+      <p>Happy reading,<br>The Acceptafy Team</p>
+    </div>
+  `, blogSummary)
+});
+
+export async function sendOnboardingEmail(
+  userId: string,
+  emailNumber: number,
+  emailType: 'welcome' | 'getting-started' | 'academy' | 'tips' | 'upgrade'
+): Promise<boolean> {
+  try {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user || !user.email || user.emailUnsubscribed) {
+      console.log(`[OnboardingEmail] Skipping user ${userId}: no email or unsubscribed`);
+      return false;
+    }
+
+    const firstName = user.firstName || 'there';
+    let emailContent;
+
+    switch (emailType) {
+      case 'welcome':
+        emailContent = onboardingEmailTemplates.welcome(firstName);
+        break;
+      case 'getting-started':
+        emailContent = onboardingEmailTemplates.gettingStarted(firstName);
+        break;
+      case 'academy':
+        emailContent = onboardingEmailTemplates.academy(firstName);
+        break;
+      case 'tips':
+        emailContent = onboardingEmailTemplates.deliverabilityTips(firstName);
+        break;
+      case 'upgrade':
+        emailContent = onboardingEmailTemplates.upgrade(firstName, user.subscriptionTier || 'starter');
+        break;
+      default:
+        console.error(`[OnboardingEmail] Unknown email type: ${emailType}`);
+        return false;
+    }
+
+    const html = emailContent.html.replace('{{userId}}', userId);
+
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: user.email,
+      subject: emailContent.subject,
+      html: html,
+    });
+
+    if (result.error) {
+      console.error(`[OnboardingEmail] Failed to send to ${user.email}:`, result.error);
+      return false;
+    }
+
+    await db.insert(onboardingEmails).values({
+      userId,
+      emailNumber,
+      emailType,
+    });
+
+    await db.update(users)
+      .set({ onboardingEmailsSent: emailNumber })
+      .where(eq(users.id, userId));
+
+    console.log(`[OnboardingEmail] Sent email #${emailNumber} (${emailType}) to ${user.email}`);
+    return true;
+  } catch (error) {
+    console.error(`[OnboardingEmail] Error sending email:`, error);
+    return false;
+  }
+}
+
+export async function sendBlogAnnouncement(
+  subject: string,
+  previewText: string,
+  blogTitle: string,
+  blogSummary: string,
+  blogUrl: string,
+  sentBy: string
+): Promise<{ success: boolean; recipientCount: number; errors: string[] }> {
+  const errors: string[] = [];
+  let successCount = 0;
+
+  try {
+    const allUsers = await db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.emailUnsubscribed, false),
+          sql`${users.email} IS NOT NULL`,
+          eq(users.emailVerified, true)
+        )
+      );
+
+    console.log(`[BlogAnnouncement] Sending to ${allUsers.length} users`);
+
+    for (const user of allUsers) {
+      if (!user.email) continue;
+
+      try {
+        const firstName = user.firstName || 'there';
+        const emailContent = blogAnnouncementTemplate(blogTitle, blogSummary, blogUrl, firstName);
+        const html = emailContent.html.replace('{{userId}}', user.id);
+
+        const result = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: user.email,
+          subject: subject,
+          html: html,
+        });
+
+        if (result.error) {
+          errors.push(`${user.email}: ${result.error.message}`);
+        } else {
+          successCount++;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } catch (err: any) {
+        errors.push(`${user.email}: ${err.message}`);
+      }
+    }
+
+    await db.insert(blogAnnouncementEmails).values({
+      subject,
+      previewText,
+      blogTitle,
+      blogSummary,
+      blogUrl,
+      recipientCount: successCount,
+      sentBy,
+    });
+
+    console.log(`[BlogAnnouncement] Sent to ${successCount}/${allUsers.length} users`);
+    return { success: true, recipientCount: successCount, errors };
+  } catch (error: any) {
+    console.error(`[BlogAnnouncement] Error:`, error);
+    return { success: false, recipientCount: 0, errors: [error.message] };
+  }
+}
+
+export async function processOnboardingEmails(): Promise<void> {
+  console.log('[OnboardingScheduler] Checking for pending onboarding emails...');
+
+  try {
+    const now = new Date();
+
+    const usersToProcess = await db.select()
+      .from(users)
+      .where(
+        and(
+          eq(users.emailUnsubscribed, false),
+          sql`${users.email} IS NOT NULL`,
+          lt(users.onboardingEmailsSent || sql`0`, 5)
+        )
+      );
+
+    for (const user of usersToProcess) {
+      if (!user.createdAt) continue;
+
+      const daysSinceSignup = Math.floor(
+        (now.getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const emailsSent = user.onboardingEmailsSent || 0;
+
+      const schedule = [
+        { day: 0, emailNumber: 1, type: 'welcome' as const },
+        { day: 1, emailNumber: 2, type: 'getting-started' as const },
+        { day: 3, emailNumber: 3, type: 'academy' as const },
+        { day: 7, emailNumber: 4, type: 'tips' as const },
+        { day: 14, emailNumber: 5, type: 'upgrade' as const },
+      ];
+
+      for (const email of schedule) {
+        if (daysSinceSignup >= email.day && emailsSent < email.emailNumber) {
+          await sendOnboardingEmail(user.id, email.emailNumber, email.type);
+          break;
+        }
+      }
+    }
+
+    console.log('[OnboardingScheduler] Completed processing');
+  } catch (error) {
+    console.error('[OnboardingScheduler] Error:', error);
+  }
+}
+
+export function startOnboardingEmailScheduler(): void {
+  console.log('[OnboardingScheduler] Starting scheduler...');
+  
+  processOnboardingEmails();
+  
+  setInterval(() => {
+    processOnboardingEmails();
+  }, 6 * 60 * 60 * 1000);
+  
+  console.log('[OnboardingScheduler] Scheduler started - will check every 6 hours');
+}

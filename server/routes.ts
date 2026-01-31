@@ -42,6 +42,7 @@ import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/s
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
 import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification, sendAdminNewSignupNotification, sendStarterMonthlyResetEmail } from "./services/email";
+import { sendOnboardingEmail, sendBlogAnnouncement } from "./emailService";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -537,6 +538,11 @@ export async function registerRoutes(
         user.lastName || '',
         email
       ).catch(err => console.error('Admin signup notification failed:', err));
+
+      // Send welcome onboarding email (don't block registration)
+      sendOnboardingEmail(user.id, 1, 'welcome').catch(err => 
+        console.error('Welcome onboarding email failed:', err)
+      );
 
       // Create session for newly registered user
       (req as any).login({ 
@@ -4752,6 +4758,80 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Delete manual campaign stats error:', error);
       res.status(500).json({ message: 'Failed to delete manual campaign stats' });
+    }
+  });
+
+  // Email unsubscribe endpoint
+  app.get('/api/unsubscribe/:userId', async (req, res) => {
+    try {
+      const { userId } = req.params;
+      if (!userId) {
+        return res.status(400).json({ message: 'Invalid unsubscribe link' });
+      }
+
+      await storage.updateUser(userId, { emailUnsubscribed: true });
+      res.json({ 
+        success: true, 
+        message: 'You have been unsubscribed from Acceptafy emails.' 
+      });
+    } catch (error) {
+      console.error('Unsubscribe error:', error);
+      res.status(500).json({ message: 'Failed to process unsubscribe request' });
+    }
+  });
+
+  // Admin blog announcement endpoint
+  app.post('/api/admin/blog-announcement', isAdmin, async (req: any, res) => {
+    try {
+      const { subject, previewText, blogTitle, blogSummary, blogUrl } = req.body;
+
+      if (!subject || !blogTitle || !blogUrl) {
+        return res.status(400).json({ 
+          message: 'Subject, blog title, and blog URL are required' 
+        });
+      }
+
+      const adminId = req.user?.claims?.sub;
+      if (!adminId) {
+        return res.status(401).json({ message: 'Admin not authenticated' });
+      }
+
+      const result = await sendBlogAnnouncement(
+        subject,
+        previewText || '',
+        blogTitle,
+        blogSummary || '',
+        blogUrl,
+        adminId
+      );
+
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          recipientCount: result.recipientCount,
+          message: `Blog announcement sent to ${result.recipientCount} users`
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: 'Failed to send blog announcement',
+          errors: result.errors
+        });
+      }
+    } catch (error) {
+      console.error('Blog announcement error:', error);
+      res.status(500).json({ message: 'Failed to send blog announcement' });
+    }
+  });
+
+  // Get blog announcement history
+  app.get('/api/admin/blog-announcements', isAdmin, async (req: any, res) => {
+    try {
+      const announcements = await storage.getBlogAnnouncementHistory();
+      res.json(announcements);
+    } catch (error) {
+      console.error('Get blog announcements error:', error);
+      res.status(500).json({ message: 'Failed to get blog announcement history' });
     }
   });
 

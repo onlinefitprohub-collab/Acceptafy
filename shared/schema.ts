@@ -42,6 +42,8 @@ export const users = pgTable("users", {
   country: varchar("country"),
   companyName: varchar("company_name"),
   phone: varchar("phone"),
+  emailUnsubscribed: boolean("email_unsubscribed").default(false),
+  onboardingEmailsSent: integer("onboarding_emails_sent").default(0),
 });
 
 export type UpsertUser = typeof users.$inferInsert;
@@ -1374,4 +1376,34 @@ export const systemConfig = pgTable("system_config", {
 
 export type SystemConfig = typeof systemConfig.$inferSelect;
 export type InsertSystemConfig = typeof systemConfig.$inferInsert;
+
+// Onboarding email tracking table
+export const onboardingEmails = pgTable("onboarding_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  emailNumber: integer("email_number").notNull(), // 1-5 for the sequence
+  emailType: varchar("email_type").notNull(), // welcome, getting-started, academy, tips, upgrade
+  sentAt: timestamp("sent_at").defaultNow(),
+  opened: boolean("opened").default(false),
+  clicked: boolean("clicked").default(false),
+});
+
+export type OnboardingEmail = typeof onboardingEmails.$inferSelect;
+export type InsertOnboardingEmail = typeof onboardingEmails.$inferInsert;
+
+// Blog announcement emails tracking
+export const blogAnnouncementEmails = pgTable("blog_announcement_emails", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  subject: text("subject").notNull(),
+  previewText: text("preview_text"),
+  blogTitle: text("blog_title").notNull(),
+  blogSummary: text("blog_summary"),
+  blogUrl: text("blog_url"),
+  sentAt: timestamp("sent_at").defaultNow(),
+  recipientCount: integer("recipient_count").default(0),
+  sentBy: varchar("sent_by").references(() => users.id),
+});
+
+export type BlogAnnouncementEmail = typeof blogAnnouncementEmails.$inferSelect;
+export type InsertBlogAnnouncementEmail = typeof blogAnnouncementEmails.$inferInsert;
 
