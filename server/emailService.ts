@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 import { db } from './db';
-import { users, onboardingEmails, blogAnnouncementEmails } from '@shared/schema';
+import { users, onboardingEmails, blogAnnouncementEmails, emailOpens, emailAnalyses } from '@shared/schema';
 import { eq, and, lt, isNull, sql } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -51,9 +52,70 @@ const emailWrapper = (content: string, previewText: string = '') => `
       <p style="margin-top: 15px;">This email was sent by Acceptafy.</p>
     </div>
   </div>
+  <!-- Email open tracking pixel -->
+  <img src="${ACCEPTAFY_URL}/api/track/open/{{trackingId}}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />
 </body>
 </html>
 `;
+
+// Generate personalization data for emails
+async function getUserPersonalization(userId: string): Promise<{
+  emailsAnalyzed: number;
+  averageScore: number;
+  daysSinceSignup: number;
+  subscriptionTier: string;
+  tierDisplayName: string;
+}> {
+  try {
+    const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) {
+      return { emailsAnalyzed: 0, averageScore: 0, daysSinceSignup: 0, subscriptionTier: 'starter', tierDisplayName: 'Starter' };
+    }
+    
+    const analyses = await db.select().from(emailAnalyses).where(eq(emailAnalyses.userId, userId));
+    const emailsAnalyzed = analyses.length;
+    const averageScore = analyses.length > 0 
+      ? Math.round(analyses.reduce((sum, a) => sum + (a.score || 0), 0) / analyses.length)
+      : 0;
+    
+    const createdAt = user[0].createdAt ? new Date(user[0].createdAt) : new Date();
+    const daysSinceSignup = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    const tierNames: Record<string, string> = {
+      'starter': 'Starter',
+      'pro': 'Pro',
+      'scale': 'Scale'
+    };
+    
+    return {
+      emailsAnalyzed,
+      averageScore,
+      daysSinceSignup,
+      subscriptionTier: user[0].subscriptionTier || 'starter',
+      tierDisplayName: tierNames[user[0].subscriptionTier || 'starter'] || 'Starter',
+    };
+  } catch (error) {
+    console.error('[Personalization] Error fetching user stats:', error);
+    return { emailsAnalyzed: 0, averageScore: 0, daysSinceSignup: 0, subscriptionTier: 'starter', tierDisplayName: 'Starter' };
+  }
+}
+
+// Create email tracking record
+async function createTrackingRecord(userId: string, emailType: string, emailId?: string): Promise<string> {
+  const trackingId = uuidv4();
+  try {
+    await db.insert(emailOpens).values({
+      userId,
+      emailType,
+      emailId,
+      trackingId,
+    });
+    return trackingId;
+  } catch (error) {
+    console.error('[EmailTracking] Error creating tracking record:', error);
+    return trackingId; // Still return the ID even if DB insert fails
+  }
+}
 
 export const onboardingEmailTemplates = {
   welcome: (firstName: string) => ({
@@ -306,6 +368,10 @@ export async function sendOnboardingEmail(
     }
 
     const firstName = user.firstName || 'there';
+    
+    // Get personalization data for enhanced emails
+    const personalization = await getUserPersonalization(userId);
+    
     let emailContent;
 
     switch (emailType) {
@@ -329,7 +395,24 @@ export async function sendOnboardingEmail(
         return false;
     }
 
-    const html = emailContent.html.replace('{{userId}}', userId);
+    // Create onboarding email record first to get the ID
+    const [onboardingEmailRecord] = await db.insert(onboardingEmails).values({
+      userId,
+      emailNumber,
+      emailType,
+    }).returning();
+
+    // Create tracking record with the onboarding email ID
+    const trackingId = await createTrackingRecord(userId, 'onboarding', onboardingEmailRecord.id);
+
+    // Replace placeholders with actual values
+    let html = emailContent.html
+      .replace(/\{\{userId\}\}/g, userId)
+      .replace(/\{\{trackingId\}\}/g, trackingId)
+      .replace(/\{\{emailsAnalyzed\}\}/g, personalization.emailsAnalyzed.toString())
+      .replace(/\{\{averageScore\}\}/g, personalization.averageScore.toString())
+      .replace(/\{\{daysSinceSignup\}\}/g, personalization.daysSinceSignup.toString())
+      .replace(/\{\{tierDisplayName\}\}/g, personalization.tierDisplayName);
 
     const result = await resend.emails.send({
       from: FROM_EMAIL,
@@ -340,14 +423,10 @@ export async function sendOnboardingEmail(
 
     if (result.error) {
       console.error(`[OnboardingEmail] Failed to send to ${user.email}:`, result.error);
+      // Clean up the onboarding email record if send fails
+      await db.delete(onboardingEmails).where(eq(onboardingEmails.id, onboardingEmailRecord.id));
       return false;
     }
-
-    await db.insert(onboardingEmails).values({
-      userId,
-      emailNumber,
-      emailType,
-    });
 
     await db.update(users)
       .set({ onboardingEmailsSent: emailNumber })
@@ -391,7 +470,14 @@ export async function sendBlogAnnouncement(
       try {
         const firstName = user.firstName || 'there';
         const emailContent = blogAnnouncementTemplate(blogTitle, blogSummary, blogUrl, firstName);
-        const html = emailContent.html.replace('{{userId}}', user.id);
+        
+        // Create tracking record for this user
+        const trackingId = await createTrackingRecord(user.id, 'blog-announcement');
+        
+        // Replace placeholders
+        const html = emailContent.html
+          .replace(/\{\{userId\}\}/g, user.id)
+          .replace(/\{\{trackingId\}\}/g, trackingId);
 
         const result = await resend.emails.send({
           from: FROM_EMAIL,

@@ -4780,6 +4780,50 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Email tracking pixel endpoint
+  app.get('/api/track/open/:trackingId', async (req, res) => {
+    try {
+      const { trackingId } = req.params;
+      const userAgent = req.headers['user-agent'] || undefined;
+      const ipAddress = req.ip || req.headers['x-forwarded-for']?.toString() || undefined;
+      
+      await storage.recordEmailOpen(trackingId, userAgent, ipAddress);
+      
+      // Return a 1x1 transparent PNG
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64'
+      );
+      
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Length', pixel.length.toString());
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.send(pixel);
+    } catch (error) {
+      console.error('Email tracking error:', error);
+      // Still return the pixel even on error
+      const pixel = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+        'base64'
+      );
+      res.setHeader('Content-Type', 'image/png');
+      res.send(pixel);
+    }
+  });
+
+  // Email analytics endpoint (admin only)
+  app.get('/api/admin/email-analytics', isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const stats = await storage.getEmailOpenStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Email analytics error:', error);
+      res.status(500).json({ message: 'Failed to fetch email analytics' });
+    }
+  });
+
   // Admin blog announcement endpoint
   app.post('/api/admin/blog-announcement', isAdmin, async (req: any, res) => {
     try {

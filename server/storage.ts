@@ -28,6 +28,8 @@ import {
   articles,
   contentDrafts,
   blogAnnouncementEmails,
+  emailOpens,
+  onboardingEmails,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -2896,6 +2898,100 @@ export class DatabaseStorage implements IStorage {
       .from(blogAnnouncementEmails)
       .orderBy(desc(blogAnnouncementEmails.sentAt))
       .limit(50);
+  }
+
+  // Email tracking methods
+  async createEmailTrackingRecord(data: {
+    userId: string;
+    emailType: string;
+    emailId?: string;
+    trackingId: string;
+  }): Promise<void> {
+    await db.insert(emailOpens).values({
+      userId: data.userId,
+      emailType: data.emailType,
+      emailId: data.emailId,
+      trackingId: data.trackingId,
+    });
+  }
+
+  async recordEmailOpen(trackingId: string, userAgent?: string, ipAddress?: string): Promise<boolean> {
+    const result = await db
+      .update(emailOpens)
+      .set({
+        openedAt: new Date(),
+        userAgent: userAgent,
+        ipAddress: ipAddress,
+      })
+      .where(eq(emailOpens.trackingId, trackingId))
+      .returning();
+    
+    // Also update onboarding email if applicable
+    if (result.length > 0 && result[0].emailType === 'onboarding' && result[0].emailId) {
+      await db
+        .update(onboardingEmails)
+        .set({ opened: true })
+        .where(eq(onboardingEmails.id, result[0].emailId));
+    }
+    
+    return result.length > 0;
+  }
+
+  async getEmailOpenStats(): Promise<{
+    totalSent: number;
+    totalOpened: number;
+    byType: { emailType: string; sent: number; opened: number }[];
+  }> {
+    const allOpens = await db.select().from(emailOpens);
+    
+    const byType: Record<string, { sent: number; opened: number }> = {};
+    
+    for (const record of allOpens) {
+      if (!byType[record.emailType]) {
+        byType[record.emailType] = { sent: 0, opened: 0 };
+      }
+      byType[record.emailType].sent++;
+      if (record.openedAt) {
+        byType[record.emailType].opened++;
+      }
+    }
+    
+    return {
+      totalSent: allOpens.length,
+      totalOpened: allOpens.filter(r => r.openedAt).length,
+      byType: Object.entries(byType).map(([emailType, stats]) => ({
+        emailType,
+        ...stats,
+      })),
+    };
+  }
+
+  async getUserStats(userId: string): Promise<{
+    emailsAnalyzed: number;
+    averageScore: number;
+    daysSinceSignup: number;
+    subscriptionTier: string;
+  }> {
+    const user = await this.getUser(userId);
+    const analyses = await db
+      .select()
+      .from(emailAnalyses)
+      .where(eq(emailAnalyses.userId, userId));
+    
+    const emailsAnalyzed = analyses.length;
+    const averageScore = analyses.length > 0 
+      ? Math.round(analyses.reduce((sum, a) => sum + (a.score || 0), 0) / analyses.length)
+      : 0;
+    
+    const createdAt = user?.createdAt ? new Date(user.createdAt) : new Date();
+    const daysSinceSignup = Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+    
+    return {
+      emailsAnalyzed,
+      averageScore,
+      daysSinceSignup,
+      subscriptionTier: user?.subscriptionTier || 'starter',
+    };
   }
 }
 

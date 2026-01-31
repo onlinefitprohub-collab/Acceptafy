@@ -769,6 +769,7 @@ export default function Admin() {
       setBlogSummary("");
       setBlogUrl("");
       setShowBlogPreview(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/email-analytics"] });
       toast({ 
         title: "Blog announcement sent", 
         description: `Email sent to ${data.recipientCount} users` 
@@ -781,6 +782,15 @@ export default function Admin() {
         variant: "destructive" 
       });
     },
+  });
+
+  // Email analytics query
+  const { data: emailAnalytics, isLoading: emailAnalyticsLoading } = useQuery<{
+    totalSent: number;
+    totalOpened: number;
+    byType: { emailType: string; sent: number; opened: number }[];
+  }>({
+    queryKey: ["/api/admin/email-analytics"],
   });
 
   const filteredUsers = useMemo(() => {
@@ -3372,6 +3382,85 @@ export default function Admin() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              </CardContent>
+            </Card>
+
+            {/* Email Analytics Card */}
+            <Card data-testid="email-analytics-card" className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Email Open Tracking Analytics
+                </CardTitle>
+                <CardDescription>
+                  Track email open rates across all email types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {emailAnalyticsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : emailAnalytics ? (
+                  <div className="space-y-6">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                        <div className="text-2xl font-bold text-purple-400">{emailAnalytics.totalSent}</div>
+                        <div className="text-sm text-slate-400">Total Emails Sent</div>
+                      </div>
+                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                        <div className="text-2xl font-bold text-green-400">{emailAnalytics.totalOpened}</div>
+                        <div className="text-sm text-slate-400">Total Opens</div>
+                      </div>
+                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+                        <div className="text-2xl font-bold text-pink-400">
+                          {emailAnalytics.totalSent > 0 
+                            ? Math.round((emailAnalytics.totalOpened / emailAnalytics.totalSent) * 100)
+                            : 0}%
+                        </div>
+                        <div className="text-sm text-slate-400">Overall Open Rate</div>
+                      </div>
+                    </div>
+                    
+                    {/* By Type Breakdown */}
+                    {emailAnalytics.byType.length > 0 ? (
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-slate-300">Open Rates by Email Type</h4>
+                        <div className="space-y-2">
+                          {emailAnalytics.byType.map((type) => {
+                            const openRate = type.sent > 0 ? Math.round((type.opened / type.sent) * 100) : 0;
+                            return (
+                              <div key={type.emailType} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                  <span className="capitalize text-slate-300">
+                                    {type.emailType.replace('-', ' ')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-4 text-sm">
+                                  <span className="text-slate-500">{type.sent} sent</span>
+                                  <span className="text-green-400">{type.opened} opened</span>
+                                  <span className="font-medium text-slate-300 min-w-[50px] text-right">
+                                    {openRate}%
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-slate-500">
+                        No email tracking data yet. Send some emails to see analytics.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-slate-500">
+                    No analytics data available
+                  </div>
+                )}
               </CardContent>
             </Card>
 

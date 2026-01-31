@@ -1407,3 +1407,19 @@ export const blogAnnouncementEmails = pgTable("blog_announcement_emails", {
 export type BlogAnnouncementEmail = typeof blogAnnouncementEmails.$inferSelect;
 export type InsertBlogAnnouncementEmail = typeof blogAnnouncementEmails.$inferInsert;
 
+// Email opens tracking table for analytics
+export const emailOpens = pgTable("email_opens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id),
+  emailType: varchar("email_type").notNull(), // onboarding, blog-announcement, etc.
+  emailId: varchar("email_id"), // Reference to specific email record
+  trackingId: varchar("tracking_id").notNull().unique(), // Unique tracking pixel ID
+  openedAt: timestamp("opened_at"),
+  userAgent: text("user_agent"),
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type EmailOpen = typeof emailOpens.$inferSelect;
+export type InsertEmailOpen = typeof emailOpens.$inferInsert;
+
