@@ -4879,6 +4879,107 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Admin email rewrite with scoring endpoint
+  // Zod schema for email rewrite-score request
+  const emailRewriteScoreSchema = z.object({
+    subject: z.string().max(500).optional().default(''),
+    previewText: z.string().max(500).optional().default(''),
+    body: z.string().min(1, 'Email body is required').max(50000),
+    guidance: z.string().max(2000).optional().default('general'),
+  });
+
+  app.post('/api/admin/email-rewrite-score', isAdmin, aiRateLimiter, async (req: any, res) => {
+    try {
+      const parseResult = emailRewriteScoreSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ 
+          message: 'Invalid request', 
+          details: parseResult.error.flatten() 
+        });
+      }
+
+      const { subject, previewText, body, guidance } = parseResult.data;
+
+      // Rewrite the email based on guidance
+      const rewriteGoal = guidance || 'general';
+      const rewritten = await rewriteCopy(body, subject, previewText, rewriteGoal);
+
+      // Simulate inbox placement for the rewritten email
+      const inboxSimulation = await simulateInboxPlacement(
+        rewritten.subject,
+        rewritten.previewText,
+        rewritten.body
+      );
+
+      // Calculate overall score and likelihood
+      const overallScore = inboxSimulation.overallScore || 75;
+      let inboxLikelihood = 'Medium';
+      if (overallScore >= 80) {
+        inboxLikelihood = 'High';
+      } else if (overallScore < 60) {
+        inboxLikelihood = 'Low';
+      }
+
+      // Extract key factors from the simulation
+      const factors: { name: string; impact: string; description: string }[] = [];
+      
+      // Add pattern matching factors
+      if (inboxSimulation.patternMatching?.matchedPatterns) {
+        inboxSimulation.patternMatching.matchedPatterns.slice(0, 3).forEach(pattern => {
+          factors.push({
+            name: pattern.pattern,
+            impact: pattern.severity === 'High' ? 'Negative' : pattern.severity === 'Low' ? 'Positive' : 'Neutral',
+            description: pattern.description
+          });
+        });
+      }
+
+      // Add authentication factors
+      if (inboxSimulation.authenticationImpact) {
+        factors.push({
+          name: 'Email Authentication',
+          impact: inboxSimulation.authenticationImpact.overallAuthScore >= 70 ? 'Positive' : 'Negative',
+          description: inboxSimulation.authenticationImpact.recommendation || 'Authentication setup affects deliverability'
+        });
+      }
+
+      // Add content-based factors from Gmail analysis
+      if (inboxSimulation.gmail?.factors) {
+        inboxSimulation.gmail.factors.slice(0, 2).forEach((factor: { factor: string; impact: string; explanation: string }) => {
+          factors.push({
+            name: factor.factor,
+            impact: factor.impact,
+            description: factor.explanation
+          });
+        });
+      }
+
+      // Get suggestions from the simulation
+      const suggestions: string[] = [];
+      if (inboxSimulation.topOpportunities) {
+        suggestions.push(...inboxSimulation.topOpportunities.slice(0, 4));
+      }
+      if (inboxSimulation.imageTextRatio?.recommendation) {
+        suggestions.push(inboxSimulation.imageTextRatio.recommendation);
+      }
+
+      res.json({
+        rewritten: {
+          subject: rewritten.subject,
+          previewText: rewritten.previewText,
+          body: rewritten.body,
+        },
+        score: overallScore,
+        inboxLikelihood,
+        factors: factors.slice(0, 5),
+        suggestions: suggestions.slice(0, 5),
+      });
+    } catch (error) {
+      console.error('Email rewrite-score error:', error);
+      res.status(500).json({ message: 'Failed to rewrite and score email' });
+    }
+  });
+
   // WebSocket Chat Support
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   

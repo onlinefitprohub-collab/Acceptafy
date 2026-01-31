@@ -89,6 +89,11 @@ import {
   ArrowDown,
   Minus,
   Send,
+  Wand2,
+  Inbox,
+  ThumbsUp,
+  ThumbsDown,
+  RefreshCw,
 } from "lucide-react";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
@@ -428,6 +433,19 @@ export default function Admin() {
   const [blogSummary, setBlogSummary] = useState("");
   const [blogUrl, setBlogUrl] = useState("");
   const [showBlogPreview, setShowBlogPreview] = useState(false);
+  
+  // Email rewriter state
+  const [rewriterSubject, setRewriterSubject] = useState("");
+  const [rewriterPreview, setRewriterPreview] = useState("");
+  const [rewriterBody, setRewriterBody] = useState("");
+  const [rewriterGuidance, setRewriterGuidance] = useState("");
+  const [rewriterResult, setRewriterResult] = useState<{
+    rewritten: { subject: string; previewText: string; body: string };
+    score: number;
+    inboxLikelihood: string;
+    factors: { name: string; impact: string; description: string }[];
+    suggestions: string[];
+  } | null>(null);
   
   // Custom date range state
   const getDefaultCustomDates = () => {
@@ -779,6 +797,28 @@ export default function Admin() {
       toast({ 
         title: "Error", 
         description: error.message || "Failed to send blog announcement", 
+        variant: "destructive" 
+      });
+    },
+  });
+
+  // Email rewriter mutation
+  const emailRewriterMutation = useMutation({
+    mutationFn: async (data: { subject: string; previewText: string; body: string; guidance: string }) => {
+      const res = await apiRequest("POST", "/api/admin/email-rewrite-score", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setRewriterResult(data);
+      toast({ 
+        title: "Email analyzed and rewritten", 
+        description: `Inbox likelihood: ${data.inboxLikelihood}` 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to rewrite and score email", 
         variant: "destructive" 
       });
     },
@@ -3385,6 +3425,211 @@ export default function Admin() {
               </CardContent>
             </Card>
 
+            {/* Email Writer/Rewriter Card */}
+            <Card data-testid="email-rewriter-card" className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wand2 className="h-5 w-5" />
+                  Email Writer & Deliverability Scorer
+                </CardTitle>
+                <CardDescription>
+                  Rewrite emails with custom guidance and predict inbox landing likelihood
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="rewriter-subject">Subject Line</Label>
+                      <Input
+                        id="rewriter-subject"
+                        placeholder="Enter your email subject..."
+                        value={rewriterSubject}
+                        onChange={(e) => setRewriterSubject(e.target.value)}
+                        data-testid="input-rewriter-subject"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="rewriter-preview">Preview Text</Label>
+                      <Input
+                        id="rewriter-preview"
+                        placeholder="Appears after subject in inbox..."
+                        value={rewriterPreview}
+                        onChange={(e) => setRewriterPreview(e.target.value)}
+                        data-testid="input-rewriter-preview"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="rewriter-body">Email Body</Label>
+                    <Textarea
+                      id="rewriter-body"
+                      placeholder="Paste your email content here..."
+                      value={rewriterBody}
+                      onChange={(e) => setRewriterBody(e.target.value)}
+                      rows={6}
+                      data-testid="input-rewriter-body"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="rewriter-guidance">Rewrite Guidance</Label>
+                    <Textarea
+                      id="rewriter-guidance"
+                      placeholder="E.g., 'Make it more conversational', 'Add urgency for Black Friday sale', 'Target enterprise clients', 'Shorten for mobile readers'..."
+                      value={rewriterGuidance}
+                      onChange={(e) => setRewriterGuidance(e.target.value)}
+                      rows={2}
+                      data-testid="input-rewriter-guidance"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Describe how you want the email rewritten. Be specific about tone, goals, or target audience.
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        emailRewriterMutation.mutate({
+                          subject: rewriterSubject,
+                          previewText: rewriterPreview,
+                          body: rewriterBody,
+                          guidance: rewriterGuidance,
+                        });
+                      }}
+                      disabled={emailRewriterMutation.isPending || !rewriterBody}
+                      data-testid="button-rewrite-score"
+                    >
+                      {emailRewriterMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <Wand2 className="h-4 w-4 mr-2" />
+                      )}
+                      Rewrite & Score
+                    </Button>
+                    {rewriterResult && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setRewriterSubject(rewriterResult.rewritten.subject);
+                          setRewriterPreview(rewriterResult.rewritten.previewText);
+                          setRewriterBody(rewriterResult.rewritten.body);
+                          setRewriterResult(null);
+                        }}
+                        data-testid="button-apply-rewrite"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Apply & Rerun
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {/* Results Display */}
+                  {rewriterResult && (
+                    <div className="mt-6 space-y-4 border-t pt-4">
+                      {/* Inbox Likelihood Score */}
+                      <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
+                        <div className="flex items-center gap-3">
+                          <Inbox className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                          <div>
+                            <div className="font-semibold">Inbox Likelihood</div>
+                            <div className="text-sm text-muted-foreground">
+                              Predicted landing placement
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`text-2xl font-bold ${
+                            rewriterResult.score >= 80 ? 'text-green-600 dark:text-green-400' :
+                            rewriterResult.score >= 60 ? 'text-yellow-600 dark:text-yellow-400' :
+                            'text-red-600 dark:text-red-400'
+                          }`}>
+                            {rewriterResult.score}%
+                          </div>
+                          <Badge variant={
+                            rewriterResult.inboxLikelihood === 'High' ? 'default' :
+                            rewriterResult.inboxLikelihood === 'Medium' ? 'secondary' : 'destructive'
+                          }>
+                            {rewriterResult.inboxLikelihood} Likelihood
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {/* Factors */}
+                      {rewriterResult.factors.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium flex items-center gap-2">
+                            <Target className="h-4 w-4" />
+                            Key Factors
+                          </h4>
+                          <div className="space-y-2">
+                            {rewriterResult.factors.map((factor, idx) => (
+                              <div key={idx} className="flex items-start gap-3 p-2 rounded-lg bg-muted/30">
+                                {factor.impact === 'Positive' ? (
+                                  <ThumbsUp className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5" />
+                                ) : factor.impact === 'Negative' ? (
+                                  <ThumbsDown className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5" />
+                                ) : (
+                                  <Minus className="h-4 w-4 text-muted-foreground mt-0.5" />
+                                )}
+                                <div>
+                                  <div className="font-medium text-sm">{factor.name}</div>
+                                  <div className="text-xs text-muted-foreground">{factor.description}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Suggestions */}
+                      {rewriterResult.suggestions.length > 0 && (
+                        <div className="space-y-2">
+                          <h4 className="font-medium flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4" />
+                            Improvement Suggestions
+                          </h4>
+                          <ul className="space-y-1 text-sm text-muted-foreground">
+                            {rewriterResult.suggestions.map((suggestion, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-purple-600 dark:text-purple-400">•</span>
+                                {suggestion}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {/* Rewritten Email */}
+                      <div className="space-y-2">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Rewritten Email
+                        </h4>
+                        <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase">Subject</span>
+                            <p className="font-medium">{rewriterResult.rewritten.subject}</p>
+                          </div>
+                          {rewriterResult.rewritten.previewText && (
+                            <div>
+                              <span className="text-xs text-muted-foreground uppercase">Preview</span>
+                              <p className="text-sm">{rewriterResult.rewritten.previewText}</p>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-xs text-muted-foreground uppercase">Body</span>
+                            <p className="text-sm whitespace-pre-wrap">{rewriterResult.rewritten.body}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Email Analytics Card */}
             <Card data-testid="email-analytics-card" className="mb-6">
               <CardHeader>
@@ -3405,43 +3650,43 @@ export default function Admin() {
                   <div className="space-y-6">
                     {/* Summary Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                        <div className="text-2xl font-bold text-purple-400">{emailAnalytics.totalSent}</div>
-                        <div className="text-sm text-slate-400">Total Emails Sent</div>
+                      <div className="rounded-lg p-4 border bg-muted/50">
+                        <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{emailAnalytics.totalSent}</div>
+                        <div className="text-sm text-muted-foreground">Total Emails Sent</div>
                       </div>
-                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                        <div className="text-2xl font-bold text-green-400">{emailAnalytics.totalOpened}</div>
-                        <div className="text-sm text-slate-400">Total Opens</div>
+                      <div className="rounded-lg p-4 border bg-muted/50">
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">{emailAnalytics.totalOpened}</div>
+                        <div className="text-sm text-muted-foreground">Total Opens</div>
                       </div>
-                      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
-                        <div className="text-2xl font-bold text-pink-400">
+                      <div className="rounded-lg p-4 border bg-muted/50">
+                        <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
                           {emailAnalytics.totalSent > 0 
                             ? Math.round((emailAnalytics.totalOpened / emailAnalytics.totalSent) * 100)
                             : 0}%
                         </div>
-                        <div className="text-sm text-slate-400">Overall Open Rate</div>
+                        <div className="text-sm text-muted-foreground">Overall Open Rate</div>
                       </div>
                     </div>
                     
                     {/* By Type Breakdown */}
                     {emailAnalytics.byType.length > 0 ? (
                       <div className="space-y-3">
-                        <h4 className="font-medium text-slate-300">Open Rates by Email Type</h4>
+                        <h4 className="font-medium">Open Rates by Email Type</h4>
                         <div className="space-y-2">
                           {emailAnalytics.byType.map((type) => {
                             const openRate = type.sent > 0 ? Math.round((type.opened / type.sent) * 100) : 0;
                             return (
-                              <div key={type.emailType} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                              <div key={type.emailType} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
                                 <div className="flex items-center gap-3">
                                   <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                                  <span className="capitalize text-slate-300">
+                                  <span className="capitalize">
                                     {type.emailType.replace('-', ' ')}
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm">
-                                  <span className="text-slate-500">{type.sent} sent</span>
-                                  <span className="text-green-400">{type.opened} opened</span>
-                                  <span className="font-medium text-slate-300 min-w-[50px] text-right">
+                                  <span className="text-muted-foreground">{type.sent} sent</span>
+                                  <span className="text-green-600 dark:text-green-400">{type.opened} opened</span>
+                                  <span className="font-medium min-w-[50px] text-right">
                                     {openRate}%
                                   </span>
                                 </div>
@@ -3451,13 +3696,13 @@ export default function Admin() {
                         </div>
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-slate-500">
+                      <div className="text-center py-4 text-muted-foreground">
                         No email tracking data yet. Send some emails to see analytics.
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-4 text-slate-500">
+                  <div className="text-center py-4 text-muted-foreground">
                     No analytics data available
                   </div>
                 )}
