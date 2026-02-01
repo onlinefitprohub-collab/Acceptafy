@@ -830,16 +830,18 @@ export default function Admin() {
       return res.json();
     },
     onSuccess: (data) => {
+      const hasFailures = data.failed && data.failed > 0;
       toast({ 
-        title: "Automation triggered", 
-        description: data.message || "Automation sequence started successfully" 
+        title: hasFailures ? "Automation partially triggered" : "Automation triggered", 
+        description: data.message || "Automation sequence started successfully",
+        variant: hasFailures ? "destructive" : "default"
       });
       setAutomationUserIds([]);
     },
     onError: (error: any) => {
       toast({ 
-        title: "Error", 
-        description: error.message || "Failed to trigger automation", 
+        title: "Automation failed", 
+        description: error.message || "Failed to trigger automation. Check that your sending domain is verified in Resend.", 
         variant: "destructive" 
       });
     },
