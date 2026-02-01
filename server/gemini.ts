@@ -3372,6 +3372,16 @@ SEO OPTIMIZATION REQUIREMENTS:
 - Headers follow proper hierarchy (H2 → H3, never skip levels)
 - Use power words in title: ultimate, proven, essential, complete, master, secret, etc.
 
+HTML FORMATTING (CRITICAL - MUST USE HTML, NOT MARKDOWN):
+- NEVER use markdown syntax like ### or ** or - for lists
+- ALL headings MUST use HTML tags: <h2>Title</h2>, <h3>Subtitle</h3>
+- ALL paragraphs MUST be wrapped in <p>tags</p>
+- ALL lists MUST use <ul><li>Item</li></ul> or <ol><li>Item</li></ol>
+- Bold text uses <strong>text</strong>, NOT **text**
+- Links use <a href="url">text</a>
+- Blockquotes use <blockquote><p>Quote</p></blockquote>
+- The content field must be valid HTML that can be rendered directly in a browser
+
 CONTENT STRUCTURE - Use this specific format for ${format.name}:
 ${format.structure}
 
