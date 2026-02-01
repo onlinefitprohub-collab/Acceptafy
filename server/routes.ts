@@ -2521,6 +2521,7 @@ Return your response as a JSON object with this exact structure:
         recipientEmail,
         subject: processedSubject,
         body: processedBody,
+        htmlContent: finalHtml,
         emailType: 'individual',
         status: 'sent',
       });
@@ -2677,6 +2678,7 @@ Return your response as a JSON object with this exact structure:
             recipientEmail: user.email!,
             subject: processedSubject,
             body: processedBody,
+            htmlContent: finalHtml,
             emailType: 'bulk',
             segment,
             status: 'sent',

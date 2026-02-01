@@ -314,11 +314,12 @@ interface Announcement {
 
 interface AdminEmail {
   id: string;
-  adminId: string;
+  adminId: string | null;
   recipientUserId: string | null;
   recipientEmail: string;
   subject: string;
   body: string;
+  htmlContent: string | null;
   emailType: string;
   segment: string | null;
   status: string;
@@ -4322,10 +4323,21 @@ export default function Admin() {
                 )}
               </div>
               <div className="border-t pt-4">
-                <span className="text-sm font-medium text-muted-foreground">Message:</span>
-                <div className="mt-2 p-4 rounded-lg bg-muted/30 text-sm whitespace-pre-wrap">
-                  {selectedEmail.body}
-                </div>
+                <span className="text-sm font-medium text-muted-foreground">Preview:</span>
+                {selectedEmail.htmlContent ? (
+                  <div className="mt-2 rounded-lg border overflow-hidden">
+                    <iframe
+                      srcDoc={selectedEmail.htmlContent}
+                      className="w-full h-[400px] bg-white"
+                      title="Email Preview"
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-2 p-4 rounded-lg bg-muted/30 text-sm whitespace-pre-wrap">
+                    {selectedEmail.body}
+                  </div>
+                )}
               </div>
             </div>
           )}

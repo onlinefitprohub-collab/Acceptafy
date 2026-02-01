@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { db } from './db';
-import { users, onboardingEmails, blogAnnouncementEmails, emailOpens, emailAnalyses } from '@shared/schema';
+import { users, onboardingEmails, blogAnnouncementEmails, emailOpens, emailAnalyses, adminEmails } from '@shared/schema';
 import { eq, and, lt, isNull, sql } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -481,6 +481,18 @@ export async function sendOnboardingEmail(
       trackingId,
     });
 
+    // Log to admin email history for visibility
+    await db.insert(adminEmails).values({
+      adminId: null, // System-generated email
+      recipientUserId: userId,
+      recipientEmail: user.email,
+      subject: emailContent.subject,
+      body: `Onboarding Email #${emailNumber}: ${emailType}`,
+      htmlContent: html,
+      emailType: 'onboarding',
+      status: 'sent',
+    });
+
     await db.update(users)
       .set({ onboardingEmailsSent: emailNumber })
       .where(eq(users.id, userId));
@@ -543,6 +555,17 @@ export async function sendBlogAnnouncement(
           errors.push(`${user.email}: ${result.error.message}`);
         } else {
           successCount++;
+          // Log to admin email history
+          await db.insert(adminEmails).values({
+            adminId: sentBy,
+            recipientUserId: user.id,
+            recipientEmail: user.email,
+            subject: subject,
+            body: `Blog Announcement: ${blogTitle}`,
+            htmlContent: html,
+            emailType: 'announcement',
+            status: 'sent',
+          });
         }
 
         await new Promise(resolve => setTimeout(resolve, 100));

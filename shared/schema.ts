@@ -1109,12 +1109,13 @@ export type InsertListHealthSnapshot = typeof listHealthSnapshots.$inferInsert;
 // Admin emails sent to users
 export const adminEmails = pgTable("admin_emails", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  adminId: varchar("admin_id").notNull().references(() => users.id),
+  adminId: varchar("admin_id").references(() => users.id), // null for system/automation emails
   recipientUserId: varchar("recipient_user_id").references(() => users.id), // null for bulk emails
   recipientEmail: varchar("recipient_email").notNull(),
   subject: text("subject").notNull(),
   body: text("body").notNull(),
-  emailType: varchar("email_type").notNull(), // 'individual', 'bulk', 'announcement'
+  htmlContent: text("html_content"), // Full HTML content for preview
+  emailType: varchar("email_type").notNull(), // 'individual', 'bulk', 'announcement', 'onboarding', 'automation'
   segment: varchar("segment"), // 'all', 'starter', 'pro', 'scale', 'at-risk', etc.
   status: varchar("status").default("sent"), // 'sent', 'failed', 'pending'
   sentAt: timestamp("sent_at").defaultNow(),
