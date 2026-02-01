@@ -3921,15 +3921,15 @@ export default function Admin() {
                   <div className="space-y-6">
                     {/* Summary Stats */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="rounded-lg p-4 border bg-muted/50">
+                      <div className="rounded-lg p-4 border bg-card">
                         <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{emailAnalytics.totalSent}</div>
                         <div className="text-sm text-muted-foreground">Total Emails Sent</div>
                       </div>
-                      <div className="rounded-lg p-4 border bg-muted/50">
+                      <div className="rounded-lg p-4 border bg-card">
                         <div className="text-2xl font-bold text-green-600 dark:text-green-400">{emailAnalytics.totalOpened}</div>
                         <div className="text-sm text-muted-foreground">Total Opens</div>
                       </div>
-                      <div className="rounded-lg p-4 border bg-muted/50">
+                      <div className="rounded-lg p-4 border bg-card">
                         <div className="text-2xl font-bold text-pink-600 dark:text-pink-400">
                           {emailAnalytics.totalSent > 0 
                             ? Math.round((emailAnalytics.totalOpened / emailAnalytics.totalSent) * 100)
@@ -3947,7 +3947,7 @@ export default function Admin() {
                           {emailAnalytics.byType.map((type) => {
                             const openRate = type.sent > 0 ? Math.round((type.opened / type.sent) * 100) : 0;
                             return (
-                              <div key={type.emailType} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                              <div key={type.emailType} className="flex items-center justify-between p-3 rounded-lg border bg-card">
                                 <div className="flex items-center gap-3">
                                   <div className="w-2 h-2 rounded-full bg-purple-500"></div>
                                   <span className="capitalize">

@@ -395,15 +395,8 @@ export async function sendOnboardingEmail(
         return false;
     }
 
-    // Create onboarding email record first to get the ID
-    const [onboardingEmailRecord] = await db.insert(onboardingEmails).values({
-      userId,
-      emailNumber,
-      emailType,
-    }).returning();
-
-    // Create tracking record with the onboarding email ID
-    const trackingId = await createTrackingRecord(userId, 'onboarding', onboardingEmailRecord.id);
+    // Generate tracking ID first (without inserting to DB yet)
+    const trackingId = uuidv4();
 
     // Replace placeholders with actual values
     let html = emailContent.html
@@ -414,6 +407,7 @@ export async function sendOnboardingEmail(
       .replace(/\{\{daysSinceSignup\}\}/g, personalization.daysSinceSignup.toString())
       .replace(/\{\{tierDisplayName\}\}/g, personalization.tierDisplayName);
 
+    // Send email first - only create records if successful
     const result = await resend.emails.send({
       from: FROM_EMAIL,
       to: user.email,
@@ -423,10 +417,23 @@ export async function sendOnboardingEmail(
 
     if (result.error) {
       console.error(`[OnboardingEmail] Failed to send to ${user.email}:`, result.error);
-      // Clean up the onboarding email record if send fails
-      await db.delete(onboardingEmails).where(eq(onboardingEmails.id, onboardingEmailRecord.id));
       return false;
     }
+
+    // Only create database records AFTER successful email send
+    const [onboardingEmailRecord] = await db.insert(onboardingEmails).values({
+      userId,
+      emailNumber,
+      emailType,
+    }).returning();
+
+    // Create tracking record with the onboarding email ID
+    await db.insert(emailOpens).values({
+      userId,
+      emailType: 'onboarding',
+      emailId: onboardingEmailRecord.id,
+      trackingId,
+    });
 
     await db.update(users)
       .set({ onboardingEmailsSent: emailNumber })
