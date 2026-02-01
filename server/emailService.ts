@@ -197,7 +197,7 @@ export const onboardingEmailTemplates = {
   }),
 
   gettingStarted: (firstName: string) => ({
-    subject: `${firstName}, here's how to get the most out of your Email Grader`,
+    subject: firstName === 'there' ? `Here's how to get the most out of your Email Grader` : `${firstName}, here's how to get the most out of your Email Grader`,
     previewText: 'Quick tips to improve your email scores instantly',
     html: emailWrapper(`
       <div class="header">
@@ -237,7 +237,7 @@ export const onboardingEmailTemplates = {
   }),
 
   academy: (firstName: string) => ({
-    subject: `${firstName}, unlock the secrets of email marketing`,
+    subject: firstName === 'there' ? `Unlock the secrets of email marketing` : `${firstName}, unlock the secrets of email marketing`,
     previewText: 'Free courses inside the Acceptafy Academy',
     html: emailWrapper(`
       <div class="header">
@@ -270,7 +270,7 @@ export const onboardingEmailTemplates = {
   }),
 
   deliverabilityTips: (firstName: string) => ({
-    subject: `${firstName}, 5 quick wins for better email deliverability`,
+    subject: firstName === 'there' ? `5 quick wins for better email deliverability` : `${firstName}, 5 quick wins for better email deliverability`,
     previewText: 'Boost your inbox placement with these proven tactics',
     html: emailWrapper(`
       <div class="header">
@@ -316,7 +316,7 @@ export const onboardingEmailTemplates = {
   }),
 
   upgrade: (firstName: string, tier: string) => ({
-    subject: `${firstName}, unlock unlimited email grades`,
+    subject: firstName === 'there' ? `Unlock unlimited email grades` : `${firstName}, unlock unlimited email grades`,
     previewText: 'Get Pro features and take your email marketing to the next level',
     html: emailWrapper(`
       <div class="header">
