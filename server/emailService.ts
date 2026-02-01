@@ -6,9 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const ACCEPTAFY_URL = process.env.REPLIT_DEV_DOMAIN 
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-  : 'https://acceptafy.replit.app';
+const ACCEPTAFY_URL = 'https://acceptafy.com';
 
 const FROM_EMAIL = 'Acceptafy <hello@updates.acceptafy.com>';
 
