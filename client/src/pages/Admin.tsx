@@ -3318,10 +3318,10 @@ export default function Admin() {
                       <div className="space-y-2">
                         <Label>Quick Load from Blog Post</Label>
                         <Select 
-                          value={selectedArticleId?.toString() || "scratch"} 
+                          value={selectedArticleId || "scratch"} 
                           onValueChange={(value) => {
                             if (value && value !== "scratch") {
-                              const article = publishedArticles.find(a => a.id === parseInt(value));
+                              const article = publishedArticles.find(a => a.id === value);
                               if (article) {
                                 setSelectedArticleId(article.id);
                                 setEmailSubject(`New on the Acceptafy Blog: ${article.title}`);
