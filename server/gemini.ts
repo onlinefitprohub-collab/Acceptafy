@@ -2872,338 +2872,173 @@ export interface GeneratedArticle {
 const ARTICLE_FORMATS = {
   'deep-dive': {
     name: 'Deep Dive Analysis',
-    description: 'Comprehensive, in-depth exploration with expert insights and research',
-    tone: 'authoritative and analytical',
+    description: 'In-depth exploration - but structure it YOUR way based on the topic',
+    tone: 'authoritative, opinionated, insider perspective',
     structure: `
-<h2>[Compelling Hook Title]</h2>
-<p>Open with a provocative question or surprising statistic that challenges conventional wisdom...</p>
+DO NOT follow a template. Create organic structure based on what the topic actually needs.
 
-<h2>The Current State of [Topic]</h2>
-<p>Industry context and why this matters now more than ever...</p>
-<blockquote><p><strong>Industry Data:</strong> [Specific statistic from recent study]</p></blockquote>
+OPENING OPTIONS (pick ONE that fits - never use "You" + emotional assumption):
+- Lead with a surprising data point that contradicts common belief
+- Start with a bold, contrarian claim you'll defend
+- Open with a specific technical detail that hooks experts
+- Begin with a question that exposes a common misconception
 
-<h2>Breaking Down the Core Concepts</h2>
-<h3>Understanding [Concept A]</h3>
-<p>Deep technical explanation with examples...</p>
-<h3>The Role of [Concept B]</h3>
-<p>How this interconnects with the broader ecosystem...</p>
-<h3>Advanced Considerations</h3>
-<p>Nuances that separate beginners from experts...</p>
+BODY REQUIREMENTS:
+- Create H2s specific to THIS topic (not generic like "Understanding the Basics")
+- Go deep on 2-3 aspects rather than shallow on 10
+- Include at least one "actually, the common advice is wrong because..." moment
+- Reference specific tools/platforms by name (Gmail Postmaster, Validity, BIMI, MXToolbox)
+- If you cite a stat, include the source and year
 
-<h2>Expert Strategies That Actually Work</h2>
-<p>Beyond the basics - tactics used by high-performing teams:</p>
-<ol>
-<li><strong>Strategy 1:</strong> Detailed implementation with expected results</li>
-<li><strong>Strategy 2:</strong> Step-by-step with metrics to track</li>
-<li><strong>Strategy 3:</strong> Advanced technique with case example</li>
-</ol>
-
-<h2>The Hidden Pitfalls Nobody Talks About</h2>
-<ul>
-<li><strong>Pitfall 1:</strong> Why most marketers get this wrong</li>
-<li><strong>Pitfall 2:</strong> The counterintuitive truth about...</li>
-<li><strong>Pitfall 3:</strong> What the data actually shows</li>
-</ul>
-
-<h2>Future-Proofing Your Approach</h2>
-<p>Emerging trends and how to stay ahead...</p>
-
-<h2>Key Takeaways</h2>
-<p>Synthesized insights and action framework...</p>`
+ENDING:
+- Don't summarize what you just said
+- End with an insight that gives readers something to think about
+- Or end with a specific action they can take in the next 5 minutes`
   },
   'case-study': {
-    name: 'Real-World Case Study',
-    description: 'Story-driven analysis with concrete examples and measurable results',
-    tone: 'narrative and evidence-based',
+    name: 'Hypothetical Scenario Analysis',
+    description: 'Walk through a realistic scenario - clearly framed as hypothetical, not fabricated',
+    tone: 'analytical, specific, grounded in real techniques',
     structure: `
-<h2>The Challenge: [Problem Statement]</h2>
-<p>Set the scene with a relatable scenario that many readers face...</p>
+CRITICAL: Do NOT pretend you have a real client. Use "Picture this scenario:" or "Imagine a company that..." framing.
 
-<h2>Background: Understanding the Stakes</h2>
-<p>What was at risk and why traditional approaches weren't working...</p>
-<blockquote><p><strong>The Reality:</strong> [Specific challenge with numbers]</p></blockquote>
+OPENING OPTIONS (pick ONE):
+- Start with a specific, measurable problem: "A 45% open rate drops to 12% over 3 months. What happened?"
+- Open with a technical observation: "Your DMARC reports show 30% of your emails failing alignment..."
+- Lead with a counterintuitive insight about the scenario
 
-<h2>The Turning Point</h2>
-<p>What changed and the decision to try a new approach...</p>
+SCENARIO REQUIREMENTS:
+- Make the scenario specific enough to be useful (mention specific tools, numbers, platforms)
+- Walk through the diagnosis process step-by-step
+- Show the actual technical checks you'd run (MXToolbox, Gmail Postmaster, Validity)
+- Include realistic numbers and timelines
 
-<h2>The Strategy: Breaking It Down</h2>
-<h3>Phase 1: [Initial Action]</h3>
-<p>What was implemented first and immediate observations...</p>
-<h3>Phase 2: [Optimization]</h3>
-<p>Refinements based on early data...</p>
-<h3>Phase 3: [Scaling]</h3>
-<p>How success was amplified...</p>
-
-<h2>The Results: By the Numbers</h2>
-<ul>
-<li><strong>Metric 1:</strong> Before vs. after comparison</li>
-<li><strong>Metric 2:</strong> Percentage improvement</li>
-<li><strong>Metric 3:</strong> Long-term impact</li>
-</ul>
-
-<h2>Lessons Learned</h2>
-<p>What would be done differently and key insights gained...</p>
-
-<h2>How to Apply This to Your Campaigns</h2>
-<ol>
-<li>Actionable step with context</li>
-<li>Practical implementation tip</li>
-<li>Quick win you can start today</li>
-</ol>
-
-<h2>The Bottom Line</h2>
-<p>Summarized learnings with encouragement to take action...</p>`
+RESOLUTION:
+- Don't wrap up too neatly - real problems often have multiple contributing factors
+- Include what you'd monitor going forward
+- End with a specific action readers can apply to their own situation`
   },
   'comparison': {
     name: 'Comparison & Analysis',
-    description: 'Side-by-side evaluation helping readers make informed decisions',
-    tone: 'objective and consultative',
+    description: 'Honest comparison - take a stance, don\'t sit on the fence',
+    tone: 'opinionated but fair, insider perspective',
     structure: `
-<h2>The [Topic] Dilemma: Finding the Right Approach</h2>
-<p>Why this decision matters and what's really at stake...</p>
+OPENING OPTIONS (pick ONE):
+- Lead with your actual recommendation, then explain why
+- Start with the common misconception about this comparison
+- Open with when you'd choose each option (situational framing)
 
-<h2>Understanding Your Options</h2>
-<p>A quick overview of the landscape before diving deep...</p>
+COMPARISON APPROACH:
+- Don't pretend to be neutral - share your actual opinion
+- Get specific: name the actual tools, platforms, or approaches
+- Include edge cases and nuances ("this works UNLESS...")
+- Acknowledge where your preferred option falls short
 
-<h2>Option A: [First Approach]</h2>
-<h3>How It Works</h3>
-<p>Core mechanics and methodology...</p>
-<h3>Pros</h3>
-<ul>
-<li>Advantage with specific benefit</li>
-<li>Another strength</li>
-<li>When this shines</li>
-</ul>
-<h3>Cons</h3>
-<ul>
-<li>Limitation to consider</li>
-<li>Potential drawback</li>
-</ul>
-
-<h2>Option B: [Second Approach]</h2>
-<h3>How It Works</h3>
-<p>Core mechanics and methodology...</p>
-<h3>Pros</h3>
-<ul>
-<li>Advantage with specific benefit</li>
-<li>Another strength</li>
-<li>When this shines</li>
-</ul>
-<h3>Cons</h3>
-<ul>
-<li>Limitation to consider</li>
-<li>Potential drawback</li>
-</ul>
-
-<h2>Head-to-Head Comparison</h2>
-<p>Critical factors side by side:</p>
-<ul>
-<li><strong>Cost/Effort:</strong> Comparison analysis</li>
-<li><strong>Results Timeline:</strong> What to expect</li>
-<li><strong>Best Use Case:</strong> When to choose each</li>
-</ul>
-
-<h2>Expert Recommendation</h2>
-<p>Based on different scenarios, here's our guidance...</p>
-
-<h2>Making Your Decision</h2>
-<p>Framework for choosing the right path for your situation...</p>`
+CRITICAL:
+- Skip generic pros/cons lists - weave the comparison into the discussion
+- Include specific scenarios: "If you're sending <10k emails/month, then..."
+- Reference actual pricing, features, or limitations where relevant
+- End with a clear recommendation or decision framework`
   },
   'problem-solution': {
     name: 'Problem-Solution Framework',
-    description: 'Focused on specific pain points with targeted, actionable fixes',
-    tone: 'empathetic and solution-oriented',
+    description: 'Diagnose a specific problem and walk through the fix',
+    tone: 'technical, practical, no-nonsense',
     structure: `
-<h2>Why [Problem] Is Costing You More Than You Think</h2>
-<p>The hidden impact that most marketers underestimate...</p>
-<blockquote><p><strong>The Cost:</strong> [Specific impact with data]</p></blockquote>
+OPENING OPTIONS (pick ONE):
+- Start with the symptom readers will recognize: "Open rates tanking despite good content?"
+- Lead with the misdiagnosis most people make
+- Open with the technical root cause that surprises people
 
-<h2>Root Causes: What's Really Going Wrong</h2>
-<h3>Cause 1: [Specific Issue]</h3>
-<p>How to identify if this affects you and why it happens...</p>
-<h3>Cause 2: [Another Issue]</h3>
-<p>Signs to look for and common misconceptions...</p>
-<h3>Cause 3: [Third Issue]</h3>
-<p>The least obvious but often most impactful factor...</p>
+DIAGNOSIS SECTION:
+- Walk through how to actually identify this problem (specific tools, checks)
+- Explain WHY this happens at a technical level
+- Include the nuances - when it looks like X but is actually Y
 
-<h2>The Solution Framework</h2>
-<p>A systematic approach to addressing each root cause...</p>
+SOLUTION SECTION:
+- Provide actual step-by-step with specific commands, settings, or actions
+- Include what success looks like (numbers, indicators)
+- Mention common mistakes people make when implementing the fix
 
-<h2>Fix 1: [Specific Solution]</h2>
-<p>Step-by-step implementation:</p>
-<ol>
-<li>First action with expected outcome</li>
-<li>Second step building on the first</li>
-<li>Verification and optimization</li>
-</ol>
-
-<h2>Fix 2: [Another Solution]</h2>
-<p>Implementation guide:</p>
-<ol>
-<li>Preparation steps</li>
-<li>Core implementation</li>
-<li>Testing and refinement</li>
-</ol>
-
-<h2>Fix 3: [Third Solution]</h2>
-<p>Advanced remediation:</p>
-<ol>
-<li>When to apply this fix</li>
-<li>How to implement correctly</li>
-<li>Measuring success</li>
-</ol>
-
-<h2>Prevention: Ensuring It Doesn't Happen Again</h2>
-<ul>
-<li>Monitoring practice to adopt</li>
-<li>Regular maintenance task</li>
-<li>Early warning indicators</li>
-</ul>
-
-<h2>Quick Action Checklist</h2>
-<p>Immediate steps you can take right now...</p>`
+CRITICAL:
+- Don't pad with obvious advice
+- Each section should teach something specific
+- Include at least one "most people don't realize..." insight`
   },
   'trend-analysis': {
     name: 'Trend & Future Analysis',
-    description: 'Forward-looking insights on industry changes and what they mean',
-    tone: 'visionary and thought-leadership',
+    description: 'Analyze a real shift in the industry with specific evidence',
+    tone: 'analytical, forward-looking, grounded in data',
     structure: `
-<h2>The Shift: How [Topic] Is Changing Everything</h2>
-<p>The transformation happening right now and what sparked it...</p>
+OPENING OPTIONS (pick ONE):
+- Start with a specific change you've observed (Gmail policy update, new RFC, ISP behavior shift)
+- Lead with data showing a trend (cite Validity, Litmus, or other real sources)
+- Open with a prediction and the evidence supporting it
 
-<h2>Where We Are Today</h2>
-<p>Current landscape assessment with key indicators...</p>
-<blockquote><p><strong>Current State:</strong> [Market data or trend indicator]</p></blockquote>
+ANALYSIS REQUIREMENTS:
+- Reference specific, recent changes (actual dates, version numbers, policy names)
+- Connect technical changes to practical impact
+- Include what most people are missing about this trend
+- Be specific about timelines and who this affects
 
-<h2>The Forces Driving Change</h2>
-<h3>Driver 1: [Technology/Market Shift]</h3>
-<p>How this is reshaping expectations and practices...</p>
-<h3>Driver 2: [Consumer/Industry Evolution]</h3>
-<p>The behavioral changes fueling this trend...</p>
-<h3>Driver 3: [Regulatory/Competitive Pressure]</h3>
-<p>External forces accelerating adoption...</p>
-
-<h2>What the Future Holds</h2>
-<h3>Near-Term (6-12 Months)</h3>
-<p>Changes to expect and prepare for...</p>
-<h3>Medium-Term (1-2 Years)</h3>
-<p>Emerging patterns to watch...</p>
-<h3>Long-Term Vision</h3>
-<p>Where this ultimately leads...</p>
-
-<h2>Winners and Losers</h2>
-<ul>
-<li><strong>Who Will Thrive:</strong> Characteristics of future success</li>
-<li><strong>Who Will Struggle:</strong> Warning signs and pitfalls</li>
-<li><strong>The Opportunity:</strong> Where the smart money is going</li>
-</ul>
-
-<h2>How to Position Yourself</h2>
-<ol>
-<li>Immediate action to gain first-mover advantage</li>
-<li>Strategic investment to make now</li>
-<li>Skills and capabilities to develop</li>
-</ol>
-
-<h2>The Bottom Line</h2>
-<p>Key predictions and call to proactive action...</p>`
+PREDICTIONS:
+- Make concrete predictions, not vague "things will change"
+- Explain what readers should do NOW vs. wait on
+- Acknowledge uncertainty where appropriate`
   },
   'quick-tips': {
     name: 'Actionable Quick Tips',
-    description: 'Scannable, immediately actionable advice with clear takeaways',
-    tone: 'energetic and practical',
+    description: 'Specific, non-obvious tips - not basic advice everyone knows',
+    tone: 'direct, specific, insider knowledge',
     structure: `
-<h2>[Number] [Topic] Tips That Actually Move the Needle</h2>
-<p>Skip the fluff - here's what top performers actually do...</p>
+CRITICAL: Every tip must be SPECIFIC and NON-OBVIOUS. Skip basic advice.
 
-<h2>Tip 1: [Powerful First Tip]</h2>
-<p>Why it works and how to implement immediately...</p>
-<p><strong>Quick Win:</strong> Do this today for instant improvement</p>
+BAD TIP EXAMPLE: "Write compelling subject lines" (too vague, everyone knows this)
+GOOD TIP EXAMPLE: "Gmail weighs the first 3 words of your subject line most heavily - front-load your hook"
 
-<h2>Tip 2: [Second Actionable Tip]</h2>
-<p>The reasoning behind this approach...</p>
-<p><strong>Quick Win:</strong> Simple action you can take in 5 minutes</p>
+OPENING: Skip the intro paragraph. Jump straight to the first tip.
 
-<h2>Tip 3: [Third Tip]</h2>
-<p>How this connects to better results...</p>
-<p><strong>Quick Win:</strong> Immediate implementation step</p>
+TIP REQUIREMENTS:
+- Each tip must include a specific, actionable instruction
+- Include the WHY - the technical or psychological reason it works
+- Vary tip length (some 2 sentences, some a full paragraph)
+- At least 2 tips should be counterintuitive or challenge common advice
+- Reference specific tools or platforms where relevant
 
-<h2>Tip 4: [Fourth Tip]</h2>
-<p>The overlooked tactic that makes a difference...</p>
-<p><strong>Quick Win:</strong> Add this to your workflow now</p>
-
-<h2>Tip 5: [Fifth Tip]</h2>
-<p>What separates good from great...</p>
-<p><strong>Quick Win:</strong> Test this in your next campaign</p>
-
-<h2>Tip 6: [Sixth Tip]</h2>
-<p>Advanced insight for maximum impact...</p>
-<p><strong>Quick Win:</strong> Schedule this for implementation</p>
-
-<h2>Tip 7: [Seventh Tip]</h2>
-<p>The multiplier effect of getting this right...</p>
-<p><strong>Quick Win:</strong> Bookmark and reference regularly</p>
-
-<h2>Bonus: The One Thing Most People Miss</h2>
-<p>The counterintuitive insight that changes everything...</p>
-
-<h2>Your Action Plan</h2>
-<ul>
-<li><strong>This Week:</strong> Tips to implement immediately</li>
-<li><strong>This Month:</strong> Deeper integrations to work on</li>
-<li><strong>Ongoing:</strong> Habits to develop</li>
-</ul>`
+STRUCTURE:
+- Use varied H2s (not "Tip 1, Tip 2, Tip 3" - use descriptive headers)
+- Don't force exactly 7 tips - use however many you have that are genuinely useful (5-9)
+- End with a strong final insight, not a summary`
   },
   'myth-busters': {
     name: 'Myth Busters',
-    description: 'Debunking misconceptions with evidence-based corrections',
-    tone: 'direct and enlightening',
+    description: 'Challenge common beliefs with evidence - be genuinely contrarian',
+    tone: 'confident, evidence-based, slightly provocative',
     structure: `
-<h2>The Myths About [Topic] That Are Hurting Your Results</h2>
-<p>Time to separate fact from fiction and stop making these costly mistakes...</p>
+CRITICAL: Pick myths that are ACTUALLY widely believed, not strawmen. The reader should think "wait, I believed that!"
 
-<h2>Myth 1: "[Common Misconception]"</h2>
-<h3>The Reality</h3>
-<p>What the data actually shows and why this belief persists...</p>
-<blockquote><p><strong>The Truth:</strong> [Evidence-based correction with stat]</p></blockquote>
-<p><strong>What to Do Instead:</strong> Correct approach with reasoning</p>
+OPENING OPTIONS (pick ONE):
+- Start with the most surprising myth debunk
+- Open with data that contradicts a common assumption
+- Lead with "most advice about X is wrong, and here's why"
 
-<h2>Myth 2: "[Second Misconception]"</h2>
-<h3>The Reality</h3>
-<p>Where this myth came from and why it's wrong...</p>
-<blockquote><p><strong>The Truth:</strong> [Factual correction]</p></blockquote>
-<p><strong>What to Do Instead:</strong> Better practice to adopt</p>
+MYTH FORMAT (vary this - don't use identical structure for each):
+- State the myth clearly
+- Explain why people believe it (makes it feel legitimate)
+- Present the evidence that contradicts it
+- Give the nuanced reality (rarely black and white)
 
-<h2>Myth 3: "[Third Misconception]"</h2>
-<h3>The Reality</h3>
-<p>The nuance that most people miss...</p>
-<blockquote><p><strong>The Truth:</strong> [Accurate understanding]</p></blockquote>
-<p><strong>What to Do Instead:</strong> Recommended approach</p>
+REQUIREMENTS:
+- Include actual data or cite real sources when debunking
+- Acknowledge when the myth has a kernel of truth
+- Don't be preachy - present evidence and let readers decide
+- At least one myth should challenge advice that even experts often give
 
-<h2>Myth 4: "[Fourth Misconception]"</h2>
-<h3>The Reality</h3>
-<p>Why experts disagree with popular opinion...</p>
-<blockquote><p><strong>The Truth:</strong> [Research-backed insight]</p></blockquote>
-<p><strong>What to Do Instead:</strong> Evidence-based practice</p>
-
-<h2>Myth 5: "[Fifth Misconception]"</h2>
-<h3>The Reality</h3>
-<p>The most dangerous myth of all...</p>
-<blockquote><p><strong>The Truth:</strong> [Critical correction]</p></blockquote>
-<p><strong>What to Do Instead:</strong> The right way forward</p>
-
-<h2>Why These Myths Persist</h2>
-<p>Understanding the psychology and history behind misinformation...</p>
-
-<h2>Building a Fact-Based Strategy</h2>
-<ul>
-<li>How to evaluate claims critically</li>
-<li>Trusted sources to rely on</li>
-<li>Testing methods to validate approaches</li>
-</ul>
-
-<h2>The Truth Sets You Free</h2>
-<p>Embrace evidence-based practices for real results...</p>`
+STRUCTURE:
+- Don't use identical "Myth X" / "The Reality" structure for every section
+- Vary how you present each debunk
+- Include 4-6 myths (not forced to be exactly 5)
+- End with an actionable takeaway, not a generic "embrace evidence" statement`
   }
 };
 
@@ -3404,12 +3239,27 @@ export const generateFullArticle = async (topicOrOptions: string | ArticleGenera
     
     // Build internal linking context for other articles
     let internalLinkingContext = '';
+    let existingArticleContext = '';
     if (existingArticles.length > 0) {
       internalLinkingContext = `
 INTERNAL ARTICLE LINKING:
 Include 2-4 internal links to these existing articles where contextually relevant:
 ${existingArticles.map(a => `- "${a.title}" (link: /resources/${a.slug})`).join('\n')}
 Use natural anchor text like: <a href="/resources/slug-here">descriptive text</a>`;
+
+      // Add context about existing articles so AI avoids repeating angles
+      existingArticleContext = `
+EXISTING ARTICLES (DO NOT REPEAT THESE ANGLES OR APPROACHES):
+The following articles already exist on this site. Your article MUST take a DIFFERENT angle, use a DIFFERENT opening style, and cover DIFFERENT specific points:
+${existingArticles.slice(0, 10).map(a => `- "${a.title}"`).join('\n')}
+
+CRITICAL: Read these titles carefully. Do NOT:
+- Use similar titles or structures
+- Cover the same specific points they likely cover
+- Use the same opening style (if one starts with a question, start yours differently)
+- Repeat the same "myths" or "tips" that would naturally appear in these articles
+
+Instead: Find the OVERLOOKED angle. What aspect of this topic do the existing articles likely NOT cover? Lead with that.`;
     }
 
     // Acceptafy feature linking - contextual CTAs to platform tools
@@ -3462,8 +3312,9 @@ ${titleInstruction}
 ${format.description}
 
 **Writing Tone:** ${format.tone}
+${existingArticleContext}
 
-CRITICAL: Create a COMPLETELY UNIQUE article. Do NOT follow generic templates. Find a FRESH ANGLE that hasn't been covered before.
+BEFORE YOU WRITE: Think about what makes YOUR take on this topic DIFFERENT. What angle hasn't been covered? What do most articles about this topic get WRONG? Start from that unique insight, not from a template.
 
 Generate with these MANDATORY SEO requirements:
 1. Title: ${providedTitle ? `Use EXACTLY: "${providedTitle}"` : 'Keyword-rich, compelling, 50-60 characters, include primary keyword near the start'}
@@ -3525,23 +3376,36 @@ CONTENT STRUCTURE - Use this specific format for ${format.name}:
 ${format.structure}
 
 BANNED PHRASES (NEVER USE - THESE SCREAM "AI WROTE THIS"):
+Opening patterns to NEVER use:
+- "You pour/poured resources into...", "You've worked hard on...", "You've crafted the perfect..."
 - "In today's", "In the world of", "In the realm of", "In the landscape of"
-- "Here's the deal:", "Here's the thing:", "Here's why:", "Here's what you need to know"
-- "Gone are the days", "Long gone are the days"
-- "It's a game of", "It's all about", "At its core"
+- Any sentence starting with "You" followed by an emotional assumption about the reader's feelings or efforts
+
+Transition phrases to NEVER use:
+- "Here's the deal:", "Here's the thing:", "Here's why:", "Here's the kicker:", "Here's what you need to know"
+- "The reality is", "The truth is", "The fact is", "The bottom line is"
 - "Let's dive in", "Let's explore", "Let's break it down", "Without further ado"
-- "You've poured your heart into", "You've worked hard on"
-- "The reality is", "The truth is", "The fact is"
-- "I remember when", "When I worked with a client" (fabricated anecdotes)
-- "Landscape", "realm", "robust", "comprehensive", "leverage", "utilize", "streamline"
-- "Game-changer", "take it to the next level", "unlock the power of"
-- "Whether you're a... or a...", "From X to Y"
-- "Not by a long shot", "And that's just the beginning"
-- "This isn't just about X, it's about Y"
-- "The good news is", "The bad news is"
-- "First things first", "Last but not least"
+- "But wait—", "Now, here's where it gets interesting", "And that's just the beginning"
+
+Clichés to NEVER use:
+- "Gone are the days", "Long gone are the days", "Times have changed"
+- "It's a game of", "It's all about", "At its core", "At the end of the day"
+- "Game-changer", "take it to the next level", "unlock the power of", "the secret sauce"
+- "Whether you're a... or a...", "From X to Y", "From beginners to experts"
+- "Not by a long shot", "This isn't just about X, it's about Y"
+- "The good news is", "The bad news is", "First things first", "Last but not least"
+- "It's a gut punch", "It's a painful reality", "It's frustrating"
+
+Words to avoid:
+- "Landscape", "realm", "robust", "comprehensive", "leverage", "utilize", "streamline", "optimize"
+- "Cutting-edge", "best-in-class", "world-class", "next-generation"
 - "AI" (never mention AI anywhere)
-- Any sentence starting with "You" followed by an emotional assumption about the reader
+
+Structural patterns to avoid:
+- "Myth 1: ... / The Reality" repeated pattern
+- "Tip 1, Tip 2, Tip 3..." numbered tips format
+- Starting every paragraph the same way
+- Fabricated client anecdotes: "I remember when", "When I worked with a client", "One company I worked with"
 
 UNIQUENESS REQUIREMENTS:
 - Before writing, identify what EVERYONE else says about this topic, then find a contrarian or overlooked angle
