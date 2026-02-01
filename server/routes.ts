@@ -3,6 +3,8 @@ import { type Server } from "http";
 import bcrypt from "bcrypt";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
+import { db } from "./db";
+import { emailOpens } from "@shared/schema";
 import { setupAuth, isAuthenticated, optionalAuth, isAdmin } from "./replitAuth";
 import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
 import { 
