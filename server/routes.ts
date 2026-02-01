@@ -4824,6 +4824,34 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Clear email tracking records (admin only)
+  app.delete('/api/admin/email-tracking', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await db.delete(emailOpens);
+      res.json({ success: true, message: 'Email tracking records cleared' });
+    } catch (error) {
+      console.error('Clear email tracking error:', error);
+      res.status(500).json({ message: 'Failed to clear email tracking records' });
+    }
+  });
+
+  // Email preview endpoint (returns branded HTML)
+  app.post('/api/admin/email-preview', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { subject, previewText, body } = req.body;
+      if (!subject || !body) {
+        return res.status(400).json({ message: 'Subject and body are required' });
+      }
+      
+      const { generateEmailPreview } = await import('./emailService');
+      const html = generateEmailPreview(subject, body, previewText || '');
+      res.json({ html });
+    } catch (error) {
+      console.error('Email preview error:', error);
+      res.status(500).json({ message: 'Failed to generate email preview' });
+    }
+  });
+
   // Admin blog announcement endpoint
   app.post('/api/admin/blog-announcement', isAdmin, async (req: any, res) => {
     try {

@@ -32,6 +32,54 @@ const baseEmailStyles = `
   .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(124, 58, 237, 0.5), transparent); margin: 30px 0; }
 `;
 
+export const getBaseEmailStyles = () => baseEmailStyles;
+
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+export const generateEmailPreview = (subject: string, body: string, previewText: string = ''): string => {
+  const safeSubject = escapeHtml(subject);
+  const safePreviewText = escapeHtml(previewText);
+  const htmlContent = escapeHtml(body)
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Email Preview</title>
+  <style>${baseEmailStyles}</style>
+</head>
+<body>
+  <div style="display:none;max-height:0;overflow:hidden;">${safePreviewText}</div>
+  <div class="container">
+    <div class="header">
+      <h1>${safeSubject}</h1>
+      ${safePreviewText ? `<p>${safePreviewText}</p>` : ''}
+    </div>
+    <div class="content">
+      <p>${htmlContent}</p>
+    </div>
+    <div class="footer">
+      <p>Acceptafy - Email Marketing Intelligence</p>
+      <p><a href="#">Unsubscribe</a> | <a href="#">Visit Acceptafy</a></p>
+      <p style="margin-top: 15px;">This email was sent by Acceptafy.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+};
+
 const emailWrapper = (content: string, previewText: string = '') => `
 <!DOCTYPE html>
 <html lang="en">

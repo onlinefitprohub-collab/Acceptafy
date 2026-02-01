@@ -420,6 +420,8 @@ export default function Admin() {
   const [userSelectorOpen, setUserSelectorOpen] = useState(false);
   const [emailSelectedUserId, setEmailSelectedUserId] = useState<string | null>(null);
   const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [brandedPreviewHtml, setBrandedPreviewHtml] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
   
   // Announcement management state
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -3659,11 +3661,36 @@ export default function Admin() {
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
-                        onClick={() => setShowEmailPreview(true)}
-                        disabled={!emailSubject || !emailBody}
+                        onClick={async () => {
+                          setPreviewLoading(true);
+                          try {
+                            const response = await fetch('/api/admin/email-preview', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                subject: emailSubject.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe'),
+                                previewText: emailPreviewLine,
+                                body: emailBody.replace(/\{\{firstName\}\}/g, 'John').replace(/\{\{lastName\}\}/g, 'Doe').replace(/\{\{email\}\}/g, 'john@example.com'),
+                              }),
+                            });
+                            const data = await response.json();
+                            if (data.html) {
+                              setBrandedPreviewHtml(data.html);
+                            }
+                          } catch (error) {
+                            console.error('Preview error:', error);
+                          }
+                          setPreviewLoading(false);
+                          setShowEmailPreview(true);
+                        }}
+                        disabled={!emailSubject || !emailBody || previewLoading}
                         data-testid="button-preview-email"
                       >
-                        <Eye className="h-4 w-4 mr-2" />
+                        {previewLoading ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                          <Eye className="h-4 w-4 mr-2" />
+                        )}
                         Preview
                       </Button>
                       <Button
@@ -3691,16 +3718,19 @@ export default function Admin() {
                     </div>
 
                     {/* Email Preview Dialog */}
-                    <Dialog open={showEmailPreview} onOpenChange={setShowEmailPreview}>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <Dialog open={showEmailPreview} onOpenChange={(open) => {
+                      setShowEmailPreview(open);
+                      if (!open) setBrandedPreviewHtml(null);
+                    }}>
+                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
                         <DialogHeader>
                           <DialogTitle>Email Preview</DialogTitle>
                           <DialogDescription>
-                            Preview how your email will appear
+                            Preview how your email will appear in the Acceptafy template
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
-                          <div className="border rounded-lg p-4 space-y-2">
+                          <div className="border rounded-lg p-3 space-y-1 bg-card">
                             <div className="flex items-center gap-2 text-sm">
                               <span className="text-muted-foreground font-medium">To:</span>
                               <span>{isBulkEmail ? `${emailSegment} segment` : (emailRecipient || 'recipient@example.com')}</span>
@@ -3716,14 +3746,25 @@ export default function Admin() {
                               </div>
                             )}
                           </div>
-                          <div className="border rounded-lg p-4 bg-muted/30">
-                            <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                              {emailBody
-                                .replace(/\{\{firstName\}\}/g, 'John')
-                                .replace(/\{\{lastName\}\}/g, 'Doe')
-                                .replace(/\{\{email\}\}/g, 'john@example.com')}
+                          {brandedPreviewHtml ? (
+                            <div className="border rounded-lg overflow-hidden" style={{ height: '500px' }}>
+                              <iframe
+                                srcDoc={brandedPreviewHtml}
+                                title="Email Preview"
+                                className="w-full h-full border-0"
+                                sandbox=""
+                              />
                             </div>
-                          </div>
+                          ) : (
+                            <div className="border rounded-lg p-4 bg-card">
+                              <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                                {emailBody
+                                  .replace(/\{\{firstName\}\}/g, 'John')
+                                  .replace(/\{\{lastName\}\}/g, 'Doe')
+                                  .replace(/\{\{email\}\}/g, 'john@example.com')}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button variant="outline" onClick={() => setShowEmailPreview(false)}>
@@ -3903,14 +3944,40 @@ export default function Admin() {
 
             {/* Email Analytics Card */}
             <Card data-testid="email-analytics-card" className="mb-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Email Open Tracking Analytics
-                </CardTitle>
-                <CardDescription>
-                  Track email open rates across all email types
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Email Open Tracking Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    Track email open rates across all email types
+                  </CardDescription>
+                </div>
+                {emailAnalytics && emailAnalytics.totalSent > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (!confirm('Are you sure you want to clear all email tracking data? This cannot be undone.')) return;
+                      try {
+                        const response = await fetch('/api/admin/email-tracking', { method: 'DELETE' });
+                        if (response.ok) {
+                          toast({ title: 'Email tracking data cleared' });
+                          queryClient.invalidateQueries({ queryKey: ['/api/admin/email-analytics'] });
+                        } else {
+                          toast({ title: 'Failed to clear data', variant: 'destructive' });
+                        }
+                      } catch (error) {
+                        toast({ title: 'Error clearing data', variant: 'destructive' });
+                      }
+                    }}
+                    data-testid="button-clear-tracking"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Clear Data
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 {emailAnalyticsLoading ? (
