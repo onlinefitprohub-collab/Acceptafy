@@ -10,7 +10,7 @@ const ACCEPTAFY_URL = process.env.REPLIT_DEV_DOMAIN
   ? `https://${process.env.REPLIT_DEV_DOMAIN}`
   : 'https://acceptafy.replit.app';
 
-const FROM_EMAIL = 'Acceptafy <hello@acceptafy.com>';
+const FROM_EMAIL = 'Acceptafy <hello@updates.acceptafy.com>';
 
 const baseEmailStyles = `
   body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #0f0f23; color: #e2e8f0; }
