@@ -3042,6 +3042,73 @@ STRUCTURE:
   }
 };
 
+// Randomized writing voice modifiers for genuine variety
+const VOICE_MODIFIERS = [
+  { name: 'The Skeptic', instruction: 'Write as someone who was initially skeptical of common advice but discovered the truth through testing. Challenge assumptions throughout.' },
+  { name: 'The Insider', instruction: 'Write as someone who works at an ESP and sees the backend data. Share insights that only someone with access to deliverability systems would know.' },
+  { name: 'The Debugger', instruction: 'Write like a developer troubleshooting a problem. Methodical, technical, focused on root causes rather than symptoms.' },
+  { name: 'The Pragmatist', instruction: 'Write for busy marketers who need results fast. No fluff, just what works. Be blunt about what matters and what does not.' },
+  { name: 'The Strategist', instruction: 'Write with a long-term perspective. Focus on compounding effects and systemic approaches rather than quick fixes.' },
+  { name: 'The Analyst', instruction: 'Lead with data and evidence. Every claim should be backed by numbers, studies, or observable patterns. Be precise.' },
+  { name: 'The Contrarian', instruction: 'Take the opposite stance of popular advice where justified. Challenge the status quo and explain why conventional wisdom fails.' },
+  { name: 'The Storyteller', instruction: 'Use narrative structure with specific scenarios throughout. Paint pictures of what happens when things go right vs wrong.' },
+];
+
+// Randomized opening styles to prevent pattern repetition
+const OPENING_STYLES = [
+  'Start with a single provocative sentence that challenges a common belief about this topic. Then pause before explaining.',
+  'Open with a specific number or statistic from a real source (Validity, Litmus, Return Path) - only if you know a real one. Make it surprising.',
+  'Begin with a hypothetical scenario that illustrates the problem: "Picture this: [specific scenario related to the topic]..."',
+  'Start mid-action, as if the reader caught you in the middle of explaining something to a colleague.',
+  'Open with what you are NOT going to cover in this article, then pivot to what actually matters.',
+  'Lead with a counterintuitive conclusion about this topic, then spend the article explaining how you got there.',
+  'Start with a direct question that the reader probably has about this topic, then answer it immediately.',
+  'Open with "Most articles about this topic get one thing wrong..." and explain what that is.',
+  'Begin with a specific tool or platform feature that most people overlook when dealing with this topic.',
+  'Start with a common mistake you see repeatedly regarding this topic and why it persists.',
+];
+
+// Randomized structural constraints
+const STRUCTURAL_VARIATIONS = [
+  'Use exactly 4 H2 sections, but make each one answer a specific question.',
+  'Structure as a journey from problem to diagnosis to solution, with tangents for nuance.',
+  'Use H2s that are full sentences or provocative statements, not generic labels.',
+  'Include one section that directly contradicts advice given earlier (then explains the nuance).',
+  'Structure around a timeline: what to do first, second, third - with specific timeframes.',
+  'Build each section around a specific tool or platform (Gmail Postmaster, MXToolbox, etc.).',
+  'Use a "zoom in" structure: start with big picture, then go increasingly specific.',
+  'Structure as layers of depth: surface-level understanding, then intermediate, then advanced.',
+  'Build around specific scenarios: "If you are seeing X, then Y. If you are seeing Z, then W."',
+  'Use comparison structure throughout: what most people do vs what actually works.',
+];
+
+// Generate a unique seed for each article to force differentiation
+const generateUniquenessConstraints = () => {
+  const voice = VOICE_MODIFIERS[Math.floor(Math.random() * VOICE_MODIFIERS.length)];
+  const opening = OPENING_STYLES[Math.floor(Math.random() * OPENING_STYLES.length)];
+  const structure = STRUCTURAL_VARIATIONS[Math.floor(Math.random() * STRUCTURAL_VARIATIONS.length)];
+  
+  // Random specific constraints to inject unpredictability (without forcing fabrication)
+  const specificConstraints = [
+    'Focus on ONE specific aspect of this topic that most articles overlook entirely.',
+    'Include a section that addresses a common misconception head-on.',
+    'Structure at least one section as a direct "if this, then that" decision tree.',
+    'Include specific tool names (Gmail Postmaster, MXToolbox, Validity) with what to look for in each.',
+    'Address what happens when the "standard advice" does not work - the edge cases.',
+    'Include specific timeframes where relevant (e.g., "wait 48-72 hours" not "wait a few days").',
+    'Reference how different inbox providers (Gmail vs Outlook vs Yahoo) handle this differently.',
+    'Include a "quick win" - something the reader can implement in under 5 minutes.',
+    'Address the difference between what works for small senders vs high-volume senders.',
+    'Include what success looks like - specific metrics or indicators to watch for.',
+  ];
+  
+  const randomConstraints = specificConstraints
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3);
+  
+  return { voice, opening, structure, randomConstraints };
+};
+
 // Select article format based on topic analysis or rotation
 const selectArticleFormat = (topic: string, existingFormats?: string[]): string => {
   const formats = Object.keys(ARTICLE_FORMATS);
@@ -3237,6 +3304,10 @@ export const generateFullArticle = async (topicOrOptions: string | ArticleGenera
     const selectedFormat = forcedFormat || selectArticleFormat(topic, existingFormats);
     const format = ARTICLE_FORMATS[selectedFormat as keyof typeof ARTICLE_FORMATS] || ARTICLE_FORMATS['deep-dive'];
     
+    // Generate randomized uniqueness constraints for this article
+    const uniqueness = generateUniquenessConstraints();
+    console.log(`[BlogGen] Voice: ${uniqueness.voice.name}, Opening style: ${uniqueness.opening.substring(0, 50)}...`);
+    
     // Build internal linking context for other articles
     let internalLinkingContext = '';
     let existingArticleContext = '';
@@ -3302,7 +3373,7 @@ The article MUST use this exact title. Generate the slug, content, and all other
       : `**Topic:** ${topic}
 Generate a compelling, keyword-rich title (50-60 characters) with primary keyword near the start.`;
 
-    const prompt = `Create a UNIQUE, heavily SEO-optimized blog article for an email marketing and deliverability platform.
+    const prompt = `Create a COMPLETELY ORIGINAL, heavily SEO-optimized blog article for an email marketing and deliverability platform.
 
 ${titleInstruction}
 
@@ -3312,9 +3383,26 @@ ${titleInstruction}
 ${format.description}
 
 **Writing Tone:** ${format.tone}
+
+=== MANDATORY UNIQUENESS CONSTRAINTS (THIS ARTICLE ONLY) ===
+
+**YOUR WRITING VOICE FOR THIS ARTICLE: ${uniqueness.voice.name}**
+${uniqueness.voice.instruction}
+
+**OPENING STYLE (MUST FOLLOW):**
+${uniqueness.opening}
+
+**STRUCTURAL APPROACH:**
+${uniqueness.structure}
+
+**SPECIFIC DETAILS TO INCLUDE:**
+${uniqueness.randomConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+=== END UNIQUENESS CONSTRAINTS ===
+
 ${existingArticleContext}
 
-BEFORE YOU WRITE: Think about what makes YOUR take on this topic DIFFERENT. What angle hasn't been covered? What do most articles about this topic get WRONG? Start from that unique insight, not from a template.
+CRITICAL DIFFERENTIATION RULE: Before writing, mentally review what a typical article about "${topic}" would contain. Then DELIBERATELY avoid those exact angles, examples, and structures. Your article must feel like it was written by a different author with a different perspective.
 
 Generate with these MANDATORY SEO requirements:
 1. Title: ${providedTitle ? `Use EXACTLY: "${providedTitle}"` : 'Keyword-rich, compelling, 50-60 characters, include primary keyword near the start'}
