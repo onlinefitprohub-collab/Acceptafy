@@ -44,6 +44,7 @@ export const users = pgTable("users", {
   phone: varchar("phone"),
   emailUnsubscribed: boolean("email_unsubscribed").default(false),
   onboardingEmailsSent: integer("onboarding_emails_sent").default(0),
+  lastOnboardingEmailAt: timestamp("last_onboarding_email_at"),
 });
 
 export type UpsertUser = typeof users.$inferInsert;

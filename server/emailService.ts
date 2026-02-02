@@ -494,7 +494,10 @@ export async function sendOnboardingEmail(
     });
 
     await db.update(users)
-      .set({ onboardingEmailsSent: emailNumber })
+      .set({ 
+        onboardingEmailsSent: emailNumber,
+        lastOnboardingEmailAt: new Date()
+      })
       .where(eq(users.id, userId));
 
     console.log(`[OnboardingEmail] Sent email #${emailNumber} (${emailType}) to ${user.email}`);
@@ -615,6 +618,15 @@ export async function processOnboardingEmails(): Promise<void> {
         (now.getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)
       );
       const emailsSent = user.onboardingEmailsSent || 0;
+
+      // Enforce minimum 24-hour gap between onboarding emails
+      if (user.lastOnboardingEmailAt) {
+        const hoursSinceLastEmail = (now.getTime() - new Date(user.lastOnboardingEmailAt).getTime()) / (1000 * 60 * 60);
+        if (hoursSinceLastEmail < 24) {
+          console.log(`[OnboardingScheduler] Skipping user ${user.id}: last email sent ${hoursSinceLastEmail.toFixed(1)} hours ago`);
+          continue;
+        }
+      }
 
       const schedule = [
         { day: 0, emailNumber: 1, type: 'welcome' as const },
