@@ -2475,12 +2475,28 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getAdminEmails(limit: number = 50): Promise<AdminEmail[]> {
-    return db
-      .select()
+  async getAdminEmails(limit: number = 50): Promise<(AdminEmail & { openedAt: Date | null })[]> {
+    // Use a subquery to get the first openedAt for each email to avoid duplicates
+    const results = await db
+      .select({
+        id: adminEmails.id,
+        adminId: adminEmails.adminId,
+        recipientUserId: adminEmails.recipientUserId,
+        recipientEmail: adminEmails.recipientEmail,
+        subject: adminEmails.subject,
+        body: adminEmails.body,
+        htmlContent: adminEmails.htmlContent,
+        emailType: adminEmails.emailType,
+        segment: adminEmails.segment,
+        status: adminEmails.status,
+        sentAt: adminEmails.sentAt,
+        openedAt: sql<Date | null>`(SELECT MAX(${emailOpens.openedAt}) FROM ${emailOpens} WHERE ${emailOpens.emailId} = ${adminEmails.id} AND ${emailOpens.openedAt} IS NOT NULL)`,
+      })
       .from(adminEmails)
       .orderBy(desc(adminEmails.sentAt))
       .limit(limit);
+    
+    return results;
   }
 
   async getEmailsByRecipient(userId: string): Promise<AdminEmail[]> {

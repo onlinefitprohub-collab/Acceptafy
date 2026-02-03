@@ -4119,6 +4119,7 @@ export default function Admin() {
                       <TableHead>Subject</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Sent</TableHead>
+                      <TableHead>Opened</TableHead>
                       <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -4140,6 +4141,25 @@ export default function Admin() {
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {format(new Date(email.sentAt), 'MMM d, h:mm a')}
+                        </TableCell>
+                        <TableCell>
+                          {(email as { openedAt?: Date | null }).openedAt ? (
+                            <Badge 
+                              variant="default" 
+                              className="text-xs"
+                              data-testid={`badge-email-opened-${email.id}`}
+                            >
+                              {format(new Date((email as { openedAt: Date }).openedAt), 'MMM d, h:mm a')}
+                            </Badge>
+                          ) : (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs text-muted-foreground"
+                              data-testid={`badge-email-unopened-${email.id}`}
+                            >
+                              Not opened
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Button
