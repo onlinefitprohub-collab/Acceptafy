@@ -1388,7 +1388,10 @@ export const onboardingEmails = pgTable("onboarding_emails", {
   sentAt: timestamp("sent_at").defaultNow(),
   opened: boolean("opened").default(false),
   clicked: boolean("clicked").default(false),
-});
+}, (table) => [
+  // Prevent duplicate emails - each user can only receive each email number once
+  uniqueIndex("onboarding_user_email_unique").on(table.userId, table.emailNumber)
+]);
 
 export type OnboardingEmail = typeof onboardingEmails.$inferSelect;
 export type InsertOnboardingEmail = typeof onboardingEmails.$inferInsert;

@@ -508,6 +508,102 @@ export async function sendOnboardingEmail(
   }
 }
 
+// Variant that skips the user table update (used when atomic update was already done)
+export async function sendOnboardingEmailWithoutDbUpdate(
+  userId: string,
+  emailNumber: number,
+  emailType: 'welcome' | 'getting-started' | 'academy' | 'tips' | 'upgrade'
+): Promise<boolean> {
+  try {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user || !user.email || user.emailUnsubscribed) {
+      console.log(`[OnboardingEmail] Skipping user ${userId}: no email or unsubscribed`);
+      return false;
+    }
+
+    const firstName = user.firstName || 'there';
+    const personalization = await getUserPersonalization(userId);
+    
+    let emailContent;
+
+    switch (emailType) {
+      case 'welcome':
+        emailContent = onboardingEmailTemplates.welcome(firstName);
+        break;
+      case 'getting-started':
+        emailContent = onboardingEmailTemplates.gettingStarted(firstName);
+        break;
+      case 'academy':
+        emailContent = onboardingEmailTemplates.academy(firstName);
+        break;
+      case 'tips':
+        emailContent = onboardingEmailTemplates.deliverabilityTips(firstName);
+        break;
+      case 'upgrade':
+        emailContent = onboardingEmailTemplates.upgrade(firstName, user.subscriptionTier || 'starter');
+        break;
+      default:
+        console.error(`[OnboardingEmail] Unknown email type: ${emailType}`);
+        return false;
+    }
+
+    const trackingId = uuidv4();
+
+    let html = emailContent.html
+      .replace(/\{\{userId\}\}/g, userId)
+      .replace(/\{\{trackingId\}\}/g, trackingId)
+      .replace(/\{\{emailsAnalyzed\}\}/g, personalization.emailsAnalyzed.toString())
+      .replace(/\{\{averageScore\}\}/g, personalization.averageScore.toString())
+      .replace(/\{\{daysSinceSignup\}\}/g, personalization.daysSinceSignup.toString())
+      .replace(/\{\{tierDisplayName\}\}/g, personalization.tierDisplayName);
+
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: user.email,
+      subject: emailContent.subject,
+      html: html,
+    });
+
+    if (result.error) {
+      console.error(`[OnboardingEmail] Failed to send to ${user.email}:`, result.error);
+      return false;
+    }
+
+    // Log records (but skip user table update - already done atomically)
+    const [onboardingEmailRecord] = await db.insert(onboardingEmails).values({
+      userId,
+      emailNumber,
+      emailType,
+    }).returning();
+
+    await db.insert(emailOpens).values({
+      userId,
+      emailType: 'onboarding',
+      emailId: onboardingEmailRecord.id,
+      trackingId,
+    });
+
+    await db.insert(adminEmails).values({
+      adminId: null,
+      recipientUserId: userId,
+      recipientEmail: user.email,
+      subject: emailContent.subject,
+      body: `Onboarding Email #${emailNumber}: ${emailType}`,
+      htmlContent: html,
+      emailType: 'onboarding',
+      status: 'sent',
+    });
+
+    // NOTE: User table update already done atomically before calling this function
+
+    console.log(`[OnboardingEmail] Sent email #${emailNumber} (${emailType}) to ${user.email}`);
+    return true;
+  } catch (error) {
+    console.error(`[OnboardingEmail] Error sending email:`, error);
+    return false;
+  }
+}
+
 export async function sendBlogAnnouncement(
   subject: string,
   previewText: string,
@@ -601,6 +697,7 @@ export async function processOnboardingEmails(): Promise<void> {
   try {
     const now = new Date();
 
+    // Get candidate users (initial filter)
     const usersToProcess = await db.select()
       .from(users)
       .where(
@@ -611,37 +708,78 @@ export async function processOnboardingEmails(): Promise<void> {
         )
       );
 
+    const schedule = [
+      { day: 0, emailNumber: 1, type: 'welcome' as const },
+      { day: 1, emailNumber: 2, type: 'getting-started' as const },
+      { day: 3, emailNumber: 3, type: 'academy' as const },
+      { day: 7, emailNumber: 4, type: 'tips' as const },
+      { day: 14, emailNumber: 5, type: 'upgrade' as const },
+    ];
+
     for (const user of usersToProcess) {
       if (!user.createdAt) continue;
 
-      const daysSinceSignup = Math.floor(
-        (now.getTime() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const emailsSent = user.onboardingEmailsSent || 0;
+      // RACE CONDITION FIX: Re-fetch user state fresh before processing
+      // This prevents duplicate sends when scheduler runs concurrently
+      const [freshUser] = await db.select()
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
 
-      // Enforce minimum 24-hour gap between onboarding emails
-      if (user.lastOnboardingEmailAt) {
-        const hoursSinceLastEmail = (now.getTime() - new Date(user.lastOnboardingEmailAt).getTime()) / (1000 * 60 * 60);
+      if (!freshUser || freshUser.emailUnsubscribed) {
+        console.log(`[OnboardingScheduler] Skipping user ${user.id}: unsubscribed or not found`);
+        continue;
+      }
+
+      const daysSinceSignup = Math.floor(
+        (now.getTime() - new Date(freshUser.createdAt!).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      const emailsSent = freshUser.onboardingEmailsSent || 0;
+
+      // Enforce minimum 24-hour gap between onboarding emails (using fresh data)
+      if (freshUser.lastOnboardingEmailAt) {
+        const hoursSinceLastEmail = (now.getTime() - new Date(freshUser.lastOnboardingEmailAt).getTime()) / (1000 * 60 * 60);
         if (hoursSinceLastEmail < 24) {
-          console.log(`[OnboardingScheduler] Skipping user ${user.id}: last email sent ${hoursSinceLastEmail.toFixed(1)} hours ago`);
+          console.log(`[OnboardingScheduler] Skipping user ${freshUser.id}: last email sent ${hoursSinceLastEmail.toFixed(1)} hours ago`);
           continue;
         }
       }
 
-      const schedule = [
-        { day: 0, emailNumber: 1, type: 'welcome' as const },
-        { day: 1, emailNumber: 2, type: 'getting-started' as const },
-        { day: 3, emailNumber: 3, type: 'academy' as const },
-        { day: 7, emailNumber: 4, type: 'tips' as const },
-        { day: 14, emailNumber: 5, type: 'upgrade' as const },
-      ];
-
+      // Determine which email to send based on fresh data
+      let emailToSend: typeof schedule[0] | null = null;
       for (const email of schedule) {
         if (daysSinceSignup >= email.day && emailsSent < email.emailNumber) {
-          await sendOnboardingEmail(user.id, email.emailNumber, email.type);
+          emailToSend = email;
           break;
         }
       }
+
+      if (!emailToSend) continue;
+
+      // ATOMIC COMPARE-AND-SET: Only proceed if emailsSent hasn't changed
+      // This uses an atomic UPDATE with WHERE clause to prevent race conditions
+      const updateResult = await db.update(users)
+        .set({ 
+          onboardingEmailsSent: emailToSend.emailNumber,
+          lastOnboardingEmailAt: new Date()
+        })
+        .where(
+          and(
+            eq(users.id, user.id),
+            eq(users.onboardingEmailsSent, emailsSent) // Only update if value matches expected
+          )
+        )
+        .returning({ id: users.id });
+
+      // If no rows updated, another process already incremented the counter
+      if (updateResult.length === 0) {
+        console.log(`[OnboardingScheduler] Race condition prevented for user ${user.id}: emailsSent already changed from ${emailsSent}`);
+        continue;
+      }
+
+      // Counter was atomically updated, now safe to send the email
+      // Note: sendOnboardingEmail will try to update again, so we pass skipDbUpdate flag
+      await sendOnboardingEmailWithoutDbUpdate(user.id, emailToSend.emailNumber, emailToSend.type);
     }
 
     console.log('[OnboardingScheduler] Completed processing');
