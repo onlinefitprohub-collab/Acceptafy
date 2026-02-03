@@ -2476,7 +2476,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdminEmails(limit: number = 50): Promise<(AdminEmail & { openedAt: Date | null })[]> {
-    // Use a subquery to get the first openedAt for each email to avoid duplicates
+    // Use COALESCE to check opens from both:
+    // 1. Direct link on admin_emails.id
+    // 2. Via onboarding_emails matching same user + approximate sent time
     const results = await db
       .select({
         id: adminEmails.id,
@@ -2490,7 +2492,15 @@ export class DatabaseStorage implements IStorage {
         segment: adminEmails.segment,
         status: adminEmails.status,
         sentAt: adminEmails.sentAt,
-        openedAt: sql<Date | null>`(SELECT MAX(${emailOpens.openedAt}) FROM ${emailOpens} WHERE ${emailOpens.emailId} = ${adminEmails.id} AND ${emailOpens.openedAt} IS NOT NULL)`,
+        openedAt: sql<Date | null>`COALESCE(
+          (SELECT MAX(${emailOpens.openedAt}) FROM ${emailOpens} WHERE ${emailOpens.emailId} = ${adminEmails.id} AND ${emailOpens.openedAt} IS NOT NULL),
+          (SELECT MAX(eo.opened_at) FROM email_opens eo 
+           JOIN onboarding_emails oe ON eo.email_id = oe.id 
+           WHERE oe.user_id = ${adminEmails.recipientUserId} 
+           AND oe.sent_at >= ${adminEmails.sentAt} - interval '5 seconds'
+           AND oe.sent_at <= ${adminEmails.sentAt} + interval '5 seconds'
+           AND eo.opened_at IS NOT NULL)
+        )`,
       })
       .from(adminEmails)
       .orderBy(desc(adminEmails.sentAt))

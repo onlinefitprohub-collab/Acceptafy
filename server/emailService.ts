@@ -473,16 +473,8 @@ export async function sendOnboardingEmail(
       emailType,
     }).returning();
 
-    // Create tracking record with the onboarding email ID
-    await db.insert(emailOpens).values({
-      userId,
-      emailType: 'onboarding',
-      emailId: onboardingEmailRecord.id,
-      trackingId,
-    });
-
-    // Log to admin email history for visibility
-    await db.insert(adminEmails).values({
+    // Log to admin email history for visibility FIRST to get the ID for tracking
+    const [adminEmailRecord] = await db.insert(adminEmails).values({
       adminId: null, // System-generated email
       recipientUserId: userId,
       recipientEmail: user.email,
@@ -491,6 +483,14 @@ export async function sendOnboardingEmail(
       htmlContent: html,
       emailType: 'onboarding',
       status: 'sent',
+    }).returning();
+
+    // Create tracking record with the admin email ID (so Email History can show opens)
+    await db.insert(emailOpens).values({
+      userId,
+      emailType: 'onboarding',
+      emailId: adminEmailRecord.id,
+      trackingId,
     });
 
     await db.update(users)
@@ -576,14 +576,8 @@ export async function sendOnboardingEmailWithoutDbUpdate(
       emailType,
     }).returning();
 
-    await db.insert(emailOpens).values({
-      userId,
-      emailType: 'onboarding',
-      emailId: onboardingEmailRecord.id,
-      trackingId,
-    });
-
-    await db.insert(adminEmails).values({
+    // Log to admin email history FIRST to get the ID for tracking
+    const [adminEmailRecord] = await db.insert(adminEmails).values({
       adminId: null,
       recipientUserId: userId,
       recipientEmail: user.email,
@@ -592,6 +586,14 @@ export async function sendOnboardingEmailWithoutDbUpdate(
       htmlContent: html,
       emailType: 'onboarding',
       status: 'sent',
+    }).returning();
+
+    // Create tracking record with the admin email ID (so Email History can show opens)
+    await db.insert(emailOpens).values({
+      userId,
+      emailType: 'onboarding',
+      emailId: adminEmailRecord.id,
+      trackingId,
     });
 
     // NOTE: User table update already done atomically before calling this function
@@ -635,8 +637,8 @@ export async function sendBlogAnnouncement(
         const firstName = user.firstName || 'there';
         const emailContent = blogAnnouncementTemplate(blogTitle, blogSummary, blogUrl, firstName);
         
-        // Create tracking record for this user
-        const trackingId = await createTrackingRecord(user.id, 'blog-announcement');
+        // Generate tracking ID (but don't insert to DB yet)
+        const trackingId = uuidv4();
         
         // Replace placeholders
         const html = emailContent.html
@@ -654,8 +656,8 @@ export async function sendBlogAnnouncement(
           errors.push(`${user.email}: ${result.error.message}`);
         } else {
           successCount++;
-          // Log to admin email history
-          await db.insert(adminEmails).values({
+          // Log to admin email history FIRST to get the ID
+          const [adminEmailRecord] = await db.insert(adminEmails).values({
             adminId: sentBy,
             recipientUserId: user.id,
             recipientEmail: user.email,
@@ -664,6 +666,14 @@ export async function sendBlogAnnouncement(
             htmlContent: html,
             emailType: 'announcement',
             status: 'sent',
+          }).returning();
+          
+          // Create tracking record with the admin email ID
+          await db.insert(emailOpens).values({
+            userId: user.id,
+            emailType: 'blog-announcement',
+            emailId: adminEmailRecord.id,
+            trackingId,
           });
         }
 
