@@ -4334,11 +4334,12 @@ Return your response as a JSON object with this exact structure:
         return res.status(400).json({ message: 'Please provide a topic with at least 5 characters' });
       }
       
-      // Fetch existing published articles for internal linking and format rotation
+      // Fetch existing published articles for internal linking, format rotation, and anti-repetition
       const existingArticles = await storage.getArticles(true);
       const existingArticleData = existingArticles.map(a => ({
         title: a.title,
-        slug: a.slug
+        slug: a.slug,
+        content: a.content // Include content for opening fingerprint anti-repetition
       }));
       
       // Track formats used in recent articles for rotation
@@ -4534,11 +4535,12 @@ Return your response as a JSON object with this exact structure:
         return res.status(400).json({ message: 'Title must be a string' });
       }
       
-      // Fetch existing published articles for internal linking and format rotation
+      // Fetch existing published articles for internal linking, format rotation, and anti-repetition
       const existingArticles = await storage.getArticles(true);
       const existingArticleData = existingArticles.map(a => ({
         title: a.title,
-        slug: a.slug
+        slug: a.slug,
+        content: a.content // Include content for opening fingerprint anti-repetition
       }));
       
       // Track formats used in recent articles for rotation

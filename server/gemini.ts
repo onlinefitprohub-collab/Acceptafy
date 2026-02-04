@@ -3042,7 +3042,7 @@ STRUCTURE:
   }
 };
 
-// Randomized writing voice modifiers for genuine variety
+// Randomized writing voice modifiers for genuine variety - 16 distinct voices
 const VOICE_MODIFIERS = [
   { name: 'The Skeptic', instruction: 'Write as someone who was initially skeptical of common advice but discovered the truth through testing. Challenge assumptions throughout.' },
   { name: 'The Insider', instruction: 'Write as someone who works at an ESP and sees the backend data. Share insights that only someone with access to deliverability systems would know.' },
@@ -3052,20 +3052,73 @@ const VOICE_MODIFIERS = [
   { name: 'The Analyst', instruction: 'Lead with data and evidence. Every claim should be backed by numbers, studies, or observable patterns. Be precise.' },
   { name: 'The Contrarian', instruction: 'Take the opposite stance of popular advice where justified. Challenge the status quo and explain why conventional wisdom fails.' },
   { name: 'The Storyteller', instruction: 'Use narrative structure with specific scenarios throughout. Paint pictures of what happens when things go right vs wrong.' },
+  // New voices for greater variety
+  { name: 'The Researcher', instruction: 'Write like an academic who has studied this topic extensively. Cite sources, acknowledge nuances, and present findings objectively.' },
+  { name: 'The Veteran', instruction: 'Write as someone with 15+ years in email marketing who has seen trends come and go. Share hard-won wisdom from real experience.' },
+  { name: 'The Minimalist', instruction: 'Use the fewest words possible. Every sentence must earn its place. Cut ruthlessly. Be direct and spare.' },
+  { name: 'The Technical Writer', instruction: 'Write clear, precise documentation-style content. Focus on accuracy and completeness. Use proper terminology consistently.' },
+  { name: 'The Industry Reporter', instruction: 'Write like a journalist covering the email industry. Report on what is happening, who is affected, and what it means.' },
+  { name: 'The Educator', instruction: 'Write as a patient teacher explaining concepts to someone new. Build understanding step by step. Anticipate confusion points.' },
+  { name: 'The Problem Solver', instruction: 'Write focused entirely on solving a specific problem. Skip theory - go straight to diagnosis and fix. Be actionable.' },
+  { name: 'The Systems Thinker', instruction: 'Write about how different parts of email infrastructure connect. Show cause and effect across the whole system.' },
 ];
 
-// Randomized opening styles to prevent pattern repetition
+// Randomized opening styles to prevent pattern repetition - 30+ options for genuine variety
 const OPENING_STYLES = [
-  'Start with a single provocative sentence that challenges a common belief about this topic. Then pause before explaining.',
-  'Open with a specific number or statistic from a real source (Validity, Litmus, Return Path) - only if you know a real one. Make it surprising.',
-  'Begin with a hypothetical scenario that illustrates the problem: "Picture this: [specific scenario related to the topic]..."',
-  'Start mid-action, as if the reader caught you in the middle of explaining something to a colleague.',
-  'Open with what you are NOT going to cover in this article, then pivot to what actually matters.',
-  'Lead with a counterintuitive conclusion about this topic, then spend the article explaining how you got there.',
-  'Start with a direct question that the reader probably has about this topic, then answer it immediately.',
-  'Open with "Most articles about this topic get one thing wrong..." and explain what that is.',
-  'Begin with a specific tool or platform feature that most people overlook when dealing with this topic.',
-  'Start with a common mistake you see repeatedly regarding this topic and why it persists.',
+  // Data-first openers
+  'Open with a specific, surprising statistic from Validity, Litmus, or Return Path research. Let the data speak first.',
+  'Lead with a percentage that contradicts common assumptions. Example format: "Only 23% of marketers actually..."',
+  'Start with a data comparison: "Company A does X, Company B does Y. The difference in results? Z%."',
+  
+  // Technical observation openers
+  'Begin with a specific technical observation from Gmail Postmaster or MXToolbox that most people misinterpret.',
+  'Open by explaining what a specific error message or log entry actually means (most people get it wrong).',
+  'Start with a DNS record, header value, or authentication result - then explain why it matters.',
+  
+  // Direct statement openers
+  'Make a bold, definitive statement in your first sentence. No hedging. Then support it.',
+  'Open with your conclusion. State the answer to the question this article addresses in sentence one.',
+  'Start with a one-sentence summary of everything the reader needs to know. Then expand.',
+  
+  // Contrarian openers
+  'Begin by disagreeing with a respected source or common best practice. Explain why they are wrong.',
+  'Open with: "The standard advice about [topic] is outdated. Here is what actually works now."',
+  'Start by identifying who this article is NOT for - then clarify who will benefit.',
+  
+  // Problem-focused openers
+  'Lead with the specific symptom or error that brought the reader here. Address it directly.',
+  'Open with the worst-case scenario related to this topic. What happens when things go wrong?',
+  'Start with the hidden cost of getting this wrong - time, money, or reputation.',
+  
+  // Industry insider openers
+  'Begin with something you have observed in your own deliverability data or logs.',
+  'Open with a recent change from Gmail, Microsoft, or Yahoo that affects this topic.',
+  'Start with what ESPs and inbox providers do not tell you about this topic.',
+  
+  // Question openers (but not rhetorical)
+  'Open with the exact question someone would type into Google to find this article. Answer it immediately.',
+  'Start with a yes/no question about this topic, then give the nuanced answer.',
+  'Begin with "Should you [specific action]?" and give a clear answer with conditions.',
+  
+  // Definition openers
+  'Start with a precise, technical definition that corrects common misunderstandings.',
+  'Open by defining what this topic is NOT (common misconceptions), then what it IS.',
+  'Begin with the RFC or technical standard that governs this topic - make it accessible.',
+  
+  // Timeline/urgency openers
+  'Open with what changed recently that makes this topic newly urgent.',
+  'Start with a deadline or timeline: "Within the next [timeframe], you need to..."',
+  'Begin with a prediction about where this is headed and what to do now.',
+  
+  // Comparison openers
+  'Open with a comparison between two approaches - which one wins and why.',
+  'Start by showing what small senders do vs. what high-volume senders do differently.',
+  'Begin with how Gmail handles this vs. how Outlook handles it - the difference matters.',
+  
+  // Tool-focused openers
+  'Open with a specific feature in Gmail Postmaster, MXToolbox, or similar tool that most people ignore.',
+  'Start with the exact command, query, or check the reader should run right now.',
+  'Begin with a screenshot or log example (describe it) that illustrates the core concept.',
 ];
 
 // Randomized structural constraints
@@ -3157,7 +3210,7 @@ const selectArticleFormat = (topic: string, existingFormats?: string[]): string 
 export interface ArticleGenerationOptions {
   topic: string;
   title?: string;
-  existingArticles?: Array<{ title: string; slug: string; }>;
+  existingArticles?: Array<{ title: string; slug: string; content?: string; }>;
   existingFormats?: string[];
   forcedFormat?: string;
 }
@@ -3319,16 +3372,32 @@ ${existingArticles.map(a => `- "${a.title}" (link: /resources/${a.slug})`).join(
 Use natural anchor text like: <a href="/resources/slug-here">descriptive text</a>`;
 
       // Add context about existing articles so AI avoids repeating angles
+      // Extract first 150 chars of content as opening fingerprints for anti-repetition
+      const articlesWithContent = existingArticles.filter(a => a.content && a.content.length > 50);
+      const openingFingerprints = articlesWithContent.length > 0 
+        ? articlesWithContent.slice(0, 8).map(a => {
+            const contentStr = typeof a.content === 'string' ? a.content : '';
+            const plainText = contentStr.replace(/<[^>]*>/g, '').trim().substring(0, 150);
+            return `"${a.title}": "${plainText}..."`;
+          }).join('\n')
+        : 'No existing article openings available - but still ensure your opening is UNIQUE and avoids clichéd patterns.';
+      
       existingArticleContext = `
 EXISTING ARTICLES (DO NOT REPEAT THESE ANGLES OR APPROACHES):
-The following articles already exist on this site. Your article MUST take a DIFFERENT angle, use a DIFFERENT opening style, and cover DIFFERENT specific points:
+The following articles already exist on this site. Your article MUST take a COMPLETELY DIFFERENT angle, opening style, and voice:
 ${existingArticles.slice(0, 10).map(a => `- "${a.title}"`).join('\n')}
 
-CRITICAL: Read these titles carefully. Do NOT:
-- Use similar titles or structures
-- Cover the same specific points they likely cover
-- Use the same opening style (if one starts with a question, start yours differently)
-- Repeat the same "myths" or "tips" that would naturally appear in these articles
+=== EXISTING ARTICLE OPENINGS (FINGERPRINTS TO AVOID) ===
+These are how existing articles BEGIN. Your opening MUST look and feel COMPLETELY DIFFERENT:
+${openingFingerprints}
+
+ANTI-REPETITION CHECKLIST (before writing):
+1. Is my opening sentence structurally different from ALL of the above? (Different first word, different format)
+2. Does my first paragraph use a different rhetorical device? (If they use questions, I use statements. If they use data, I use contrast.)
+3. Am I leading with an angle the existing articles clearly do NOT cover?
+4. Would a reader think this was written by a different person?
+
+CRITICAL: If your planned opening resembles ANY of the fingerprints above, STOP and choose a completely different approach.
 
 Instead: Find the OVERLOOKED angle. What aspect of this topic do the existing articles likely NOT cover? Lead with that.`;
     }
@@ -3402,7 +3471,16 @@ ${uniqueness.randomConstraints.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
 ${existingArticleContext}
 
-CRITICAL DIFFERENTIATION RULE: Before writing, mentally review what a typical article about "${topic}" would contain. Then DELIBERATELY avoid those exact angles, examples, and structures. Your article must feel like it was written by a different author with a different perspective.
+PRE-WRITING STRUCTURE PLANNING (MANDATORY - DO THIS FIRST):
+Before writing ANY content, you MUST mentally plan:
+1. OPENING SENTENCE: Write out your exact first sentence. Does it match ANY of the fingerprints above? If yes, choose a completely different opening format.
+2. H2 STRUCTURE: List your 4-5 H2 headings. Are they structurally similar to what the existing articles likely use? If yes, restructure.
+3. UNIQUE ANGLE: What specific aspect of "${topic}" do the existing articles likely NOT cover? Lead with that.
+4. VOICE CHECK: Confirm your writing voice matches "${uniqueness.voice.name}" - not a generic authoritative tone.
+
+Only after completing this mental planning should you begin writing. The final content must reflect these planning decisions.
+
+CRITICAL DIFFERENTIATION RULE: Your article must feel like it was written by a COMPLETELY different author with a different perspective and writing style. If a reader saw this alongside the existing articles, they should notice the distinct voice immediately.
 
 Generate with these MANDATORY SEO requirements:
 1. Title: ${providedTitle ? `Use EXACTLY: "${providedTitle}"` : 'Keyword-rich, compelling, 50-60 characters, include primary keyword near the start'}
@@ -3431,17 +3509,35 @@ HUMAN WRITING STYLE (CRITICAL - ACTUALLY SOUND HUMAN, NOT AI-TRYING-TO-SOUND-HUM
 - Reference real platforms by name: Gmail Postmaster, Validity, BIMI, Return Path, MXToolbox
 - Admit limitations or gray areas - real experts acknowledge what they don't know
 - Use industry jargon, then quickly explain it for newcomers
-- NEVER fabricate client stories or case studies - use clearly hypothetical scenarios ("Picture this:") or cite real, verifiable sources with links
+- NEVER fabricate client stories or case studies - use clearly framed hypothetical scenarios ("Consider a situation where...") or cite real, verifiable sources with links
 - Vary paragraph length wildly - one sentence sometimes, five sentences other times
 - End sections with a surprising insight, not a summary of what you just said
 
-AI SEARCH ENGINE OPTIMIZATION (FOR CHATGPT, PERPLEXITY, GOOGLE AI):
-- Include 2-3 "Answer Box" paragraphs: definitive 40-60 word answers that directly answer a question
-- Start key sections with the question, then immediately answer it
-- Use clear, quotable statements that AI can cite: "Email deliverability is [clear definition]"
-- Structure FAQs with question as H3, answer as concise paragraph
-- Include specific, citable statistics with context
-- Write authoritative, confident statements (AI prefers definitive over hedged language)
+AI SEARCH ENGINE OPTIMIZATION (FOR CHATGPT, PERPLEXITY, GOOGLE AI, CLAUDE):
+CRITICAL - AI search engines are now a major traffic source. Optimize specifically for AI citation:
+
+ANSWER BOX FORMATTING (include 3-4 throughout article):
+- Format: [Question]? [Direct 40-60 word answer]. [Supporting detail].
+- Example: "What is a good email open rate? A good email open rate ranges from 15-25% for most industries, with B2B averaging 21.3% and B2C averaging 18.7%. However, your benchmark should be based on your specific industry and list quality."
+- Place these at the START of relevant sections, not buried in paragraphs
+
+FAQ SCHEMA OPTIMIZATION (include 4-6 Q&A pairs):
+- Use H3 for questions: <h3>How long does it take to warm up a new domain?</h3>
+- Follow immediately with concise paragraph answer (50-100 words)
+- Questions should match actual Google "People Also Ask" queries
+- End each answer with a specific number, timeframe, or actionable step
+
+CITABLE STATEMENT PATTERNS (AI loves these):
+- "[Term] is defined as [clear definition]." 
+- "The [X] best practice is to [specific action]."
+- "According to [source], [specific statistic]."
+- "[Common belief] is a myth because [reason]."
+
+STRUCTURED DATA HINTS:
+- Include clear definitions that could populate knowledge panels
+- Use consistent terminology throughout (AI learns your definitions)
+- Provide step-by-step lists with specific numbers (AI can cite "Step 3 is...")
+- Include comparison data in clear formats (X vs Y, before/after)
 
 FEATURED SNIPPET OPTIMIZATION:
 - Include ONE "definition box": Start a paragraph with "[Term] is..." and provide a 40-60 word definition
@@ -3475,9 +3571,11 @@ ${format.structure}
 
 BANNED PHRASES (NEVER USE - THESE SCREAM "AI WROTE THIS"):
 Opening patterns to NEVER use:
-- "You pour/poured resources into...", "You've worked hard on...", "You've crafted the perfect..."
-- "In today's", "In the world of", "In the realm of", "In the landscape of"
+- "Picture this:", "Imagine this:", "Consider this scenario:"
+- "You pour/poured resources into...", "You've worked hard on...", "You've crafted the perfect...", "You've just launched..."
+- "In today's", "In the world of", "In the realm of", "In the landscape of", "In the ever-evolving"
 - Any sentence starting with "You" followed by an emotional assumption about the reader's feelings or efforts
+- "You hit send, confident...", "Days later, your engagement...", "What happened?"
 
 Transition phrases to NEVER use:
 - "Here's the deal:", "Here's the thing:", "Here's why:", "Here's the kicker:", "Here's what you need to know"
