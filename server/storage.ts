@@ -2509,13 +2509,19 @@ export class DatabaseStorage implements IStorage {
         scheduledAt: adminEmails.scheduledAt,
         sentAt: adminEmails.sentAt,
         openedAt: sql<Date | null>`COALESCE(
-          (SELECT MAX(${emailOpens.openedAt}) FROM ${emailOpens} WHERE ${emailOpens.emailId} = ${adminEmails.id} AND ${emailOpens.openedAt} IS NOT NULL),
-          (SELECT MAX(eo.opened_at) FROM email_opens eo 
+          (SELECT MAX(${emailOpens.openedAt}) 
+           FROM ${emailOpens} 
+           WHERE ${emailOpens.emailId} = ${adminEmails.id} 
+           AND ${emailOpens.openedAt} IS NOT NULL
+           AND ${emailOpens.openedAt} >= ${adminEmails.sentAt}),
+          (SELECT MAX(eo.opened_at) 
+           FROM email_opens eo 
            JOIN onboarding_emails oe ON eo.email_id = oe.id 
            WHERE oe.user_id = ${adminEmails.recipientUserId} 
            AND oe.sent_at >= ${adminEmails.sentAt} - interval '5 seconds'
            AND oe.sent_at <= ${adminEmails.sentAt} + interval '5 seconds'
-           AND eo.opened_at IS NOT NULL)
+           AND eo.opened_at IS NOT NULL
+           AND eo.opened_at >= ${adminEmails.sentAt})
         )`,
       })
       .from(adminEmails)
