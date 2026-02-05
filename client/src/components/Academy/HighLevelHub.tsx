@@ -173,31 +173,60 @@ export const HighLevelWarmup = ({ onBack }: SectionProps) => (
       </p>
     </div>
 
-    <InfoCard title="7-Day Ramp-Up Schedule" icon={Clock} variant="info">
+    <InfoCard title="HighLevel Stage-Based Warm-Up Schedule" icon={Clock} variant="info">
+      <p className="text-sm mb-3">HighLevel uses a stage-based warm-up system. As you reach your daily limit consistently and maintain good engagement, you progress to the next stage.</p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
-              <th className="text-left py-2 font-semibold">Day</th>
-              <th className="text-left py-2 font-semibold">Email Limit</th>
+              <th className="text-left py-2 font-semibold">Stage</th>
+              <th className="text-left py-2 font-semibold">Daily Limit</th>
+              <th className="text-left py-2 font-semibold">Progression</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b"><td className="py-2">Day 1</td><td className="py-2 font-mono">250</td></tr>
-            <tr className="border-b"><td className="py-2">Day 2</td><td className="py-2 font-mono">500</td></tr>
-            <tr className="border-b"><td className="py-2">Day 3</td><td className="py-2 font-mono">1,000</td></tr>
-            <tr className="border-b"><td className="py-2">Day 4</td><td className="py-2 font-mono">2,500</td></tr>
-            <tr className="border-b"><td className="py-2">Day 5</td><td className="py-2 font-mono">5,000</td></tr>
-            <tr className="border-b"><td className="py-2">Day 6</td><td className="py-2 font-mono">7,500</td></tr>
-            <tr className="border-b"><td className="py-2">Day 7</td><td className="py-2 font-mono">10,000</td></tr>
-            <tr className="border-b bg-muted/50"><td className="py-2 font-semibold">Day 8+ (Shared)</td><td className="py-2 font-mono font-semibold">15,000</td></tr>
-            <tr className="bg-green-500/10"><td className="py-2 font-semibold">Day 8+ (Dedicated)</td><td className="py-2 font-mono font-semibold">450,000</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Stage 1</td><td className="py-2 font-mono">1,000</td><td className="py-2 text-xs text-muted-foreground">Starting stage for new domains</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Stage 2</td><td className="py-2 font-mono">5,000</td><td className="py-2 text-xs text-muted-foreground">After consistent Stage 1 sends</td></tr>
+            <tr className="border-b"><td className="py-2 font-semibold">Stage 3</td><td className="py-2 font-mono">10,000</td><td className="py-2 text-xs text-muted-foreground">Good reputation established</td></tr>
+            <tr className="border-b bg-muted/50"><td className="py-2 font-semibold">Stage 4 (Shared)</td><td className="py-2 font-mono font-semibold">15,000</td><td className="py-2 text-xs text-muted-foreground">Max for shared domains</td></tr>
+            <tr className="bg-green-500/10"><td className="py-2 font-semibold">Stage 4 (Dedicated)</td><td className="py-2 font-mono font-semibold">450,000</td><td className="py-2 text-xs text-muted-foreground">Requires dedicated sending domain</td></tr>
           </tbody>
         </table>
       </div>
       <p className="text-xs mt-2">
-        The daily counter resets every day at midnight 00:00:01 AM UTC.
+        The daily counter resets every day at midnight 00:00:01 AM UTC. Aim to reach your daily limit consistently to progress to the next stage.
       </p>
+    </InfoCard>
+    
+    <InfoCard title="Batch Sending Best Practices" icon={Mail} variant="success">
+      <p className="text-sm mb-3">When sending bulk campaigns, proper throttling protects your reputation and improves deliverability.</p>
+      <div className="space-y-3">
+        <div className="p-3 rounded-lg bg-muted/50">
+          <p className="font-semibold text-foreground text-sm">Recommended Batch Sizes</p>
+          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
+            <li><span className="font-semibold">Stage 1:</span> Send in batches of 200-300 emails, spaced 15-30 minutes apart</li>
+            <li><span className="font-semibold">Stage 2:</span> Send in batches of 500-1,000 emails, spaced 10-15 minutes apart</li>
+            <li><span className="font-semibold">Stage 3+:</span> Send in batches of 1,000-2,000 emails, spaced 5-10 minutes apart</li>
+          </ul>
+        </div>
+        <div className="p-3 rounded-lg bg-muted/50">
+          <p className="font-semibold text-foreground text-sm">Timing Recommendations</p>
+          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
+            <li><span className="font-semibold">Best sending windows:</span> Tuesday-Thursday, 9am-11am or 1pm-3pm recipient's local time</li>
+            <li><span className="font-semibold">Avoid:</span> Weekends, early mornings, and late evenings for business emails</li>
+            <li><span className="font-semibold">Spread large campaigns:</span> Break 10,000+ sends across multiple days if possible</li>
+          </ul>
+        </div>
+        <div className="p-3 rounded-lg bg-muted/50">
+          <p className="font-semibold text-foreground text-sm">Throttling Strategy</p>
+          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
+            <li>Never send your entire list at once - even if within limits</li>
+            <li>Use HighLevel's built-in batch sending feature when available</li>
+            <li>Monitor bounce rates during sending - pause if above 2%</li>
+            <li>Start each campaign with your most engaged subscribers first</li>
+          </ul>
+        </div>
+      </div>
     </InfoCard>
 
     <div className="grid md:grid-cols-2 gap-4">
