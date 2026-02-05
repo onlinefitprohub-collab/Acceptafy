@@ -325,7 +325,7 @@ interface AdminEmail {
   status: string;
   scheduledAt: string | null;
   sentAt: string;
-  openedAt?: Date | null;
+  openedAt?: string | null;
 }
 
 interface ContactMessage {
@@ -436,7 +436,7 @@ export default function Admin() {
 
   // Unified Email Composer state
   const [composerTab, setComposerTab] = useState<'compose' | 'automation'>('compose');
-  const [selectedArticleId, setSelectedArticleId] = useState<number | null>(null);
+  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [showAiRewrite, setShowAiRewrite] = useState(false);
   const [rewriteGuidance, setRewriteGuidance] = useState("");
   const [rewriteResult, setRewriteResult] = useState<{
@@ -3331,9 +3331,9 @@ export default function Admin() {
                           value={selectedArticleId || "scratch"} 
                           onValueChange={(value) => {
                             if (value && value !== "scratch") {
-                              const article = publishedArticles.find(a => a.id === value);
+                              const article = publishedArticles.find(a => a.id.toString() === value);
                               if (article) {
-                                setSelectedArticleId(article.id);
+                                setSelectedArticleId(article.id.toString());
                                 setEmailSubject(`New on the Acceptafy Blog: ${article.title}`);
                                 setEmailPreviewLine(article.metaDescription || '');
                                 setEmailBody(`Hi {{firstName}},\n\nWe just published a new article you'll love:\n\n**${article.title}**\n\n${article.metaDescription || ''}\n\nRead the full article: https://acceptafy.com/academy/${article.slug}\n\nHappy learning!\nThe Acceptafy Team`);
