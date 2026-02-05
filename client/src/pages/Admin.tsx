@@ -618,6 +618,18 @@ export default function Admin() {
     enabled: isAdmin,
   });
 
+  const { data: pendingOnboardingEmails, isLoading: pendingOnboardingLoading } = useQuery<{
+    userId: string;
+    email: string;
+    firstName: string | null;
+    nextEmailNumber: number;
+    nextEmailType: string;
+    scheduledDate: string;
+  }[]>({
+    queryKey: ["/api/admin/emails/pending-onboarding"],
+    enabled: isAdmin,
+  });
+
   const { data: contactMessages, isLoading: messagesLoading } = useQuery<ContactMessage[]>({
     queryKey: ["/api/admin/contact-messages"],
     enabled: isAdmin,
@@ -4109,28 +4121,29 @@ export default function Admin() {
               Scheduled Emails
             </CardTitle>
             <CardDescription>
-              Upcoming emails waiting to be sent
+              Upcoming emails waiting to be sent (broadcasts and onboarding)
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {scheduledEmailsLoading ? (
+            {(scheduledEmailsLoading || pendingOnboardingLoading) ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : scheduledEmails && scheduledEmails.length > 0 ? (
-              <ScrollArea className="h-[200px]">
+            ) : ((scheduledEmails && scheduledEmails.length > 0) || (pendingOnboardingEmails && pendingOnboardingEmails.length > 0)) ? (
+              <ScrollArea className="h-[300px]">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Recipient</TableHead>
-                      <TableHead>Subject</TableHead>
+                      <TableHead>Subject/Email</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Scheduled For</TableHead>
                       <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {scheduledEmails.map((email) => (
+                    {/* Scheduled broadcast emails */}
+                    {scheduledEmails?.map((email) => (
                       <TableRow key={email.id}>
                         <TableCell className="font-medium text-sm">
                           {email.emailType === 'bulk' ? (
@@ -4162,6 +4175,34 @@ export default function Admin() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {/* Pending onboarding emails */}
+                    {pendingOnboardingEmails?.map((item) => (
+                      <TableRow key={`onboarding-${item.userId}-${item.nextEmailNumber}`}>
+                        <TableCell className="font-medium text-sm">
+                          <span className="truncate max-w-[150px] block">{item.email}</span>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <span className="text-muted-foreground">
+                            Email #{item.nextEmailNumber}: {item.nextEmailType}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-400 border-purple-500/30">
+                            onboarding
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="default" className="bg-purple-600">
+                            {format(new Date(item.scheduledDate), 'MMM d, h:mm a')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground text-xs" title="Auto-sent by onboarding automation">
+                            {item.firstName || 'User'}
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))}

@@ -2788,6 +2788,17 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
+  // Get pending onboarding emails (users waiting for their next onboarding email)
+  app.get('/api/admin/emails/pending-onboarding', isAdmin, async (req: any, res) => {
+    try {
+      const pendingEmails = await storage.getPendingOnboardingEmails();
+      res.json(pendingEmails);
+    } catch (error) {
+      console.error('Pending onboarding emails error:', error);
+      res.status(500).json({ error: 'Failed to fetch pending onboarding emails' });
+    }
+  });
+
   // Announcements CRUD
   app.get('/api/admin/announcements', isAdmin, async (req: any, res) => {
     try {

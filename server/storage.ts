@@ -303,6 +303,14 @@ export interface IStorage {
   createAdminEmail(email: InsertAdminEmail): Promise<AdminEmail>;
   getAdminEmails(limit?: number): Promise<(AdminEmail & { openedAt: Date | null })[]>;
   getScheduledEmails(): Promise<AdminEmail[]>;
+  getPendingOnboardingEmails(): Promise<{
+    userId: string;
+    email: string;
+    firstName: string | null;
+    nextEmailNumber: number;
+    nextEmailType: string;
+    scheduledDate: Date;
+  }[]>;
   getEmailsByRecipient(userId: string): Promise<AdminEmail[]>;
 }
 
@@ -2529,6 +2537,82 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(adminEmails.scheduledAt);
+  }
+
+  async getPendingOnboardingEmails(): Promise<{
+    userId: string;
+    email: string;
+    firstName: string | null;
+    nextEmailNumber: number;
+    nextEmailType: string;
+    scheduledDate: Date;
+  }[]> {
+    // Onboarding schedule: day 0 = email 1, day 1 = email 2, day 3 = email 3, day 7 = email 4, day 14 = email 5
+    const schedule = [
+      { day: 0, emailNumber: 1, type: 'welcome' },
+      { day: 1, emailNumber: 2, type: 'getting-started' },
+      { day: 3, emailNumber: 3, type: 'academy' },
+      { day: 7, emailNumber: 4, type: 'tips' },
+      { day: 14, emailNumber: 5, type: 'upgrade' },
+    ];
+
+    // Get users who haven't completed onboarding (less than 5 emails sent)
+    const usersInOnboarding = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      createdAt: users.createdAt,
+      onboardingEmailsSent: users.onboardingEmailsSent,
+    })
+    .from(users)
+    .where(
+      and(
+        eq(users.emailUnsubscribed, false),
+        sql`${users.email} IS NOT NULL`,
+        sql`COALESCE(${users.onboardingEmailsSent}, 0) < 5`
+      )
+    );
+
+    const now = new Date();
+    const pendingEmails: {
+      userId: string;
+      email: string;
+      firstName: string | null;
+      nextEmailNumber: number;
+      nextEmailType: string;
+      scheduledDate: Date;
+    }[] = [];
+
+    for (const user of usersInOnboarding) {
+      if (!user.email || !user.createdAt) continue;
+      
+      const emailsSent = user.onboardingEmailsSent || 0;
+      const nextScheduleItem = schedule.find(s => s.emailNumber === emailsSent + 1);
+      
+      if (!nextScheduleItem) continue;
+      
+      // Calculate when the next email is scheduled
+      const signupDate = new Date(user.createdAt);
+      const scheduledDate = new Date(signupDate);
+      scheduledDate.setDate(signupDate.getDate() + nextScheduleItem.day);
+      
+      // Only include emails scheduled for the future
+      if (scheduledDate > now) {
+        pendingEmails.push({
+          userId: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          nextEmailNumber: nextScheduleItem.emailNumber,
+          nextEmailType: nextScheduleItem.type,
+          scheduledDate,
+        });
+      }
+    }
+
+    // Sort by scheduled date (earliest first)
+    pendingEmails.sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
+
+    return pendingEmails;
   }
 
   async getEmailsByRecipient(userId: string): Promise<AdminEmail[]> {
