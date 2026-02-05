@@ -44,7 +44,7 @@ import { insertEmailTemplateSchema, insertContactMessageSchema } from "@shared/s
 import { SUBSCRIPTION_LIMITS, connectESPRequestSchema, espProviderSchema } from "@shared/schema";
 import { validateESPConnection, fetchESPStats, sendEmailViaESP, type ESPCredentials } from "./services/esp";
 import { sendWelcomeEmail, sendPasswordResetEmail, sendAccountDeactivatedEmail, sendEmailVerification, sendAdminNewSignupNotification, sendStarterMonthlyResetEmail } from "./services/email";
-import { sendOnboardingEmail, sendBlogAnnouncement } from "./emailService";
+import { sendOnboardingEmail, sendBlogAnnouncement, addResendContact } from "./emailService";
 import { generateBenchmarkFeedback, calculateReadingLevel } from "@shared/benchmarks";
 import { 
   generateVariationsRequestSchema,
@@ -544,6 +544,11 @@ export async function registerRoutes(
       // Send welcome onboarding email (don't block registration)
       sendOnboardingEmail(user.id, 1, 'welcome').catch(err => 
         console.error('Welcome onboarding email failed:', err)
+      );
+
+      // Add to Resend contacts for newsletter/marketing (don't block registration)
+      addResendContact(email, firstName, lastName).catch(err =>
+        console.error('Resend contact creation failed:', err)
       );
 
       // Create session for newly registered user
@@ -2769,6 +2774,17 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Admin emails error:', error);
       res.status(500).json({ error: 'Failed to fetch email history' });
+    }
+  });
+
+  // Get Scheduled Emails (upcoming emails waiting to be sent)
+  app.get('/api/admin/emails/scheduled', isAdmin, async (req: any, res) => {
+    try {
+      const scheduledEmails = await storage.getScheduledEmails();
+      res.json(scheduledEmails);
+    } catch (error) {
+      console.error('Scheduled emails error:', error);
+      res.status(500).json({ error: 'Failed to fetch scheduled emails' });
     }
   });
 

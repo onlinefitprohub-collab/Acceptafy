@@ -1118,11 +1118,13 @@ export const adminEmails = pgTable("admin_emails", {
   htmlContent: text("html_content"), // Full HTML content for preview
   emailType: varchar("email_type").notNull(), // 'individual', 'bulk', 'announcement', 'onboarding', 'automation'
   segment: varchar("segment"), // 'all', 'starter', 'pro', 'scale', 'at-risk', etc.
-  status: varchar("status").default("sent"), // 'sent', 'failed', 'pending'
+  status: varchar("status").default("sent"), // 'sent', 'failed', 'pending', 'scheduled'
+  scheduledAt: timestamp("scheduled_at"), // When the email should be sent (null = immediate)
   sentAt: timestamp("sent_at").defaultNow(),
 }, (table) => [
   index("idx_admin_emails_admin").on(table.adminId),
   index("idx_admin_emails_recipient").on(table.recipientUserId),
+  index("idx_admin_emails_scheduled").on(table.scheduledAt),
 ]);
 
 export type AdminEmail = typeof adminEmails.$inferSelect;

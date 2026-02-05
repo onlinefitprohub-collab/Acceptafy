@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
+import { addResendContact } from "./emailService";
 
 const getOidcConfig = memoize(
   async () => {
@@ -52,15 +53,30 @@ function updateUserSession(
 }
 
 async function upsertUser(claims: any) {
+  const email = claims["email"];
+  const firstName = claims["first_name"];
+  const lastName = claims["last_name"];
+  
+  // Check if this is a new user before upserting
+  const existingUser = await storage.getUserByEmail(email);
+  const isNewUser = !existingUser;
+  
   await storage.upsertUser({
     id: claims["sub"],
-    email: claims["email"],
-    firstName: claims["first_name"],
-    lastName: claims["last_name"],
+    email: email,
+    firstName: firstName,
+    lastName: lastName,
     profileImageUrl: claims["profile_image_url"],
     emailVerified: true, // Replit OAuth users have verified emails
     lastLoginAt: new Date(), // Track login time
   });
+  
+  // Add new OAuth users to Resend contacts for newsletter/marketing
+  if (isNewUser && email) {
+    addResendContact(email, firstName, lastName).catch(err =>
+      console.error('Resend contact creation failed for OAuth user:', err)
+    );
+  }
 }
 
 export async function setupAuth(app: Express) {

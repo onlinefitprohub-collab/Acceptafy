@@ -298,6 +298,12 @@ export interface IStorage {
   
   // Blog Announcements
   getBlogAnnouncementHistory(): Promise<any[]>;
+  
+  // Admin Emails
+  createAdminEmail(email: InsertAdminEmail): Promise<AdminEmail>;
+  getAdminEmails(limit?: number): Promise<(AdminEmail & { openedAt: Date | null })[]>;
+  getScheduledEmails(): Promise<AdminEmail[]>;
+  getEmailsByRecipient(userId: string): Promise<AdminEmail[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -345,6 +351,7 @@ export class DatabaseStorage implements IStorage {
         target: users.email,
         set: {
           ...userData,
+          lastLoginAt: userData.lastLoginAt || new Date(), // Ensure login time is always updated
           updatedAt: new Date(),
         },
       })
@@ -2491,6 +2498,7 @@ export class DatabaseStorage implements IStorage {
         emailType: adminEmails.emailType,
         segment: adminEmails.segment,
         status: adminEmails.status,
+        scheduledAt: adminEmails.scheduledAt,
         sentAt: adminEmails.sentAt,
         openedAt: sql<Date | null>`COALESCE(
           (SELECT MAX(${emailOpens.openedAt}) FROM ${emailOpens} WHERE ${emailOpens.emailId} = ${adminEmails.id} AND ${emailOpens.openedAt} IS NOT NULL),
@@ -2507,6 +2515,20 @@ export class DatabaseStorage implements IStorage {
       .limit(limit);
     
     return results;
+  }
+
+  async getScheduledEmails(): Promise<AdminEmail[]> {
+    // Get emails that are scheduled for the future and haven't been sent yet
+    return db
+      .select()
+      .from(adminEmails)
+      .where(
+        and(
+          eq(adminEmails.status, 'scheduled'),
+          sql`${adminEmails.scheduledAt} > NOW()`
+        )
+      )
+      .orderBy(adminEmails.scheduledAt);
   }
 
   async getEmailsByRecipient(userId: string): Promise<AdminEmail[]> {

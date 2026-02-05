@@ -809,3 +809,36 @@ export function startOnboardingEmailScheduler(): void {
   
   console.log('[OnboardingScheduler] Scheduler started - will check every 6 hours');
 }
+
+// Add user as a contact in Resend for newsletter/marketing emails
+// Uses the Acceptafy audience/segment for subscribers
+const RESEND_AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
+
+export async function addResendContact(email: string, firstName?: string, lastName?: string): Promise<boolean> {
+  try {
+    // If no audience ID configured, skip contact creation
+    if (!RESEND_AUDIENCE_ID) {
+      console.log('[ResendContact] No RESEND_AUDIENCE_ID configured, skipping contact creation for:', email);
+      return false;
+    }
+
+    const result = await resend.contacts.create({
+      email: email,
+      firstName: firstName || '',
+      lastName: lastName || '',
+      unsubscribed: false,
+      audienceId: RESEND_AUDIENCE_ID,
+    });
+
+    if (result.error) {
+      console.error('[ResendContact] Error adding contact:', result.error);
+      return false;
+    }
+
+    console.log('[ResendContact] Successfully added contact:', email);
+    return true;
+  } catch (error) {
+    console.error('[ResendContact] Exception adding contact:', error);
+    return false;
+  }
+}

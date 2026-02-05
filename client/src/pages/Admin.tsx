@@ -323,7 +323,9 @@ interface AdminEmail {
   emailType: string;
   segment: string | null;
   status: string;
+  scheduledAt: string | null;
   sentAt: string;
+  openedAt?: Date | null;
 }
 
 interface ContactMessage {
@@ -608,6 +610,11 @@ export default function Admin() {
 
   const { data: adminEmails, isLoading: emailsLoading } = useQuery<AdminEmail[]>({
     queryKey: ["/api/admin/emails"],
+    enabled: isAdmin,
+  });
+
+  const { data: scheduledEmails, isLoading: scheduledEmailsLoading } = useQuery<AdminEmail[]>({
+    queryKey: ["/api/admin/emails/scheduled"],
     enabled: isAdmin,
   });
 
@@ -4094,6 +4101,81 @@ export default function Admin() {
           </CardContent>
         </Card>
 
+        {/* Scheduled Emails */}
+        <Card data-testid="scheduled-emails-card" className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Scheduled Emails
+            </CardTitle>
+            <CardDescription>
+              Upcoming emails waiting to be sent
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {scheduledEmailsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : scheduledEmails && scheduledEmails.length > 0 ? (
+              <ScrollArea className="h-[200px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Scheduled For</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {scheduledEmails.map((email) => (
+                      <TableRow key={email.id}>
+                        <TableCell className="font-medium text-sm">
+                          {email.emailType === 'bulk' ? (
+                            <Badge variant="secondary" className="capitalize">{email.segment || 'All'}</Badge>
+                          ) : (
+                            <span className="truncate max-w-[150px] block">{email.recipientEmail}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm truncate max-w-[200px]">{email.subject}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {email.emailType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Badge variant="default" className="bg-amber-600">
+                            {email.scheduledAt ? format(new Date(email.scheduledAt), 'MMM d, h:mm a') : 'Unknown'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            data-testid={`button-view-scheduled-email-${email.id}`}
+                            onClick={() => {
+                              setSelectedEmail(email);
+                              setViewEmailDialog(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            ) : (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                No scheduled emails
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Email History */}
         <Card data-testid="email-history-card" className="lg:col-span-2">
           <CardHeader>
@@ -4143,13 +4225,13 @@ export default function Admin() {
                           {format(new Date(email.sentAt), 'MMM d, h:mm a')}
                         </TableCell>
                         <TableCell>
-                          {(email as { openedAt?: Date | null }).openedAt ? (
+                          {email.openedAt ? (
                             <Badge 
                               variant="default" 
                               className="text-xs"
                               data-testid={`badge-email-opened-${email.id}`}
                             >
-                              {format(new Date((email as { openedAt: Date }).openedAt), 'MMM d, h:mm a')}
+                              {format(new Date(email.openedAt), 'MMM d, h:mm a')}
                             </Badge>
                           ) : (
                             <Badge 
