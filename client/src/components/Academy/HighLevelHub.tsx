@@ -173,40 +173,93 @@ export const HighLevelWarmup = ({ onBack }: SectionProps) => (
       </p>
     </div>
 
-    <InfoCard title="HighLevel Stage-Based Warm-Up Schedule" icon={Clock} variant="info">
-      <p className="text-sm mb-3">HighLevel uses a stage-based warm-up system. As you reach your daily limit consistently and maintain good engagement, you progress to the next stage.</p>
+    <InfoCard title="Email Sending Recommendations" icon={Clock} variant="info">
+      <p className="text-sm mb-3">Daily and Hourly Bulk Email Sending Recommendations to follow when warming up your Dedicated Email Domain. Only send to emails that have opted-in.</p>
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full text-xs">
           <thead>
-            <tr className="border-b">
-              <th className="text-left py-2 font-semibold">Stage</th>
-              <th className="text-left py-2 font-semibold">Daily Limit</th>
-              <th className="text-left py-2 font-semibold">Progression</th>
+            <tr className="border-b bg-purple-500/10">
+              <th className="text-left py-2 px-2 font-semibold">Stage</th>
+              <th className="text-center py-2 px-1 font-semibold">1</th>
+              <th className="text-center py-2 px-1 font-semibold">2</th>
+              <th className="text-center py-2 px-1 font-semibold">3</th>
+              <th className="text-center py-2 px-1 font-semibold">4</th>
+              <th className="text-center py-2 px-1 font-semibold">5</th>
+              <th className="text-center py-2 px-1 font-semibold">6</th>
+              <th className="text-center py-2 px-1 font-semibold">7</th>
+              <th className="text-center py-2 px-1 font-semibold">8</th>
+              <th className="text-center py-2 px-1 font-semibold">9</th>
+              <th className="text-center py-2 px-1 font-semibold">10</th>
+              <th className="text-center py-2 px-1 font-semibold">11</th>
+              <th className="text-center py-2 px-1 font-semibold">12</th>
+              <th className="text-center py-2 px-1 font-semibold">13</th>
+              <th className="text-center py-2 px-1 font-semibold">14</th>
+              <th className="text-center py-2 px-1 font-semibold">15</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b"><td className="py-2 font-semibold">Stage 1</td><td className="py-2 font-mono">1,000</td><td className="py-2 text-xs text-muted-foreground">Starting stage for new domains</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Stage 2</td><td className="py-2 font-mono">5,000</td><td className="py-2 text-xs text-muted-foreground">After consistent Stage 1 sends</td></tr>
-            <tr className="border-b"><td className="py-2 font-semibold">Stage 3</td><td className="py-2 font-mono">10,000</td><td className="py-2 text-xs text-muted-foreground">Good reputation established</td></tr>
-            <tr className="border-b bg-muted/50"><td className="py-2 font-semibold">Stage 4 (Shared)</td><td className="py-2 font-mono font-semibold">15,000</td><td className="py-2 text-xs text-muted-foreground">Max for shared domains</td></tr>
-            <tr className="bg-green-500/10"><td className="py-2 font-semibold">Stage 4 (Dedicated)</td><td className="py-2 font-mono font-semibold">450,000</td><td className="py-2 text-xs text-muted-foreground">Requires dedicated sending domain</td></tr>
+            <tr className="border-b">
+              <td className="py-2 px-2 font-semibold text-purple-400">Hourly Sending</td>
+              <td className="text-center py-2 px-1 font-mono">100</td>
+              <td className="text-center py-2 px-1 font-mono">300</td>
+              <td className="text-center py-2 px-1 font-mono">600</td>
+              <td className="text-center py-2 px-1 font-mono">800</td>
+              <td className="text-center py-2 px-1 font-mono">1K</td>
+              <td className="text-center py-2 px-1 font-mono">1.5K</td>
+              <td className="text-center py-2 px-1 font-mono">2K</td>
+              <td className="text-center py-2 px-1 font-mono">3K</td>
+              <td className="text-center py-2 px-1 font-mono">3.5K</td>
+              <td className="text-center py-2 px-1 font-mono">4.5K</td>
+              <td className="text-center py-2 px-1 font-mono">6.5K</td>
+              <td className="text-center py-2 px-1 font-mono">10K</td>
+              <td className="text-center py-2 px-1 font-mono">16K</td>
+              <td className="text-center py-2 px-1 font-mono">25K</td>
+              <td className="text-center py-2 px-1 font-mono">50K</td>
+            </tr>
+            <tr className="bg-purple-500/5">
+              <td className="py-2 px-2 font-semibold text-purple-400">Daily Sending</td>
+              <td className="text-center py-2 px-1 font-mono">1K</td>
+              <td className="text-center py-2 px-1 font-mono">2.5K</td>
+              <td className="text-center py-2 px-1 font-mono">5K</td>
+              <td className="text-center py-2 px-1 font-mono">6.5K</td>
+              <td className="text-center py-2 px-1 font-mono">8K</td>
+              <td className="text-center py-2 px-1 font-mono">10K</td>
+              <td className="text-center py-2 px-1 font-mono">14K</td>
+              <td className="text-center py-2 px-1 font-mono">20K</td>
+              <td className="text-center py-2 px-1 font-mono">25K</td>
+              <td className="text-center py-2 px-1 font-mono">35K</td>
+              <td className="text-center py-2 px-1 font-mono">50K</td>
+              <td className="text-center py-2 px-1 font-mono">80K</td>
+              <td className="text-center py-2 px-1 font-mono">125K</td>
+              <td className="text-center py-2 px-1 font-mono">175K</td>
+              <td className="text-center py-2 px-1 font-mono">250K</td>
+            </tr>
           </tbody>
         </table>
       </div>
-      <p className="text-xs mt-2">
-        The daily counter resets every day at midnight 00:00:01 AM UTC. Aim to reach your daily limit consistently to progress to the next stage.
+      <p className="text-xs mt-3 text-muted-foreground">
+        Progress through stages by consistently reaching your limits while maintaining good engagement. The daily counter resets at midnight 00:00:01 AM UTC.
       </p>
     </InfoCard>
     
     <InfoCard title="Batch Sending Best Practices" icon={Mail} variant="success">
-      <p className="text-sm mb-3">When sending bulk campaigns, proper throttling protects your reputation and improves deliverability.</p>
+      <p className="text-sm mb-3">Follow these recommendations to ensure you aren't sending too many emails within a single day or hour.</p>
       <div className="space-y-3">
         <div className="p-3 rounded-lg bg-muted/50">
-          <p className="font-semibold text-foreground text-sm">Recommended Batch Sizes</p>
+          <p className="font-semibold text-foreground text-sm">Stay Within Hourly Limits</p>
           <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
-            <li><span className="font-semibold">Stage 1:</span> Send in batches of 200-300 emails, spaced 15-30 minutes apart</li>
-            <li><span className="font-semibold">Stage 2:</span> Send in batches of 500-1,000 emails, spaced 10-15 minutes apart</li>
-            <li><span className="font-semibold">Stage 3+:</span> Send in batches of 1,000-2,000 emails, spaced 5-10 minutes apart</li>
+            <li><span className="font-semibold">Stage 1:</span> Max 100 emails per hour - space out your sends</li>
+            <li><span className="font-semibold">Stage 2-4:</span> 300-800 emails per hour - still be cautious</li>
+            <li><span className="font-semibold">Stage 5+:</span> Higher limits, but always respect the hourly cap</li>
+          </ul>
+        </div>
+        <div className="p-3 rounded-lg bg-muted/50">
+          <p className="font-semibold text-foreground text-sm">Sending Best Practices</p>
+          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
+            <li><span className="font-semibold">Only send to opted-in contacts:</span> Never send to purchased or scraped lists</li>
+            <li><span className="font-semibold">Spread large campaigns:</span> If sending 5K+ emails, split across multiple hours</li>
+            <li><span className="font-semibold">Monitor engagement:</span> High bounces or complaints can slow your progression</li>
+            <li><span className="font-semibold">Start with engaged subscribers:</span> Send to your most active contacts first</li>
           </ul>
         </div>
         <div className="p-3 rounded-lg bg-muted/50">
@@ -214,16 +267,7 @@ export const HighLevelWarmup = ({ onBack }: SectionProps) => (
           <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
             <li><span className="font-semibold">Best sending windows:</span> Tuesday-Thursday, 9am-11am or 1pm-3pm recipient's local time</li>
             <li><span className="font-semibold">Avoid:</span> Weekends, early mornings, and late evenings for business emails</li>
-            <li><span className="font-semibold">Spread large campaigns:</span> Break 10,000+ sends across multiple days if possible</li>
-          </ul>
-        </div>
-        <div className="p-3 rounded-lg bg-muted/50">
-          <p className="font-semibold text-foreground text-sm">Throttling Strategy</p>
-          <ul className="list-disc list-inside space-y-1 mt-2 text-xs">
-            <li>Never send your entire list at once - even if within limits</li>
-            <li>Use HighLevel's built-in batch sending feature when available</li>
-            <li>Monitor bounce rates during sending - pause if above 2%</li>
-            <li>Start each campaign with your most engaged subscribers first</li>
+            <li><span className="font-semibold">Be consistent:</span> Regular sending helps build and maintain reputation</li>
           </ul>
         </div>
       </div>
