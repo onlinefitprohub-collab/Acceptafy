@@ -2138,16 +2138,8 @@ function AppContent() {
       {connectionsSubView === 'esp' && (
         <ESPSettings
           connections={espConnections}
-          onConnect={async (provider) => {
-            setEspConnections(prev => 
-              prev.map(c => c.provider === provider ? { ...c, connected: true } : c)
-            );
-          }}
-          onDisconnect={async (provider) => {
-            setEspConnections(prev => 
-              prev.map(c => c.provider === provider ? { ...c, connected: false } : c)
-            );
-          }}
+          onConnect={handleESPConnect}
+          onDisconnect={handleESPDisconnect}
         />
       )}
 
