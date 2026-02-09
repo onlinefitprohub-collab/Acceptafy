@@ -2072,7 +2072,44 @@ function AppContent() {
 
       {analyticsSubView === 'stats' && (
         <Suspense fallback={<ComponentLoader />}>
-          <ESPStatsDashboard onNavigateToFunnel={() => setAnalyticsSubView('funnel')} />
+          <ESPStatsDashboard 
+            onNavigateToFunnel={() => setAnalyticsSubView('funnel')} 
+            onAnalyzeSubject={(content: string) => {
+              const lines = content.split('\n');
+              let subject = '';
+              let previewText = '';
+              let bodyContent = '';
+              
+              if (content.startsWith('Subject:')) {
+                const bodyStartIndex = content.indexOf('\n\n');
+                const headerSection = bodyStartIndex >= 0 ? content.substring(0, bodyStartIndex) : content;
+                bodyContent = bodyStartIndex >= 0 ? content.substring(bodyStartIndex + 2).trim() : '';
+                
+                for (const line of headerSection.split('\n')) {
+                  if (line.startsWith('Subject:')) {
+                    subject = line.replace('Subject:', '').trim();
+                  } else if (line.startsWith('Preview Text:')) {
+                    previewText = line.replace('Preview Text:', '').trim();
+                  }
+                }
+              } else {
+                subject = content.trim();
+              }
+              
+              if (subject) {
+                setVariations([{ subject, previewText: previewText || '' }]);
+              }
+              if (bodyContent) {
+                setBody(bodyContent);
+              }
+              
+              setResult(null);
+              setGradingError(null);
+              setSelectedHistoryItem(null);
+              setActiveView('grader');
+              clearAllSubViews();
+            }}
+          />
         </Suspense>
       )}
 
