@@ -1135,31 +1135,48 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
         return;
       }
       
-      // Extract text content from HTML for grading, using DOMParser for safe extraction
       let textContent = textContentFromResponse;
       if (!textContent && htmlContent) {
         try {
           const parser = new DOMParser();
           const doc = parser.parseFromString(htmlContent, 'text/html');
           
-          // Remove script, style, and other non-content elements
           const elementsToRemove = doc.querySelectorAll('script, style, noscript, svg, head, meta, link');
           elementsToRemove.forEach(el => el.remove());
           
-          // Get text content preserving paragraph structure
-          const bodyContent = doc.body?.textContent || doc.documentElement?.textContent || '';
-          // Normalize whitespace: collapse multiple spaces/newlines but preserve paragraph breaks
-          textContent = bodyContent
-            .replace(/\s+/g, ' ')
-            .replace(/\s*\n\s*/g, '\n')
+          const blockTags = new Set([
+            'P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+            'LI', 'TR', 'BLOCKQUOTE', 'SECTION', 'ARTICLE',
+            'HEADER', 'FOOTER', 'HR', 'TABLE', 'UL', 'OL',
+            'DT', 'DD', 'FIGCAPTION', 'ADDRESS', 'PRE',
+          ]);
+          
+          const extractText = (node: Node): string => {
+            if (node.nodeType === Node.TEXT_NODE) {
+              return (node.textContent || '').replace(/[ \t]+/g, ' ');
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
+            const el = node as Element;
+            if (el.tagName === 'BR') return '\n';
+            
+            const childText = Array.from(el.childNodes).map(extractText).join('');
+            if (blockTags.has(el.tagName)) {
+              return '\n' + childText.trim() + '\n';
+            }
+            return childText;
+          };
+          
+          const raw = extractText(doc.body || doc.documentElement);
+          textContent = raw
+            .replace(/\n{3,}/g, '\n\n')
+            .replace(/^[ \t]+/gm, '')
             .trim();
         } catch {
-          // Fallback to simple regex approach
           const cleanHtml = htmlContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
             .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = cleanHtml;
-          textContent = tempDiv.textContent || tempDiv.innerText || '';
+          textContent = (tempDiv.innerText || tempDiv.textContent || '').trim();
         }
       }
       
