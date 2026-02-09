@@ -1502,6 +1502,35 @@ const ontraportProvider: ESPProvider = {
         console.log('Ontraport messages raw:', JSON.stringify(data).slice(0, 1500));
         
         const messages = data.data || [];
+        
+        // DIAGNOSTIC: Log ALL field keys and any bounce-related values from first message
+        if (messages.length > 0) {
+          const firstMsg = messages[0];
+          const allKeys = Object.keys(firstMsg);
+          console.log('ONTRAPORT DIAGNOSTIC - All field keys:', JSON.stringify(allKeys));
+          
+          // Find any fields containing 'bounce', 'bad', 'hard', 'soft', 'deliver' in their name or having mc prefix
+          const bounceRelated: Record<string, any> = {};
+          for (const key of allKeys) {
+            const lk = key.toLowerCase();
+            if (lk.includes('bounce') || lk.includes('bad') || lk.includes('hard') || lk.includes('soft') || 
+                lk.includes('deliver') || lk.includes('reject') || lk.includes('fail') ||
+                (lk.startsWith('mc') && firstMsg[key] !== '0' && firstMsg[key] !== '' && firstMsg[key] !== null)) {
+              bounceRelated[key] = firstMsg[key];
+            }
+          }
+          console.log('ONTRAPORT DIAGNOSTIC - Bounce/delivery related fields:', JSON.stringify(bounceRelated));
+          
+          // Also log ALL mc* fields with their values
+          const mcFields: Record<string, any> = {};
+          for (const key of allKeys) {
+            if (key.startsWith('mc')) {
+              mcFields[key] = firstMsg[key];
+            }
+          }
+          console.log('ONTRAPORT DIAGNOSTIC - All mc* fields:', JSON.stringify(mcFields));
+        }
+        
         // Filter for messages that have actually been sent (mcsent > 0)
         const sentMessages = messages.filter((m: any) => parseInt(m.mcsent) > 0);
         
