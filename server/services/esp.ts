@@ -829,23 +829,29 @@ const convertkitProvider: ESPProvider = {
       if (!response.ok) return [];
       const data = await response.json();
       const broadcasts = (data.broadcasts || []).slice(0, limit);
-      return broadcasts.map((b: any) => ({
-        campaignId: b.id?.toString() || '',
-        campaignName: b.subject || 'Untitled Broadcast',
-        subject: b.subject,
-        sentAt: b.published_at,
-        totalSent: b.stats?.recipients || 0,
-        delivered: b.stats?.recipients || 0,
-        opened: b.stats?.open_count || 0,
-        clicked: b.stats?.click_count || 0,
-        bounced: 0,
-        unsubscribed: b.stats?.unsubscribes || 0,
-        spamReports: 0,
-        openRate: b.stats?.open_rate ? b.stats.open_rate * 100 : 0,
-        clickRate: b.stats?.click_rate ? b.stats.click_rate * 100 : 0,
-        bounceRate: 0,
-        unsubscribeRate: 0,
-      }));
+      return broadcasts.map((b: any) => {
+        const sent = b.stats?.recipients || 0;
+        const bounced = b.stats?.bounce_count || b.stats?.bounces || b.stats?.hard_bounces || 0;
+        const delivered = sent - bounced;
+        const bounceRate = sent > 0 ? (bounced / sent) * 100 : 0;
+        return {
+          campaignId: b.id?.toString() || '',
+          campaignName: b.subject || 'Untitled Broadcast',
+          subject: b.subject,
+          sentAt: b.published_at,
+          totalSent: sent,
+          delivered: delivered > 0 ? delivered : sent,
+          opened: b.stats?.open_count || 0,
+          clicked: b.stats?.click_count || 0,
+          bounced,
+          unsubscribed: b.stats?.unsubscribes || 0,
+          spamReports: 0,
+          openRate: b.stats?.open_rate ? b.stats.open_rate * 100 : 0,
+          clickRate: b.stats?.click_rate ? b.stats.click_rate * 100 : 0,
+          bounceRate,
+          unsubscribeRate: 0,
+        };
+      });
     } catch {
       return [];
     }
@@ -1164,23 +1170,29 @@ const aweberProvider: ESPProvider = {
       });
       if (!response.ok) return [];
       const data = await response.json();
-      return (data.entries || []).map((b: any) => ({
-        campaignId: b.id?.toString() || '',
-        campaignName: b.subject || 'Untitled Broadcast',
-        subject: b.subject,
-        sentAt: b.sent_at,
-        totalSent: b.total_sent || 0,
-        delivered: b.total_sent || 0,
-        opened: b.total_opens || 0,
-        clicked: b.total_clicks || 0,
-        bounced: 0,
-        unsubscribed: b.total_unsubscribes || 0,
-        spamReports: 0,
-        openRate: b.open_rate ? b.open_rate * 100 : 0,
-        clickRate: b.click_rate ? b.click_rate * 100 : 0,
-        bounceRate: 0,
-        unsubscribeRate: 0,
-      }));
+      return (data.entries || []).map((b: any) => {
+        const sent = b.total_sent || 0;
+        const bounced = b.total_bounces || b.bounces || 0;
+        const delivered = sent - bounced;
+        const bounceRate = sent > 0 ? (bounced / sent) * 100 : 0;
+        return {
+          campaignId: b.id?.toString() || '',
+          campaignName: b.subject || 'Untitled Broadcast',
+          subject: b.subject,
+          sentAt: b.sent_at,
+          totalSent: sent,
+          delivered: delivered > 0 ? delivered : sent,
+          opened: b.total_opens || 0,
+          clicked: b.total_clicks || 0,
+          bounced,
+          unsubscribed: b.total_unsubscribes || 0,
+          spamReports: b.total_spam_complaints || 0,
+          openRate: b.open_rate ? b.open_rate * 100 : 0,
+          clickRate: b.click_rate ? b.click_rate * 100 : 0,
+          bounceRate,
+          unsubscribeRate: sent > 0 ? ((b.total_unsubscribes || 0) / sent) * 100 : 0,
+        };
+      });
     } catch {
       return [];
     }
@@ -1498,17 +1510,20 @@ const ontraportProvider: ESPProvider = {
         if (sentMessages.length > 0) {
           return sentMessages.slice(0, limit).map((m: any) => {
             // Ontraport uses mc* prefix for stats: mcsent, mcopened, mcclicked, mcabuse, mcunsub
+            // Bounce fields: mcbounce (primary), mcbad (bad addresses), mcbounced (alternate)
+            // Use the highest single value to avoid double-counting overlapping fields
             const sent = parseInt(m.mcsent) || 0;
-            const delivered = sent; // Ontraport doesn't provide separate delivered count
             const opened = parseInt(m.mcopened) || 0;
             const clicked = parseInt(m.mcclicked) || 0;
-            const bounced = 0; // Not directly available in Messages endpoint
+            const bounced = Math.max(parseInt(m.mcbounce) || 0, parseInt(m.mcbad) || 0, parseInt(m.mcbounced) || 0);
+            const delivered = Math.max(sent - bounced, 0);
             const unsubscribed = parseInt(m.mcunsub) || 0;
             const spamReports = parseInt(m.mcabuse) || 0;
             
             // Calculate rates
             const openRate = sent > 0 ? (opened / sent) * 100 : 0;
             const clickRate = sent > 0 ? (clicked / sent) * 100 : 0;
+            const bounceRate = sent > 0 ? (bounced / sent) * 100 : 0;
             
             return {
               campaignId: m.id?.toString() || '',
@@ -1524,7 +1539,7 @@ const ontraportProvider: ESPProvider = {
               spamReports,
               openRate,
               clickRate,
-              bounceRate: 0,
+              bounceRate,
               unsubscribeRate: sent > 0 ? (unsubscribed / sent) * 100 : 0,
             };
           });
