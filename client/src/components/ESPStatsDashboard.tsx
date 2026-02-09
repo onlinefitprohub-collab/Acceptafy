@@ -1576,7 +1576,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               trend={(totals?.avgBounceRate ?? 0) < 1 ? 'up' : (totals?.avgBounceRate ?? 0) < 3 ? 'neutral' : 'down'}
               trendValue={(totals?.avgBounceRate ?? 0) < 1 ? 'Excellent' : (totals?.avgBounceRate ?? 0) < 3 ? 'Acceptable' : 'Needs attention'}
               gradient="from-orange-500 to-red-500"
-              tooltip="Percentage of emails that failed to deliver. Ideal: Below 2%. High rates damage sender reputation with email providers."
+              tooltip="Percentage of emails that failed to deliver. Ideal: Below 2%. High rates damage sender reputation. Note: Some providers (e.g. Ontraport) do not expose bounce data through their API."
             />
             <StatCard
               title="Avg Skip Rate"

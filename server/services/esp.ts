@@ -1487,7 +1487,6 @@ const ontraportProvider: ESPProvider = {
       // Filter for messages that have been sent (mcsent > 0)
       const endpoint = `https://api.ontraport.com/1/Messages?range=${limit}&sort=date&sortDir=desc`;
       
-      console.log(`Ontraport fetching messages: ${endpoint}`);
       const resp = await fetch(endpoint, {
         headers: { 
           'Api-Key': credentials.apiKey,
@@ -1495,64 +1494,23 @@ const ontraportProvider: ESPProvider = {
         }
       });
       
-      console.log(`Ontraport messages response:`, resp.status);
-      
       if (resp.ok) {
         const data = await resp.json();
-        console.log('Ontraport messages raw:', JSON.stringify(data).slice(0, 1500));
-        
         const messages = data.data || [];
-        
-        // DIAGNOSTIC: Log ALL field keys and any bounce-related values from first message
-        if (messages.length > 0) {
-          const firstMsg = messages[0];
-          const allKeys = Object.keys(firstMsg);
-          console.log('ONTRAPORT DIAGNOSTIC - All field keys:', JSON.stringify(allKeys));
-          
-          // Find any fields containing 'bounce', 'bad', 'hard', 'soft', 'deliver' in their name or having mc prefix
-          const bounceRelated: Record<string, any> = {};
-          for (const key of allKeys) {
-            const lk = key.toLowerCase();
-            if (lk.includes('bounce') || lk.includes('bad') || lk.includes('hard') || lk.includes('soft') || 
-                lk.includes('deliver') || lk.includes('reject') || lk.includes('fail') ||
-                (lk.startsWith('mc') && firstMsg[key] !== '0' && firstMsg[key] !== '' && firstMsg[key] !== null)) {
-              bounceRelated[key] = firstMsg[key];
-            }
-          }
-          console.log('ONTRAPORT DIAGNOSTIC - Bounce/delivery related fields:', JSON.stringify(bounceRelated));
-          
-          // Also log ALL mc* fields with their values
-          const mcFields: Record<string, any> = {};
-          for (const key of allKeys) {
-            if (key.startsWith('mc')) {
-              mcFields[key] = firstMsg[key];
-            }
-          }
-          console.log('ONTRAPORT DIAGNOSTIC - All mc* fields:', JSON.stringify(mcFields));
-        }
-        
-        // Filter for messages that have actually been sent (mcsent > 0)
         const sentMessages = messages.filter((m: any) => parseInt(m.mcsent) > 0);
-        
-        console.log(`Ontraport found ${sentMessages.length} sent messages out of ${messages.length} total`);
         
         if (sentMessages.length > 0) {
           return sentMessages.slice(0, limit).map((m: any) => {
-            // Ontraport uses mc* prefix for stats: mcsent, mcopened, mcclicked, mcabuse, mcunsub
-            // Bounce fields: mcbounce (primary), mcbad (bad addresses), mcbounced (alternate)
-            // Use the highest single value to avoid double-counting overlapping fields
+            // Ontraport Message API exposes: mcsent, mcopened, mcclicked, mcabuse, mcunsub
+            // Note: Ontraport does NOT expose bounce data through their Messages API
             const sent = parseInt(m.mcsent) || 0;
             const opened = parseInt(m.mcopened) || 0;
             const clicked = parseInt(m.mcclicked) || 0;
-            const bounced = Math.max(parseInt(m.mcbounce) || 0, parseInt(m.mcbad) || 0, parseInt(m.mcbounced) || 0);
-            const delivered = Math.max(sent - bounced, 0);
             const unsubscribed = parseInt(m.mcunsub) || 0;
             const spamReports = parseInt(m.mcabuse) || 0;
             
-            // Calculate rates
             const openRate = sent > 0 ? (opened / sent) * 100 : 0;
             const clickRate = sent > 0 ? (clicked / sent) * 100 : 0;
-            const bounceRate = sent > 0 ? (bounced / sent) * 100 : 0;
             
             return {
               campaignId: m.id?.toString() || '',
@@ -1560,22 +1518,21 @@ const ontraportProvider: ESPProvider = {
               subject: m.subject || m.alias || m.name,
               sentAt: m.date ? new Date(parseInt(m.date) * 1000).toISOString() : undefined,
               totalSent: sent,
-              delivered,
+              delivered: sent,
               opened,
               clicked,
-              bounced,
+              bounced: 0,
               unsubscribed,
               spamReports,
               openRate,
               clickRate,
-              bounceRate,
+              bounceRate: 0,
               unsubscribeRate: sent > 0 ? (unsubscribed / sent) * 100 : 0,
             };
           });
         }
       }
       
-      console.log('Ontraport: No sent messages found');
       return [];
     } catch (error) {
       console.error('Ontraport fetchCampaignStats error:', error);
