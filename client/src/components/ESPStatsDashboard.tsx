@@ -588,6 +588,16 @@ function CampaignDetailModal({
 }) {
   const { toast } = useToast();
   const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [emailContent, setEmailContent] = useState<{ htmlContent?: string; textContent?: string; subject?: string; previewText?: string } | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [prevCampaignId, setPrevCampaignId] = useState<string | null>(null);
+
+  if (campaign && campaign.campaignId !== prevCampaignId) {
+    setPrevCampaignId(campaign.campaignId);
+    setEmailContent(null);
+    setIsLoadingPreview(false);
+    setIsLoadingContent(false);
+  }
   
   if (!campaign) return null;
   
@@ -601,6 +611,47 @@ function CampaignDetailModal({
         title: "Copied!",
         description: "Subject line copied to clipboard",
       });
+    }
+  };
+
+  const handlePreviewEmail = async () => {
+    if (isManualCampaign || !supportsContent) return;
+    setIsLoadingPreview(true);
+    try {
+      const response = await fetch(`/api/esp/${provider}/campaign/${campaign.campaignId}/content`, {
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        toast({
+          title: "Preview Not Available",
+          description: "Could not fetch email content from your ESP",
+          variant: "destructive",
+        });
+        return;
+      }
+      const data = await response.json();
+      if (data.success === false) {
+        toast({
+          title: "Preview Not Available",
+          description: data.error || "Could not fetch email content",
+          variant: "destructive",
+        });
+        return;
+      }
+      setEmailContent({
+        htmlContent: data.htmlContent || '',
+        textContent: data.textContent || '',
+        subject: data.subject || '',
+        previewText: data.previewText || '',
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to load email preview",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingPreview(false);
     }
   };
 
@@ -730,6 +781,67 @@ function CampaignDetailModal({
             </div>
           </div>
           
+          {supportsContent && !isManualCampaign && !emailContent && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePreviewEmail}
+                disabled={isLoadingPreview}
+                className="gap-2"
+                data-testid="button-preview-email"
+              >
+                {isLoadingPreview ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading Preview...
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    Preview Email
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {emailContent && (
+            <div className="space-y-3 border border-border rounded-xl overflow-hidden" data-testid="email-preview-container">
+              <div className="p-3 bg-muted/50 border-b border-border space-y-2">
+                {emailContent.subject && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Subject:</span>
+                    <span className="text-sm font-medium" data-testid="preview-subject">{emailContent.subject}</span>
+                  </div>
+                )}
+                {emailContent.previewText && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground uppercase tracking-wide">Preview:</span>
+                    <span className="text-sm text-muted-foreground" data-testid="preview-text">{emailContent.previewText}</span>
+                  </div>
+                )}
+              </div>
+              <div className="max-h-64 overflow-y-auto" data-testid="email-preview-body">
+                {emailContent.htmlContent ? (
+                  <iframe
+                    srcDoc={emailContent.htmlContent}
+                    className="w-full h-64 border-0 bg-white"
+                    sandbox=""
+                    title="Email Preview"
+                    data-testid="email-preview-iframe"
+                  />
+                ) : emailContent.textContent ? (
+                  <pre className="p-3 text-sm whitespace-pre-wrap font-sans" data-testid="email-preview-text-content">
+                    {emailContent.textContent}
+                  </pre>
+                ) : (
+                  <p className="p-3 text-sm text-muted-foreground text-center">No email body content available</p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="pt-4 border-t border-border space-y-3">
             {campaign.subject && (
               <div>
@@ -739,7 +851,7 @@ function CampaignDetailModal({
                   data-testid="button-copy-to-grader"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Analyze Subject Line in Email Grader
+                  Grade Subject Line
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-2">
                   Opens the email grader with your subject line pre-filled
@@ -764,7 +876,7 @@ function CampaignDetailModal({
                   ) : (
                     <>
                       <Mail className="w-4 h-4" />
-                      Analyze Full Email Body
+                      Grade This Email
                     </>
                   )}
                 </Button>
@@ -863,6 +975,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
   const [showManualEntryForm, setShowManualEntryForm] = useState(false);
   const [manualCampaignForm, setManualCampaignForm] = useState<ManualCampaignForm>(emptyManualCampaignForm);
   const [manualCampaigns, setManualCampaigns] = useState<ESPCampaignStats[]>([]);
+  const [showAllCampaigns, setShowAllCampaigns] = useState(false);
 
   // Load manual campaigns from localStorage on mount
   useEffect(() => {
@@ -1063,7 +1176,12 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
       
       // Build full email content for analysis
       const subject = data.subject || selectedCampaign?.campaign?.subject || '';
-      const fullContent = subject ? `Subject: ${subject}\n\n${cleanedText}` : cleanedText;
+      const previewText = data.previewText || '';
+      let fullContent = '';
+      if (subject) fullContent += `Subject: ${subject}\n`;
+      if (previewText) fullContent += `Preview Text: ${previewText}\n`;
+      if (fullContent) fullContent += '\n';
+      fullContent += cleanedText;
       
       setSelectedCampaign(null);
       
@@ -2359,7 +2477,7 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {allCampaigns.slice(0, 10).map(({ campaign, provider }) => (
+              {(showAllCampaigns ? allCampaigns : allCampaigns.slice(0, 10)).map(({ campaign, provider }) => (
                 <CampaignRow 
                   key={`${provider}-${campaign.campaignId}`} 
                   campaign={campaign} 
@@ -2374,9 +2492,27 @@ export function ESPStatsDashboard({ onAnalyzeSubject, onNavigateToFunnel }: ESPS
                 </div>
               )}
               {allCampaigns.length > 10 && (
-                <p className="text-center text-sm text-muted-foreground pt-2">
-                  Showing 10 of {allCampaigns.length} campaigns
-                </p>
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCampaigns(!showAllCampaigns)}
+                    className="gap-1"
+                    data-testid="button-toggle-all-campaigns"
+                  >
+                    {showAllCampaigns ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        View All {allCampaigns.length} Campaigns
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>
