@@ -2486,7 +2486,8 @@ Return your response as a JSON object with this exact structure:
         ? `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`
         : '';
       
-      // Convert newlines to <br> for proper formatting and wrap in styled template
+      const trackingId = randomUUID();
+      
       const formattedBody = processedBody.replace(/\n/g, '<br>');
       const finalHtml = `<!DOCTYPE html>
 <html>
@@ -2505,10 +2506,10 @@ Return your response as a JSON object with this exact structure:
     </div>
     <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Reply to this email for assistance.</p>
   </div>
+  <img src="https://acceptafy.com/api/track/open/${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />
 </body>
 </html>`;
 
-      // Send email using Resend
       const { Resend } = await import('resend');
       const resend = new Resend(process.env.RESEND_API_KEY);
       
@@ -2519,7 +2520,6 @@ Return your response as a JSON object with this exact structure:
         html: finalHtml,
       });
 
-      // Log the email
       const emailRecord = await storage.createAdminEmail({
         adminId,
         recipientUserId,
@@ -2531,7 +2531,13 @@ Return your response as a JSON object with this exact structure:
         status: 'sent',
       });
 
-      // Log admin activity
+      await db.insert(emailOpens).values({
+        userId: recipientUserId || 'unknown',
+        emailType: 'individual',
+        emailId: emailRecord.id,
+        trackingId,
+      });
+
       await storage.logAdminActivity(adminId, 'email_sent', recipientUserId, { subject: processedSubject });
 
       res.json({ success: true, emailId: emailRecord.id });
@@ -2648,7 +2654,8 @@ Return your response as a JSON object with this exact structure:
             ? `<span style="display:none!important;visibility:hidden;mso-hide:all;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${processedPreviewLine}</span>`
             : '';
           
-          // Convert newlines to <br> for proper formatting and wrap in styled template
+          const trackingId = randomUUID();
+          
           const formattedBody = processedBody.replace(/\n/g, '<br>');
           const finalHtml = `<!DOCTYPE html>
 <html>
@@ -2667,6 +2674,7 @@ Return your response as a JSON object with this exact structure:
     </div>
     <p style="font-size: 14px; color: #94a3b8; text-align: center; margin-top: 40px;">Questions? Reply to this email for assistance.</p>
   </div>
+  <img src="https://acceptafy.com/api/track/open/${trackingId}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />
 </body>
 </html>`;
           
@@ -2677,7 +2685,7 @@ Return your response as a JSON object with this exact structure:
             html: finalHtml,
           });
           
-          await storage.createAdminEmail({
+          const adminEmailRecord = await storage.createAdminEmail({
             adminId,
             recipientUserId: user.id,
             recipientEmail: user.email!,
@@ -2687,6 +2695,13 @@ Return your response as a JSON object with this exact structure:
             emailType: 'bulk',
             segment,
             status: 'sent',
+          });
+          
+          await db.insert(emailOpens).values({
+            userId: user.id,
+            emailType: 'bulk',
+            emailId: adminEmailRecord.id,
+            trackingId,
           });
           
           sentCount++;
