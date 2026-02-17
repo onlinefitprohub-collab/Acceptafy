@@ -387,6 +387,22 @@ function SectionHeader({ title, icon, description }: SectionHeaderProps) {
   );
 }
 
+const SEGMENT_LABELS: Record<string, string> = {
+  all: 'All Users',
+  starter: 'Starter Users',
+  pro: 'Pro Users',
+  scale: 'Scale Users',
+  paid: 'All Paid Users',
+  'new-signups': 'New Signups',
+  inactive: 'Inactive',
+  'power-users': 'Power Users',
+  'at-risk': 'At Risk',
+  'high-graders': 'High Graders',
+  'high-rewriters': 'High Rewriters',
+  'esp-connected': 'ESP Connected',
+  'approaching-limits': 'Near Limit',
+};
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -4147,9 +4163,14 @@ export default function Admin() {
                       <TableRow key={email.id}>
                         <TableCell className="font-medium text-sm">
                           {email.emailType === 'bulk' ? (
-                            <Badge variant="secondary" className="capitalize">{email.segment || 'All'}</Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className="w-fit text-xs" data-testid={`badge-scheduled-segment-${email.id}`}>
+                                {SEGMENT_LABELS[email.segment || 'all'] || email.segment || 'All Users'}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate max-w-[180px] block" data-testid={`text-scheduled-recipient-${email.id}`}>{email.recipientEmail}</span>
+                            </div>
                           ) : (
-                            <span className="truncate max-w-[150px] block">{email.recipientEmail}</span>
+                            <span className="truncate max-w-[150px] block" data-testid={`text-scheduled-recipient-${email.id}`}>{email.recipientEmail}</span>
                           )}
                         </TableCell>
                         <TableCell className="text-sm truncate max-w-[200px]">{email.subject}</TableCell>
@@ -4251,9 +4272,14 @@ export default function Admin() {
                       <TableRow key={email.id}>
                         <TableCell className="font-medium text-sm">
                           {email.emailType === 'bulk' ? (
-                            <Badge variant="secondary" className="capitalize">{email.segment || 'All'}</Badge>
+                            <div className="flex flex-col gap-1">
+                              <Badge variant="secondary" className="w-fit text-xs" data-testid={`badge-segment-${email.id}`}>
+                                {SEGMENT_LABELS[email.segment || 'all'] || email.segment || 'All Users'}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground truncate max-w-[180px] block" data-testid={`text-recipient-${email.id}`}>{email.recipientEmail}</span>
+                            </div>
                           ) : (
-                            <span className="truncate max-w-[150px] block">{email.recipientEmail}</span>
+                            <span className="truncate max-w-[150px] block" data-testid={`text-recipient-${email.id}`}>{email.recipientEmail}</span>
                           )}
                         </TableCell>
                         <TableCell className="text-sm truncate max-w-[200px]">{email.subject}</TableCell>
