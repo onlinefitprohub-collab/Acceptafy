@@ -221,7 +221,7 @@ export default function ResourceArticle() {
             <CardContent className="p-8 md:p-12">
               <div 
                 className="prose prose-neutral dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: article.content }}
+                dangerouslySetInnerHTML={{ __html: article.content.replace(/^\s*<h1[^>]*>[\s\S]*?<\/h1>\s*/i, '') }}
                 data-testid="article-content"
               />
             </CardContent>

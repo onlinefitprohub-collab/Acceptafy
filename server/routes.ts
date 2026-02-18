@@ -4417,11 +4417,17 @@ Return your response as a JSON object with this exact structure:
       // Use provided title if specified, otherwise use generated title
       const finalTitle = providedTitle?.trim() || rawArticle.title || topic.trim();
       
+      // Normalize content: ensure it starts with a single H1 containing the title
+      let normalizedContent = rawArticle.content || '';
+      normalizedContent = normalizedContent.replace(/<h1[^>]*>[\s\S]*?<\/h1>\s*/gi, '');
+      const escapedTitle = finalTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      normalizedContent = `<h1>${escapedTitle}</h1>\n${normalizedContent.trimStart()}`;
+      
       const article = {
         title: finalTitle,
         slug: rawArticle.slug || generateSlug(finalTitle),
         excerpt: rawArticle.excerpt || extractExcerpt(rawArticle.content || ''),
-        content: rawArticle.content || '',
+        content: normalizedContent,
         featuredImageKeywords: rawArticle.featuredImageKeywords || 'email marketing',
         tags: rawArticle.tags || [],
         metaTitle: rawArticle.metaTitle || finalTitle.substring(0, 60),
@@ -4609,11 +4615,17 @@ Return your response as a JSON object with this exact structure:
       
       const finalTitle = title?.trim() || rawArticle.title || topic.trim();
       
+      // Normalize content: ensure it starts with a single H1 containing the title
+      let rewriteContent = rawArticle.content || '';
+      rewriteContent = rewriteContent.replace(/<h1[^>]*>[\s\S]*?<\/h1>\s*/gi, '');
+      const rewriteEscapedTitle = finalTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      rewriteContent = `<h1>${rewriteEscapedTitle}</h1>\n${rewriteContent.trimStart()}`;
+      
       const article = {
         title: finalTitle,
         slug: rawArticle.slug || generateSlug(finalTitle),
         excerpt: rawArticle.excerpt || extractExcerpt(rawArticle.content || ''),
-        content: rawArticle.content || '',
+        content: rewriteContent,
         tags: rawArticle.tags || [],
         metaTitle: rawArticle.metaTitle || finalTitle.substring(0, 60),
         metaDescription: rawArticle.metaDescription || (rawArticle.excerpt || extractExcerpt(rawArticle.content || '')).substring(0, 160)
