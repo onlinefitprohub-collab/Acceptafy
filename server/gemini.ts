@@ -363,9 +363,32 @@ CRITICAL FORMATTING REQUIREMENTS:
 - NEVER return the body as one long continuous block of text.
 - The body should be formatted for easy reading with clear visual breaks.`;
 
+function stripHtmlToPlainText(html: string): string {
+  if (!/<[a-z][\s\S]*>/i.test(html)) return html;
+  let text = html;
+  text = text.replace(/<br\s*\/?>/gi, '\n');
+  text = text.replace(/<\/p>\s*<p[^>]*>/gi, '\n\n');
+  text = text.replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n');
+  text = text.replace(/<li[^>]*>/gi, '- ');
+  text = text.replace(/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '$2 ($1)');
+  text = text.replace(/<[^>]+>/g, '');
+  text = text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n').trim();
+  return text;
+}
+
+function plainTextToHtml(text: string): string {
+  const paragraphs = text.split(/\n\n+/);
+  return paragraphs.map(p => {
+    const inner = p.replace(/\n/g, '<br>');
+    return `<p>${inner}</p>`;
+  }).join('');
+}
+
 export const rewriteCopy = async (emailBody: string, subject: string, previewText: string, goal: string): Promise<RewrittenEmail> => {
   try {
-    const content = `---Original Email---\nSubject: ${subject}\nPreview: ${previewText}\n\n---Body---\n${emailBody}`;
+    const plainBody = stripHtmlToPlainText(emailBody);
+    const content = `---Original Email---\nSubject: ${subject}\nPreview: ${previewText}\n\n---Body---\n${plainBody}`;
     
     let systemInstruction: string;
     const baseInstruction = `You are an expert email copywriter specializing in high-conversion, high-deliverability emails. Rewrite the provided email content (subject, preview text, and body). Preserve the core message and intent of the original email. Return the result as a single JSON object.`;
@@ -406,11 +429,11 @@ Return the result as a single JSON object.`;
     const jsonString = result.text?.trim() || '{}';
     const parsed = JSON.parse(jsonString) as RewrittenEmail;
     
-    // Convert literal \n sequences to actual newlines
+    const rawBody = (parsed.body?.replace(/\\n/g, '\n') || '').trim();
     return {
       subject: parsed.subject?.replace(/\\n/g, '\n') || '',
       previewText: parsed.previewText?.replace(/\\n/g, '\n') || '',
-      body: parsed.body?.replace(/\\n/g, '\n') || '',
+      body: plainTextToHtml(rawBody),
     };
 
   } catch (error) {

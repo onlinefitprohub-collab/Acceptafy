@@ -3618,9 +3618,7 @@ export default function Admin() {
                                 onClick={() => {
                                   setEmailSubject(rewriteResult.rewritten.subject);
                                   setEmailPreviewLine(rewriteResult.rewritten.previewText);
-                                  const rewrittenBody = rewriteResult.rewritten.body;
-                                  const isHtml = /<[a-z][\s\S]*>/i.test(rewrittenBody);
-                                  setEmailBody(isHtml ? rewrittenBody : rewrittenBody.split(/\n\n+/).map((p: string) => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''));
+                                  setEmailBody(rewriteResult.rewritten.body);
                                   setRewriteResult(null);
                                 }}
                                 data-testid="button-apply-rewrite"
