@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResourcesSection } from "@/components/admin/ResourcesSection";
 import { UserDetailModal } from "@/components/admin/UserDetailModal";
+import { EmailComposerEditor, type EmailComposerEditorRef } from "@/components/EmailComposerEditor";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -406,6 +407,8 @@ const SEGMENT_LABELS: Record<string, string> = {
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  
+  const composerEditorRef = useRef<EmailComposerEditorRef>(null);
   
   // Single selected section state
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
@@ -3364,7 +3367,7 @@ export default function Admin() {
                                 setSelectedArticleId(article.id.toString());
                                 setEmailSubject(`New on the Acceptafy Blog: ${article.title}`);
                                 setEmailPreviewLine(article.metaDescription || '');
-                                setEmailBody(`Hi {{firstName}},\n\nWe just published a new article you'll love:\n\n**${article.title}**\n\n${article.metaDescription || ''}\n\nRead the full article: https://acceptafy.com/academy/${article.slug}\n\nHappy learning!\nThe Acceptafy Team`);
+                                setEmailBody(`<p>Hi {{firstName}},</p><p>We just published a new article you'll love:</p><p><strong>${article.title}</strong></p><p>${article.metaDescription || ''}</p><p>Don't miss it — <a href="https://acceptafy.com/academy/${article.slug}">Read the full article here</a>.</p><p>Happy learning!<br>The Acceptafy Team</p>`);
                               }
                             } else {
                               setSelectedArticleId(null);
@@ -3537,7 +3540,13 @@ export default function Admin() {
                               key={tag}
                               variant="secondary" 
                               className="cursor-pointer text-xs hover-elevate"
-                              onClick={() => setEmailBody(prev => prev + tag)}
+                              onClick={() => {
+                                if (composerEditorRef.current) {
+                                  composerEditorRef.current.insertText(tag);
+                                } else {
+                                  setEmailBody(prev => prev + tag);
+                                }
+                              }}
                               data-testid={`tag-${tag.replace(/[{}]/g, '')}`}
                             >
                               {tag}
@@ -3545,13 +3554,11 @@ export default function Admin() {
                           ))}
                         </div>
                       </div>
-                      <Textarea
-                        id="composer-body"
+                      <EmailComposerEditor
+                        ref={composerEditorRef}
+                        content={emailBody}
+                        onChange={setEmailBody}
                         placeholder="Write your email content here. Use merge tags for personalization."
-                        value={emailBody}
-                        onChange={(e) => setEmailBody(e.target.value)}
-                        rows={6}
-                        data-testid="input-email-body"
                       />
                     </div>
 
@@ -3611,7 +3618,9 @@ export default function Admin() {
                                 onClick={() => {
                                   setEmailSubject(rewriteResult.rewritten.subject);
                                   setEmailPreviewLine(rewriteResult.rewritten.previewText);
-                                  setEmailBody(rewriteResult.rewritten.body);
+                                  const rewrittenBody = rewriteResult.rewritten.body;
+                                  const isHtml = /<[a-z][\s\S]*>/i.test(rewrittenBody);
+                                  setEmailBody(isHtml ? rewrittenBody : rewrittenBody.split(/\n\n+/).map((p: string) => `<p>${p.replace(/\n/g, '<br>')}</p>`).join(''));
                                   setRewriteResult(null);
                                 }}
                                 data-testid="button-apply-rewrite"
@@ -3795,12 +3804,13 @@ export default function Admin() {
                             </div>
                           ) : (
                             <div className="border rounded-lg p-4 bg-card">
-                              <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                                {emailBody
+                              <div 
+                                className="text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: emailBody
                                   .replace(/\{\{firstName\}\}/g, 'John')
                                   .replace(/\{\{lastName\}\}/g, 'Doe')
-                                  .replace(/\{\{email\}\}/g, 'john@example.com')}
-                              </div>
+                                  .replace(/\{\{email\}\}/g, 'john@example.com') }}
+                              />
                             </div>
                           )}
                         </div>

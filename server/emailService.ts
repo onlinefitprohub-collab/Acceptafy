@@ -44,9 +44,12 @@ const escapeHtml = (unsafe: string): string => {
 export const generateEmailPreview = (subject: string, body: string, previewText: string = ''): string => {
   const safeSubject = escapeHtml(subject);
   const safePreviewText = escapeHtml(previewText);
-  const htmlContent = escapeHtml(body)
-    .replace(/\n/g, '<br>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  const isHtmlBody = /<[a-z][\s\S]*>/i.test(body);
+  const htmlContent = isHtmlBody 
+    ? body.replace(/<a\s/gi, '<a style="color: #a855f7; text-decoration: underline;" ')
+    : escapeHtml(body)
+      .replace(/\n/g, '<br>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   
   return `
 <!DOCTYPE html>

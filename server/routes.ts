@@ -2488,7 +2488,10 @@ Return your response as a JSON object with this exact structure:
       
       const trackingId = randomUUID();
       
-      const formattedBody = processedBody.replace(/\n/g, '<br>');
+      const isHtmlBody = /<[a-z][\s\S]*>/i.test(processedBody);
+      const formattedBody = isHtmlBody 
+        ? processedBody.replace(/<a\s/gi, '<a style="color: #a855f7; text-decoration: underline;" ') 
+        : processedBody.replace(/\n/g, '<br>');
       const finalHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -2656,7 +2659,10 @@ Return your response as a JSON object with this exact structure:
           
           const trackingId = randomUUID();
           
-          const formattedBody = processedBody.replace(/\n/g, '<br>');
+          const isHtmlBody = /<[a-z][\s\S]*>/i.test(processedBody);
+          const formattedBody = isHtmlBody 
+            ? processedBody.replace(/<a\s/gi, '<a style="color: #a855f7; text-decoration: underline;" ') 
+            : processedBody.replace(/\n/g, '<br>');
           const finalHtml = `<!DOCTYPE html>
 <html>
 <head>
