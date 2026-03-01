@@ -99,17 +99,16 @@ export function OnboardingTour({ onComplete, onSkip }: OnboardingTourProps) {
       <Card className={`w-full max-w-md mx-4 relative overflow-hidden transition-all duration-300 ${isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}>
         <div className={`absolute inset-0 bg-gradient-to-br ${step.gradient} opacity-10`} />
         
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-3 right-3 z-10"
-          onClick={handleSkip}
-          data-testid="onboarding-skip"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-        
         <CardContent className="relative p-8">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 z-10 text-muted-foreground"
+            onClick={handleSkip}
+            data-testid="onboarding-skip"
+          >
+            <X className="w-4 h-4" />
+          </Button>
           <div className="mb-6">
             <Progress value={progress} className="h-1" />
             <p className="text-xs text-muted-foreground mt-2 text-center">
