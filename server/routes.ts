@@ -1502,6 +1502,12 @@ export async function registerRoutes(
     question: z.string().min(1).max(5000),
     image: z.string().optional(),
     mimeType: z.string().optional(),
+    history: z.array(z.object({
+      role: z.enum(['user', 'assistant']),
+      content: z.string().max(10000),
+      image: z.string().max(5_000_000).optional(),
+      mimeType: z.string().max(50).optional(),
+    })).max(20).optional(),
   });
 
   app.post('/api/ask-acceptafy', aiRateLimiter, isAuthenticated, async (req: any, res) => {
@@ -1514,8 +1520,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
       }
 
-      const { question, image, mimeType } = parseResult.data;
-      const result = await askAcceptafy(question, image, mimeType);
+      const { question, image, mimeType, history } = parseResult.data;
+      const result = await askAcceptafy(question, image, mimeType, history);
       res.json(result);
     } catch (error) {
       console.error('Ask Acceptafy error:', error);

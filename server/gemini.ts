@@ -4169,10 +4169,18 @@ const askAcceptafySchema = {
   required: ["answer", "isOnTopic"]
 };
 
+export interface ChatHistoryMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  image?: string;
+  mimeType?: string;
+}
+
 export const askAcceptafy = async (
   question: string,
   imageBase64?: string,
-  mimeType?: string
+  mimeType?: string,
+  history?: ChatHistoryMessage[]
 ): Promise<{ answer: string; isOnTopic: boolean }> => {
   try {
     const systemInstruction = `You are "Acceptafy", an expert AI assistant exclusively focused on email deliverability, email marketing, inbox placement, sender reputation, DNS authentication (SPF, DKIM, DMARC, BIMI), spam filtering, email list management, ESP configuration, and all related topics.
@@ -4182,6 +4190,7 @@ Your role:
 - If the user provides a screenshot or image, analyze it in the context of email deliverability (e.g., DNS records, spam reports, email headers, ESP dashboards, email designs, bounce logs, etc.).
 - Provide actionable, specific, and expert-level advice.
 - Use clear formatting with paragraphs and bullet points where appropriate.
+- You have access to the full conversation history. When the user refers to something from earlier in the conversation (including previously uploaded images), use that context to provide relevant answers.
 
 IMPORTANT RULES:
 - If the user's question is NOT related to email deliverability or email marketing topics, you MUST set isOnTopic to false and politely decline to answer. In your response, briefly explain that you are specialized in email deliverability and list 3-4 examples of topics you CAN help with (e.g., "I can help with things like improving your inbox placement rate, setting up SPF/DKIM/DMARC records, diagnosing why emails land in spam, or optimizing your email content for better deliverability.").
@@ -4191,17 +4200,29 @@ IMPORTANT RULES:
 
     const contents: any[] = [];
 
-    if (imageBase64 && mimeType) {
-      contents.push({
-        inlineData: {
-          data: imageBase64,
-          mimeType: mimeType
-        }
-      });
-      contents.push(`The user has uploaded an image for analysis. Here is their question:\n\n${question}`);
-    } else {
-      contents.push(question);
+    const trimmedHistory = (history || []).slice(-20);
+    for (const msg of trimmedHistory) {
+      const parts: any[] = [];
+      if (msg.image && msg.mimeType) {
+        parts.push({ inlineData: { data: msg.image, mimeType: msg.mimeType } });
+      }
+      if (msg.content) {
+        parts.push({ text: msg.content });
+      }
+      if (parts.length > 0) {
+        contents.push({
+          role: msg.role === 'assistant' ? 'model' : 'user',
+          parts
+        });
+      }
     }
+
+    const currentParts: any[] = [];
+    if (imageBase64 && mimeType) {
+      currentParts.push({ inlineData: { data: imageBase64, mimeType } });
+    }
+    currentParts.push({ text: question });
+    contents.push({ role: 'user', parts: currentParts });
 
     const res = await ai.models.generateContent({
       model: 'gemini-2.5-flash',

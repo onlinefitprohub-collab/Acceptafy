@@ -141,7 +141,14 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
     setIsLoading(true);
 
     try {
-      const body: Record<string, string> = { question: trimmedInput };
+      const history = messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        ...(msg.image ? { image: msg.image.includes(',') ? msg.image.split(',')[1] : msg.image } : {}),
+        ...(msg.imageMimeType ? { mimeType: msg.imageMimeType } : {}),
+      }));
+
+      const body: Record<string, any> = { question: trimmedInput, history };
       if (sentImage) {
         body.image = sentImage.split(',')[1];
         body.mimeType = sentMimeType || 'image/png';
