@@ -191,6 +191,31 @@ export function AppSidebar({
                 <Tooltip delayDuration={300}>
                   <TooltipTrigger asChild>
                     <SidebarMenuButton 
+                      isActive={activeView === 'ask-acceptafy'}
+                      onClick={() => {
+                        setActiveView('ask-acceptafy');
+                        clearAllSubViews();
+                      }}
+                      className={`group transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-r from-violet-500/15 to-purple-500/15 border border-violet-500/20' : ''}`}
+                      data-testid="nav-ask-acceptafy"
+                    >
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-br from-violet-500 to-purple-500 shadow-md shadow-violet-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <MessageCircleQuestion className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Ask Acceptafy</span>
+                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'opacity-100 text-violet-400' : 'opacity-0 -translate-x-2'}`} />
+                    </SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>AI assistant for email deliverability</p>
+                  </TooltipContent>
+                </Tooltip>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton 
                       isActive={activeView === 'grader'}
                       onClick={() => {
                         setActiveView('grader');
@@ -889,31 +914,6 @@ export function AppSidebar({
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p>Learn email marketing best practices</p>
-                  </TooltipContent>
-                </Tooltip>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <SidebarMenuButton 
-                      isActive={activeView === 'ask-acceptafy'}
-                      onClick={() => {
-                        setActiveView('ask-acceptafy');
-                        clearAllSubViews();
-                      }}
-                      className={`group transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-r from-violet-500/15 to-purple-500/15 border border-violet-500/20' : ''}`}
-                      data-testid="nav-ask-acceptafy"
-                    >
-                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-br from-violet-500 to-purple-500 shadow-md shadow-violet-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
-                        <MessageCircleQuestion className="w-4 h-4" />
-                      </div>
-                      <span className="font-medium">Ask Acceptafy</span>
-                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'opacity-100 text-violet-400' : 'opacity-0 -translate-x-2'}`} />
-                    </SidebarMenuButton>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>AI assistant for email deliverability</p>
                   </TooltipContent>
                 </Tooltip>
               </SidebarMenuItem>
