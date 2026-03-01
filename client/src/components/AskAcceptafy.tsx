@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -327,8 +329,16 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
                 </div>
               )}
               {message.content && (
-                <div className="text-sm whitespace-pre-wrap break-words" data-testid={`text-message-${message.id}`}>
-                  {message.content}
+                <div data-testid={`text-message-${message.id}`}>
+                  {message.role === 'assistant' ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-headings:my-3 prose-headings:text-foreground prose-strong:text-foreground prose-a:text-purple-400 prose-code:text-purple-300 prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-pre:bg-muted prose-pre:border prose-pre:border-border/50">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="text-sm whitespace-pre-wrap break-words">
+                      {message.content}
+                    </div>
+                  )}
                 </div>
               )}
               <div className={`text-[10px] mt-1.5 ${message.role === 'user' ? 'text-white/60' : 'text-muted-foreground'}`}>
