@@ -261,25 +261,27 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
                 Ask me anything about email deliverability, DNS authentication, spam filters, sender reputation, and more.
               </p>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2 max-w-lg w-full">
+            <div className="flex flex-wrap gap-2 max-w-lg w-full justify-center">
               {[
-                'How do I set up DMARC for my domain?',
-                'Why are my emails going to spam?',
-                'What is a good sender reputation score?',
-                'How do I warm up a new IP address?',
+                'Set up DMARC',
+                'Emails going to spam',
+                'Sender reputation',
+                'IP warmup strategy',
+                'SPF & DKIM setup',
+                'Improve open rates',
               ].map((suggestion) => (
                 <Button
                   key={suggestion}
                   variant="outline"
-                  className="text-left h-auto py-3 px-4 text-sm justify-start"
+                  className="text-sm"
                   onClick={() => {
                     setInput(suggestion);
                     textareaRef.current?.focus();
                   }}
                   data-testid={`button-suggestion-${suggestion.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                 >
-                  <Sparkles className="w-3 h-3 mr-2 flex-shrink-0 text-purple-500" />
-                  <span className="line-clamp-2">{suggestion}</span>
+                  <Sparkles className="w-3 h-3 mr-1.5 flex-shrink-0 text-purple-500" />
+                  {suggestion}
                 </Button>
               ))}
             </div>
