@@ -51,12 +51,20 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
   const userTier = (user?.subscriptionTier === 'scale' ? 'scale' : (user?.subscriptionTier === 'pro' ? 'pro' : 'starter')) as keyof typeof SUBSCRIPTION_LIMITS;
   const hasAccess = SUBSCRIPTION_LIMITS[userTier].askAcceptafy;
 
+  const lastAssistantRef = useRef<HTMLDivElement>(null);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length === 0) return;
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role === 'assistant' && lastAssistantRef.current) {
+      lastAssistantRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      scrollToBottom();
+    }
   }, [messages, scrollToBottom]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -300,9 +308,13 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
           </div>
         )}
 
-        {messages.map((message) => (
+        {messages.map((message, index) => {
+          const isLastAssistant = message.role === 'assistant' && 
+            !messages.slice(index + 1).some(m => m.role === 'assistant');
+          return (
           <div
             key={message.id}
+            ref={isLastAssistant ? lastAssistantRef : undefined}
             className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             data-testid={`chat-message-${message.role}-${message.id}`}
           >
@@ -351,7 +363,8 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
 
         {isLoading && (
           <div className="flex gap-3 justify-start" data-testid="typing-indicator">
