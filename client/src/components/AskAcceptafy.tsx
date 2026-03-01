@@ -60,33 +60,7 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: 'Invalid file',
-        description: 'Please upload an image file (PNG, JPG, GIF, WebP)',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: 'File too large',
-        description: 'Image must be under 10MB',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const base64 = (reader.result as string).split(',')[1];
-      setImagePreview(reader.result as string);
-      setImageMimeType(file.type);
-    };
-    reader.readAsDataURL(file);
-
+    processImageFile(file);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -95,6 +69,44 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
   const removeImage = () => {
     setImagePreview(null);
     setImageMimeType(null);
+  };
+
+  const processImageFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file',
+        description: 'Please upload an image file (PNG, JPG, GIF, WebP)',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Image must be under 10MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImagePreview(reader.result as string);
+      setImageMimeType(file.type);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) processImageFile(file);
+        return;
+      }
+    }
   };
 
   const handleSend = async () => {
@@ -261,26 +273,24 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
                 Ask me anything about email deliverability, DNS authentication, spam filters, sender reputation, and more.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2 max-w-lg w-full justify-center">
+            <div className="flex flex-col gap-2 w-full max-w-md">
               {[
-                'Set up DMARC',
-                'Emails going to spam',
-                'Sender reputation',
-                'IP warmup strategy',
-                'SPF & DKIM setup',
-                'Improve open rates',
+                'How do I set up DMARC for my domain?',
+                'Why are my emails going to spam?',
+                'What is a good sender reputation score?',
+                'How do I warm up a new IP address?',
               ].map((suggestion) => (
                 <Button
                   key={suggestion}
                   variant="outline"
-                  className="text-sm"
+                  className="text-sm h-auto py-2.5 px-4 justify-start whitespace-normal text-left"
                   onClick={() => {
                     setInput(suggestion);
                     textareaRef.current?.focus();
                   }}
                   data-testid={`button-suggestion-${suggestion.slice(0, 20).replace(/\s+/g, '-').toLowerCase()}`}
                 >
-                  <Sparkles className="w-3 h-3 mr-1.5 flex-shrink-0 text-purple-500" />
+                  <Sparkles className="w-3.5 h-3.5 mr-2 flex-shrink-0 text-purple-500" />
                   {suggestion}
                 </Button>
               ))}
@@ -393,7 +403,8 @@ export function AskAcceptafy({ onUpgrade }: AskAcceptafyProps) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about email deliverability..."
+            onPaste={handlePaste}
+            placeholder="Ask about email deliverability... (paste images here)"
             className="resize-none min-h-[44px] max-h-32 flex-1"
             rows={1}
             disabled={isLoading}
