@@ -4159,3 +4159,69 @@ Generate the content now.`;
     throw new Error("Failed to generate content. Please try again.");
   }
 };
+
+const askAcceptafySchema = {
+  type: Type.OBJECT,
+  properties: {
+    answer: { type: Type.STRING, description: "The assistant's response to the user's question." },
+    isOnTopic: { type: Type.BOOLEAN, description: "Whether the question was related to email deliverability, email marketing, or related topics." }
+  },
+  required: ["answer", "isOnTopic"]
+};
+
+export const askAcceptafy = async (
+  question: string,
+  imageBase64?: string,
+  mimeType?: string
+): Promise<{ answer: string; isOnTopic: boolean }> => {
+  try {
+    const systemInstruction = `You are "Acceptafy", an expert AI assistant exclusively focused on email deliverability, email marketing, inbox placement, sender reputation, DNS authentication (SPF, DKIM, DMARC, BIMI), spam filtering, email list management, ESP configuration, and all related topics.
+
+Your role:
+- Answer questions about email deliverability, email marketing strategy, inbox placement optimization, spam avoidance, DNS records for email authentication, sender reputation management, email list hygiene, warm-up strategies, and related technical topics.
+- If the user provides a screenshot or image, analyze it in the context of email deliverability (e.g., DNS records, spam reports, email headers, ESP dashboards, email designs, bounce logs, etc.).
+- Provide actionable, specific, and expert-level advice.
+- Use clear formatting with paragraphs and bullet points where appropriate.
+
+IMPORTANT RULES:
+- If the user's question is NOT related to email deliverability or email marketing topics, you MUST set isOnTopic to false and politely decline to answer. In your response, briefly explain that you are specialized in email deliverability and list 3-4 examples of topics you CAN help with (e.g., "I can help with things like improving your inbox placement rate, setting up SPF/DKIM/DMARC records, diagnosing why emails land in spam, or optimizing your email content for better deliverability.").
+- If the question IS on-topic, set isOnTopic to true and provide a thorough, helpful answer.
+- Never fabricate statistics or data. If you're unsure about something, say so.
+- Keep responses concise but comprehensive. Aim for practical advice the user can act on immediately.`;
+
+    const contents: any[] = [];
+
+    if (imageBase64 && mimeType) {
+      contents.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType: mimeType
+        }
+      });
+      contents.push(`The user has uploaded an image for analysis. Here is their question:\n\n${question}`);
+    } else {
+      contents.push(question);
+    }
+
+    const res = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: askAcceptafySchema
+      }
+    });
+
+    const jsonString = res.text?.trim() || '{}';
+    const parsed = JSON.parse(jsonString) as { answer: string; isOnTopic: boolean };
+
+    return {
+      answer: parsed.answer || "I'm sorry, I couldn't generate a response. Please try again.",
+      isOnTopic: parsed.isOnTopic ?? true
+    };
+  } catch (error) {
+    console.error("Error in Ask Acceptafy:", error);
+    throw new Error("Failed to get a response from the AI assistant. Please try again.");
+  }
+};

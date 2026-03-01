@@ -40,6 +40,7 @@ const OnboardingTour = lazy(() => import('./components/OnboardingTour').then(m =
 const ESPStatsDashboard = lazy(() => import('./components/ESPStatsDashboard').then(m => ({ default: m.ESPStatsDashboard })));
 const DeliverabilityIntelligence = lazy(() => import('./components/DeliverabilityIntelligence').then(m => ({ default: m.DeliverabilityIntelligence })));
 const CampaignFunnelVisualization = lazy(() => import('./components/CampaignFunnelVisualization').then(m => ({ default: m.CampaignFunnelVisualization })));
+const AskAcceptafy = lazy(() => import('./components/AskAcceptafy').then(m => ({ default: m.AskAcceptafy })));
 
 // Lazy load pages for better initial load performance
 const Pricing = lazy(() => import('./pages/Pricing'));
@@ -159,7 +160,7 @@ import type {
   EmailPreview
 } from './types';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account' | 'ask-acceptafy';
 type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
@@ -2932,6 +2933,7 @@ function AppContent() {
                   {activeView === 'analytics' && 'Analytics'}
                   {activeView === 'deliverability' && 'Deliverability'}
                   {activeView === 'connections' && 'Connections'}
+                  {activeView === 'ask-acceptafy' && 'Ask Acceptafy'}
                   {activeView === 'account' && 'Account Settings'}
                 </h2>
               </div>
@@ -3002,6 +3004,13 @@ function AppContent() {
               {activeView === 'analytics' && renderAnalyticsView()}
               {activeView === 'deliverability' && renderDeliverabilityView()}
               {activeView === 'connections' && renderConnectionsView()}
+              {activeView === 'ask-acceptafy' && (
+                <Suspense fallback={<ComponentLoader />}>
+                  <AskAcceptafy onUpgrade={() => {
+                    window.location.href = '/pricing';
+                  }} />
+                </Suspense>
+              )}
               {activeView === 'account' && <AccountView />}
             </div>
           </main>

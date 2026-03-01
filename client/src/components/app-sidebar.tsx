@@ -47,6 +47,7 @@ import {
   CheckCircle,
   Wrench,
   Layers,
+  MessageCircleQuestion,
   type LucideIcon
 } from 'lucide-react';
 
@@ -81,7 +82,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Progress } from '@/components/ui/progress';
 import { useGamification } from '@/hooks/use-gamification';
 
-type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account';
+type ActiveView = 'dashboard' | 'grader' | 'history' | 'academy' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections' | 'account' | 'ask-acceptafy';
 type CreateSubView = 'builder' | 'rewrite' | 'followup' | 'templates' | 'tone' | 'import' | 'content' | null;
 type OptimizeSubView = 'variations' | 'preview' | 'spam' | 'sentiment' | 'sendtime' | 'competitor' | null;
 type AnalyticsSubView = 'stats' | 'funnel' | 'intelligence' | null;
@@ -888,6 +889,31 @@ export function AppSidebar({
                   </TooltipTrigger>
                   <TooltipContent side="right">
                     <p>Learn email marketing best practices</p>
+                  </TooltipContent>
+                </Tooltip>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton 
+                      isActive={activeView === 'ask-acceptafy'}
+                      onClick={() => {
+                        setActiveView('ask-acceptafy');
+                        clearAllSubViews();
+                      }}
+                      className={`group transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-r from-violet-500/15 to-purple-500/15 border border-violet-500/20' : ''}`}
+                      data-testid="nav-ask-acceptafy"
+                    >
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'bg-gradient-to-br from-violet-500 to-purple-500 shadow-md shadow-violet-500/30' : 'bg-sidebar-accent/80 group-hover:bg-sidebar-accent'}`}>
+                        <MessageCircleQuestion className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Ask Acceptafy</span>
+                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'ask-acceptafy' ? 'opacity-100 text-violet-400' : 'opacity-0 -translate-x-2'}`} />
+                    </SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>AI assistant for email deliverability</p>
                   </TooltipContent>
                 </Tooltip>
               </SidebarMenuItem>

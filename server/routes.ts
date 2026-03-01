@@ -36,7 +36,8 @@ import {
   generateFullArticle,
   generateArticleImage,
   analyzeCampaignRisk,
-  generateContent
+  generateContent,
+  askAcceptafy
 } from "./gemini";
 import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
 import { randomUUID } from "crypto";
@@ -266,7 +267,7 @@ function normalizeTier(tier: string | null | undefined): 'starter' | 'pro' | 'sc
   return 'starter';
 }
 
-type FeatureKey = 'campaignRiskAnalysis' | 'competitorAnalysis' | 'inboxSimulation' | 'funnelAnalysis' | 'sequenceGenerator' | 'warmupPlan' | 'advancedSpamAnalysis';
+type FeatureKey = 'campaignRiskAnalysis' | 'competitorAnalysis' | 'inboxSimulation' | 'funnelAnalysis' | 'sequenceGenerator' | 'warmupPlan' | 'advancedSpamAnalysis' | 'askAcceptafy';
 
 async function checkFeatureAccess(req: any, res: any, feature: FeatureKey): Promise<boolean> {
   if (!req.user) {
@@ -1494,6 +1495,31 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Sequence error:', error);
       res.status(500).json({ error: 'Failed to generate sequence' });
+    }
+  });
+
+  const askAcceptafyRequestSchema = z.object({
+    question: z.string().min(1).max(5000),
+    image: z.string().optional(),
+    mimeType: z.string().optional(),
+  });
+
+  app.post('/api/ask-acceptafy', aiRateLimiter, isAuthenticated, async (req: any, res) => {
+    try {
+      const hasAccess = await checkFeatureAccess(req, res, 'askAcceptafy');
+      if (!hasAccess) return;
+
+      const parseResult = askAcceptafyRequestSchema.safeParse(req.body);
+      if (!parseResult.success) {
+        return res.status(400).json({ error: 'Invalid request', details: parseResult.error.flatten() });
+      }
+
+      const { question, image, mimeType } = parseResult.data;
+      const result = await askAcceptafy(question, image, mimeType);
+      res.json(result);
+    } catch (error) {
+      console.error('Ask Acceptafy error:', error);
+      res.status(500).json({ error: 'Failed to get a response. Please try again.' });
     }
   });
 

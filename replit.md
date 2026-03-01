@@ -24,7 +24,7 @@ PostgreSQL is used as the database with Drizzle ORM, primarily for a minimal use
 
 ### AI Integration
 
-The platform integrates with Google Gemini AI via Replit's AI Integrations service. All AI operations utilize structured output with schema validation, mapping to defined TypeScript interfaces. Key AI functions include multi-faceted email grading, goal-based email rewriting, context-aware follow-up and sequence generation, technical record generation (SPF, DKIM, DMARC, BIMI), and domain/list analysis.
+The platform integrates with Google Gemini AI via Replit's AI Integrations service. All AI operations utilize structured output with schema validation, mapping to defined TypeScript interfaces. Key AI functions include multi-faceted email grading, goal-based email rewriting, context-aware follow-up and sequence generation, technical record generation (SPF, DKIM, DMARC, BIMI), domain/list analysis, and the "Ask Acceptafy" conversational AI assistant for email deliverability questions (with image upload support, paid-member only via `askAcceptafy` feature flag in SUBSCRIPTION_LIMITS).
 
 ### System Design Choices
 

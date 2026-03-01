@@ -224,6 +224,9 @@ export const SUBSCRIPTION_LIMITS = {
     funnelAnalysis: false,
     sequenceGenerator: false,
     warmupPlan: false,
+    askAcceptafy: false,
+    askAcceptafyPerDay: 0,
+    askAcceptafyPerMonth: 0,
   },
   pro: {
     gradesPerMonth: 600,
@@ -244,6 +247,9 @@ export const SUBSCRIPTION_LIMITS = {
     funnelAnalysis: true,
     sequenceGenerator: true,
     warmupPlan: true,
+    askAcceptafy: true,
+    askAcceptafyPerDay: 50,
+    askAcceptafyPerMonth: 500,
   },
   scale: {
     gradesPerMonth: 2500,
@@ -264,6 +270,9 @@ export const SUBSCRIPTION_LIMITS = {
     funnelAnalysis: true,
     sequenceGenerator: true,
     warmupPlan: true,
+    askAcceptafy: true,
+    askAcceptafyPerDay: 200,
+    askAcceptafyPerMonth: 2000,
   },
 } as const;
 
