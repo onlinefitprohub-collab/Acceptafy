@@ -2407,7 +2407,11 @@ export class DatabaseStorage implements IStorage {
     activeConnections: number;
     limitHitUsers: { userId: string; email: string; tier: string; feature: string; usage: number; limit: number }[];
   }> {
+    const now = new Date();
     const allUsage = await db.select().from(usageCounters);
+    const currentPeriodUsage = await db.select().from(usageCounters).where(
+      and(lte(usageCounters.periodStart, now), gte(usageCounters.periodEnd, now))
+    );
     const allUsers = await db.select().from(users);
     const userMap = new Map(allUsers.map(u => [u.id, u]));
     
@@ -2449,7 +2453,7 @@ export class DatabaseStorage implements IStorage {
       scale: { gradeCount: 2500, rewriteCount: 1200, followupCount: 600, deliverabilityChecks: 400 },
     };
     
-    for (const usage of allUsage) {
+    for (const usage of currentPeriodUsage) {
       const user = nonAdminUserMap.get(usage.userId);
       if (!user) continue;
       
