@@ -2741,8 +2741,11 @@ export class DatabaseStorage implements IStorage {
     limit: number;
     percentage: number;
   }[]> {
+    const now = new Date();
     const allUsers = await db.select().from(users);
-    const allUsage = await db.select().from(usageCounters);
+    const allUsage = await db.select().from(usageCounters).where(
+      and(lte(usageCounters.periodStart, now), gte(usageCounters.periodEnd, now))
+    );
     
     const tierLimits: Record<string, Record<string, number>> = {
       starter: { gradeCount: 3, rewriteCount: 3, followupCount: 20, deliverabilityChecks: 10 },
