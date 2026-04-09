@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FTeXNsri4whq1yQ0kApO-"
+uri = "file://test-email-list.csv"
+type = "table"
+title = "Test Email List (15 addresses)"
