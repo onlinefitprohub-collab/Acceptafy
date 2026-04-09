@@ -145,6 +145,7 @@ export interface IStorage {
   hasProcessedStripeEvent(eventId: string): Promise<boolean>;
   markStripeEventProcessed(eventId: string): Promise<void>;
   incrementListVerificationCredits(userId: string, count: number): Promise<void>;
+  claimAndCreditStripeEvent(eventId: string, userId: string, credits: number): Promise<'credited' | 'duplicate'>;
 
   getEmailAnalyses(userId: string, limit?: number): Promise<EmailAnalysis[]>;
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
@@ -671,75 +672,77 @@ export class DatabaseStorage implements IStorage {
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    return await db.transaction(async (tx) => {
-      // 1. Lock the current-period usage counter row (or create one)
-      let [counter] = await tx.select().from(usageCounters).where(
-        and(
-          eq(usageCounters.userId, userId),
-          lte(usageCounters.periodStart, now),
-          gte(usageCounters.periodEnd, now)
-        )
-      );
-      if (!counter) {
-        [counter] = await tx.insert(usageCounters).values({
-          userId,
-          periodStart,
-          periodEnd,
-          gradeCount: 0,
-          rewriteCount: 0,
-          followupCount: 0,
-          deliverabilityChecks: 0,
-          aiTokensUsed: 0,
-          listVerifications: 0,
-        }).returning();
-      }
+    try {
+      await db.transaction(async (tx) => {
+        // 1. Get or create the current-period counter row
+        let [counter] = await tx.select().from(usageCounters).where(
+          and(
+            eq(usageCounters.userId, userId),
+            lte(usageCounters.periodStart, now),
+            gte(usageCounters.periodEnd, now)
+          )
+        );
+        if (!counter) {
+          [counter] = await tx.insert(usageCounters).values({
+            userId, periodStart, periodEnd,
+            gradeCount: 0, rewriteCount: 0, followupCount: 0,
+            deliverabilityChecks: 0, aiTokensUsed: 0, listVerifications: 0,
+          }).returning();
+        }
 
-      // 2. Lock the user row to serialize bonus-credit reads
-      const [user] = await tx.select().from(users).where(eq(users.id, userId));
-      if (!user) return { success: false, error: 'User not found' };
+        // 2. Read current user bonus credits inside the same transaction snapshot
+        const [user] = await tx.select().from(users).where(eq(users.id, userId));
+        if (!user) throw new Error('USER_NOT_FOUND');
 
-      const usedThisMonth = counter.listVerifications ?? 0;
-      const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
-      const bonusCredits = user.listVerificationCredits ?? 0;
-      const totalAvailable = availableMonthly + bonusCredits;
+        const usedThisMonth = counter.listVerifications ?? 0;
+        const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
+        const bonusCredits = user.listVerificationCredits ?? 0;
+        if (availableMonthly + bonusCredits < emailCount) throw new Error('INSUFFICIENT_CREDITS');
 
-      if (totalAvailable < emailCount) {
-        return {
-          success: false,
-          error: `Insufficient credits: need ${emailCount}, have ${totalAvailable}`,
-        };
-      }
+        const monthlyDeduction = Math.min(availableMonthly, emailCount);
+        const bonusDeduction = emailCount - monthlyDeduction;
 
-      const monthlyDeduction = Math.min(availableMonthly, emailCount);
-      const bonusDeduction = emailCount - monthlyDeduction;
+        // 3. Conditional UPDATE for monthly quota — only succeeds if the row still has capacity.
+        //    Throws to rollback if a concurrent request already consumed the credits.
+        if (monthlyDeduction > 0) {
+          const result = await tx.execute(
+            sql`UPDATE usage_counters
+                SET list_verifications = COALESCE(list_verifications, 0) + ${monthlyDeduction}
+                WHERE id = ${counter.id}
+                  AND (${monthlyLimit} - COALESCE(list_verifications, 0)) >= ${monthlyDeduction}`
+          );
+          if ((result as any).rowCount === 0) throw new Error('MONTHLY_QUOTA_EXCEEDED');
+        }
 
-      // 3. Deduct monthly usage atomically (inside same transaction)
-      if (monthlyDeduction > 0) {
-        await tx.update(usageCounters)
-          .set({ listVerifications: sql`COALESCE(${usageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
-          .where(eq(usageCounters.id, counter.id));
-      }
+        // 4. Conditional UPDATE for bonus credits — only succeeds if enough remain
+        if (bonusDeduction > 0) {
+          const result = await tx.execute(
+            sql`UPDATE users
+                SET list_verification_credits = COALESCE(list_verification_credits, 0) - ${bonusDeduction}
+                WHERE id = ${userId}
+                  AND COALESCE(list_verification_credits, 0) >= ${bonusDeduction}`
+          );
+          if ((result as any).rowCount === 0) throw new Error('INSUFFICIENT_BONUS_CREDITS');
+        }
 
-      // 4. Deduct bonus credits atomically
-      if (bonusDeduction > 0) {
-        await tx.update(users)
-          .set({ listVerificationCredits: sql`GREATEST(0, COALESCE(${users.listVerificationCredits}, 0) - ${bonusDeduction})` })
-          .where(eq(users.id, userId));
-      }
-
-      // 5. Update daily counter inside the same transaction
-      const [existingDaily] = await tx.select().from(dailyUsageCounters)
-        .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
-      if (!existingDaily) {
-        await tx.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: monthlyDeduction });
-      } else {
-        await tx.update(dailyUsageCounters)
-          .set({ listVerifications: sql`COALESCE(${dailyUsageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
-          .where(eq(dailyUsageCounters.id, existingDaily.id));
-      }
+        // 5. Update daily counter inside the same transaction
+        const [existingDaily] = await tx.select().from(dailyUsageCounters)
+          .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
+        if (!existingDaily) {
+          await tx.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: monthlyDeduction });
+        } else {
+          await tx.update(dailyUsageCounters)
+            .set({ listVerifications: sql`COALESCE(${dailyUsageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
+            .where(eq(dailyUsageCounters.id, existingDaily.id));
+        }
+      });
 
       return { success: true };
-    });
+    } catch (e: any) {
+      const knownErrors = ['INSUFFICIENT_CREDITS', 'MONTHLY_QUOTA_EXCEEDED', 'INSUFFICIENT_BONUS_CREDITS', 'USER_NOT_FOUND'];
+      if (knownErrors.includes(e.message)) return { success: false, error: e.message };
+      throw e;
+    }
   }
 
   async createVerificationJob(data: InsertVerificationJob): Promise<VerificationJob> {
@@ -771,6 +774,29 @@ export class DatabaseStorage implements IStorage {
     await db.update(users)
       .set({ listVerificationCredits: sql`COALESCE(${users.listVerificationCredits}, 0) + ${count}` })
       .where(eq(users.id, userId));
+  }
+
+  async claimAndCreditStripeEvent(eventId: string, userId: string, credits: number): Promise<'credited' | 'duplicate'> {
+    try {
+      await db.transaction(async (tx) => {
+        // Atomically claim the event ID — if another handler already claimed it, this returns 0 rows
+        const inserted = await tx
+          .insert(processedStripeEvents)
+          .values({ eventId })
+          .onConflictDoNothing()
+          .returning();
+        if (inserted.length === 0) throw new Error('DUPLICATE');
+
+        // Credit the user inside the same transaction
+        await tx.update(users)
+          .set({ listVerificationCredits: sql`COALESCE(${users.listVerificationCredits}, 0) + ${credits}` })
+          .where(eq(users.id, userId));
+      });
+      return 'credited';
+    } catch (e: any) {
+      if (e.message === 'DUPLICATE') return 'duplicate';
+      throw e;
+    }
   }
 
   async getEmailAnalyses(userId: string, limit: number = 50): Promise<EmailAnalysis[]> {

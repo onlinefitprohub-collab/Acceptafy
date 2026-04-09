@@ -1636,13 +1636,12 @@ export async function registerRoutes(
       const tier = (user.subscriptionTier || 'starter') as keyof typeof SUBSCRIPTION_LIMITS;
       const monthlyLimit = SUBSCRIPTION_LIMITS[tier].listVerificationsPerMonth;
 
-      // Atomically check and deduct credits in a single DB transaction
-      const deduction = await storage.deductVerificationCredits(userId, emails.length, monthlyLimit);
-      if (!deduction.success) {
-        const counter = await storage.getUsageCounter(userId);
-        const usedThisMonth = counter?.listVerifications || 0;
-        const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
-        const bonusCredits = user.listVerificationCredits || 0;
+      // 1. Read-only pre-check: reject early if the user obviously has no credits
+      const counter = await storage.getUsageCounter(userId);
+      const usedThisMonth = counter?.listVerifications || 0;
+      const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
+      const bonusCredits = user.listVerificationCredits || 0;
+      if (availableMonthly + bonusCredits < emails.length) {
         return res.status(403).json({
           error: 'Insufficient verification credits',
           available: availableMonthly + bonusCredits,
@@ -1651,9 +1650,22 @@ export async function registerRoutes(
         });
       }
 
+      // 2. Submit to Debounce FIRST — credits are only charged after a successful submit
       const debounceListId = await submitBulkVerification(emails);
 
-      // Persist job in DB so it survives server restarts
+      // 3. Atomically deduct credits in a single DB transaction (conditional SQL updates
+      //    prevent over-consumption if concurrent requests race through the pre-check)
+      const deduction = await storage.deductVerificationCredits(userId, emails.length, monthlyLimit);
+      if (!deduction.success) {
+        // Credits were consumed by a concurrent request between the pre-check and now.
+        // The Debounce job was already submitted but we cannot charge the user — treat as an error.
+        return res.status(403).json({
+          error: 'Verification credit conflict — another request consumed your remaining credits. Please try again.',
+          upgradeRequired: monthlyLimit === 0,
+        });
+      }
+
+      // 4. Persist job in DB so it survives server restarts
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
       const job = await storage.createVerificationJob({
         userId,

@@ -154,13 +154,6 @@ export class WebhookHandlers {
       const { metadata } = session;
       if (!metadata || metadata.type !== 'verification_credits') return;
 
-      // DB-backed idempotency guard: skip if this event has already been processed
-      const alreadyProcessed = await storage.hasProcessedStripeEvent(eventId);
-      if (alreadyProcessed) {
-        console.log(`Skipping duplicate checkout.session.completed event ${eventId}`);
-        return;
-      }
-
       const { userId, credits } = metadata;
       if (!userId || !credits) return;
 
@@ -173,12 +166,13 @@ export class WebhookHandlers {
         return;
       }
 
-      // Atomic SQL increment — avoids lost-update race condition
-      await storage.incrementListVerificationCredits(userId, creditCount);
-
-      // Mark as processed AFTER successful credit application so retries still
-      // work if the credit update threw before reaching this line
-      await storage.markStripeEventProcessed(eventId);
+      // Atomically claim the event ID and credit the user in one transaction.
+      // The unique constraint on event_id ensures only one concurrent handler wins.
+      const outcome = await storage.claimAndCreditStripeEvent(eventId, userId, creditCount);
+      if (outcome === 'duplicate') {
+        console.log(`Skipping duplicate checkout.session.completed event ${eventId}`);
+        return;
+      }
 
       console.log(`Added ${creditCount} verification credits to user ${userId} (event: ${eventId})`);
     } catch (error) {
