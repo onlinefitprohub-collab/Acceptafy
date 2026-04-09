@@ -29,9 +29,10 @@ function mapDebounceStatus(email: DebounceApiEmail): DebounceResult['status'] {
   if (reason.includes('spam') || reason.includes('trap')) return 'spamtrap';
   if (result === 'safe to send' || result === 'deliverable') return 'valid';
   if (result === 'invalid' || result === 'undeliverable') return 'invalid';
-  if (result === 'risky' && reason.includes('catch')) return 'catch_all';
-  if (result === 'risky') return 'catch_all';
-  if (result === 'unknown' || result === 'accept-all') return 'catch_all';
+  if (result === 'risky' && (reason.includes('catch') || reason.includes('accept'))) return 'catch_all';
+  if (result === 'risky') return 'invalid';
+  if (result === 'accept-all') return 'catch_all';
+  if (result === 'unknown') return 'unknown';
   if (email.code === '5') return 'disposable';
   if (email.code === '4') return 'catch_all';
   if (email.code === '3') return 'invalid';
@@ -73,9 +74,9 @@ export async function verifySingleEmail(email: string): Promise<DebounceResult> 
   if (data.success !== '1' || !data.debounce) {
     return {
       email,
-      status: 'unknown',
+      status: 'invalid',
       reason: 'Could not be verified',
-      recommendation: 'keep',
+      recommendation: 'remove',
       safeToSend: false,
     };
   }
@@ -107,9 +108,9 @@ export async function verifyEmailList(
       batch.map((email) =>
         verifySingleEmail(email).catch((): DebounceResult => ({
           email,
-          status: 'unknown',
-          reason: 'Verification failed',
-          recommendation: 'keep',
+          status: 'invalid',
+          reason: 'Could not be verified',
+          recommendation: 'remove',
           safeToSend: false,
         })),
       ),
