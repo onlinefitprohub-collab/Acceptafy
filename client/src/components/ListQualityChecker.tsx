@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import {
   Upload, Download, CheckCircle2, XCircle, AlertTriangle, Zap, FileText,
-  ShieldCheck, Coins, RefreshCw, Loader2, ArrowRight, ExternalLink, Lock
+  ShieldCheck, Coins, RefreshCw, Loader2, ArrowRight, Lock
 } from 'lucide-react';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ function StarterUpgrade() {
         </div>
         <h3 className="font-semibold text-foreground">Upgrade to Unlock List Cleaning</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-          Real-time email verification powered by Debounce.io is available on Pro and Scale plans.
+          Advanced email verification is available on Pro and Scale plans.
           Pro includes 2,000 verifications/month, Scale includes 5,000.
         </p>
         <Button className="mt-2" onClick={() => window.location.href = '/?tab=account'}>
@@ -403,7 +403,7 @@ export const ListQualityChecker: React.FC = () => {
     },
     onSuccess: (data) => {
       setListId(data.listId);
-      toast({ title: 'Verification started', description: `Processing ${data.emailCount.toLocaleString()} emails via Debounce.io…` });
+      toast({ title: 'Verification started', description: `Verifying ${data.emailCount.toLocaleString()} emails…` });
     },
     onError: (err: Error) => {
       toast({ title: 'Error', description: err.message || 'Failed to start verification', variant: 'destructive' });
@@ -509,14 +509,8 @@ export const ListQualityChecker: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-bold text-foreground">Email List Cleaner</h3>
-              <p className="text-sm text-muted-foreground">Real-time verification powered by Debounce.io</p>
+              <p className="text-sm text-muted-foreground">Real-time email verification &amp; hygiene</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="gap-1 text-xs">
-              <ExternalLink className="w-3 h-3" />
-              Debounce.io
-            </Badge>
           </div>
         </div>
       </div>

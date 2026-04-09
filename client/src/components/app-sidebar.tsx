@@ -237,6 +237,32 @@ export function AppSidebar({
                 </Tooltip>
               </SidebarMenuItem>
 
+              <SidebarMenuItem>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <SidebarMenuButton 
+                      isActive={activeView === 'deliverability' && deliverabilitySubView === 'list-quality'}
+                      onClick={() => {
+                        setActiveView('deliverability');
+                        clearAllSubViews();
+                        setDeliverabilitySubView('list-quality');
+                      }}
+                      className={`group transition-all duration-200 ${activeView === 'deliverability' && deliverabilitySubView === 'list-quality' ? 'bg-gradient-to-r from-amber-500/15 to-yellow-500/15 border border-amber-500/20' : ''}`}
+                      data-testid="nav-list-cleaner"
+                    >
+                      <div className={`p-1.5 rounded-lg transition-all duration-200 ${activeView === 'deliverability' && deliverabilitySubView === 'list-quality' ? 'bg-gradient-to-br from-amber-500 to-yellow-500 shadow-md shadow-amber-500/30' : 'bg-amber-500/10 group-hover:bg-amber-500/20'}`}>
+                        <Users className={`w-4 h-4 ${activeView === 'deliverability' && deliverabilitySubView === 'list-quality' ? 'text-white' : 'text-amber-500'}`} />
+                      </div>
+                      <span className="font-semibold text-amber-500">List Cleaner</span>
+                      <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'deliverability' && deliverabilitySubView === 'list-quality' ? 'opacity-100 text-amber-400' : 'opacity-0 -translate-x-2'}`} />
+                    </SidebarMenuButton>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Verify and clean your email lists</p>
+                  </TooltipContent>
+                </Tooltip>
+              </SidebarMenuItem>
+
               <Collapsible open={createOpen} onOpenChange={setCreateOpen}>
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
@@ -742,27 +768,6 @@ export function AppSidebar({
                           </TooltipTrigger>
                           <TooltipContent side="right">
                             <p>Monitor your sender reputation score</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </SidebarMenuSubItem>
-                      <SidebarMenuSubItem>
-                        <Tooltip delayDuration={300}>
-                          <TooltipTrigger asChild>
-                            <SidebarMenuSubButton 
-                              isActive={deliverabilitySubView === 'list-quality'}
-                              onClick={() => {
-                                setActiveView('deliverability');
-                                clearAllSubViews();
-                                setDeliverabilitySubView('list-quality');
-                              }}
-                              data-testid="nav-deliverability-list"
-                            >
-                              <Users className="w-3 h-3" />
-                              <span>List Cleaner</span>
-                            </SidebarMenuSubButton>
-                          </TooltipTrigger>
-                          <TooltipContent side="right">
-                            <p>Analyze and clean your email lists</p>
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuSubItem>

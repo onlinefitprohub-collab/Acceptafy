@@ -1169,6 +1169,125 @@ export default function Landing() {
         </div>
       </section>
 
+      <section className="py-16 bg-muted/30" id="list-cleaner" data-testid="section-list-cleaner">
+        <div className="container mx-auto px-4">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <Badge variant="outline" className="mb-4 bg-gradient-to-r from-amber-500/10 to-yellow-500/10 border-amber-500/30 text-amber-600">
+                <ShieldCheck className="w-3 h-3 mr-1" />
+                List Cleaner
+              </Badge>
+              <h2 className="text-2xl md:text-3xl font-bold mb-4">
+                Your Dirty List Is Costing You Money
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                Invalid addresses, spam traps, and disposable emails silently destroy your sender reputation and suppress your open rates. Clean your list once and see the difference immediately.
+              </p>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-10 items-center mb-12">
+              <div className="space-y-5">
+                {[
+                  {
+                    icon: AlertCircle,
+                    color: "text-red-500",
+                    bg: "bg-red-500/10",
+                    title: "Bad addresses tank your reputation",
+                    desc: "ESPs like Gmail and Outlook watch your bounce rate closely. A rate above 2% can permanently flag your domain as a spammer.",
+                  },
+                  {
+                    icon: TrendingUp,
+                    color: "text-amber-500",
+                    bg: "bg-amber-500/10",
+                    title: "Spam traps get you blacklisted",
+                    desc: "Sending to spam trap addresses lands you on blocklists overnight — and getting off them can take months.",
+                  },
+                  {
+                    icon: CheckCircle2,
+                    color: "text-emerald-500",
+                    bg: "bg-emerald-500/10",
+                    title: "A clean list means more opens & revenue",
+                    desc: "Marketers who clean their lists regularly see 20–30% higher open rates and significantly better deliverability scores.",
+                  },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="flex items-start gap-4" data-testid={`list-cleaner-benefit-${i}`}>
+                      <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
+                        <Icon className={`w-5 h-5 ${item.color}`} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm mb-1">{item.title}</p>
+                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <Card className="bg-gradient-to-br from-amber-500/5 to-yellow-500/5 border-amber-500/20" data-testid="card-list-cleaner-pricing">
+                <CardContent className="p-8">
+                  <div className="text-center mb-6">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-amber-500/20">
+                      <ListChecks className="w-7 h-7 text-white" />
+                    </div>
+                    <h3 className="text-xl font-bold mb-1">Unbeatable Value</h3>
+                    <p className="text-sm text-muted-foreground">Verify thousands of addresses for less than a coffee</p>
+                  </div>
+
+                  <div className="space-y-3 mb-6">
+                    {[
+                      { credits: "2,000", label: "verifications/month", note: "Included with Pro plan", highlight: false },
+                      { credits: "5,000", label: "verifications/month", note: "Included with Scale plan", highlight: false },
+                      { credits: "5,000", label: "credit top-up", note: "One-time add-on — just $25", highlight: true },
+                      { credits: "10,000", label: "credit top-up", note: "One-time add-on — just $45", highlight: true },
+                    ].map((row, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between rounded-lg px-4 py-3 ${row.highlight ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-muted/50'}`}
+                        data-testid={`list-cleaner-pack-${i}`}
+                      >
+                        <div>
+                          <span className="font-bold text-sm">{row.credits}</span>
+                          <span className="text-sm text-muted-foreground ml-1">{row.label}</span>
+                        </div>
+                        <span className={`text-xs font-medium ${row.highlight ? 'text-amber-600' : 'text-muted-foreground'}`}>{row.note}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center text-xs text-muted-foreground mb-6">
+                    That's as low as <span className="font-bold text-foreground">$0.0045 per verification</span> — cheaper than any standalone tool
+                  </div>
+
+                  <LoginDialog mode="signup">
+                    <Button className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold" data-testid="button-list-cleaner-cta">
+                      Clean My List Now
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </LoginDialog>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid md:grid-cols-4 gap-4 text-center">
+              {[
+                { value: "99.5%", label: "Accuracy Rate", sub: "Industry-leading verification" },
+                { value: "< 5min", label: "Avg. Processing", sub: "Even for large lists" },
+                { value: "6+", label: "Check Types", sub: "Valid, invalid, disposable, spam trap & more" },
+                { value: "$0/bounce", label: "Extra Fees", sub: "Flat-rate credit pricing" },
+              ].map((stat, i) => (
+                <div key={i} className="p-4 rounded-xl bg-card border border-border" data-testid={`list-cleaner-stat-${i}`}>
+                  <p className="text-2xl font-bold text-amber-500 mb-1">{stat.value}</p>
+                  <p className="text-sm font-semibold mb-1">{stat.label}</p>
+                  <p className="text-xs text-muted-foreground">{stat.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
