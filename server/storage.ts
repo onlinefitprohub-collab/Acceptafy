@@ -134,6 +134,7 @@ export interface IStorage {
   }>;
   incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void>;
   addListVerifications(userId: string, count: number): Promise<void>;
+  deductVerificationCredits(userId: string, emailCount: number, monthlyLimit: number): Promise<{ success: boolean; error?: string }>;
 
   // Verification jobs (DB-backed for persistence across restarts)
   createVerificationJob(data: InsertVerificationJob): Promise<VerificationJob>;
@@ -143,6 +144,7 @@ export interface IStorage {
   // Stripe webhook idempotency (DB-backed)
   hasProcessedStripeEvent(eventId: string): Promise<boolean>;
   markStripeEventProcessed(eventId: string): Promise<void>;
+  incrementListVerificationCredits(userId: string, count: number): Promise<void>;
 
   getEmailAnalyses(userId: string, limit?: number): Promise<EmailAnalysis[]>;
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
@@ -663,6 +665,83 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deductVerificationCredits(userId: string, emailCount: number, monthlyLimit: number): Promise<{ success: boolean; error?: string }> {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    return await db.transaction(async (tx) => {
+      // 1. Lock the current-period usage counter row (or create one)
+      let [counter] = await tx.select().from(usageCounters).where(
+        and(
+          eq(usageCounters.userId, userId),
+          lte(usageCounters.periodStart, now),
+          gte(usageCounters.periodEnd, now)
+        )
+      );
+      if (!counter) {
+        [counter] = await tx.insert(usageCounters).values({
+          userId,
+          periodStart,
+          periodEnd,
+          gradeCount: 0,
+          rewriteCount: 0,
+          followupCount: 0,
+          deliverabilityChecks: 0,
+          aiTokensUsed: 0,
+          listVerifications: 0,
+        }).returning();
+      }
+
+      // 2. Lock the user row to serialize bonus-credit reads
+      const [user] = await tx.select().from(users).where(eq(users.id, userId));
+      if (!user) return { success: false, error: 'User not found' };
+
+      const usedThisMonth = counter.listVerifications ?? 0;
+      const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
+      const bonusCredits = user.listVerificationCredits ?? 0;
+      const totalAvailable = availableMonthly + bonusCredits;
+
+      if (totalAvailable < emailCount) {
+        return {
+          success: false,
+          error: `Insufficient credits: need ${emailCount}, have ${totalAvailable}`,
+        };
+      }
+
+      const monthlyDeduction = Math.min(availableMonthly, emailCount);
+      const bonusDeduction = emailCount - monthlyDeduction;
+
+      // 3. Deduct monthly usage atomically (inside same transaction)
+      if (monthlyDeduction > 0) {
+        await tx.update(usageCounters)
+          .set({ listVerifications: sql`COALESCE(${usageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
+          .where(eq(usageCounters.id, counter.id));
+      }
+
+      // 4. Deduct bonus credits atomically
+      if (bonusDeduction > 0) {
+        await tx.update(users)
+          .set({ listVerificationCredits: sql`GREATEST(0, COALESCE(${users.listVerificationCredits}, 0) - ${bonusDeduction})` })
+          .where(eq(users.id, userId));
+      }
+
+      // 5. Update daily counter inside the same transaction
+      const [existingDaily] = await tx.select().from(dailyUsageCounters)
+        .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
+      if (!existingDaily) {
+        await tx.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: monthlyDeduction });
+      } else {
+        await tx.update(dailyUsageCounters)
+          .set({ listVerifications: sql`COALESCE(${dailyUsageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
+          .where(eq(dailyUsageCounters.id, existingDaily.id));
+      }
+
+      return { success: true };
+    });
+  }
+
   async createVerificationJob(data: InsertVerificationJob): Promise<VerificationJob> {
     const [job] = await db.insert(verificationJobs).values(data).returning();
     return job;
@@ -686,6 +765,12 @@ export class DatabaseStorage implements IStorage {
 
   async markStripeEventProcessed(eventId: string): Promise<void> {
     await db.insert(processedStripeEvents).values({ eventId }).onConflictDoNothing();
+  }
+
+  async incrementListVerificationCredits(userId: string, count: number): Promise<void> {
+    await db.update(users)
+      .set({ listVerificationCredits: sql`COALESCE(${users.listVerificationCredits}, 0) + ${count}` })
+      .where(eq(users.id, userId));
   }
 
   async getEmailAnalyses(userId: string, limit: number = 50): Promise<EmailAnalysis[]> {

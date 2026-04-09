@@ -167,22 +167,20 @@ export class WebhookHandlers {
       const creditCount = parseInt(credits, 10);
       if (isNaN(creditCount) || creditCount <= 0) return;
 
-      const user = await storage.getUser(userId);
-      if (!user) {
+      const userExists = await storage.getUser(userId);
+      if (!userExists) {
         console.error(`Verification credits: user ${userId} not found`);
         return;
       }
 
-      const currentCredits = user.listVerificationCredits || 0;
-      await storage.updateUser(userId, {
-        listVerificationCredits: currentCredits + creditCount,
-      });
+      // Atomic SQL increment — avoids lost-update race condition
+      await storage.incrementListVerificationCredits(userId, creditCount);
 
       // Mark as processed AFTER successful credit application so retries still
       // work if the credit update threw before reaching this line
       await storage.markStripeEventProcessed(eventId);
 
-      console.log(`Added ${creditCount} verification credits to user ${userId}. New total: ${currentCredits + creditCount} (event: ${eventId})`);
+      console.log(`Added ${creditCount} verification credits to user ${userId} (event: ${eventId})`);
     } catch (error) {
       console.error('Error handling checkout completed for verification credits:', error);
     }

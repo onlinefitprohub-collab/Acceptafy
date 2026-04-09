@@ -1635,16 +1635,17 @@ export async function registerRoutes(
 
       const tier = (user.subscriptionTier || 'starter') as keyof typeof SUBSCRIPTION_LIMITS;
       const monthlyLimit = SUBSCRIPTION_LIMITS[tier].listVerificationsPerMonth;
-      const bonusCredits = user.listVerificationCredits || 0;
-      const counter = await storage.getUsageCounter(userId);
-      const usedThisMonth = counter?.listVerifications || 0;
-      const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
-      const totalAvailable = availableMonthly + bonusCredits;
 
-      if (totalAvailable < emails.length) {
+      // Atomically check and deduct credits in a single DB transaction
+      const deduction = await storage.deductVerificationCredits(userId, emails.length, monthlyLimit);
+      if (!deduction.success) {
+        const counter = await storage.getUsageCounter(userId);
+        const usedThisMonth = counter?.listVerifications || 0;
+        const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
+        const bonusCredits = user.listVerificationCredits || 0;
         return res.status(403).json({
           error: 'Insufficient verification credits',
-          available: totalAvailable,
+          available: availableMonthly + bonusCredits,
           required: emails.length,
           upgradeRequired: monthlyLimit === 0,
         });
@@ -1662,19 +1663,6 @@ export async function registerRoutes(
         processed: 0,
         expiresAt,
       });
-
-      // Deduct from monthly allowance first, then bonus credits
-      const monthlyDeduction = Math.min(availableMonthly, emails.length);
-      const bonusDeduction = emails.length - monthlyDeduction;
-
-      if (monthlyDeduction > 0) {
-        await storage.addListVerifications(userId, monthlyDeduction);
-      }
-      if (bonusDeduction > 0) {
-        await storage.updateUser(userId, {
-          listVerificationCredits: Math.max(0, bonusCredits - bonusDeduction),
-        });
-      }
 
       res.json({ listId: job.id, emailCount: emails.length });
     } catch (error) {
