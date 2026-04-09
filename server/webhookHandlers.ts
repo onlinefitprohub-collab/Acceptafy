@@ -14,15 +14,6 @@ function getStripe(): Stripe | null {
   return stripeClient;
 }
 
-// In-memory set of processed Stripe event IDs to prevent duplicate crediting.
-// Covers the typical 24-hour Stripe retry window; entries purged after 48 hours.
-const processedEventIds = new Map<string, number>();
-setInterval(() => {
-  const cutoff = Date.now() - 48 * 60 * 60 * 1000;
-  for (const [id, ts] of processedEventIds.entries()) {
-    if (ts < cutoff) processedEventIds.delete(id);
-  }
-}, 60 * 60 * 1000);
 
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string, uuid: string): Promise<void> {
@@ -163,12 +154,13 @@ export class WebhookHandlers {
       const { metadata } = session;
       if (!metadata || metadata.type !== 'verification_credits') return;
 
-      // Idempotency guard: skip if this event has already been processed
-      if (processedEventIds.has(eventId)) {
+      // DB-backed idempotency guard: skip if this event has already been processed
+      const alreadyProcessed = await storage.hasProcessedStripeEvent(eventId);
+      if (alreadyProcessed) {
         console.log(`Skipping duplicate checkout.session.completed event ${eventId}`);
         return;
       }
-      processedEventIds.set(eventId, Date.now());
+      await storage.markStripeEventProcessed(eventId);
 
       const { userId, credits } = metadata;
       if (!userId || !credits) return;

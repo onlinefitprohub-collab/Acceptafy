@@ -1445,3 +1445,30 @@ export const emailOpens = pgTable("email_opens", {
 export type EmailOpen = typeof emailOpens.$inferSelect;
 export type InsertEmailOpen = typeof emailOpens.$inferInsert;
 
+// Verification jobs table - persists Debounce.io bulk jobs so results survive server restarts
+export const verificationJobs = pgTable("verification_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  debounceListId: varchar("debounce_list_id").notNull(),
+  status: varchar("status").notNull().default('pending'), // pending | done | error
+  total: integer("total").default(0),
+  processed: integer("processed").default(0),
+  results: text("results"), // JSON stringified DebounceResult[]
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  expiresAt: timestamp("expires_at"), // Auto-cleanup after 48h
+}, (table) => [
+  index("idx_verification_jobs_user").on(table.userId),
+]);
+
+export type VerificationJob = typeof verificationJobs.$inferSelect;
+export type InsertVerificationJob = typeof verificationJobs.$inferInsert;
+
+// Processed Stripe events - idempotency guard to prevent double-crediting on webhook retries
+export const processedStripeEvents = pgTable("processed_stripe_events", {
+  eventId: varchar("event_id").primaryKey(),
+  processedAt: timestamp("processed_at").defaultNow(),
+});
+
+export type ProcessedStripeEvent = typeof processedStripeEvents.$inferSelect;
+

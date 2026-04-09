@@ -30,6 +30,8 @@ import {
   blogAnnouncementEmails,
   emailOpens,
   onboardingEmails,
+  verificationJobs,
+  processedStripeEvents,
   SUBSCRIPTION_LIMITS,
   type User,
   type UpsertUser,
@@ -92,6 +94,8 @@ import {
   type ContentDraft,
   type InsertContentDraft,
   systemConfig,
+  type VerificationJob,
+  type InsertVerificationJob,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, and, gte, lte, desc } from "drizzle-orm";
@@ -130,7 +134,16 @@ export interface IStorage {
   }>;
   incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void>;
   addListVerifications(userId: string, count: number): Promise<void>;
-  
+
+  // Verification jobs (DB-backed for persistence across restarts)
+  createVerificationJob(data: InsertVerificationJob): Promise<VerificationJob>;
+  getVerificationJob(id: string): Promise<VerificationJob | undefined>;
+  updateVerificationJob(id: string, updates: Partial<VerificationJob>): Promise<void>;
+
+  // Stripe webhook idempotency (DB-backed)
+  hasProcessedStripeEvent(eventId: string): Promise<boolean>;
+  markStripeEventProcessed(eventId: string): Promise<void>;
+
   getEmailAnalyses(userId: string, limit?: number): Promise<EmailAnalysis[]>;
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
   getEmailAnalysis(id: string, userId: string): Promise<EmailAnalysis | undefined>;
@@ -629,6 +642,8 @@ export class DatabaseStorage implements IStorage {
     const now = new Date();
     const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    // Update monthly counter
     const existing = await db.select().from(usageCounters).where(eq(usageCounters.userId, userId)).limit(1);
     if (existing.length === 0) {
       await db.insert(usageCounters).values({
@@ -642,6 +657,44 @@ export class DatabaseStorage implements IStorage {
         .set({ listVerifications: sql`${usageCounters.listVerifications} + ${count}` })
         .where(eq(usageCounters.userId, userId));
     }
+
+    // Also update daily counter
+    const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
+    const existingDaily = await db.select().from(dailyUsageCounters)
+      .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)))
+      .limit(1);
+    if (existingDaily.length === 0) {
+      await db.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: count });
+    } else {
+      await db.update(dailyUsageCounters)
+        .set({ listVerifications: sql`${dailyUsageCounters.listVerifications} + ${count}` })
+        .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
+    }
+  }
+
+  async createVerificationJob(data: InsertVerificationJob): Promise<VerificationJob> {
+    const [job] = await db.insert(verificationJobs).values(data).returning();
+    return job;
+  }
+
+  async getVerificationJob(id: string): Promise<VerificationJob | undefined> {
+    const [job] = await db.select().from(verificationJobs).where(eq(verificationJobs.id, id));
+    return job;
+  }
+
+  async updateVerificationJob(id: string, updates: Partial<VerificationJob>): Promise<void> {
+    await db.update(verificationJobs)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(verificationJobs.id, id));
+  }
+
+  async hasProcessedStripeEvent(eventId: string): Promise<boolean> {
+    const [row] = await db.select().from(processedStripeEvents).where(eq(processedStripeEvents.eventId, eventId));
+    return !!row;
+  }
+
+  async markStripeEventProcessed(eventId: string): Promise<void> {
+    await db.insert(processedStripeEvents).values({ eventId }).onConflictDoNothing();
   }
 
   async getEmailAnalyses(userId: string, limit: number = 50): Promise<EmailAnalysis[]> {

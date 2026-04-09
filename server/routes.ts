@@ -57,18 +57,6 @@ import {
 import { z } from "zod";
 import { submitBulkVerification, getBulkVerificationStatus } from './services/debounce';
 
-// Server-owned job map: jobId -> { userId, debounceListId, createdAt }
-// Prevents IDOR: clients only know jobId, never the raw Debounce listId
-const verificationJobs = new Map<string, { userId: string; debounceListId: string; createdAt: number }>();
-
-// Purge stale jobs older than 24 hours every hour
-setInterval(() => {
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  for (const [id, job] of verificationJobs.entries()) {
-    if (job.createdAt < cutoff) verificationJobs.delete(id);
-  }
-}, 60 * 60 * 1000);
-
 const generateRoadmapRequestSchema = z.object({
   analysisResult: gradingResultSchema,
   subject: z.string().default(''),
@@ -1664,9 +1652,16 @@ export async function registerRoutes(
 
       const debounceListId = await submitBulkVerification(emails);
 
-      // Generate a server-owned jobId so clients never see the raw Debounce listId
-      const jobId = randomUUID();
-      verificationJobs.set(jobId, { userId, debounceListId, createdAt: Date.now() });
+      // Persist job in DB so it survives server restarts
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const job = await storage.createVerificationJob({
+        userId,
+        debounceListId,
+        status: 'pending',
+        total: emails.length,
+        processed: 0,
+        expiresAt,
+      });
 
       // Deduct from monthly allowance first, then bonus credits
       const monthlyDeduction = Math.min(availableMonthly, emails.length);
@@ -1681,7 +1676,7 @@ export async function registerRoutes(
         });
       }
 
-      res.json({ listId: jobId, emailCount: emails.length });
+      res.json({ listId: job.id, emailCount: emails.length });
     } catch (error) {
       console.error('Bulk verify error:', error);
       res.status(500).json({ error: 'Failed to submit verification job' });
@@ -1693,19 +1688,37 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       const { jobId } = req.params;
 
-      const job = verificationJobs.get(jobId);
+      const job = await storage.getVerificationJob(jobId);
       if (!job) {
-        return res.status(404).json({ error: 'Verification job not found' });
+        return res.status(404).json({ error: 'Verification job not found or expired' });
       }
       if (job.userId !== userId) {
         return res.status(403).json({ error: 'Forbidden' });
       }
 
+      // Return cached results if already done (retry-safe)
+      if (job.status === 'done' && job.results) {
+        const results = JSON.parse(job.results);
+        return res.json({ done: true, total: job.total ?? 0, processed: job.processed ?? 0, results });
+      }
+
+      // Otherwise poll Debounce
       const status = await getBulkVerificationStatus(job.debounceListId);
 
-      // Clean up finished jobs from memory
-      if (status.done) {
-        verificationJobs.delete(jobId);
+      // Persist results when done
+      if (status.done && status.results) {
+        await storage.updateVerificationJob(jobId, {
+          status: 'done',
+          total: status.total,
+          processed: status.processed,
+          results: JSON.stringify(status.results),
+        });
+      } else {
+        // Update progress counters
+        await storage.updateVerificationJob(jobId, {
+          total: status.total,
+          processed: status.processed,
+        });
       }
 
       res.json(status);
