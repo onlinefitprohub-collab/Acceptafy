@@ -66,12 +66,12 @@ function parseCSVContent(content: string): string[] {
 }
 
 const STATUS_CONFIG = {
-  valid:      { label: 'Valid',       color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', icon: CheckCircle2 },
-  invalid:    { label: 'Invalid',     color: 'text-red-600 dark:text-red-400',         bg: 'bg-red-500/10',     border: 'border-red-500/20',     icon: XCircle },
-  disposable: { label: 'Disposable',  color: 'text-red-600 dark:text-red-400',         bg: 'bg-red-500/10',     border: 'border-red-500/20',     icon: XCircle },
-  spamtrap:   { label: 'Spam Trap',   color: 'text-red-600 dark:text-red-400',         bg: 'bg-red-500/10',     border: 'border-red-500/20',     icon: XCircle },
-  catch_all:  { label: 'Catch-All',   color: 'text-amber-600 dark:text-amber-400',     bg: 'bg-amber-500/10',   border: 'border-amber-500/20',   icon: AlertTriangle },
-  unknown:    { label: 'Unknown',     color: 'text-slate-500 dark:text-slate-400',     bg: 'bg-slate-500/10',   border: 'border-slate-500/20',   icon: AlertTriangle },
+  valid:      { label: 'Valid',       color: 'text-emerald-600 dark:text-emerald-400',   bg: 'bg-emerald-500/10',  border: 'border-emerald-500/20',  icon: CheckCircle2 },
+  invalid:    { label: 'Invalid',     color: 'text-red-600 dark:text-red-400',           bg: 'bg-red-500/10',      border: 'border-red-500/20',      icon: XCircle },
+  disposable: { label: 'Disposable',  color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle },
+  spamtrap:   { label: 'Spam Trap',   color: 'text-rose-800 dark:text-rose-300',         bg: 'bg-rose-900/10',     border: 'border-rose-800/30',     icon: XCircle },
+  catch_all:  { label: 'Catch-All',   color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle },
+  unknown:    { label: 'Unknown',     color: 'text-slate-500 dark:text-slate-400',       bg: 'bg-slate-500/10',    border: 'border-slate-500/20',    icon: AlertTriangle },
 } as const;
 
 function downloadCSV(filename: string, rows: string[][]) {
@@ -186,8 +186,9 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
 
   const keepCount = results.filter(r => r.recommendation === 'keep').length;
   const removeCount = results.filter(r => r.recommendation === 'remove').length;
-  const safeCount = results.filter(r => r.safeToSend).length;
-  const catchAllCount = results.filter(r => r.status === 'catch_all').length;
+  const validCount = results.filter(r => r.status === 'valid').length;
+  const invalidCount = results.filter(r => r.status === 'invalid' || r.status === 'disposable' || r.status === 'spamtrap').length;
+  const riskyCount = results.filter(r => r.status === 'catch_all' || r.status === 'unknown').length;
 
   const handleSort = (field: SortField) => {
     if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -224,19 +225,19 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="rounded-lg border border-border bg-card p-3 text-center">
           <div className="text-2xl font-bold text-foreground">{results.length.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Total Verified</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Total Checked</div>
         </div>
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{safeCount.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Safe to Send</div>
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{validCount.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Valid</div>
         </div>
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-center">
-          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{removeCount.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Remove</div>
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{invalidCount.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Invalid</div>
         </div>
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-center">
-          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{catchAllCount.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Catch-All</div>
+          <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{riskyCount.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Risky</div>
         </div>
       </div>
 
@@ -325,11 +326,15 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                     </td>
                     <td className="px-4 py-2.5">
                       {r.recommendation === 'keep' ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                        <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                           {r.safeToSend ? 'Safe' : 'Keep'}
                         </span>
                       ) : (
-                        <span className="text-red-600 dark:text-red-400 text-xs font-medium">Remove</span>
+                        <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400 text-xs font-bold">
+                          <XCircle className="w-4 h-4 flex-shrink-0" />
+                          Remove
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell">{r.reason}</td>
@@ -400,9 +405,8 @@ export const ListQualityChecker: React.FC = () => {
       setListId(data.listId);
       toast({ title: 'Verification started', description: `Processing ${data.emailCount.toLocaleString()} emails via Debounce.io…` });
     },
-    onError: (err: any) => {
-      const msg = err?.message || 'Failed to start verification';
-      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    onError: (err: Error) => {
+      toast({ title: 'Error', description: err.message || 'Failed to start verification', variant: 'destructive' });
     },
   });
 
@@ -418,8 +422,9 @@ export const ListQualityChecker: React.FC = () => {
       } else {
         throw new Error(data.error || 'No checkout URL returned');
       }
-    } catch (err: any) {
-      toast({ title: 'Checkout error', description: err.message || 'Failed to start checkout', variant: 'destructive' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start checkout';
+      toast({ title: 'Checkout error', description: msg, variant: 'destructive' });
     } finally {
       setBuyingPack(null);
     }
@@ -652,30 +657,39 @@ export const ListQualityChecker: React.FC = () => {
             </div>
           )}
 
-          {/* Verification in progress */}
+          {/* Verification in progress — shimmer skeleton */}
           {listId && !results && (
-            <Card data-testid="card-verification-progress">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin text-violet-500" />
-                  Verifying {emailCount.toLocaleString()} Emails
-                </CardTitle>
-                <CardDescription>This may take a moment. Results will appear automatically.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Progress value={verifyProgress} className="h-2" />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{bulkStatus?.processed?.toLocaleString() ?? 0} processed</span>
-                  <span>{bulkStatus?.total?.toLocaleString() ?? emailCount.toLocaleString()} total</span>
+            <div className="space-y-4" data-testid="card-verification-progress">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-violet-500" />
+                  <span className="text-sm font-medium text-foreground">
+                    Verifying {emailCount.toLocaleString()} emails…
+                  </span>
                 </div>
-                {isPolling && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 animate-spin" />
-                    Checking for results…
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                <span className="text-xs text-muted-foreground">
+                  {bulkStatus ? `${bulkStatus.processed.toLocaleString()} / ${bulkStatus.total.toLocaleString()}` : 'Starting…'}
+                </span>
+              </div>
+              <Progress value={verifyProgress} className="h-1.5" />
+              {/* Shimmer skeleton simulating the results table */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                <div className="bg-muted/50 px-4 py-2.5 grid grid-cols-3 gap-4">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-12" />
+                  <Skeleton className="h-3 w-14" />
+                </div>
+                <div className="divide-y divide-border">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="px-4 py-3 grid grid-cols-3 gap-4 items-center">
+                      <Skeleton className="h-3 w-full max-w-[160px]" style={{ opacity: 1 - i * 0.1 }} />
+                      <Skeleton className="h-5 w-16 rounded-md" style={{ opacity: 1 - i * 0.1 }} />
+                      <Skeleton className="h-3 w-12" style={{ opacity: 1 - i * 0.1 }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Results */}

@@ -740,9 +740,10 @@ export class DatabaseStorage implements IStorage {
       });
 
       return { success: true };
-    } catch (e: any) {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
       const knownErrors = ['INSUFFICIENT_CREDITS', 'MONTHLY_QUOTA_EXCEEDED', 'INSUFFICIENT_BONUS_CREDITS', 'USER_NOT_FOUND'];
-      if (knownErrors.includes(e.message)) return { success: false, error: e.message };
+      if (knownErrors.includes(msg)) return { success: false, error: msg };
       throw e;
     }
   }
@@ -795,8 +796,8 @@ export class DatabaseStorage implements IStorage {
           .where(eq(users.id, userId));
       });
       return 'credited';
-    } catch (e: any) {
-      if (e.message === 'DUPLICATE') return 'duplicate';
+    } catch (e) {
+      if (e instanceof Error && e.message === 'DUPLICATE') return 'duplicate';
       throw e;
     }
   }
