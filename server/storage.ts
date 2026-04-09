@@ -702,37 +702,39 @@ export class DatabaseStorage implements IStorage {
         const monthlyDeduction = Math.min(availableMonthly, emailCount);
         const bonusDeduction = emailCount - monthlyDeduction;
 
-        // 3. Conditional UPDATE for monthly quota — only succeeds if the row still has capacity.
-        //    Throws to rollback if a concurrent request already consumed the credits.
+        // 3. Conditional UPDATE for monthly quota — uses .returning() to get typed result.
+        //    If the WHERE condition fails (capacity consumed by concurrent request), 0 rows are returned.
         if (monthlyDeduction > 0) {
-          const result = await tx.execute(
-            sql`UPDATE usage_counters
-                SET list_verifications = COALESCE(list_verifications, 0) + ${monthlyDeduction}
-                WHERE id = ${counter.id}
-                  AND (${monthlyLimit} - COALESCE(list_verifications, 0)) >= ${monthlyDeduction}`
-          );
-          if ((result as any).rowCount === 0) throw new Error('MONTHLY_QUOTA_EXCEEDED');
+          const updated = await tx.update(usageCounters)
+            .set({ listVerifications: sql`COALESCE(${usageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
+            .where(and(
+              eq(usageCounters.id, counter.id),
+              sql`(${monthlyLimit} - COALESCE(${usageCounters.listVerifications}, 0)) >= ${monthlyDeduction}`
+            ))
+            .returning({ id: usageCounters.id });
+          if (updated.length === 0) throw new Error('MONTHLY_QUOTA_EXCEEDED');
         }
 
-        // 4. Conditional UPDATE for bonus credits — only succeeds if enough remain
+        // 4. Conditional UPDATE for bonus credits — returns 0 rows if insufficient
         if (bonusDeduction > 0) {
-          const result = await tx.execute(
-            sql`UPDATE users
-                SET list_verification_credits = COALESCE(list_verification_credits, 0) - ${bonusDeduction}
-                WHERE id = ${userId}
-                  AND COALESCE(list_verification_credits, 0) >= ${bonusDeduction}`
-          );
-          if ((result as any).rowCount === 0) throw new Error('INSUFFICIENT_BONUS_CREDITS');
+          const updated = await tx.update(users)
+            .set({ listVerificationCredits: sql`COALESCE(${users.listVerificationCredits}, 0) - ${bonusDeduction}` })
+            .where(and(
+              eq(users.id, userId),
+              sql`COALESCE(${users.listVerificationCredits}, 0) >= ${bonusDeduction}`
+            ))
+            .returning({ id: users.id });
+          if (updated.length === 0) throw new Error('INSUFFICIENT_BONUS_CREDITS');
         }
 
-        // 5. Update daily counter inside the same transaction
+        // 5. Update daily counter with full emailCount (monthly + bonus) inside the same transaction
         const [existingDaily] = await tx.select().from(dailyUsageCounters)
           .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
         if (!existingDaily) {
-          await tx.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: monthlyDeduction });
+          await tx.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: emailCount });
         } else {
           await tx.update(dailyUsageCounters)
-            .set({ listVerifications: sql`COALESCE(${dailyUsageCounters.listVerifications}, 0) + ${monthlyDeduction}` })
+            .set({ listVerifications: sql`COALESCE(${dailyUsageCounters.listVerifications}, 0) + ${emailCount}` })
             .where(eq(dailyUsageCounters.id, existingDaily.id));
         }
       });
