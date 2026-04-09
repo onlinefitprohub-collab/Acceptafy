@@ -55,7 +55,7 @@ import {
   senderScoreInputSchema
 } from "@shared/schema";
 import { z } from "zod";
-import { submitBulkVerification, getBulkVerificationStatus } from './services/debounce';
+import { verifyEmailList } from './services/debounce';
 
 const generateRoadmapRequestSchema = z.object({
   analysisResult: gradingResultSchema,
@@ -1650,33 +1650,46 @@ export async function registerRoutes(
         });
       }
 
-      // 2. Submit to Debounce FIRST — credits are only charged after a successful submit
-      const debounceListId = await submitBulkVerification(emails);
-
-      // 3. Atomically deduct credits in a single DB transaction (conditional SQL updates
-      //    prevent over-consumption if concurrent requests race through the pre-check)
+      // 2. Atomically deduct credits before processing
       const deduction = await storage.deductVerificationCredits(userId, emails.length, monthlyLimit);
       if (!deduction.success) {
-        // Credits were consumed by a concurrent request between the pre-check and now.
-        // The Debounce job was already submitted but we cannot charge the user — treat as an error.
         return res.status(403).json({
           error: 'Verification credit conflict — another request consumed your remaining credits. Please try again.',
           upgradeRequired: monthlyLimit === 0,
         });
       }
 
-      // 4. Persist job in DB so it survives server restarts
+      // 3. Persist job in DB so progress can be polled
       const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
       const job = await storage.createVerificationJob({
         userId,
-        debounceListId,
-        status: 'pending',
+        debounceListId: 'pending', // placeholder — single-email API used
+        status: 'processing',
         total: emails.length,
         processed: 0,
         expiresAt,
       });
 
-      res.json({ listId: job.id, emailCount: emails.length });
+      // 4. Process emails in background — client polls /api/list/verify-bulk/:jobId
+      const jobId = job.id;
+      (async () => {
+        try {
+          const results = await verifyEmailList(emails, async (processed) => {
+            await storage.updateVerificationJob(jobId, { processed });
+          });
+          await storage.updateVerificationJob(jobId, {
+            status: 'done',
+            total: results.length,
+            processed: results.length,
+            results: JSON.stringify(results),
+          });
+        } catch (err) {
+          console.error('Background verification error:', err);
+          await storage.updateVerificationJob(jobId, { status: 'error' });
+        }
+      })();
+
+      res.json({ listId: jobId, emailCount: emails.length });
     } catch (error) {
       console.error('Bulk verify error:', error);
       res.status(500).json({ error: 'Failed to submit verification job' });
@@ -1696,32 +1709,20 @@ export async function registerRoutes(
         return res.status(403).json({ error: 'Forbidden' });
       }
 
-      // Return cached results if already done (retry-safe)
+      const total = job.total ?? 0;
+      const processed = job.processed ?? 0;
+
       if (job.status === 'done' && job.results) {
         const results = JSON.parse(job.results);
-        return res.json({ done: true, total: job.total ?? 0, processed: job.processed ?? 0, results });
+        return res.json({ done: true, total, processed, results });
       }
 
-      // Otherwise poll Debounce
-      const status = await getBulkVerificationStatus(job.debounceListId);
-
-      // Persist results when done
-      if (status.done && status.results) {
-        await storage.updateVerificationJob(jobId, {
-          status: 'done',
-          total: status.total,
-          processed: status.processed,
-          results: JSON.stringify(status.results),
-        });
-      } else {
-        // Update progress counters
-        await storage.updateVerificationJob(jobId, {
-          total: status.total,
-          processed: status.processed,
-        });
+      if (job.status === 'error') {
+        return res.json({ done: false, total, processed, error: true });
       }
 
-      res.json(status);
+      // Still processing — return progress
+      res.json({ done: false, total, processed });
     } catch (error) {
       console.error('Bulk verify status error:', error);
       res.status(500).json({ error: 'Failed to get verification status' });

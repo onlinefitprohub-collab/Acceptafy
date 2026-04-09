@@ -4,6 +4,18 @@ import { db } from '../server/db';
 import { users } from '../shared/schema';
 import { eq } from 'drizzle-orm';
 
+function linkifyHtmlContent(html: string): string {
+  const urlRegex = /(?<![='"(])(https?:\/\/[^\s<>"')\],]+)/g;
+  return html.replace(/>([^<]*)</g, (match, textContent) => {
+    const linked = textContent.replace(urlRegex, (url: string) => {
+      const clean = url.replace(/[.,;:!?]+$/, '');
+      const trailing = url.slice(clean.length);
+      return `<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>${trailing}`;
+    });
+    return `>${linked}<`;
+  });
+}
+
 const topics = [
   "Why Your Emails Are Going to Spam (And How to Fix It in 24 Hours)",
   "The Cold Email Deliverability Checklist: 15 Things to Check Before You Hit Send",
@@ -59,12 +71,15 @@ async function generateArticles() {
         .replace(/-+/g, '-')
         .trim();
       
+      // Convert bare URLs to clickable hyperlinks
+      const linkedContent = linkifyHtmlContent(rawArticle.content || '');
+
       // Save to database
       const article = await storage.createArticle({
         title: rawArticle.title || topic,
         slug,
         excerpt: rawArticle.excerpt || '',
-        content: rawArticle.content || '',
+        content: linkedContent,
         featuredImage: null,
         tags: rawArticle.tags || [],
         metaTitle: rawArticle.metaTitle || rawArticle.title || topic,

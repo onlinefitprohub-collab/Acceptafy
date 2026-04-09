@@ -10,7 +10,7 @@ export interface DebounceResult {
 }
 
 interface DebounceApiEmail {
-  email: string;
+  email?: string;
   code?: string;
   send_transactional?: string;
   disposable?: string;
@@ -21,30 +21,17 @@ interface DebounceApiEmail {
   did_you_mean?: string;
 }
 
-interface DebounceBulkStatusResponse {
-  debounce?: {
-    success?: string;
-    summary?: {
-      total?: number;
-      processed?: number;
-    };
-    emails?: DebounceApiEmail[];
-  };
-  status?: string;
-  success?: string;
-}
-
 function mapDebounceStatus(email: DebounceApiEmail): DebounceResult['status'] {
   const result = (email.result || '').toLowerCase();
   const reason = (email.reason || '').toLowerCase();
 
   if (email.disposable === '1' || reason.includes('disposable')) return 'disposable';
   if (reason.includes('spam') || reason.includes('trap')) return 'spamtrap';
-  if (result === 'deliverable' || result === 'safe_to_send') return 'valid';
-  if (result === 'undeliverable') return 'invalid';
+  if (result === 'safe to send' || result === 'deliverable') return 'valid';
+  if (result === 'invalid' || result === 'undeliverable') return 'invalid';
   if (result === 'risky' && reason.includes('catch')) return 'catch_all';
   if (result === 'risky') return 'catch_all';
-  if (result === 'unknown') return 'unknown';
+  if (result === 'unknown' || result === 'accept-all') return 'catch_all';
   if (email.code === '5') return 'disposable';
   if (email.code === '4') return 'catch_all';
   if (email.code === '3') return 'invalid';
@@ -70,69 +57,66 @@ function reasonLabel(email: DebounceApiEmail, status: DebounceResult['status']):
   return map[status];
 }
 
-export async function submitBulkVerification(emails: string[]): Promise<string> {
+export async function verifySingleEmail(email: string): Promise<DebounceResult> {
   if (!DEBOUNCE_API_KEY) throw new Error('DEBOUNCE_API_KEY is not configured');
 
-  const csv = ['email', ...emails].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const formData = new FormData();
-  formData.append('api', DEBOUNCE_API_KEY);
-  formData.append('file', blob, 'emails.csv');
-
-  const response = await fetch(`${DEBOUNCE_BASE}/bulk`, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Debounce.io upload failed: ${response.status} ${text}`);
-  }
-
-  const data = await response.json() as { debounce?: { list_id?: string }; list_id?: string };
-  const listId = data?.debounce?.list_id || data?.list_id;
-  if (!listId) throw new Error('Debounce.io did not return a list_id');
-  return listId;
-}
-
-export async function getBulkVerificationStatus(listId: string): Promise<{
-  done: boolean;
-  total: number;
-  processed: number;
-  results?: DebounceResult[];
-}> {
-  if (!DEBOUNCE_API_KEY) throw new Error('DEBOUNCE_API_KEY is not configured');
-
-  const url = `${DEBOUNCE_BASE}/bulk?api=${encodeURIComponent(DEBOUNCE_API_KEY)}&id=${encodeURIComponent(listId)}`;
+  const url = `${DEBOUNCE_BASE}/?api=${encodeURIComponent(DEBOUNCE_API_KEY)}&email=${encodeURIComponent(email)}`;
   const response = await fetch(url);
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Debounce.io status check failed: ${response.status} ${text}`);
+    throw new Error(`Debounce API error ${response.status}: ${text.slice(0, 200)}`);
   }
 
-  const data = await response.json() as DebounceBulkStatusResponse;
-  const summary = data?.debounce?.summary;
-  const total = summary?.total ?? 0;
-  const processed = summary?.processed ?? 0;
-  const done = total > 0 && processed >= total;
+  const data = await response.json() as { debounce?: DebounceApiEmail; success?: string };
 
-  if (!done) {
-    return { done: false, total, processed };
-  }
-
-  const emails = data?.debounce?.emails || [];
-  const results: DebounceResult[] = emails.map((e) => {
-    const status = mapDebounceStatus(e);
-    const recommendation = mapToRecommendation(status);
+  if (data.success !== '1' || !data.debounce) {
     return {
-      email: e.email,
-      status,
-      reason: reasonLabel(e, status),
-      recommendation,
-      safeToSend: recommendation === 'keep' && status !== 'catch_all',
+      email,
+      status: 'unknown',
+      reason: 'Could not be verified',
+      recommendation: 'keep',
+      safeToSend: false,
     };
-  });
+  }
 
-  return { done: true, total, processed, results };
+  const emailData = data.debounce;
+  const status = mapDebounceStatus(emailData);
+  const recommendation = mapToRecommendation(status);
+
+  return {
+    email: emailData.email || email,
+    status,
+    reason: reasonLabel(emailData, status),
+    recommendation,
+    safeToSend: recommendation === 'keep' && status !== 'catch_all',
+  };
+}
+
+const BATCH_SIZE = 5;
+
+export async function verifyEmailList(
+  emails: string[],
+  onProgress?: (processed: number) => void,
+): Promise<DebounceResult[]> {
+  const results: DebounceResult[] = [];
+
+  for (let i = 0; i < emails.length; i += BATCH_SIZE) {
+    const batch = emails.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((email) =>
+        verifySingleEmail(email).catch((): DebounceResult => ({
+          email,
+          status: 'unknown',
+          reason: 'Verification failed',
+          recommendation: 'keep',
+          safeToSend: false,
+        })),
+      ),
+    );
+    results.push(...batchResults);
+    if (onProgress) onProgress(results.length);
+  }
+
+  return results;
 }
