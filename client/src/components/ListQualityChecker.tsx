@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import {
   Upload, Download, CheckCircle2, XCircle, AlertTriangle, Zap, FileText,
-  ShieldCheck, Coins, RefreshCw, Loader2, ArrowRight, Lock
+  ShieldCheck, Coins, RefreshCw, Loader2, ArrowRight, Lock, Info
 } from 'lucide-react';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -66,12 +67,12 @@ function parseCSVContent(content: string): string[] {
 }
 
 const STATUS_CONFIG = {
-  valid:      { label: 'Valid',       color: 'text-emerald-600 dark:text-emerald-400',   bg: 'bg-emerald-500/10',  border: 'border-emerald-500/20',  icon: CheckCircle2 },
-  invalid:    { label: 'Invalid',     color: 'text-red-600 dark:text-red-400',           bg: 'bg-red-500/10',      border: 'border-red-500/20',      icon: XCircle },
-  disposable: { label: 'Disposable',  color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle },
-  spamtrap:   { label: 'Spam Trap',   color: 'text-rose-800 dark:text-rose-300',         bg: 'bg-rose-900/10',     border: 'border-rose-800/30',     icon: XCircle },
-  catch_all:  { label: 'Catch-All',   color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle },
-  unknown:    { label: 'Unknown',     color: 'text-slate-500 dark:text-slate-400',       bg: 'bg-slate-500/10',    border: 'border-slate-500/20',    icon: AlertTriangle },
+  valid:      { label: 'Valid',       color: 'text-emerald-600 dark:text-emerald-400',   bg: 'bg-emerald-500/10',  border: 'border-emerald-500/20',  icon: CheckCircle2, tooltip: 'Mailbox confirmed deliverable — safe to send marketing email.' },
+  invalid:    { label: 'Invalid',     color: 'text-red-600 dark:text-red-400',           bg: 'bg-red-500/10',      border: 'border-red-500/20',      icon: XCircle,      tooltip: 'Mailbox does not exist or bounces. Sending here will hurt your sender reputation.' },
+  disposable: { label: 'Disposable',  color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle, tooltip: 'Temporary throwaway address (e.g. Mailinator). High spam risk — remove from your list.' },
+  spamtrap:   { label: 'Spam Trap',   color: 'text-rose-800 dark:text-rose-300',         bg: 'bg-rose-900/10',     border: 'border-rose-800/30',     icon: XCircle,      tooltip: 'Known spam trap. Sending to this address will severely damage your deliverability and blacklist your domain.' },
+  catch_all:  { label: 'Catch-All',   color: 'text-amber-600 dark:text-amber-400',       bg: 'bg-amber-500/10',    border: 'border-amber-500/20',    icon: AlertTriangle, tooltip: 'The domain accepts all email addresses whether or not the mailbox exists. Deliverability is uncertain.' },
+  unknown:    { label: 'Unknown',     color: 'text-slate-500 dark:text-slate-400',       bg: 'bg-slate-500/10',    border: 'border-slate-500/20',    icon: AlertTriangle, tooltip: 'Could not be verified — the mailbox status is indeterminate. Treat with caution.' },
 } as const;
 
 function downloadCSV(filename: string, rows: string[][]) {
@@ -289,13 +290,13 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
       <div className="rounded-lg border border-border overflow-hidden">
         <div className="max-h-72 overflow-y-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/50 sticky top-0 z-10">
+            <thead className="bg-muted sticky top-0 z-20 shadow-sm">
               <tr>
                 {(['email', 'status', 'recommendation'] as SortField[]).map((field, i) => (
                   <th
                     key={field}
                     onClick={() => handleSort(field)}
-                    className={`text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors ${i === 1 ? '' : i === 2 ? '' : ''}`}
+                    className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors"
                     data-testid={`th-sort-${field}`}
                   >
                     <span className="inline-flex items-center gap-1">
@@ -308,7 +309,19 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                     </span>
                   </th>
                 ))}
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide hidden sm:table-cell">Reason</th>
+                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide hidden sm:table-cell">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 cursor-default">
+                        Reason
+                        <Info className="w-3 h-3 opacity-50" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      The specific reason returned by the verification service explaining why an address received its status.
+                    </TooltipContent>
+                  </Tooltip>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -317,12 +330,21 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                 const Icon = cfg.icon;
                 return (
                   <tr key={i} className={r.recommendation === 'remove' ? 'bg-red-500/3' : ''} data-testid={`row-result-${i}`}>
-                    <td className="px-4 py-2.5 font-mono text-xs text-foreground">{r.email}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-foreground max-w-[180px] sm:max-w-[260px]">
+                      <span className="block truncate" title={r.email}>{r.email}</span>
+                    </td>
                     <td className="px-4 py-2.5">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border ${cfg.bg} ${cfg.color} ${cfg.border}`}>
-                        <Icon className="w-3 h-3" />
-                        {cfg.label}
-                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border cursor-default ${cfg.bg} ${cfg.color} ${cfg.border}`}>
+                            <Icon className="w-3 h-3" />
+                            {cfg.label}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs">
+                          {cfg.tooltip}
+                        </TooltipContent>
+                      </Tooltip>
                     </td>
                     <td className="px-4 py-2.5">
                       {r.recommendation === 'keep' ? (
@@ -337,7 +359,9 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell">{r.reason}</td>
+                    <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell max-w-[160px]">
+                      <span className="block truncate" title={r.reason}>{r.reason}</span>
+                    </td>
                   </tr>
                 );
               })}
