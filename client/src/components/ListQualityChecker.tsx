@@ -75,6 +75,27 @@ const STATUS_CONFIG = {
   unknown:    { label: 'Unknown',     color: 'text-slate-500 dark:text-slate-400',       bg: 'bg-slate-500/10',    border: 'border-slate-500/20',    icon: AlertTriangle, tooltip: 'Could not be verified — the mailbox status is indeterminate. Treat with caution.' },
 } as const;
 
+const REASON_TOOLTIPS: Record<string, string> = {
+  'deliverable':            'The mail server confirmed this inbox exists and accepts email.',
+  'bounce':                 'The mail server rejected the address. This mailbox does not exist.',
+  'domain not found':       'The email domain has no DNS records — it does not exist.',
+  'no mx record':           'The domain has no mail server configured and cannot receive email.',
+  'disposable':             'A known temporary/throwaway email service. These addresses are abandoned quickly.',
+  'disposable, role':       'A throwaway address that also uses a role-based pattern (e.g. admin@). High risk.',
+  'accept all':             'The mail server accepts all addresses regardless of whether the mailbox actually exists.',
+  'accept all, role':       'Catch-all domain with a role-based address pattern — deliverability is uncertain.',
+  'role':                   'Role-based address (e.g. info@, admin@, support@). These are often filtered or unmonitored.',
+  'bounce, role':           'Address bounced AND uses a role-based pattern — do not send.',
+  'spam trap':              'A known spam trap. Sending here will harm your sender reputation and risk blacklisting.',
+  'could not be verified':  'The verification service could not reach a conclusion for this address.',
+  'syntax error':           'The email address format is invalid.',
+  'unknown':                'The verification service returned an indeterminate result for this address.',
+};
+
+function getReasonTooltip(reason: string): string | undefined {
+  return REASON_TOOLTIPS[reason.toLowerCase()];
+}
+
 function downloadCSV(filename: string, rows: string[][]) {
   const content = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
   const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
@@ -360,7 +381,18 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                       )}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell max-w-[160px]">
-                      <span className="block truncate" title={r.reason}>{r.reason}</span>
+                      {getReasonTooltip(r.reason) ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="block truncate underline decoration-dotted decoration-muted-foreground/40 cursor-default" title={r.reason}>{r.reason}</span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs">
+                            {getReasonTooltip(r.reason)}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        <span className="block truncate" title={r.reason}>{r.reason}</span>
+                      )}
                     </td>
                   </tr>
                 );
