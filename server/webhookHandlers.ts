@@ -160,7 +160,6 @@ export class WebhookHandlers {
         console.log(`Skipping duplicate checkout.session.completed event ${eventId}`);
         return;
       }
-      await storage.markStripeEventProcessed(eventId);
 
       const { userId, credits } = metadata;
       if (!userId || !credits) return;
@@ -178,6 +177,10 @@ export class WebhookHandlers {
       await storage.updateUser(userId, {
         listVerificationCredits: currentCredits + creditCount,
       });
+
+      // Mark as processed AFTER successful credit application so retries still
+      // work if the credit update threw before reaching this line
+      await storage.markStripeEventProcessed(eventId);
 
       console.log(`Added ${creditCount} verification credits to user ${userId}. New total: ${currentCredits + creditCount} (event: ${eventId})`);
     } catch (error) {

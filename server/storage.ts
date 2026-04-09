@@ -640,35 +640,26 @@ export class DatabaseStorage implements IStorage {
 
   async addListVerifications(userId: string, count: number): Promise<void> {
     const now = new Date();
-    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    // Update monthly counter
-    const existing = await db.select().from(usageCounters).where(eq(usageCounters.userId, userId)).limit(1);
-    if (existing.length === 0) {
-      await db.insert(usageCounters).values({
-        userId,
-        periodStart,
-        periodEnd,
-        listVerifications: count,
-      });
-    } else {
-      await db.update(usageCounters)
-        .set({ listVerifications: sql`${usageCounters.listVerifications} + ${count}` })
-        .where(eq(usageCounters.userId, userId));
+    // Update the current-period monthly counter (uses period-scoped lookup to avoid stale rows)
+    let counter = await this.getUsageCounter(userId);
+    if (!counter) {
+      counter = await this.createOrResetUsageCounter(userId);
     }
+    await db.update(usageCounters)
+      .set({ listVerifications: sql`${usageCounters.listVerifications} + ${count}` })
+      .where(eq(usageCounters.id, counter.id));
 
-    // Also update daily counter
+    // Also update today's daily counter
     const today = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const existingDaily = await db.select().from(dailyUsageCounters)
-      .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)))
-      .limit(1);
-    if (existingDaily.length === 0) {
+    const [existingDaily] = await db.select().from(dailyUsageCounters)
+      .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
+    if (!existingDaily) {
       await db.insert(dailyUsageCounters).values({ userId, date: today, listVerifications: count });
     } else {
       await db.update(dailyUsageCounters)
         .set({ listVerifications: sql`${dailyUsageCounters.listVerifications} + ${count}` })
-        .where(and(eq(dailyUsageCounters.userId, userId), eq(dailyUsageCounters.date, today)));
+        .where(eq(dailyUsageCounters.id, existingDaily.id));
     }
   }
 
