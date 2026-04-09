@@ -252,9 +252,10 @@ export const gradeCopy = async (
   images?: ImageData[]
 ): Promise<GradingResult> => {
   try {
+    const plainBody = stripHtmlToPlainText(body);
     let fullEmailCopy = variations.map((v, i) => 
       `---Variation ${i + 1}---\nSubject: ${v.subject}\nPreview: ${v.previewText}`
-    ).join('\n\n') + `\n\n---Email Body (Common to all variations)---\n${body}`;
+    ).join('\n\n') + `\n\n---Email Body (Common to all variations)---\n${plainBody}`;
     
     if (images && images.length > 0) {
       const imageDetails = images.map((img, idx) => {
@@ -458,7 +459,7 @@ export const generateFollowUpEmail = async (
     context?: string
 ): Promise<FollowUpEmail> => {
     try {
-        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${originalEmail.body}`;
+        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${stripHtmlToPlainText(originalEmail.body)}`;
         const analysisSummary = `The original email was analyzed and received an overall grade of ${analysis.overallGrade.grade}. Key feedback was: ${analysis.overallGrade.summary}. The main spam concern was: ${analysis.spamAnalysis[0]?.reason || 'none'}.`;
 
         let goalInstruction = '';
@@ -504,10 +505,11 @@ export const generateFollowUpEmail = async (
         const jsonString = result.text?.trim() || '{}';
         const parsed = JSON.parse(jsonString) as FollowUpEmail;
         
-        // Convert literal \n sequences to actual newlines
+        // Convert literal \n sequences to actual newlines, then wrap in HTML
+        const rawBody = (parsed.body?.replace(/\\n/g, '\n') || '').trim();
         return {
             subject: parsed.subject?.replace(/\\n/g, '\n') || '',
-            body: parsed.body?.replace(/\\n/g, '\n') || '',
+            body: plainTextToHtml(rawBody),
         };
 
     } catch (error) {
@@ -676,7 +678,7 @@ export const generateFollowUpSequence = async (
     sequenceType: string = 'sequence'
 ): Promise<FollowUpSequenceEmail[]> => {
     try {
-        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${originalEmail.body}`;
+        const originalContent = `---Original Email---\nSubject: ${originalEmail.subject}\n\n---Body---\n${stripHtmlToPlainText(originalEmail.body)}`;
         const analysisSummary = `The original email was analyzed and received an overall grade of ${analysis.overallGrade.grade}. Key feedback was: ${analysis.overallGrade.summary}. The main spam concern was: ${analysis.spamAnalysis[0]?.reason || 'none'}. The personalization score was ${analysis.personalizationScore.score}/100.`;
         
         const { typeDescription, structureGuidance } = getSequenceTypeInstructions(sequenceType, sequenceGoal);

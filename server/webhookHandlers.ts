@@ -59,6 +59,9 @@ export class WebhookHandlers {
       case 'customer.subscription.deleted':
         await WebhookHandlers.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
+      case 'checkout.session.completed':
+        await WebhookHandlers.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
       default:
         // Other events are handled by the sync library
         break;
@@ -143,6 +146,34 @@ export class WebhookHandlers {
 
   static async handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
     await WebhookHandlers.handleSubscriptionUpdated(subscription);
+  }
+
+  static async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+    try {
+      const { metadata } = session;
+      if (!metadata || metadata.type !== 'verification_credits') return;
+
+      const { userId, credits } = metadata;
+      if (!userId || !credits) return;
+
+      const creditCount = parseInt(credits, 10);
+      if (isNaN(creditCount) || creditCount <= 0) return;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        console.error(`Verification credits: user ${userId} not found`);
+        return;
+      }
+
+      const currentCredits = user.listVerificationCredits || 0;
+      await storage.updateUser(userId, {
+        listVerificationCredits: currentCredits + creditCount,
+      });
+
+      console.log(`Added ${creditCount} verification credits to user ${userId}. New total: ${currentCredits + creditCount}`);
+    } catch (error) {
+      console.error('Error handling checkout completed for verification credits:', error);
+    }
   }
 
   static async handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {

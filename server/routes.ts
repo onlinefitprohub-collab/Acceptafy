@@ -55,6 +55,7 @@ import {
   senderScoreInputSchema
 } from "@shared/schema";
 import { z } from "zod";
+import { submitBulkVerification, getBulkVerificationStatus } from './services/debounce';
 
 const generateRoadmapRequestSchema = z.object({
   analysisResult: gradingResultSchema,
@@ -1584,6 +1585,160 @@ export async function registerRoutes(
     } catch (error) {
       console.error('List analysis error:', error);
       res.status(500).json({ error: 'Failed to analyze email list' });
+    }
+  });
+
+  // ===== LIST VERIFICATION (Debounce.io) =====
+
+  app.get('/api/list/verification-credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const tier = (user.subscriptionTier || 'starter') as keyof typeof SUBSCRIPTION_LIMITS;
+      const monthlyLimit = SUBSCRIPTION_LIMITS[tier].listVerificationsPerMonth;
+      const bonusCredits = user.listVerificationCredits || 0;
+
+      const counter = await storage.getUsageCounter(userId);
+      const usedThisMonth = counter?.listVerifications || 0;
+
+      const remaining = Math.max(0, monthlyLimit - usedThisMonth) + bonusCredits;
+
+      res.json({
+        tier,
+        monthlyLimit,
+        usedThisMonth,
+        bonusCredits,
+        remaining,
+        totalAvailable: remaining,
+      });
+    } catch (error) {
+      console.error('Verification credits error:', error);
+      res.status(500).json({ error: 'Failed to fetch verification credits' });
+    }
+  });
+
+  app.post('/api/list/verify-bulk', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const { emails } = req.body;
+      if (!Array.isArray(emails) || emails.length === 0) {
+        return res.status(400).json({ error: 'emails array is required' });
+      }
+      if (emails.length > 50000) {
+        return res.status(400).json({ error: 'Maximum 50,000 emails per batch' });
+      }
+
+      const tier = (user.subscriptionTier || 'starter') as keyof typeof SUBSCRIPTION_LIMITS;
+      const monthlyLimit = SUBSCRIPTION_LIMITS[tier].listVerificationsPerMonth;
+      const bonusCredits = user.listVerificationCredits || 0;
+      const counter = await storage.getUsageCounter(userId);
+      const usedThisMonth = counter?.listVerifications || 0;
+      const availableMonthly = Math.max(0, monthlyLimit - usedThisMonth);
+      const totalAvailable = availableMonthly + bonusCredits;
+
+      if (totalAvailable < emails.length) {
+        return res.status(403).json({
+          error: 'Insufficient verification credits',
+          available: totalAvailable,
+          required: emails.length,
+          upgradeRequired: monthlyLimit === 0,
+        });
+      }
+
+      const listId = await submitBulkVerification(emails);
+
+      // Deduct from monthly allowance first, then bonus credits
+      const monthlyDeduction = Math.min(availableMonthly, emails.length);
+      const bonusDeduction = emails.length - monthlyDeduction;
+
+      if (monthlyDeduction > 0) {
+        await storage.addListVerifications(userId, monthlyDeduction);
+      }
+      if (bonusDeduction > 0) {
+        await storage.updateUser(userId, {
+          listVerificationCredits: Math.max(0, bonusCredits - bonusDeduction),
+        });
+      }
+
+      res.json({ listId, emailCount: emails.length });
+    } catch (error) {
+      console.error('Bulk verify error:', error);
+      res.status(500).json({ error: 'Failed to submit verification job' });
+    }
+  });
+
+  app.get('/api/list/verify-bulk/:listId', isAuthenticated, async (req: any, res) => {
+    try {
+      const { listId } = req.params;
+      const status = await getBulkVerificationStatus(listId);
+      res.json(status);
+    } catch (error) {
+      console.error('Bulk verify status error:', error);
+      res.status(500).json({ error: 'Failed to get verification status' });
+    }
+  });
+
+  app.post('/api/checkout/verification-credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ error: 'User not found' });
+
+      const { pack } = req.body; // '5000' or '10000'
+      const packs: Record<string, { credits: number; amount: number; label: string }> = {
+        '5000': { credits: 5000, amount: 2500, label: '5,000 Verification Credits' },
+        '10000': { credits: 10000, amount: 4500, label: '10,000 Verification Credits' },
+      };
+
+      const selected = packs[String(pack)];
+      if (!selected) return res.status(400).json({ error: 'Invalid pack. Choose 5000 or 10000.' });
+
+      const stripe = await getUncachableStripeClient();
+
+      let customerId = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email || undefined,
+          metadata: { userId },
+        });
+        await storage.updateUserStripeInfo(userId, { stripeCustomerId: customer.id });
+        customerId = customer.id;
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            unit_amount: selected.amount,
+            product_data: {
+              name: selected.label,
+              description: `${selected.credits.toLocaleString()} email verification credits for Acceptafy List Cleaner`,
+            },
+          },
+          quantity: 1,
+        }],
+        mode: 'payment',
+        success_url: `${req.protocol}://${req.get('host')}/?tab=list-cleaner&credits=success`,
+        cancel_url: `${req.protocol}://${req.get('host')}/?tab=list-cleaner`,
+        metadata: {
+          userId,
+          creditPack: String(pack),
+          credits: String(selected.credits),
+          type: 'verification_credits',
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Verification credits checkout error:', error);
+      res.status(500).json({ error: 'Failed to create checkout session' });
     }
   });
 
@@ -4455,11 +4610,27 @@ Return your response as a JSON object with this exact structure:
       // Use provided title if specified, otherwise use generated title
       const finalTitle = providedTitle?.trim() || rawArticle.title || topic.trim();
       
+      // Convert bare URLs in HTML text to clickable anchor tags
+      function linkifyHtmlContent(html: string): string {
+        // URL regex: matches http(s) URLs that are NOT already inside an href attribute or anchor tag
+        const urlRegex = /(?<![='"(])(https?:\/\/[^\s<>"')\],]+)/g;
+        // Split on existing anchor tags to avoid double-linking
+        return html.replace(/>([^<]*)</g, (match, textContent) => {
+          const linked = textContent.replace(urlRegex, (url: string) => {
+            const clean = url.replace(/[.,;:!?]+$/, '');
+            const trailing = url.slice(clean.length);
+            return `<a href="${clean}" target="_blank" rel="noopener noreferrer">${clean}</a>${trailing}`;
+          });
+          return `>${linked}<`;
+        });
+      }
+
       // Normalize content: ensure it starts with a single H1 containing the title
       let normalizedContent = rawArticle.content || '';
       normalizedContent = normalizedContent.replace(/<h1[^>]*>[\s\S]*?<\/h1>\s*/gi, '');
       const escapedTitle = finalTitle.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       normalizedContent = `<h1>${escapedTitle}</h1>\n${normalizedContent.trimStart()}`;
+      normalizedContent = linkifyHtmlContent(normalizedContent);
       
       const article = {
         title: finalTitle,

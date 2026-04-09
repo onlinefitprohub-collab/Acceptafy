@@ -129,6 +129,7 @@ export interface IStorage {
     reason?: 'monthly' | 'daily';
   }>;
   incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void>;
+  addListVerifications(userId: string, count: number): Promise<void>;
   
   getEmailAnalyses(userId: string, limit?: number): Promise<EmailAnalysis[]>;
   createEmailAnalysis(analysis: InsertEmailAnalysis): Promise<EmailAnalysis>;
@@ -622,6 +623,25 @@ export class DatabaseStorage implements IStorage {
   async incrementBothUsages(userId: string, field: 'gradeCount' | 'rewriteCount' | 'followupCount' | 'deliverabilityChecks'): Promise<void> {
     await this.incrementUsage(userId, field);
     await this.incrementDailyUsage(userId, field);
+  }
+
+  async addListVerifications(userId: string, count: number): Promise<void> {
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const existing = await db.select().from(usageCounters).where(eq(usageCounters.userId, userId)).limit(1);
+    if (existing.length === 0) {
+      await db.insert(usageCounters).values({
+        userId,
+        periodStart,
+        periodEnd,
+        listVerifications: count,
+      });
+    } else {
+      await db.update(usageCounters)
+        .set({ listVerifications: sql`${usageCounters.listVerifications} + ${count}` })
+        .where(eq(usageCounters.userId, userId));
+    }
   }
 
   async getEmailAnalyses(userId: string, limit: number = 50): Promise<EmailAnalysis[]> {

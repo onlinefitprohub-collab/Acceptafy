@@ -45,6 +45,7 @@ export const users = pgTable("users", {
   emailUnsubscribed: boolean("email_unsubscribed").default(false),
   onboardingEmailsSent: integer("onboarding_emails_sent").default(0),
   lastOnboardingEmailAt: timestamp("last_onboarding_email_at"),
+  listVerificationCredits: integer("list_verification_credits").default(0),
 });
 
 export type UpsertUser = typeof users.$inferInsert;
@@ -61,6 +62,7 @@ export const usageCounters = pgTable("usage_counters", {
   followupCount: integer("followup_count").default(0),
   deliverabilityChecks: integer("deliverability_checks").default(0),
   aiTokensUsed: integer("ai_tokens_used").default(0),
+  listVerifications: integer("list_verifications").default(0),
 });
 
 export type UsageCounter = typeof usageCounters.$inferSelect;
@@ -75,6 +77,7 @@ export const dailyUsageCounters = pgTable("daily_usage_counters", {
   rewriteCount: integer("rewrite_count").default(0),
   followupCount: integer("followup_count").default(0),
   deliverabilityChecks: integer("deliverability_checks").default(0),
+  listVerifications: integer("list_verifications").default(0),
 });
 
 export type DailyUsageCounter = typeof dailyUsageCounters.$inferSelect;
@@ -227,6 +230,7 @@ export const SUBSCRIPTION_LIMITS = {
     askAcceptafy: false,
     askAcceptafyPerDay: 0,
     askAcceptafyPerMonth: 0,
+    listVerificationsPerMonth: 0,
   },
   pro: {
     gradesPerMonth: 600,
@@ -250,6 +254,7 @@ export const SUBSCRIPTION_LIMITS = {
     askAcceptafy: true,
     askAcceptafyPerDay: 50,
     askAcceptafyPerMonth: 500,
+    listVerificationsPerMonth: 2000,
   },
   scale: {
     gradesPerMonth: 2500,
@@ -273,6 +278,7 @@ export const SUBSCRIPTION_LIMITS = {
     askAcceptafy: true,
     askAcceptafyPerDay: 200,
     askAcceptafyPerMonth: 2000,
+    listVerificationsPerMonth: 5000,
   },
 } as const;
 
