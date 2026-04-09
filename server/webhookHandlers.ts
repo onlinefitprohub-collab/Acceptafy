@@ -14,6 +14,16 @@ function getStripe(): Stripe | null {
   return stripeClient;
 }
 
+// In-memory set of processed Stripe event IDs to prevent duplicate crediting.
+// Covers the typical 24-hour Stripe retry window; entries purged after 48 hours.
+const processedEventIds = new Map<string, number>();
+setInterval(() => {
+  const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+  for (const [id, ts] of processedEventIds.entries()) {
+    if (ts < cutoff) processedEventIds.delete(id);
+  }
+}, 60 * 60 * 1000);
+
 export class WebhookHandlers {
   static async processWebhook(payload: Buffer, signature: string, uuid: string): Promise<void> {
     if (!Buffer.isBuffer(payload)) {
@@ -60,7 +70,7 @@ export class WebhookHandlers {
         await WebhookHandlers.handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
         break;
       case 'checkout.session.completed':
-        await WebhookHandlers.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        await WebhookHandlers.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session, event.id);
         break;
       default:
         // Other events are handled by the sync library
@@ -148,10 +158,17 @@ export class WebhookHandlers {
     await WebhookHandlers.handleSubscriptionUpdated(subscription);
   }
 
-  static async handleCheckoutCompleted(session: Stripe.Checkout.Session): Promise<void> {
+  static async handleCheckoutCompleted(session: Stripe.Checkout.Session, eventId: string): Promise<void> {
     try {
       const { metadata } = session;
       if (!metadata || metadata.type !== 'verification_credits') return;
+
+      // Idempotency guard: skip if this event has already been processed
+      if (processedEventIds.has(eventId)) {
+        console.log(`Skipping duplicate checkout.session.completed event ${eventId}`);
+        return;
+      }
+      processedEventIds.set(eventId, Date.now());
 
       const { userId, credits } = metadata;
       if (!userId || !credits) return;
@@ -170,7 +187,7 @@ export class WebhookHandlers {
         listVerificationCredits: currentCredits + creditCount,
       });
 
-      console.log(`Added ${creditCount} verification credits to user ${userId}. New total: ${currentCredits + creditCount}`);
+      console.log(`Added ${creditCount} verification credits to user ${userId}. New total: ${currentCredits + creditCount} (event: ${eventId})`);
     } catch (error) {
       console.error('Error handling checkout completed for verification credits:', error);
     }

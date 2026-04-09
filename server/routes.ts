@@ -57,6 +57,18 @@ import {
 import { z } from "zod";
 import { submitBulkVerification, getBulkVerificationStatus } from './services/debounce';
 
+// Server-owned job map: jobId -> { userId, debounceListId, createdAt }
+// Prevents IDOR: clients only know jobId, never the raw Debounce listId
+const verificationJobs = new Map<string, { userId: string; debounceListId: string; createdAt: number }>();
+
+// Purge stale jobs older than 24 hours every hour
+setInterval(() => {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  for (const [id, job] of verificationJobs.entries()) {
+    if (job.createdAt < cutoff) verificationJobs.delete(id);
+  }
+}, 60 * 60 * 1000);
+
 const generateRoadmapRequestSchema = z.object({
   analysisResult: gradingResultSchema,
   subject: z.string().default(''),
@@ -1650,7 +1662,11 @@ export async function registerRoutes(
         });
       }
 
-      const listId = await submitBulkVerification(emails);
+      const debounceListId = await submitBulkVerification(emails);
+
+      // Generate a server-owned jobId so clients never see the raw Debounce listId
+      const jobId = randomUUID();
+      verificationJobs.set(jobId, { userId, debounceListId, createdAt: Date.now() });
 
       // Deduct from monthly allowance first, then bonus credits
       const monthlyDeduction = Math.min(availableMonthly, emails.length);
@@ -1665,17 +1681,33 @@ export async function registerRoutes(
         });
       }
 
-      res.json({ listId, emailCount: emails.length });
+      res.json({ listId: jobId, emailCount: emails.length });
     } catch (error) {
       console.error('Bulk verify error:', error);
       res.status(500).json({ error: 'Failed to submit verification job' });
     }
   });
 
-  app.get('/api/list/verify-bulk/:listId', isAuthenticated, async (req: any, res) => {
+  app.get('/api/list/verify-bulk/:jobId', isAuthenticated, async (req: any, res) => {
     try {
-      const { listId } = req.params;
-      const status = await getBulkVerificationStatus(listId);
+      const userId = req.user.claims.sub;
+      const { jobId } = req.params;
+
+      const job = verificationJobs.get(jobId);
+      if (!job) {
+        return res.status(404).json({ error: 'Verification job not found' });
+      }
+      if (job.userId !== userId) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+
+      const status = await getBulkVerificationStatus(job.debounceListId);
+
+      // Clean up finished jobs from memory
+      if (status.done) {
+        verificationJobs.delete(jobId);
+      }
+
       res.json(status);
     } catch (error) {
       console.error('Bulk verify status error:', error);

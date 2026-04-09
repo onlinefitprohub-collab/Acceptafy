@@ -6,6 +6,7 @@ export interface DebounceResult {
   status: 'valid' | 'invalid' | 'disposable' | 'spamtrap' | 'catch_all' | 'unknown';
   reason: string;
   recommendation: 'keep' | 'remove';
+  safeToSend: boolean;
 }
 
 interface DebounceApiEmail {
@@ -123,11 +124,13 @@ export async function getBulkVerificationStatus(listId: string): Promise<{
   const emails = data?.debounce?.emails || [];
   const results: DebounceResult[] = emails.map((e) => {
     const status = mapDebounceStatus(e);
+    const recommendation = mapToRecommendation(status);
     return {
       email: e.email,
       status,
       reason: reasonLabel(e, status),
-      recommendation: mapToRecommendation(status),
+      recommendation,
+      safeToSend: recommendation === 'keep' && status !== 'catch_all',
     };
   });
 

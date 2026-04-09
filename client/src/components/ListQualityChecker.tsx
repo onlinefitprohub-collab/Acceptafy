@@ -28,6 +28,7 @@ interface DebounceResult {
   status: 'valid' | 'invalid' | 'disposable' | 'spamtrap' | 'catch_all' | 'unknown';
   reason: string;
   recommendation: 'keep' | 'remove';
+  safeToSend: boolean;
 }
 
 interface BulkStatusResponse {
@@ -175,12 +176,31 @@ function CreditPackCard({
   );
 }
 
+type SortField = 'email' | 'status' | 'recommendation';
+type SortDir = 'asc' | 'desc';
+
 function ResultsTable({ results }: { results: DebounceResult[] }) {
   const [filter, setFilter] = useState<'all' | 'keep' | 'remove'>('all');
-  const shown = results.filter(r => filter === 'all' || r.recommendation === filter);
+  const [sortField, setSortField] = useState<SortField>('recommendation');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
   const keepCount = results.filter(r => r.recommendation === 'keep').length;
   const removeCount = results.filter(r => r.recommendation === 'remove').length;
+  const safeCount = results.filter(r => r.safeToSend).length;
   const catchAllCount = results.filter(r => r.status === 'catch_all').length;
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortField(field); setSortDir('asc'); }
+  };
+
+  const shown = [...results]
+    .filter(r => filter === 'all' || r.recommendation === filter)
+    .sort((a, b) => {
+      let aVal = a[sortField] as string;
+      let bVal = b[sortField] as string;
+      return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    });
 
   const exportClean = () => {
     const rows = [
@@ -207,8 +227,8 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
           <div className="text-xs text-muted-foreground mt-0.5">Total Verified</div>
         </div>
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-center">
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{keepCount.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground mt-0.5">Keep</div>
+          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{safeCount.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">Safe to Send</div>
         </div>
         <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-center">
           <div className="text-2xl font-bold text-red-600 dark:text-red-400">{removeCount.toLocaleString()}</div>
@@ -241,11 +261,23 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
           ))}
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={exportClean} disabled={keepCount === 0} data-testid="button-export-clean">
+          <Button
+            size="sm"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+            onClick={exportClean}
+            disabled={keepCount === 0}
+            data-testid="button-export-clean"
+          >
             <Download className="w-3.5 h-3.5 mr-1.5" />
             Export Clean ({keepCount})
           </Button>
-          <Button size="sm" variant="outline" onClick={exportRemove} disabled={removeCount === 0} data-testid="button-export-remove">
+          <Button
+            size="sm"
+            className="bg-red-600 hover:bg-red-700 text-white border-0"
+            onClick={exportRemove}
+            disabled={removeCount === 0}
+            data-testid="button-export-remove"
+          >
             <Download className="w-3.5 h-3.5 mr-1.5" />
             Export Remove ({removeCount})
           </Button>
@@ -258,10 +290,24 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
           <table className="w-full text-sm">
             <thead className="bg-muted/50 sticky top-0 z-10">
               <tr>
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Email</th>
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Status</th>
+                {(['email', 'status', 'recommendation'] as SortField[]).map((field, i) => (
+                  <th
+                    key={field}
+                    onClick={() => handleSort(field)}
+                    className={`text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide cursor-pointer select-none hover:text-foreground transition-colors ${i === 1 ? '' : i === 2 ? '' : ''}`}
+                    data-testid={`th-sort-${field}`}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {field === 'recommendation' ? 'Action' : field.charAt(0).toUpperCase() + field.slice(1)}
+                      {sortField === field ? (
+                        sortDir === 'asc' ? ' ↑' : ' ↓'
+                      ) : (
+                        <span className="opacity-30"> ↕</span>
+                      )}
+                    </span>
+                  </th>
+                ))}
                 <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide hidden sm:table-cell">Reason</th>
-                <th className="text-left px-4 py-2.5 text-muted-foreground font-medium text-xs uppercase tracking-wide">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -277,14 +323,16 @@ function ResultsTable({ results }: { results: DebounceResult[] }) {
                         {cfg.label}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell">{r.reason}</td>
                     <td className="px-4 py-2.5">
                       {r.recommendation === 'keep' ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">Keep</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 text-xs font-medium">
+                          {r.safeToSend ? 'Safe' : 'Keep'}
+                        </span>
                       ) : (
                         <span className="text-red-600 dark:text-red-400 text-xs font-medium">Remove</span>
                       )}
                     </td>
+                    <td className="px-4 py-2.5 text-muted-foreground text-xs hidden sm:table-cell">{r.reason}</td>
                   </tr>
                 );
               })}
