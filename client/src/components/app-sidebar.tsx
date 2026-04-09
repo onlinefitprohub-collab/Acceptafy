@@ -381,6 +381,9 @@ export function AppSidebar({
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuSubItem>
+                      <div className="px-3 pt-3 pb-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">Advanced</p>
+                      </div>
                       <SidebarMenuSubItem>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
@@ -504,6 +507,9 @@ export function AppSidebar({
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuSubItem>
+                      <div className="px-3 pt-3 pb-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">Advanced</p>
+                      </div>
                       <SidebarMenuSubItem>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
@@ -708,6 +714,9 @@ export function AppSidebar({
                           </TooltipContent>
                         </Tooltip>
                       </SidebarMenuSubItem>
+                      <div className="px-3 pt-3 pb-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/40">Advanced</p>
+                      </div>
                       <SidebarMenuSubItem>
                         <Tooltip delayDuration={300}>
                           <TooltipTrigger asChild>
