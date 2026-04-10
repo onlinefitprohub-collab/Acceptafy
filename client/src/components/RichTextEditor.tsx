@@ -129,7 +129,16 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       Underline,
       Link.configure({
         openOnClick: false,
-        validate: () => true,
+        validate: (href) => {
+          // Allow safe schemes and relative URLs; block javascript: and other dangerous schemes
+          try {
+            const url = new URL(href, window.location.origin);
+            return ['http:', 'https:', 'mailto:'].includes(url.protocol);
+          } catch {
+            // Relative URLs throw on new URL() — allow them
+            return href.startsWith('/') || href.startsWith('#') || href.startsWith('?');
+          }
+        },
         HTMLAttributes: {
           class: 'text-purple-500 hover:underline cursor-pointer',
         },

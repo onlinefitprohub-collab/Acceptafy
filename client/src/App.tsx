@@ -2945,6 +2945,7 @@ function AppContent() {
                     data-testid="button-upgrade-pill"
                   >
                     <Zap className="w-3 h-3 flex-shrink-0" />
+                    <span className="hidden md:inline">Free Plan · </span>
                     <span>Upgrade to Pro</span>
                   </button>
                 )}

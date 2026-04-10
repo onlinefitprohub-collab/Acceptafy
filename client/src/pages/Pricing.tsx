@@ -296,13 +296,15 @@ export default function Pricing() {
                         variant={plan.popular ? "default" : "outline"}
                         size="lg"
                         onClick={() => handleSubscribe(plan.priceId, plan.key)}
-                        disabled={checkoutMutation.isPending || isCurrentPlan}
+                        disabled={checkoutMutation.isPending || isCurrentPlan || (!plan.priceId && plan.key !== 'starter')}
                         data-testid={`button-subscribe-${plan.key}`}
                       >
                         {checkoutMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : isCurrentPlan ? (
                           "Current Plan"
+                        ) : !plan.priceId && plan.key !== 'starter' ? (
+                          "Coming Soon"
                         ) : plan.key === "starter" ? (
                           "Start Free"
                         ) : plan.key === "pro" ? (
