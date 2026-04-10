@@ -2938,6 +2938,16 @@ function AppContent() {
                 </h2>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
+                {userTier === 'starter' && (
+                  <button
+                    onClick={() => setActiveView('pricing')}
+                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 upgrade-shimmer-pill overflow-hidden relative"
+                    data-testid="button-upgrade-pill"
+                  >
+                    <Zap className="w-3 h-3 flex-shrink-0" />
+                    <span>Upgrade to Pro</span>
+                  </button>
+                )}
                 <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 shadow-sm">
                   <Trophy className="w-4 h-4 text-yellow-500" />
                   <span className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">Best: {bestScore}</span>

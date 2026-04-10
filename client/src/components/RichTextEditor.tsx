@@ -129,6 +129,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
       Underline,
       Link.configure({
         openOnClick: false,
+        validate: () => true,
         HTMLAttributes: {
           class: 'text-purple-500 hover:underline cursor-pointer',
         },

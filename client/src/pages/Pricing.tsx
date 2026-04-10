@@ -137,6 +137,8 @@ export default function Pricing() {
 
     if (priceId) {
       checkoutMutation.mutate(priceId);
+    } else {
+      console.warn(`[Pricing] No priceId found for plan "${planKey}". Products may not be synced from Stripe yet.`);
     }
   };
 

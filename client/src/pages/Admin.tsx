@@ -388,6 +388,58 @@ function SectionHeader({ title, icon, description }: SectionHeaderProps) {
   );
 }
 
+function StripeProductSeedCard() {
+  const { toast } = useToast();
+  const seedMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/admin/stripe/seed-products');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      const created = data.results?.filter((r: any) => r.status === 'created').length ?? 0;
+      const existing = data.results?.filter((r: any) => r.status === 'already_exists').length ?? 0;
+      toast({
+        title: created > 0 ? 'Stripe products created' : 'Products already exist',
+        description: created > 0
+          ? `Created ${created} product(s). A sync is running — pricing will appear shortly.`
+          : `${existing} product(s) already present in Stripe. No changes made.`,
+      });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Seed failed', description: err.message || 'Could not create Stripe products', variant: 'destructive' });
+    },
+  });
+
+  return (
+    <Card data-testid="stripe-product-seed-card" className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <CreditCard className="h-4 w-4 text-purple-400" />
+          Stripe Product Setup
+        </CardTitle>
+        <CardDescription>
+          Create Pro ($59/mo, $590/yr) and Scale ($149/mo, $1490/yr) products in Stripe if they don't exist yet.
+          Run this once after a fresh deployment — it's idempotent and safe to re-run.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button
+          onClick={() => seedMutation.mutate()}
+          disabled={seedMutation.isPending}
+          data-testid="button-seed-stripe-products"
+          size="sm"
+        >
+          {seedMutation.isPending ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Seeding…</>
+          ) : (
+            'Seed Stripe Products'
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 const SEGMENT_LABELS: Record<string, string> = {
   all: 'All Users',
   starter: 'Starter Users',
@@ -3021,6 +3073,9 @@ export default function Admin() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Stripe Product Setup */}
+      <StripeProductSeedCard />
 
             </>
           )}

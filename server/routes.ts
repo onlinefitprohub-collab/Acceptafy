@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { emailOpens } from "@shared/schema";
 import { setupAuth, isAuthenticated, optionalAuth, isAdmin } from "./replitAuth";
-import { getUncachableStripeClient, getStripePublishableKey } from "./stripeClient";
+import { getUncachableStripeClient, getStripePublishableKey, getStripeSync } from "./stripeClient";
 import { 
   gradeCopy, 
   rewriteCopy, 
@@ -1347,6 +1347,24 @@ export async function registerRoutes(
     return true;
   }
 
+  // Strip HTML tags from content sent by the rich-text editor, leaving plain text for AI processing
+  function stripHtmlForAI(html: string): string {
+    return html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
   app.post('/api/grade', aiRateLimiter, optionalAuth, async (req: any, res) => {
     try {
       const parseResult = gradeRequestSchema.safeParse(req.body);
@@ -1359,7 +1377,8 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { body, variations, industry, emailType, images } = parseResult.data;
+      const { body: rawBody, variations, industry, emailType, images } = parseResult.data;
+      const body = stripHtmlForAI(rawBody);
       const normalizedVariations = (variations || []).map(v => ({
         subject: v.subject || '',
         previewText: v.previewText || ''
@@ -1441,7 +1460,8 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { body, subject, preview, goal } = parseResult.data;
+      const { body: rawBody, subject, preview, goal } = parseResult.data;
+      const body = stripHtmlForAI(rawBody);
       const result = await rewriteCopy(body, subject || '', preview || '', goal || '');
       res.json(result);
     } catch (error) {
@@ -1462,7 +1482,8 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { original, analysis, goal, context } = parseResult.data;
+      const { original: rawOriginal, analysis, goal, context } = parseResult.data;
+      const original = stripHtmlForAI(rawOriginal);
       const originalEmail = { subject: '', body: original };
       const result = await generateFollowUpEmail(originalEmail, analysis, goal || 'reminder', context);
       res.json(result);
@@ -1488,8 +1509,9 @@ export async function registerRoutes(
         if (!allowed) return;
       }
 
-      const { original, analysis, goal, context } = parseResult.data;
-      const originalEmail = { subject: '', body: original };
+      const { original: rawOriginalSeq, analysis, goal, context } = parseResult.data;
+      const originalSeq = stripHtmlForAI(rawOriginalSeq);
+      const originalEmail = { subject: '', body: originalSeq };
       // goal = sequence type (nurture, welcome, etc), context = goal description
       const result = await generateFollowUpSequence(originalEmail, analysis, context, goal || 'sequence');
       res.json(result);
@@ -4982,6 +5004,64 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Delete article error:', error);
       res.status(500).json({ message: 'Failed to delete article' });
+    }
+  });
+
+  // Stripe Product Seeding (idempotent - safe to call multiple times)
+  app.post('/api/admin/stripe/seed-products', isAdmin, async (req: any, res) => {
+    try {
+      const stripe = await getUncachableStripeClient();
+
+      const existingProducts = await stripe.products.list({ active: true });
+      const existingNames = existingProducts.data.map(p => p.name.toLowerCase());
+
+      const results: any[] = [];
+
+      // Helper to create product + prices if it doesn't already exist
+      const seedProduct = async (
+        name: string,
+        tier: string,
+        monthlyUsd: number,
+        yearlyUsd: number
+      ) => {
+        if (existingNames.includes(name.toLowerCase())) {
+          results.push({ name, status: 'already_exists' });
+          return;
+        }
+        const product = await stripe.products.create({
+          name,
+          metadata: { tier },
+        });
+        await stripe.prices.create({
+          product: product.id,
+          unit_amount: monthlyUsd * 100,
+          currency: 'usd',
+          recurring: { interval: 'month' },
+        });
+        await stripe.prices.create({
+          product: product.id,
+          unit_amount: yearlyUsd * 100,
+          currency: 'usd',
+          recurring: { interval: 'year' },
+        });
+        results.push({ name, productId: product.id, status: 'created' });
+      };
+
+      await seedProduct('Acceptafy Pro', 'pro', 59, 590);
+      await seedProduct('Acceptafy Scale', 'scale', 149, 1490);
+
+      // Trigger a full backfill so the local DB picks up the new products/prices
+      try {
+        const stripeSync = await getStripeSync();
+        stripeSync.syncBackfill();
+      } catch (syncErr) {
+        console.warn('Post-seed sync warning:', syncErr);
+      }
+
+      res.json({ success: true, results });
+    } catch (error) {
+      console.error('Stripe seed-products error:', error);
+      res.status(500).json({ message: 'Failed to seed Stripe products', error: String(error) });
     }
   });
 
