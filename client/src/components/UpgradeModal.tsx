@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { CloseIcon, AcademyIcon, FollowUpIcon, PreFlightIcon } from './icons/CategoryIcons';
 import { Loader2 } from 'lucide-react';
+import { PRICING } from '@shared/schema';
 
 interface UpgradeModalProps {
   onClose: () => void;
@@ -75,7 +76,17 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
 
   const isPro = selectedPlan === 'pro';
   const planName = isPro ? 'Pro' : 'Scale';
-  const planPrice = isPro ? '$19' : '$49';
+
+  const getMonthlyPrice = (tier: string): string => {
+    const product = productsData?.data?.find(p =>
+      p.metadata?.tier === tier || p.name.toLowerCase().includes(tier)
+    );
+    const monthly = product?.prices?.find(p => p.recurring?.interval === 'month');
+    if (monthly) return `$${Math.round(monthly.unit_amount / 100)}`;
+    return tier === 'pro' ? `$${PRICING.pro.monthly}` : `$${PRICING.scale.monthly}`;
+  };
+
+  const planPrice = getMonthlyPrice(selectedPlan);
 
   return (
     <div
@@ -115,7 +126,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
                 }`}
                 data-testid="button-select-pro"
               >
-                Pro - $19/mo
+                Pro - {getMonthlyPrice('pro')}/mo
               </button>
               <button
                 onClick={() => setSelectedPlan('scale')}
@@ -126,7 +137,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({ onClose, targetPlan 
                 }`}
                 data-testid="button-select-scale"
               >
-                Scale - $49/mo
+                Scale - {getMonthlyPrice('scale')}/mo
               </button>
             </div>
 
