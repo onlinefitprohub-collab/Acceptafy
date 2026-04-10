@@ -2940,12 +2940,12 @@ function AppContent() {
               <div className="flex items-center gap-2 sm:gap-3">
                 {userTier === 'starter' && (
                   <button
-                    onClick={() => setActiveView('pricing')}
-                    className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 upgrade-shimmer-pill overflow-hidden relative"
+                    onClick={() => { window.location.href = '/pricing'; }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all duration-200 hover:scale-105 active:scale-95 upgrade-shimmer-pill overflow-hidden relative"
                     data-testid="button-upgrade-pill"
                   >
                     <Zap className="w-3 h-3 flex-shrink-0" />
-                    <span className="hidden md:inline">Free Plan · </span>
+                    <span className="hidden md:inline">Starter · </span>
                     <span>Upgrade to Pro</span>
                   </button>
                 )}

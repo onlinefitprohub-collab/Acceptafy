@@ -5012,20 +5012,26 @@ Return your response as a JSON object with this exact structure:
     try {
       const stripe = await getUncachableStripeClient();
 
-      const existingProducts = await stripe.products.list({ active: true });
-      const existingNames = existingProducts.data.map(p => p.name.toLowerCase());
+      // Build a map of tier → existing product, using auto-pagination to avoid
+      // missing products in accounts with many items (Stripe default page = 10)
+      const existingTiers = new Map<string, string>(); // tier → productId
+      for await (const product of stripe.products.list({ active: true, limit: 100 })) {
+        if (product.metadata?.tier) {
+          existingTiers.set(product.metadata.tier, product.id);
+        }
+      }
 
       const results: any[] = [];
 
-      // Helper to create product + prices if it doesn't already exist
+      // Helper: ensure a product + monthly/yearly prices exist for a given tier
       const seedProduct = async (
         name: string,
         tier: string,
         monthlyUsd: number,
         yearlyUsd: number
       ) => {
-        if (existingNames.includes(name.toLowerCase())) {
-          results.push({ name, status: 'already_exists' });
+        if (existingTiers.has(tier)) {
+          results.push({ name, tier, productId: existingTiers.get(tier), status: 'already_exists' });
           return;
         }
         const product = await stripe.products.create({
@@ -5044,7 +5050,7 @@ Return your response as a JSON object with this exact structure:
           currency: 'usd',
           recurring: { interval: 'year' },
         });
-        results.push({ name, productId: product.id, status: 'created' });
+        results.push({ name, productId: product.id, tier, status: 'created' });
       };
 
       await seedProduct('Acceptafy Pro', 'pro', 59, 590);
