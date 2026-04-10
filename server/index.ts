@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { runMigrations } from 'stripe-replit-sync';
-import { getStripeSync } from "./stripeClient";
+import { getStripeSync, getUncachableStripeClient } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 import { startScheduler } from "./services/blacklistScheduler";
 import { startMonthlyResetScheduler } from "./services/monthlyResetScheduler";
@@ -29,6 +29,55 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Idempotent: creates Pro and Scale products in Stripe if they don't exist yet.
+// Checked by metadata.tier so duplicates are never created even on repeated restarts.
+async function ensureStripeProducts() {
+  try {
+    const stripe = await getUncachableStripeClient();
+
+    const existingTiers = new Map<string, string>(); // tier → productId
+    for await (const product of stripe.products.list({ active: true, limit: 100 })) {
+      if (product.metadata?.tier) {
+        existingTiers.set(product.metadata.tier, product.id);
+      }
+    }
+
+    const needed = [
+      { name: 'Acceptafy Pro',   tier: 'pro',   monthlyUsd: 59,  yearlyUsd: 590  },
+      { name: 'Acceptafy Scale', tier: 'scale', monthlyUsd: 149, yearlyUsd: 1490 },
+    ];
+
+    let seeded = 0;
+    for (const { name, tier, monthlyUsd, yearlyUsd } of needed) {
+      if (existingTiers.has(tier)) continue;
+
+      const product = await stripe.products.create({ name, metadata: { tier } });
+      await stripe.prices.create({
+        product: product.id,
+        unit_amount: monthlyUsd * 100,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+      });
+      await stripe.prices.create({
+        product: product.id,
+        unit_amount: yearlyUsd * 100,
+        currency: 'usd',
+        recurring: { interval: 'year' },
+      });
+      console.log(`[Stripe] Seeded product: ${name} (${tier})`);
+      seeded++;
+    }
+
+    if (seeded === 0) {
+      console.log('[Stripe] Products already exist, skipping seed');
+    } else {
+      console.log(`[Stripe] Seeded ${seeded} missing product(s)`);
+    }
+  } catch (err) {
+    console.error('[Stripe] Auto-seed failed (non-fatal):', err);
+  }
+}
+
 async function initStripe() {
   const databaseUrl = process.env.DATABASE_URL;
 
@@ -41,6 +90,9 @@ async function initStripe() {
     console.log('Initializing Stripe schema...');
     await runMigrations({ databaseUrl });
     console.log('Stripe schema ready');
+
+    // Ensure Pro and Scale products exist before syncing
+    await ensureStripeProducts();
 
     const stripeSync = await getStripeSync();
 
