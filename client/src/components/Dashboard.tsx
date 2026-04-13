@@ -22,9 +22,10 @@ interface DashboardProps {
   onNavigate: (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => void;
   onOpenAcademy: () => void;
   onReplayTutorial?: () => void;
+  userName?: string;
 }
 
-export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial }: DashboardProps) {
+export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial, userName }: DashboardProps) {
   const { xp, level, streak, nextLevelXp, achievements, totalGrades, bestScore } = useGamification();
 
   const unlockedAchievements = achievements.filter(a => a.unlocked).length;
@@ -53,7 +54,7 @@ export function Dashboard({ history, onNavigate, onOpenAcademy, onReplayTutorial
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Welcome back!</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back{userName ? `, ${userName}` : ''}!</h1>
           <p className="text-muted-foreground">Here's your email marketing overview</p>
         </div>
         <div className="flex items-center gap-3">

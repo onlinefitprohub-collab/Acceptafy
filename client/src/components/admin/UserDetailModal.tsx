@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DOMPurify from "dompurify";
-import { 
-  User, Mail, Calendar, Trophy, Target, FileText, 
+import {
+  User, Mail, Calendar, Trophy, Target, FileText,
   Star, Zap, TrendingUp, Clock, CheckCircle, XCircle,
   Loader2, Eye, X
 } from "lucide-react";
+import { format, formatDistanceToNow } from "date-fns";
 
 interface UserDetailModalProps {
   userId: string | null;
@@ -203,7 +204,16 @@ export function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProp
                       </div>
                       <div>
                         <span className="text-muted-foreground">Last Login:</span>
-                        <p className="font-medium">{formatDate(userDetail.user.lastLoginAt)}</p>
+                        <p className="font-medium">
+                          {userDetail.user.lastLoginAt
+                            ? formatDistanceToNow(new Date(userDetail.user.lastLoginAt), { addSuffix: true })
+                            : 'Never'}
+                        </p>
+                        {userDetail.user.lastLoginAt && (
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(userDetail.user.lastLoginAt), 'MMM d, yyyy HH:mm')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -351,7 +361,11 @@ export function UserDetailModal({ userId, isOpen, onClose }: UserDetailModalProp
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Last Login</span>
-                          <span>{formatDate(userDetail.user.lastLoginAt)}</span>
+                          <span>
+                            {userDetail.user.lastLoginAt
+                              ? formatDistanceToNow(new Date(userDetail.user.lastLoginAt), { addSuffix: true })
+                              : 'Never'}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Total Emails Graded</span>

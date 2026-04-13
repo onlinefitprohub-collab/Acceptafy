@@ -104,7 +104,7 @@ import { AdminSidebar, AdminSection } from "@/components/admin-sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
-import { format } from "date-fns";
+import { format, formatDistanceToNow, isAfter, subDays } from "date-fns";
 import {
   Table,
   TableBody,
@@ -144,6 +144,7 @@ interface AdminUser {
   totalGrades: number;
   totalRewrites: number;
   totalFollowups: number;
+  totalDeliverabilityChecks: number;
   lastActiveDate: string | null;
 }
 
@@ -1031,6 +1032,20 @@ export default function Admin() {
     }
   };
 
+  const formatRelativeTime = (dateStr: string | null): { label: string; color: string } => {
+    if (!dateStr) return { label: 'Never', color: 'text-muted-foreground' };
+    try {
+      const date = new Date(dateStr);
+      const label = formatDistanceToNow(date, { addSuffix: true });
+      const now = new Date();
+      if (isAfter(date, subDays(now, 7)))  return { label, color: 'text-green-500' };
+      if (isAfter(date, subDays(now, 30))) return { label, color: 'text-yellow-500' };
+      return { label, color: 'text-red-400' };
+    } catch {
+      return { label: 'Never', color: 'text-muted-foreground' };
+    }
+  };
+
   const getUserInitials = (u: AdminUser) => {
     if (u.firstName && u.lastName) {
       return `${u.firstName[0]}${u.lastName[0]}`.toUpperCase();
@@ -1745,7 +1760,7 @@ export default function Admin() {
                       <TableHead>User</TableHead>
                       <TableHead>Tier</TableHead>
                       <TableHead>Usage</TableHead>
-                      <TableHead>Last Active</TableHead>
+                      <TableHead>Last Login</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead className="w-[50px]">Actions</TableHead>
                     </TableRow>
@@ -1797,15 +1812,34 @@ export default function Admin() {
                               <Mail className="h-3 w-3 text-muted-foreground" />
                               <span>{u.totalGrades || 0} grades</span>
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {u.totalRewrites || 0} rewrites, {u.totalFollowups || 0} followups
+                            <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2">
+                              <span>{u.totalRewrites || 0} rewrites</span>
+                              <span>{u.totalFollowups || 0} followups</span>
+                              {(u.totalDeliverabilityChecks || 0) > 0 && (
+                                <span className="text-cyan-500">{u.totalDeliverabilityChecks} deliv.</span>
+                              )}
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatLastActive(u.lastActiveDate)}
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`h-2 w-2 rounded-full flex-shrink-0 ${
+                                u.lastLoginAt
+                                  ? isAfter(new Date(u.lastLoginAt), subDays(new Date(), 7))
+                                    ? 'bg-green-500'
+                                    : isAfter(new Date(u.lastLoginAt), subDays(new Date(), 30))
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-400'
+                                  : 'bg-muted-foreground/30'
+                              }`} />
+                              <span className={`text-sm ${formatRelativeTime(u.lastLoginAt).color}`}>
+                                {formatRelativeTime(u.lastLoginAt).label}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {u.lastLoginAt ? format(new Date(u.lastLoginAt), 'MMM d, yyyy') : ''}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
