@@ -140,7 +140,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw, Rocket, Thermometer, Key, CheckCircle, Wrench } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw, Rocket, Thermometer, Key, CheckCircle, Wrench, ArrowLeft } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -172,6 +172,304 @@ const EXAMPLE_EMAIL = {
   previewText: "",
   body: ``
 };
+
+// Extracted to module scope to prevent React from unmounting/remounting on every
+// parent re-render (component-inside-component anti-pattern causes state loss).
+interface AccountViewProps {
+  user: { email?: string | null; passwordHash?: string | null; subscriptionTier?: string | null } | null | undefined;
+  userTier: 'starter' | 'pro' | 'scale';
+  toast: ReturnType<typeof useToast>['toast'];
+}
+
+function AccountView({ user, userTier, toast }: AccountViewProps) {
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const limits = SUBSCRIPTION_LIMITS[userTier];
+  const isPasswordUser = !!user?.passwordHash;
+
+  const handleLogout = () => {
+    setIsLoggingOut(true);
+    window.location.href = '/api/logout';
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast({ title: 'Error', description: 'Password must be at least 8 characters', variant: 'destructive' });
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (response.ok) {
+        toast({ title: 'Success', description: 'Password changed successfully' });
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+      } else {
+        const data = await response.json();
+        toast({ title: 'Error', description: data.message || 'Failed to change password', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to change password', variant: 'destructive' });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      toast({ title: 'Error', description: 'Please type DELETE to confirm', variant: 'destructive' });
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const response = await fetch('/api/delete-account', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted' });
+        window.location.href = '/';
+      } else {
+        const data = await response.json();
+        toast({ title: 'Error', description: data.message || 'Failed to delete account', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete account', variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  return (
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
+        <p className="text-muted-foreground">Manage your profile, subscription, and security</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card data-testid="card-profile">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="w-5 h-5" />
+              Profile
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">{user?.email}</p>
+                <Badge className={`mt-1 ${userTier === 'scale' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : userTier === 'pro' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-muted'} text-white border-0`}>
+                  <Star className="w-3 h-3 mr-1" />
+                  {userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan
+                </Badge>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Secure account
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-subscription">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              Subscription
+            </CardTitle>
+            <CardDescription>Your current plan and usage limits</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <span className="text-sm">Email Grades</span>
+              <span className="font-medium">{limits.gradesPerMonth.toLocaleString()}/mo</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <span className="text-sm">AI Rewrites</span>
+              <span className="font-medium">{limits.rewritesPerMonth.toLocaleString()}/mo</span>
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <span className="text-sm">Follow-ups</span>
+              <span className="font-medium">{limits.followupsPerMonth.toLocaleString()}/mo</span>
+            </div>
+            {userTier !== 'scale' && (
+              <Button
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
+                onClick={() => window.location.href = '/pricing'}
+                data-testid="button-upgrade"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                Upgrade Plan
+              </Button>
+            )}
+            {userTier !== 'starter' && (
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/billing-portal', {
+                      method: 'POST',
+                      credentials: 'include',
+                    });
+                    if (response.ok) {
+                      const { url } = await response.json();
+                      window.location.href = url;
+                    }
+                  } catch (error) {
+                    toast({ title: 'Error', description: 'Failed to open billing portal', variant: 'destructive' });
+                  }
+                }}
+                data-testid="button-manage-billing"
+              >
+                Manage Billing
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card data-testid="card-security">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5" />
+            Security
+          </CardTitle>
+          <CardDescription>Manage your account security</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {isPasswordUser && (
+            <div className="space-y-4 pb-4 border-b border-border">
+              <div>
+                <p className="font-medium">Change Password</p>
+                <p className="text-sm text-muted-foreground">Update your account password</p>
+              </div>
+              <div className="space-y-3">
+                <Input
+                  type="password"
+                  placeholder="Current password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  data-testid="input-current-password"
+                />
+                <Input
+                  type="password"
+                  placeholder="New password (min 8 characters)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  data-testid="input-new-password"
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirm new password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  data-testid="input-confirm-password"
+                />
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                  data-testid="button-change-password"
+                >
+                  {isChangingPassword ? 'Changing...' : 'Change Password'}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pb-4 border-b border-border">
+            <div>
+              <p className="font-medium">Sign Out</p>
+              <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              data-testid="button-logout"
+            >
+              {isLoggingOut ? 'Signing out...' : 'Sign Out'}
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-destructive">Delete Account</p>
+                <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                data-testid="button-delete-account"
+              >
+                Delete Account
+              </Button>
+            </div>
+
+            {showDeleteConfirm && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
+                <p className="text-sm font-medium text-destructive">This action cannot be undone!</p>
+                <p className="text-sm text-muted-foreground">
+                  All your data including analysis history, subscription, and account settings will be permanently deleted.
+                </p>
+                <div className="space-y-2">
+                  <p className="text-sm">Type <strong>DELETE</strong> to confirm:</p>
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Type DELETE"
+                    data-testid="input-delete-confirm"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteAccount}
+                      disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                      data-testid="button-confirm-delete"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteConfirmText('');
+                      }}
+                      data-testid="button-cancel-delete"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function AppContent() {
   const { toast } = useToast();
@@ -929,6 +1227,15 @@ function AppContent() {
 
   const renderCreateView = () => (
     <div className="animate-fade-in space-y-6">
+      {createSubView && (
+        <button
+          onClick={() => setCreateSubView(null)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Create
+        </button>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Create</h2>
         <p className="text-muted-foreground">Build and write emails with powerful tools</p>
@@ -1759,14 +2066,6 @@ function AppContent() {
         />
       )}
 
-      {optimizeSubView === 'competitor' && (
-        <CompetitorAnalysis />
-      )}
-
-      {optimizeSubView === 'sendtime' && (
-        <SendTimeOptimizer />
-      )}
-
       {createSubView === 'builder' && (
         <EmailBuilder />
       )}
@@ -1861,6 +2160,15 @@ function AppContent() {
 
   const renderOptimizeView = () => (
     <div className="animate-fade-in space-y-6">
+      {optimizeSubView && (
+        <button
+          onClick={() => setOptimizeSubView(null)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Optimize
+        </button>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Optimize</h2>
         <p className="text-muted-foreground">Test and optimize your emails for better results</p>
@@ -2066,6 +2374,15 @@ function AppContent() {
 
   const renderAnalyticsView = () => (
     <div className="animate-fade-in space-y-6">
+      {analyticsSubView && (
+        <button
+          onClick={() => setAnalyticsSubView(null)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Analytics
+        </button>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Analytics</h2>
         <p className="text-muted-foreground">Track and analyze your email performance</p>
@@ -2216,6 +2533,15 @@ function AppContent() {
 
   const renderDeliverabilityView = () => (
     <div className="animate-fade-in space-y-6">
+      {deliverabilitySubView && (
+        <button
+          onClick={() => setDeliverabilitySubView(null)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Deliverability
+        </button>
+      )}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Deliverability Tools</h2>
         <p className="text-muted-foreground">Ensure your emails land in the inbox, not spam</p>
@@ -2397,296 +2723,6 @@ function AppContent() {
     }
 
     setEspConnections(prev => prev.filter(c => c.provider !== provider));
-  };
-
-  const AccountView = () => {
-    const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [deleteConfirmText, setDeleteConfirmText] = useState('');
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [isChangingPassword, setIsChangingPassword] = useState(false);
-    const limits = SUBSCRIPTION_LIMITS[userTier];
-    const isPasswordUser = !!user?.passwordHash;
-    
-    const handleLogout = () => {
-      setIsLoggingOut(true);
-      window.location.href = '/api/logout';
-    };
-
-    const handleChangePassword = async () => {
-      if (newPassword !== confirmPassword) {
-        toast({ title: 'Error', description: 'New passwords do not match', variant: 'destructive' });
-        return;
-      }
-      if (newPassword.length < 8) {
-        toast({ title: 'Error', description: 'Password must be at least 8 characters', variant: 'destructive' });
-        return;
-      }
-      setIsChangingPassword(true);
-      try {
-        const response = await fetch('/api/change-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ currentPassword, newPassword }),
-        });
-        if (response.ok) {
-          toast({ title: 'Success', description: 'Password changed successfully' });
-          setCurrentPassword('');
-          setNewPassword('');
-          setConfirmPassword('');
-        } else {
-          const data = await response.json();
-          toast({ title: 'Error', description: data.message || 'Failed to change password', variant: 'destructive' });
-        }
-      } catch (error) {
-        toast({ title: 'Error', description: 'Failed to change password', variant: 'destructive' });
-      } finally {
-        setIsChangingPassword(false);
-      }
-    };
-
-    const handleDeleteAccount = async () => {
-      if (deleteConfirmText !== 'DELETE') {
-        toast({ title: 'Error', description: 'Please type DELETE to confirm', variant: 'destructive' });
-        return;
-      }
-      setIsDeleting(true);
-      try {
-        const response = await fetch('/api/delete-account', {
-          method: 'DELETE',
-          credentials: 'include',
-        });
-        if (response.ok) {
-          toast({ title: 'Account Deleted', description: 'Your account has been permanently deleted' });
-          window.location.href = '/';
-        } else {
-          const data = await response.json();
-          toast({ title: 'Error', description: data.message || 'Failed to delete account', variant: 'destructive' });
-        }
-      } catch (error) {
-        toast({ title: 'Error', description: 'Failed to delete account', variant: 'destructive' });
-      } finally {
-        setIsDeleting(false);
-        setShowDeleteConfirm(false);
-      }
-    };
-
-    return (
-      <div className="animate-fade-in space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Account Settings</h2>
-          <p className="text-muted-foreground">Manage your profile, subscription, and security</p>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card data-testid="card-profile">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="w-5 h-5" />
-                Profile
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xl font-bold">
-                  {user?.email?.[0]?.toUpperCase() || 'U'}
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">{user?.email}</p>
-                  <Badge className={`mt-1 ${userTier === 'scale' ? 'bg-gradient-to-r from-purple-500 to-pink-500' : userTier === 'pro' ? 'bg-gradient-to-r from-blue-500 to-cyan-500' : 'bg-muted'} text-white border-0`}>
-                    <Star className="w-3 h-3 mr-1" />
-                    {userTier.charAt(0).toUpperCase() + userTier.slice(1)} Plan
-                  </Badge>
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Secure account
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card data-testid="card-subscription">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5" />
-                Subscription
-              </CardTitle>
-              <CardDescription>Your current plan and usage limits</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm">Email Grades</span>
-                <span className="font-medium">{limits.gradesPerMonth.toLocaleString()}/mo</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm">AI Rewrites</span>
-                <span className="font-medium">{limits.rewritesPerMonth.toLocaleString()}/mo</span>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                <span className="text-sm">Follow-ups</span>
-                <span className="font-medium">{limits.followupsPerMonth.toLocaleString()}/mo</span>
-              </div>
-              {userTier !== 'scale' && (
-                <Button 
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500"
-                  onClick={() => window.location.href = '/pricing'}
-                  data-testid="button-upgrade"
-                >
-                  <Zap className="w-4 h-4 mr-2" />
-                  Upgrade Plan
-                </Button>
-              )}
-              {userTier !== 'starter' && (
-                <Button 
-                  variant="outline"
-                  className="w-full"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/billing-portal', {
-                        method: 'POST',
-                        credentials: 'include',
-                      });
-                      if (response.ok) {
-                        const { url } = await response.json();
-                        window.location.href = url;
-                      }
-                    } catch (error) {
-                      toast({ title: 'Error', description: 'Failed to open billing portal', variant: 'destructive' });
-                    }
-                  }}
-                  data-testid="button-manage-billing"
-                >
-                  Manage Billing
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card data-testid="card-security">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5" />
-              Security
-            </CardTitle>
-            <CardDescription>Manage your account security</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {isPasswordUser && (
-              <div className="space-y-4 pb-4 border-b border-border">
-                <div>
-                  <p className="font-medium">Change Password</p>
-                  <p className="text-sm text-muted-foreground">Update your account password</p>
-                </div>
-                <div className="space-y-3">
-                  <Input
-                    type="password"
-                    placeholder="Current password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    data-testid="input-current-password"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="New password (min 8 characters)"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    data-testid="input-new-password"
-                  />
-                  <Input
-                    type="password"
-                    placeholder="Confirm new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    data-testid="input-confirm-password"
-                  />
-                  <Button
-                    onClick={handleChangePassword}
-                    disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
-                    data-testid="button-change-password"
-                  >
-                    {isChangingPassword ? 'Changing...' : 'Change Password'}
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pb-4 border-b border-border">
-              <div>
-                <p className="font-medium">Sign Out</p>
-                <p className="text-sm text-muted-foreground">Sign out of your account on this device</p>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                data-testid="button-logout"
-              >
-                {isLoggingOut ? 'Signing out...' : 'Sign Out'}
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-destructive">Delete Account</p>
-                  <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
-                </div>
-                <Button 
-                  variant="destructive"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  data-testid="button-delete-account"
-                >
-                  Delete Account
-                </Button>
-              </div>
-              
-              {showDeleteConfirm && (
-                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 space-y-3">
-                  <p className="text-sm font-medium text-destructive">This action cannot be undone!</p>
-                  <p className="text-sm text-muted-foreground">
-                    All your data including analysis history, subscription, and account settings will be permanently deleted.
-                  </p>
-                  <div className="space-y-2">
-                    <p className="text-sm">Type <strong>DELETE</strong> to confirm:</p>
-                    <Input
-                      value={deleteConfirmText}
-                      onChange={(e) => setDeleteConfirmText(e.target.value)}
-                      placeholder="Type DELETE"
-                      data-testid="input-delete-confirm"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        variant="destructive"
-                        onClick={handleDeleteAccount}
-                        disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                        data-testid="button-confirm-delete"
-                      >
-                        {isDeleting ? 'Deleting...' : 'Permanently Delete'}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowDeleteConfirm(false);
-                          setDeleteConfirmText('');
-                        }}
-                        data-testid="button-cancel-delete"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
   };
 
   const renderGraderView = () => (
@@ -3000,11 +3036,12 @@ function AppContent() {
             <div className="max-w-5xl mx-auto">
               {activeView === 'dashboard' && (
                 <Suspense fallback={<ComponentLoader />}>
-                  <Dashboard 
+                  <Dashboard
                     history={history}
                     onNavigate={handleDashboardNavigate}
                     onOpenAcademy={() => setShowAcademy(true)}
                     onReplayTutorial={resetOnboarding}
+                    userName={user?.firstName || user?.email?.split('@')[0] || ''}
                   />
                 </Suspense>
               )}
@@ -3022,7 +3059,7 @@ function AppContent() {
                   }} />
                 </Suspense>
               )}
-              {activeView === 'account' && <AccountView />}
+              {activeView === 'account' && <AccountView user={user} userTier={userTier} toast={toast} />}
             </div>
           </main>
         </SidebarInset>

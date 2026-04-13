@@ -37,7 +37,10 @@ import {
   generateArticleImage,
   analyzeCampaignRisk,
   generateContent,
-  askAcceptafy
+  askAcceptafy,
+  generatePostscript,
+  rewriteSentence,
+  gradeSentence
 } from "./gemini";
 import { registerObjectStorageRoutes, objectStorageClient } from "./replit_integrations/object_storage";
 import { randomUUID } from "crypto";
@@ -1904,6 +1907,51 @@ export async function registerRoutes(
     } catch (error) {
       console.error('Email preview error:', error);
       res.status(500).json({ error: 'Failed to generate email previews' });
+    }
+  });
+
+  // Generate P.S. (postscript) for email body
+  app.post('/api/generate-ps', optionalAuth, async (req: any, res) => {
+    try {
+      const { emailBody } = req.body;
+      if (!emailBody || typeof emailBody !== 'string') {
+        return res.status(400).json({ error: 'Email body is required' });
+      }
+      const ps = await generatePostscript(emailBody);
+      res.json({ ps });
+    } catch (error) {
+      console.error('Generate P.S. error:', error);
+      res.status(500).json({ error: 'Failed to generate postscript' });
+    }
+  });
+
+  // Rewrite a single sentence for better email marketing impact
+  app.post('/api/sentence/rewrite', optionalAuth, async (req: any, res) => {
+    try {
+      const { sentence } = req.body;
+      if (!sentence || typeof sentence !== 'string') {
+        return res.status(400).json({ error: 'Sentence is required' });
+      }
+      const rewritten = await rewriteSentence(sentence);
+      res.json({ rewritten });
+    } catch (error) {
+      console.error('Sentence rewrite error:', error);
+      res.status(500).json({ error: 'Failed to rewrite sentence' });
+    }
+  });
+
+  // Grade a single sentence for email marketing effectiveness
+  app.post('/api/sentence/grade', optionalAuth, async (req: any, res) => {
+    try {
+      const { sentence } = req.body;
+      if (!sentence || typeof sentence !== 'string') {
+        return res.status(400).json({ error: 'Sentence is required' });
+      }
+      const grade = await gradeSentence(sentence);
+      res.json(grade);
+    } catch (error) {
+      console.error('Sentence grade error:', error);
+      res.status(500).json({ error: 'Failed to grade sentence' });
     }
   });
 
@@ -4193,16 +4241,6 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  // Admin endpoint to view contact messages
-  app.get('/api/admin/contact-messages', isAdmin, async (req, res) => {
-    try {
-      const messages = await storage.getContactMessages();
-      res.json(messages);
-    } catch (error) {
-      console.error('Get contact messages error:', error);
-      res.status(500).json({ message: 'Failed to fetch messages' });
-    }
-  });
 
   // Admin action: Trigger password reset for a user
   app.post('/api/admin/users/:id/reset-password', isAdmin, async (req: any, res) => {
