@@ -1212,7 +1212,7 @@ export type InsertAdminActivityLog = typeof adminActivityLogs.$inferInsert;
 // Zod schemas for API validation
 export const deliverabilityAlertSchema = z.object({
   id: z.string(),
-  alertType: z.enum(['bounce_spike', 'complaint_spike', 'engagement_drop', 'deferral_increase', 'volume_spike', 'frequency_warning']),
+  alertType: z.enum(['bounce_spike', 'complaint_spike', 'engagement_drop', 'deferral_increase', 'volume_spike', 'frequency_warning', 'domain_blacklisted', 'reputation_drop']),
   severity: z.enum(['info', 'warning', 'critical']),
   title: z.string(),
   message: z.string(),

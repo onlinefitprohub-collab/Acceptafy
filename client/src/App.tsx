@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Switch, Route } from 'wouter';
 import { Logo } from './components/icons/Logo';
 import { EmailInput, type Industry, type EmailType } from './components/EmailInput';
@@ -24,6 +25,7 @@ import { useAuth } from './hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { queryClient } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -140,7 +142,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw, Rocket, Thermometer, Key, CheckCircle, Wrench, ArrowLeft } from 'lucide-react';
+import { Sparkles, Zap, Target, Mail, Flame, Trophy, Star, Shield, ShieldAlert, ShieldCheck, Heart, Download, FileText, FolderOpen, Upload, Users, Activity, BarChart3, AlertCircle, RotateCcw, Rocket, Thermometer, Key, CheckCircle, Wrench, ArrowLeft, Bell, X, AlertTriangle } from 'lucide-react';
 import { SUBSCRIPTION_LIMITS } from '@shared/schema';
 import type { 
   GradingResult, 
@@ -510,6 +512,7 @@ function AppContent() {
   const [rewrittenEmail, setRewrittenEmail] = useState<RewrittenEmail | null>(null);
   const [isRewriting, setIsRewriting] = useState(false);
   const [rewriteGoal, setRewriteGoal] = useState<string>('general');
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [followUpEmail, setFollowUpEmail] = useState<FollowUpEmail | null>(null);
   const [followUpSequence, setFollowUpSequence] = useState<FollowUpSequenceEmail[]>([]);
   const [isGeneratingFollowUp, setIsGeneratingFollowUp] = useState(false);
@@ -565,6 +568,28 @@ function AppContent() {
     };
     loadESPConnections();
   }, [user]);
+
+  const { data: alertsData, refetch: refetchAlerts } = useQuery<{ alerts: any[]; unreadCount: number }>({
+    queryKey: ['/api/alerts'],
+    enabled: !!user,
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+  const unreadAlertCount = alertsData?.unreadCount ?? 0;
+  const allAlerts = alertsData?.alerts ?? [];
+
+  const markAlertReadMutation = useMutation({
+    mutationFn: (id: string) => fetch(`/api/alerts/${id}/read`, { method: 'POST', credentials: 'include' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
+  });
+  const dismissAlertMutation = useMutation({
+    mutationFn: (id: string) => fetch(`/api/alerts/${id}`, { method: 'DELETE', credentials: 'include' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
+  });
+  const dismissAllAlertsMutation = useMutation({
+    mutationFn: () => fetch('/api/alerts', { method: 'DELETE', credentials: 'include' }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
+  });
 
   useEffect(() => {
     if (level > prevLevel && prevLevel > 0) {
@@ -2958,6 +2983,11 @@ function AppContent() {
           connectionsSubView={connectionsSubView}
           setConnectionsSubView={setConnectionsSubView}
           clearAllSubViews={clearAllSubViews}
+          unreadAlertCount={unreadAlertCount}
+          onOpenAlerts={() => {
+            setAlertsOpen(true);
+            allAlerts.filter(a => !a.isRead).forEach(a => markAlertReadMutation.mutate(a.id));
+          }}
         />
         
         <SidebarInset className="flex flex-col flex-1 overflow-hidden">
@@ -3095,6 +3125,72 @@ function AppContent() {
 
       <CelebrationRenderer />
       <Toaster />
+
+      <Sheet open={alertsOpen} onOpenChange={setAlertsOpen}>
+        <SheetContent side="right" className="w-96 sm:max-w-md flex flex-col">
+          <SheetHeader className="pb-3 border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Alerts
+                {unreadAlertCount > 0 && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold">{unreadAlertCount}</span>
+                )}
+              </SheetTitle>
+              {allAlerts.length > 0 && (
+                <button
+                  onClick={() => dismissAllAlertsMutation.mutate()}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Dismiss all
+                </button>
+              )}
+            </div>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto py-4 space-y-3">
+            {allAlerts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <Bell className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm text-muted-foreground">No alerts — you're all clear!</p>
+              </div>
+            ) : (
+              allAlerts.map((alert) => {
+                const severityClass =
+                  alert.severity === 'critical' ? 'border-red-500/40 bg-red-500/5' :
+                  alert.severity === 'warning' ? 'border-yellow-500/40 bg-yellow-500/5' :
+                  'border-blue-500/40 bg-blue-500/5';
+                const iconClass =
+                  alert.severity === 'critical' ? 'text-red-500' :
+                  alert.severity === 'warning' ? 'text-yellow-500' :
+                  'text-blue-500';
+                return (
+                  <div key={alert.id} className={`relative rounded-xl border p-4 ${severityClass} ${!alert.isRead ? 'ring-1 ring-inset ring-border/50' : 'opacity-75'}`}>
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${iconClass}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">{alert.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{alert.message}</p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-2">
+                          {new Date(alert.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => dismissAlertMutation.mutate(alert.id)}
+                        className="flex-shrink-0 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+                        aria-label="Dismiss"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </SidebarProvider>
   );
 }

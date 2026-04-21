@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { 
-  Mail, 
-  History, 
-  GraduationCap, 
+import {
+  Mail,
+  History,
+  GraduationCap,
   PenTool,
-  Target, 
+  Target,
   Zap,
   Trophy,
   Flame,
@@ -48,6 +48,7 @@ import {
   Wrench,
   Layers,
   MessageCircleQuestion,
+  Bell,
   type LucideIcon
 } from 'lucide-react';
 
@@ -104,11 +105,13 @@ interface AppSidebarProps {
   connectionsSubView: ConnectionsSubView;
   setConnectionsSubView: (view: ConnectionsSubView) => void;
   clearAllSubViews: () => void;
+  unreadAlertCount?: number;
+  onOpenAlerts?: () => void;
 }
 
-export function AppSidebar({ 
-  activeView, 
-  setActiveView, 
+export function AppSidebar({
+  activeView,
+  setActiveView,
   onOpenAcademy,
   createSubView,
   setCreateSubView,
@@ -120,7 +123,9 @@ export function AppSidebar({
   setDeliverabilitySubView,
   connectionsSubView,
   setConnectionsSubView,
-  clearAllSubViews
+  clearAllSubViews,
+  unreadAlertCount = 0,
+  onOpenAlerts,
 }: AppSidebarProps) {
   const [createOpen, setCreateOpen] = useState(false);
   const [optimizeOpen, setOptimizeOpen] = useState(false);
@@ -1017,7 +1022,7 @@ export function AppSidebar({
           </div>
           <SidebarMenu className="space-y-1">
             <SidebarMenuItem>
-              <SidebarMenuButton 
+              <SidebarMenuButton
                 isActive={activeView === 'account'}
                 onClick={() => {
                   setActiveView('account');
@@ -1033,6 +1038,28 @@ export function AppSidebar({
                 <ChevronRight className={`w-4 h-4 ml-auto transition-all duration-200 ${activeView === 'account' ? 'opacity-100 text-slate-400' : 'opacity-0 -translate-x-2'}`} />
               </SidebarMenuButton>
             </SidebarMenuItem>
+            {onOpenAlerts && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={onOpenAlerts}
+                  className="group transition-all duration-200"
+                  data-testid="nav-alerts"
+                >
+                  <div className="relative p-1.5 rounded-lg transition-all duration-200 bg-sidebar-accent/80 group-hover:bg-sidebar-accent">
+                    <Bell className="w-4 h-4" />
+                    {unreadAlertCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                        {unreadAlertCount > 9 ? '9+' : unreadAlertCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-medium">Alerts</span>
+                  {unreadAlertCount > 0 && (
+                    <span className="ml-auto text-xs font-semibold text-red-500">{unreadAlertCount} new</span>
+                  )}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
           </SidebarMenu>
         </div>
       </SidebarFooter>

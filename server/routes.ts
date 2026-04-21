@@ -4467,7 +4467,32 @@ Return your response as a JSON object with this exact structure:
         cleanOn: result.cleanOn,
         results: result.results,
       });
-      
+
+      if (result.listedOn > 0) {
+        try {
+          const existing = await storage.getDeliverabilityAlerts(userId);
+          const recentDupe = existing.find(a =>
+            a.alertType === 'domain_blacklisted' &&
+            a.domain === result.domain &&
+            new Date(a.createdAt!).getTime() > Date.now() - 86400000
+          );
+          if (!recentDupe) {
+            await storage.createDeliverabilityAlert({
+              userId,
+              provider: 'blacklist',
+              alertType: 'domain_blacklisted',
+              severity: result.listedOn >= 3 ? 'critical' : 'warning',
+              title: 'Domain Found on Blacklist',
+              message: `${result.domain} is listed on ${result.listedOn} blacklist${result.listedOn > 1 ? 's' : ''}. This may severely impact deliverability.`,
+              domain: result.domain,
+              currentValue: result.listedOn,
+            });
+          }
+        } catch (e) {
+          console.error('Alert creation failed:', e);
+        }
+      }
+
       res.json(result);
     } catch (error: any) {
       console.error('Blacklist check error:', error);
@@ -4475,6 +4500,51 @@ Return your response as a JSON object with this exact structure:
     }
   });
   
+  // ── Deliverability Alerts ─────────────────────────────────────────────────
+  app.get('/api/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const unreadOnly = req.query.unreadOnly === 'true';
+      const alerts = await storage.getDeliverabilityAlerts(userId, unreadOnly);
+      const unreadCount = unreadOnly ? alerts.length : alerts.filter(a => !a.isRead).length;
+      res.json({ alerts, unreadCount });
+    } catch (error) {
+      console.error('Alerts fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch alerts' });
+    }
+  });
+
+  app.post('/api/alerts/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markAlertRead(req.params.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to mark alert as read' });
+    }
+  });
+
+  app.delete('/api/alerts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.dismissAlert(req.params.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to dismiss alert' });
+    }
+  });
+
+  app.delete('/api/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const alerts = await storage.getDeliverabilityAlerts(userId);
+      await Promise.all(alerts.map(a => storage.dismissAlert(a.id, userId)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to dismiss all alerts' });
+    }
+  });
+
   app.get('/api/blacklist/history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -5612,6 +5682,31 @@ Return your response as a JSON object with this exact structure:
       }
 
       const data = await getGoogleDomainReputation(userId, domain);
+
+      if (data.verifiedDomain && (data.domainReputation === 'LOW' || data.domainReputation === 'BAD')) {
+        try {
+          const existing = await storage.getDeliverabilityAlerts(userId);
+          const recentDupe = existing.find(a =>
+            a.alertType === 'reputation_drop' &&
+            a.domain === domain &&
+            new Date(a.createdAt!).getTime() > Date.now() - 86400000
+          );
+          if (!recentDupe) {
+            await storage.createDeliverabilityAlert({
+              userId,
+              provider: 'google-postmaster',
+              alertType: 'reputation_drop',
+              severity: data.domainReputation === 'BAD' ? 'critical' : 'warning',
+              title: 'Low Domain Reputation Detected',
+              message: `Gmail Postmaster reports ${domain} has ${data.domainReputation} reputation. Check your sending practices to avoid inbox delivery issues.`,
+              domain,
+            });
+          }
+        } catch (e) {
+          console.error('Alert creation failed:', e);
+        }
+      }
+
       res.json(data);
     } catch (err: any) {
       console.error('Google Postmaster reputation error:', err);
