@@ -26,7 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { queryClient } from '@/lib/queryClient';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import Landing from './pages/Landing';
@@ -579,15 +579,15 @@ function AppContent() {
   const allAlerts = alertsData?.alerts ?? [];
 
   const markAlertReadMutation = useMutation({
-    mutationFn: (id: string) => fetch(`/api/alerts/${id}/read`, { method: 'POST', credentials: 'include' }),
+    mutationFn: (id: string) => apiRequest('POST', `/api/alerts/${id}/read`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
   });
   const dismissAlertMutation = useMutation({
-    mutationFn: (id: string) => fetch(`/api/alerts/${id}`, { method: 'DELETE', credentials: 'include' }),
+    mutationFn: (id: string) => apiRequest('DELETE', `/api/alerts/${id}`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
   });
   const dismissAllAlertsMutation = useMutation({
-    mutationFn: () => fetch('/api/alerts', { method: 'DELETE', credentials: 'include' }),
+    mutationFn: () => apiRequest('DELETE', '/api/alerts'),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/alerts'] }),
   });
 

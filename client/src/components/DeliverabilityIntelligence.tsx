@@ -178,10 +178,11 @@ export function DeliverabilityIntelligence({ connections: propConnections }: Del
     enabled: connectedProviders.length > 0,
   });
 
-  const { data: alerts, isLoading: loadingAlerts, refetch: refetchAlerts } = useQuery<DeliverabilityAlert[]>({
-    queryKey: ['/api/deliverability/alerts'],
+  const { data: alertsData, isLoading: loadingAlerts, refetch: refetchAlerts } = useQuery<{ alerts: DeliverabilityAlert[]; unreadCount: number }>({
+    queryKey: ['/api/alerts'],
     enabled: connectedProviders.length > 0,
   });
+  const alerts = alertsData?.alerts;
 
   const { data: campaignHistory, isLoading: loadingHistory } = useQuery<CampaignHistory[]>({
     queryKey: ['/api/deliverability/campaign-history', selectedProvider],
@@ -205,7 +206,7 @@ export function DeliverabilityIntelligence({ connections: propConnections }: Del
         description: `Synced ${data.campaignsSynced} campaigns for trend analysis.`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/provider-health'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/deliverability/alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/campaign-history', provider] });
       queryClient.invalidateQueries({ queryKey: ['/api/deliverability/frequency-tracking', provider] });
     },
@@ -234,19 +235,19 @@ export function DeliverabilityIntelligence({ connections: propConnections }: Del
 
   const dismissAlertMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest('PATCH', `/api/deliverability/alerts/${alertId}/dismiss`, {});
+      await apiRequest('DELETE', `/api/alerts/${alertId}`, {});
     },
     onSuccess: () => {
-      refetchAlerts();
+      queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
     },
   });
 
   const markReadMutation = useMutation({
     mutationFn: async (alertId: string) => {
-      await apiRequest('PATCH', `/api/deliverability/alerts/${alertId}/read`, {});
+      await apiRequest('POST', `/api/alerts/${alertId}/read`, {});
     },
     onSuccess: () => {
-      refetchAlerts();
+      queryClient.invalidateQueries({ queryKey: ['/api/alerts'] });
     },
   });
 
