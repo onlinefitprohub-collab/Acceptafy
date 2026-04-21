@@ -831,7 +831,8 @@ export const espProviderSchema = z.enum([
   'aweber',
   'highlevel',
   'ontraport',
-  'keap'
+  'keap',
+  'google-postmaster',
 ]);
 
 export type ESPProviderType = z.infer<typeof espProviderSchema>;

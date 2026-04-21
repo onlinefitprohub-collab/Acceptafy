@@ -586,6 +586,17 @@ function AppContent() {
     setConnectionsSubView(null);
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('googlePostmasterConnected')) {
+      toast({ title: 'Google Postmaster connected!', description: 'Real reputation data is now available in Domain Health Checker.' });
+      setActiveView('deliverability');
+      clearAllSubViews();
+      setDeliverabilitySubView('domain-health');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const handleDashboardNavigate = (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => {
     setActiveView(view);
     clearAllSubViews();
