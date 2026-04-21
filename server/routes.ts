@@ -3861,45 +3861,6 @@ Return your response as a JSON object with this exact structure:
     }
   });
 
-  app.get('/api/deliverability/alerts', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const unreadOnly = req.query.unread === 'true';
-      
-      const alerts = await storage.getDeliverabilityAlerts(userId, unreadOnly);
-      res.json(alerts);
-    } catch (error) {
-      console.error('Alerts fetch error:', error);
-      res.status(500).json({ error: 'Failed to fetch alerts' });
-    }
-  });
-
-  app.patch('/api/deliverability/alerts/:id/read', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      
-      await storage.markAlertRead(id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Mark alert read error:', error);
-      res.status(500).json({ error: 'Failed to mark alert as read' });
-    }
-  });
-
-  app.patch('/api/deliverability/alerts/:id/dismiss', isAuthenticated, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const { id } = req.params;
-      
-      await storage.dismissAlert(id, userId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error('Dismiss alert error:', error);
-      res.status(500).json({ error: 'Failed to dismiss alert' });
-    }
-  });
-
   app.post('/api/deliverability/risk-score', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -4510,7 +4471,7 @@ Return your response as a JSON object with this exact structure:
       res.json({ alerts, unreadCount });
     } catch (error) {
       console.error('Alerts fetch error:', error);
-      res.status(500).json({ message: 'Failed to fetch alerts' });
+      res.status(500).json({ error: 'Failed to fetch alerts' });
     }
   });
 
@@ -4520,7 +4481,7 @@ Return your response as a JSON object with this exact structure:
       await storage.markAlertRead(req.params.id, userId);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ message: 'Failed to mark alert as read' });
+      res.status(500).json({ error: 'Failed to mark alert as read' });
     }
   });
 
@@ -4530,7 +4491,7 @@ Return your response as a JSON object with this exact structure:
       await storage.dismissAlert(req.params.id, userId);
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ message: 'Failed to dismiss alert' });
+      res.status(500).json({ error: 'Failed to dismiss alert' });
     }
   });
 
@@ -4541,7 +4502,7 @@ Return your response as a JSON object with this exact structure:
       await Promise.all(alerts.map(a => storage.dismissAlert(a.id, userId)));
       res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ message: 'Failed to dismiss all alerts' });
+      res.status(500).json({ error: 'Failed to dismiss all alerts' });
     }
   });
 
