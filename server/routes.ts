@@ -59,6 +59,13 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { verifyEmailList } from './services/debounce';
+import {
+  getAuthUrl as getGooglePostmasterAuthUrl,
+  exchangeCode as exchangeGoogleCode,
+  getTokenEmail as getGoogleTokenEmail,
+  getVerifiedDomains as getGoogleVerifiedDomains,
+  getDomainReputation as getGoogleDomainReputation,
+} from './services/googlePostmaster';
 
 const generateRoadmapRequestSchema = z.object({
   analysisResult: gradingResultSchema,
@@ -4460,7 +4467,32 @@ Return your response as a JSON object with this exact structure:
         cleanOn: result.cleanOn,
         results: result.results,
       });
-      
+
+      if (result.listedOn > 0) {
+        try {
+          const existing = await storage.getDeliverabilityAlerts(userId);
+          const recentDupe = existing.find(a =>
+            a.alertType === 'domain_blacklisted' &&
+            a.domain === result.domain &&
+            new Date(a.createdAt!).getTime() > Date.now() - 86400000
+          );
+          if (!recentDupe) {
+            await storage.createDeliverabilityAlert({
+              userId,
+              provider: 'blacklist',
+              alertType: 'domain_blacklisted',
+              severity: result.listedOn >= 3 ? 'critical' : 'warning',
+              title: 'Domain Found on Blacklist',
+              message: `${result.domain} is listed on ${result.listedOn} blacklist${result.listedOn > 1 ? 's' : ''}. This may severely impact deliverability.`,
+              domain: result.domain,
+              currentValue: result.listedOn,
+            });
+          }
+        } catch (e) {
+          console.error('Alert creation failed:', e);
+        }
+      }
+
       res.json(result);
     } catch (error: any) {
       console.error('Blacklist check error:', error);
@@ -4468,6 +4500,51 @@ Return your response as a JSON object with this exact structure:
     }
   });
   
+  // ── Deliverability Alerts ─────────────────────────────────────────────────
+  app.get('/api/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const unreadOnly = req.query.unreadOnly === 'true';
+      const alerts = await storage.getDeliverabilityAlerts(userId, unreadOnly);
+      const unreadCount = unreadOnly ? alerts.length : alerts.filter(a => !a.isRead).length;
+      res.json({ alerts, unreadCount });
+    } catch (error) {
+      console.error('Alerts fetch error:', error);
+      res.status(500).json({ message: 'Failed to fetch alerts' });
+    }
+  });
+
+  app.post('/api/alerts/:id/read', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.markAlertRead(req.params.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to mark alert as read' });
+    }
+  });
+
+  app.delete('/api/alerts/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.dismissAlert(req.params.id, userId);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to dismiss alert' });
+    }
+  });
+
+  app.delete('/api/alerts', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const alerts = await storage.getDeliverabilityAlerts(userId);
+      await Promise.all(alerts.map(a => storage.dismissAlert(a.id, userId)));
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to dismiss all alerts' });
+    }
+  });
+
   app.get('/api/blacklist/history', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -5515,6 +5592,138 @@ Return your response as a JSON object with this exact structure:
     } catch (error) {
       console.error('Trigger automation error:', error);
       res.status(500).json({ message: 'Failed to trigger automation' });
+    }
+  });
+
+  // ── Google Postmaster Tools OAuth ────────────────────────────────────────
+  // Step 1: redirect user to Google's consent screen
+  app.get('/api/google-postmaster/auth', isAuthenticated, (req: any, res) => {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.status(503).json({ error: 'Google OAuth is not configured on this server' });
+    }
+    const userId = req.user.claims.sub;
+    const state = `${userId}:${randomUUID()}`;
+    const url = getGooglePostmasterAuthUrl(state, req.hostname);
+    res.json({ url });
+  });
+
+  // Step 2: Google redirects back here with ?code=...&state=...
+  app.get('/api/google-postmaster/callback', async (req: any, res) => {
+    const { code, state, error } = req.query as Record<string, string>;
+
+    if (error) {
+      return res.redirect(`/?googleError=${encodeURIComponent(error)}`);
+    }
+    if (!code || !state) {
+      return res.redirect('/?googleError=missing_params');
+    }
+
+    const [userId] = state.split(':');
+    if (!userId) {
+      return res.redirect('/?googleError=invalid_state');
+    }
+
+    try {
+      const tokens = await exchangeGoogleCode(code, req.hostname);
+      if (!tokens.access_token) throw new Error('No access token returned');
+
+      const email = await getGoogleTokenEmail(tokens.access_token);
+
+      await storage.upsertESPConnection({
+        userId,
+        provider: 'google-postmaster' as any,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token ?? undefined,
+        accountEmail: email ?? undefined,
+        accountName: email ? email.split('@')[0] : 'Google Account',
+        isConnected: true,
+        lastSyncAt: new Date(),
+      });
+
+      res.redirect('/?googlePostmasterConnected=1');
+    } catch (err) {
+      console.error('Google Postmaster callback error:', err);
+      res.redirect('/?googleError=token_exchange_failed');
+    }
+  });
+
+  // Connection status + verified domains in one call
+  app.get('/api/google-postmaster/status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const connection = await storage.getESPConnection(userId, 'google-postmaster' as any);
+
+      if (!connection?.isConnected || !connection?.accessToken) {
+        return res.json({ connected: false, accountEmail: null, domains: [] });
+      }
+
+      let domains: string[] = [];
+      try {
+        domains = await getGoogleVerifiedDomains(userId);
+      } catch {
+        // Token may need re-auth; still report connected so UI can show disconnect button
+      }
+
+      res.json({ connected: true, accountEmail: connection.accountEmail, domains });
+    } catch (err) {
+      console.error('Google Postmaster status error:', err);
+      res.status(500).json({ error: 'Failed to check connection status' });
+    }
+  });
+
+  // Fetch real reputation data for a specific domain
+  app.get('/api/google-postmaster/reputation/:domain', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const domain = req.params.domain as string;
+
+      if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+        return res.status(400).json({ error: 'Invalid domain' });
+      }
+
+      const data = await getGoogleDomainReputation(userId, domain);
+
+      if (data.verifiedDomain && (data.domainReputation === 'LOW' || data.domainReputation === 'BAD')) {
+        try {
+          const existing = await storage.getDeliverabilityAlerts(userId);
+          const recentDupe = existing.find(a =>
+            a.alertType === 'reputation_drop' &&
+            a.domain === domain &&
+            new Date(a.createdAt!).getTime() > Date.now() - 86400000
+          );
+          if (!recentDupe) {
+            await storage.createDeliverabilityAlert({
+              userId,
+              provider: 'google-postmaster',
+              alertType: 'reputation_drop',
+              severity: data.domainReputation === 'BAD' ? 'critical' : 'warning',
+              title: 'Low Domain Reputation Detected',
+              message: `Gmail Postmaster reports ${domain} has ${data.domainReputation} reputation. Check your sending practices to avoid inbox delivery issues.`,
+              domain,
+            });
+          }
+        } catch (e) {
+          console.error('Alert creation failed:', e);
+        }
+      }
+
+      res.json(data);
+    } catch (err: any) {
+      console.error('Google Postmaster reputation error:', err);
+      const msg = err.message || 'Failed to fetch reputation data';
+      res.status(msg.includes('not connected') ? 401 : 500).json({ error: msg });
+    }
+  });
+
+  // Disconnect — revoke stored tokens
+  app.delete('/api/google-postmaster/disconnect', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteESPConnection(userId, 'google-postmaster' as any);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Google Postmaster disconnect error:', err);
+      res.status(500).json({ error: 'Failed to disconnect' });
     }
   });
 
