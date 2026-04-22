@@ -82,7 +82,7 @@ interface PostmasterStatus {
 }
 
 interface PostmasterReputation {
-  domainReputation: 'HIGH' | 'MEDIUM' | 'LOW' | 'BAD' | null;
+  domainReputation: null; // removed in Postmaster Tools API v2
   userReportedSpamRatio: number | null;
   spfSuccessRatio: number | null;
   dkimSuccessRatio: number | null;
@@ -92,13 +92,6 @@ interface PostmasterReputation {
   periodEnd: string;
   verifiedDomain: boolean;
 }
-
-const REP_COLORS: Record<string, { badge: string; label: string }> = {
-  HIGH:   { badge: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300',   label: 'High' },
-  MEDIUM: { badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-300', label: 'Medium' },
-  LOW:    { badge: 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300', label: 'Low' },
-  BAD:    { badge: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300',           label: 'Bad' },
-};
 
 function pct(ratio: number | null): string {
   if (ratio == null) return 'N/A';
@@ -344,18 +337,6 @@ export const DomainHealthChecker: React.FC = () => {
 
             {!pmRepLoading && pmReputation?.verifiedDomain && pmReputation.dataPoints > 0 && (
               <div className="space-y-4">
-                {/* Domain Reputation */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Domain Reputation</span>
-                  {pmReputation.domainReputation ? (
-                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${REP_COLORS[pmReputation.domainReputation]?.badge}`}>
-                      {REP_COLORS[pmReputation.domainReputation]?.label}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">Insufficient data</span>
-                  )}
-                </div>
-
                 {/* Auth ratios */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[

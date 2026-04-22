@@ -5565,9 +5565,6 @@ Return your response as a JSON object with this exact structure:
     const userId = req.user.claims.sub;
     const state = `${userId}:${randomUUID()}`;
     const url = getGooglePostmasterAuthUrl(state, req.hostname);
-    console.log('[Postmaster Auth] client_id prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
-    console.log('[Postmaster Auth] redirect_uri:', process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`);
-    console.log('[Postmaster Auth] generated url prefix:', url.slice(0, 80));
     res.json({ url });
   });
 
@@ -5587,9 +5584,6 @@ Return your response as a JSON object with this exact structure:
       return res.redirect('/?googleError=invalid_state');
     }
 
-    const _secretSuffix = process.env.GOOGLE_CLIENT_SECRET?.slice(-4) ?? 'MISSING';
-    const _redirectUri = process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`;
-    console.log(`[Postmaster Callback] hasId=${!!process.env.GOOGLE_CLIENT_ID} idLen=${process.env.GOOGLE_CLIENT_ID?.length} hasSecret=${!!process.env.GOOGLE_CLIENT_SECRET} secretLen=${process.env.GOOGLE_CLIENT_SECRET?.length} secretSuffix=${_secretSuffix} redirectUri=${_redirectUri}`);
     try {
       const tokens = await exchangeGoogleCode(code, req.hostname);
       if (!tokens.access_token) throw new Error('No access token returned');
