@@ -620,6 +620,11 @@ function AppContent() {
       setDeliverabilitySubView('domain-health');
       window.history.replaceState({}, '', window.location.pathname);
     }
+    const googleError = params.get('googleError');
+    if (googleError) {
+      toast({ title: 'Google connection failed', description: googleError, variant: 'destructive' });
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   const handleDashboardNavigate = (view: 'grader' | 'history' | 'create' | 'optimize' | 'analytics' | 'deliverability' | 'connections', subView?: string) => {

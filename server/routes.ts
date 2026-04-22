@@ -5605,9 +5605,10 @@ Return your response as a JSON object with this exact structure:
       });
 
       res.redirect('/?googlePostmasterConnected=1');
-    } catch (err) {
-      console.error('Google Postmaster callback error:', err);
-      res.redirect('/?googleError=token_exchange_failed');
+    } catch (err: any) {
+      const detail = err?.response?.data?.error || err?.message || 'unknown';
+      console.error('Google Postmaster callback error:', detail, err);
+      res.redirect(`/?googleError=${encodeURIComponent(detail)}`);
     }
   });
 
