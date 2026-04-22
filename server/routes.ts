@@ -5587,6 +5587,14 @@ Return your response as a JSON object with this exact structure:
       return res.redirect('/?googleError=invalid_state');
     }
 
+    console.log('[Postmaster Callback] creds:', {
+      hasClientId: !!process.env.GOOGLE_CLIENT_ID,
+      clientIdLen: process.env.GOOGLE_CLIENT_ID?.length,
+      hasSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+      secretLen: process.env.GOOGLE_CLIENT_SECRET?.length,
+      secretSuffix: process.env.GOOGLE_CLIENT_SECRET?.slice(-4),
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`,
+    });
     try {
       const tokens = await exchangeGoogleCode(code, req.hostname);
       if (!tokens.access_token) throw new Error('No access token returned');
