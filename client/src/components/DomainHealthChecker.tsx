@@ -319,9 +319,21 @@ export const DomainHealthChecker: React.FC = () => {
             )}
 
             {!pmRepLoading && pmReputation && !pmReputation.verifiedDomain && (
-              <p className="text-sm text-muted-foreground">
-                <strong>{domain}</strong> is not verified in your Google Postmaster account, or your send volume to Gmail is too low for data to appear (Google requires ~100 emails/day).
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  <strong>{domain}</strong> is not verified in your Google Postmaster account, or your send volume to Gmail is too low for data to appear (Google requires ~100 emails/day).
+                </p>
+                <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">How to verify your domain in Postmaster Tools:</p>
+                  <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>Go to <a href="https://postmaster.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">postmaster.google.com</a></li>
+                    <li>Click <strong>+</strong> and enter <strong>{domain}</strong></li>
+                    <li>Add the TXT record Google provides to your domain's DNS settings</li>
+                    <li>Click <strong>Verify</strong> in Postmaster Tools once DNS propagates (up to 48h)</li>
+                  </ol>
+                  <p className="text-xs text-muted-foreground">Once verified and sending ≥100 emails/day to Gmail, reputation data will appear here automatically.</p>
+                </div>
+              </div>
             )}
 
             {!pmRepLoading && pmReputation?.verifiedDomain && pmReputation.dataPoints === 0 && (
