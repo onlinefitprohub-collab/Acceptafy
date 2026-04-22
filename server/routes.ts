@@ -5587,14 +5587,9 @@ Return your response as a JSON object with this exact structure:
       return res.redirect('/?googleError=invalid_state');
     }
 
-    console.log('[Postmaster Callback] creds:', {
-      hasClientId: !!process.env.GOOGLE_CLIENT_ID,
-      clientIdLen: process.env.GOOGLE_CLIENT_ID?.length,
-      hasSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-      secretLen: process.env.GOOGLE_CLIENT_SECRET?.length,
-      secretSuffix: process.env.GOOGLE_CLIENT_SECRET?.slice(-4),
-      redirectUri: process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`,
-    });
+    const _secretSuffix = process.env.GOOGLE_CLIENT_SECRET?.slice(-4) ?? 'MISSING';
+    const _redirectUri = process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`;
+    console.log(`[Postmaster Callback] hasId=${!!process.env.GOOGLE_CLIENT_ID} idLen=${process.env.GOOGLE_CLIENT_ID?.length} hasSecret=${!!process.env.GOOGLE_CLIENT_SECRET} secretLen=${process.env.GOOGLE_CLIENT_SECRET?.length} secretSuffix=${_secretSuffix} redirectUri=${_redirectUri}`);
     try {
       const tokens = await exchangeGoogleCode(code, req.hostname);
       if (!tokens.access_token) throw new Error('No access token returned');
@@ -5614,9 +5609,10 @@ Return your response as a JSON object with this exact structure:
 
       res.redirect('/?googlePostmasterConnected=1');
     } catch (err: any) {
-      const detail = err?.response?.data?.error || err?.message || 'unknown';
-      console.error('Google Postmaster callback error:', detail, err);
-      res.redirect(`/?googleError=${encodeURIComponent(detail)}`);
+      const errCode = err?.response?.data?.error ?? err?.message ?? 'unknown';
+      const errDesc = err?.response?.data?.error_description ?? '';
+      console.error(`[Postmaster Callback] FAILED error=${errCode} description=${errDesc}`);
+      res.redirect(`/?googleError=${encodeURIComponent(errCode)}`);
     }
   });
 
