@@ -5565,6 +5565,9 @@ Return your response as a JSON object with this exact structure:
     const userId = req.user.claims.sub;
     const state = `${userId}:${randomUUID()}`;
     const url = getGooglePostmasterAuthUrl(state, req.hostname);
+    console.log('[Postmaster Auth] client_id prefix:', process.env.GOOGLE_CLIENT_ID?.slice(0, 20));
+    console.log('[Postmaster Auth] redirect_uri:', process.env.GOOGLE_REDIRECT_URI || `https://${req.hostname}/api/google-postmaster/callback`);
+    console.log('[Postmaster Auth] generated url prefix:', url.slice(0, 80));
     res.json({ url });
   });
 
