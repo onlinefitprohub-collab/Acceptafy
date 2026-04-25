@@ -3,7 +3,7 @@ import { storage } from '../storage';
 import type { ESPProviderType } from '@shared/schema';
 
 const POSTMASTER_SCOPE = 'https://www.googleapis.com/auth/postmaster.readonly';
-const POSTMASTER_API_BASE = 'https://gmailpostmastertools.googleapis.com/v2';
+const POSTMASTER_API_BASE = 'https://gmailpostmastertools.googleapis.com/v1';
 const PROVIDER = 'google-postmaster' as ESPProviderType;
 
 function createClient(redirectUri?: string) {
@@ -76,7 +76,7 @@ export async function getVerifiedDomains(userId: string): Promise<string[]> {
 }
 
 export interface PostmasterReputationData {
-  domainReputation: null; // removed in Postmaster Tools API v2
+  domainReputation: 'HIGH' | 'MEDIUM' | 'LOW' | 'BAD' | null;
   userReportedSpamRatio: number | null;
   spfSuccessRatio: number | null;
   dkimSuccessRatio: number | null;
@@ -103,21 +103,22 @@ export async function getDomainReputation(userId: string, domain: string): Promi
     'endDate.day':     String(end.getDate()),
   });
 
-  type DomainStat = {
+  type TrafficStat = {
+    domainReputation?: string;
     userReportedSpamRatio?: number;
     spfSuccessRatio?: number;
     dkimSuccessRatio?: number;
     dmarcSuccessRatio?: number;
   };
 
-  let stats: DomainStat[] = [];
+  let stats: TrafficStat[] = [];
   let verifiedDomain = true;
 
   try {
-    const res = await client.request<{ domainStats?: DomainStat[] }>({
-      url: `${POSTMASTER_API_BASE}/domains/${encodeURIComponent(domain)}/domainStats:query?${params}`,
+    const res = await client.request<{ trafficStats?: TrafficStat[] }>({
+      url: `${POSTMASTER_API_BASE}/domains/${encodeURIComponent(domain)}/trafficStats?${params}`,
     });
-    stats = res.data.domainStats ?? [];
+    stats = res.data.trafficStats ?? [];
   } catch (err: any) {
     const status = err?.response?.status ?? err?.code;
     if (status === 403 || status === 404) {
@@ -127,15 +128,20 @@ export async function getDomainReputation(userId: string, domain: string): Promi
     }
   }
 
-  const avgOrNull = (key: keyof DomainStat): number | null => {
+  const avgOrNull = (key: keyof TrafficStat): number | null => {
     const vals = stats
       .map((s) => s[key] as number | undefined)
       .filter((v): v is number => v != null);
     return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   };
 
+  const latestRep = [...stats]
+    .reverse()
+    .find((s) => s.domainReputation && s.domainReputation !== 'REPUTATION_CATEGORY_UNSPECIFIED')
+    ?.domainReputation ?? null;
+
   return {
-    domainReputation: null,
+    domainReputation: latestRep as PostmasterReputationData['domainReputation'],
     userReportedSpamRatio: avgOrNull('userReportedSpamRatio'),
     spfSuccessRatio: avgOrNull('spfSuccessRatio'),
     dkimSuccessRatio: avgOrNull('dkimSuccessRatio'),
