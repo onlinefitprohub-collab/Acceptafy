@@ -1,0 +1,1607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Acceptafy — Email Mastery Suite Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="deck-stage.js"></script>
+<style>
+  :root{
+    --bg:#0B0C0E;
+    --bg-2:#111215;
+    --surface:#14161A;
+    --surface-2:#1A1D22;
+    --line:#22262D;
+    --line-2:#2C313A;
+    --text:#ECEEF1;
+    --text-dim:#9CA3AE;
+    --text-mute:#5E6773;
+
+    --accent: oklch(78% 0.18 145);          /* electric green */
+    --accent-ink: oklch(30% 0.10 145);
+    --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
+    --accent-line: color-mix(in oklab, var(--accent) 40%, transparent);
+
+    --warn: oklch(80% 0.14 75);
+    --crit: oklch(70% 0.22 25);
+    --info: oklch(78% 0.11 230);
+
+    --sans: "Inter Tight", -apple-system, Helvetica, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --serif: "Instrument Serif", Georgia, serif;
+
+    --r-xs: 6px;
+    --r-sm: 10px;
+    --r-md: 14px;
+    --r-lg: 20px;
+    --r-xl: 28px;
+  }
+  html,body{margin:0;background:#000;color:var(--text);font-family:var(--sans);}
+  deck-stage > section{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-feature-settings:"ss01","cv11";
+    letter-spacing:-0.005em;
+  }
+
+  /* ---------- shared primitives ---------- */
+  .grid-bg{
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    background-position: -1px -1px;
+  }
+  .noise::after{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background-image: radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 3px 3px; opacity:0.6;
+  }
+  .mono{font-family:var(--mono); font-feature-settings:"tnum" 1;}
+  .serif{font-family:var(--serif); font-weight:400;}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; text-transform:uppercase;
+    letter-spacing:0.14em; color:var(--text-mute);
+  }
+  .badge{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px; border-radius:999px; font-size:12px;
+    background: var(--surface-2); color:var(--text-dim);
+    border:1px solid var(--line);
+    font-family:var(--mono); font-weight:500;
+  }
+  .dot{width:6px; height:6px; border-radius:999px; display:inline-block;}
+  .accent-dot{background:var(--accent); box-shadow: 0 0 0 4px var(--accent-soft);}
+
+  /* chrome scaffolding used across slides */
+  .app{
+    position:absolute; inset:60px 60px 60px 60px;
+    background: var(--bg-2);
+    border:1px solid var(--line);
+    border-radius: 22px;
+    display:grid;
+    grid-template-columns: 64px 240px 1fr;
+    overflow:hidden;
+    box-shadow: 0 50px 120px -40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .rail{
+    background:#0E1013;
+    border-right:1px solid var(--line);
+    padding:18px 0;
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  .rail-logo{
+    width:36px; height:36px; border-radius:10px;
+    background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent), #fff 15%));
+    display:flex; align-items:center; justify-content:center;
+    color:#051; font-weight:800; font-size:16px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 0 24px var(--accent-soft);
+    margin-bottom:10px;
+  }
+  .rail-btn{
+    width:44px; height:44px; border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-mute); position:relative;
+  }
+  .rail-btn.active{background:var(--surface-2); color:var(--accent);}
+  .rail-btn.active::before{
+    content:""; position:absolute; left:-18px; top:10px; bottom:10px;
+    width:3px; border-radius:0 3px 3px 0; background:var(--accent);
+  }
+  .rail-btn svg{width:20px; height:20px;}
+  .rail-divider{width:24px; height:1px; background:var(--line); margin:8px 0;}
+  .rail-foot{margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:10px;}
+  .avatar{
+    width:36px; height:36px; border-radius:10px;
+    background: oklch(70% 0.15 30); color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:600; font-size:13px;
+  }
+
+  .side{
+    background:#0E1013;
+    border-right:1px solid var(--line);
+    display:flex; flex-direction:column;
+  }
+  .side-head{
+    padding:18px 18px 12px; border-bottom:1px solid var(--line);
+  }
+  .side-title{font-size:16px; font-weight:600; letter-spacing:-0.01em;}
+  .side-sub{font-size:11px; color:var(--text-mute); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.12em; margin-top:4px;}
+  .side-list{padding:10px 8px; display:flex; flex-direction:column; gap:2px;}
+  .side-item{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:8px;
+    color:var(--text-dim); font-size:13.5px; font-weight:500;
+    cursor:default;
+  }
+  .side-item.active{background:var(--surface-2); color:var(--text);}
+  .side-item .ico{
+    width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+    color:var(--text-mute);
+  }
+  .side-item.active .ico{color:var(--accent);}
+  .side-item .kbd{
+    margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--text-mute);
+    padding:1px 5px; border:1px solid var(--line); border-radius:4px;
+  }
+  .side-group{
+    padding:12px 18px 6px;
+    font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.14em;
+    color:var(--text-mute);
+  }
+  .side-foot{
+    margin-top:auto; padding:16px 18px; border-top:1px solid var(--line);
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .xp-row{display:flex; align-items:center; gap:10px; font-size:12px;}
+  .xp-level{
+    width:28px; height:28px; border-radius:8px;
+    background:var(--surface-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:12px; color:var(--text);
+  }
+  .xp-bar{flex:1; height:6px; background:var(--surface-2); border-radius:3px; overflow:hidden;}
+  .xp-fill{height:100%; background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent), #fff 30%));}
+  .streak{
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:var(--mono); font-size:11px; color:var(--warn);
+  }
+
+  .main{
+    background: var(--bg-2);
+    overflow:hidden;
+    position:relative;
+    display:flex; flex-direction:column;
+  }
+  .topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 24px; border-bottom:1px solid var(--line);
+    background:var(--bg-2);
+  }
+  .crumb{font-size:12px; color:var(--text-mute); font-family:var(--mono);}
+  .crumb b{color:var(--text); font-weight:500;}
+  .search{
+    margin-left:auto; display:flex; align-items:center; gap:8px;
+    padding:6px 10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg); font-size:12px; color:var(--text-mute);
+    min-width: 260px;
+  }
+
+  .h1{font-size:34px; font-weight:700; letter-spacing:-0.02em; line-height:1.05;}
+  .h2{font-size:22px; font-weight:600; letter-spacing:-0.015em;}
+  .h3{font-size:15px; font-weight:600; letter-spacing:-0.01em;}
+  .muted{color:var(--text-dim);}
+  .dim{color:var(--text-mute);}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius: var(--r-md);
+    padding:18px;
+    position:relative;
+  }
+  .card.accent{
+    background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 6%, var(--surface)), var(--surface));
+    border-color: var(--accent-line);
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:8px 14px; border-radius:10px;
+    font-size:13px; font-weight:500;
+    background:var(--surface-2); color:var(--text);
+    border:1px solid var(--line);
+    cursor:default;
+  }
+  .btn.primary{
+    background:var(--accent); color:#041; border-color:transparent;
+    font-weight:600;
+  }
+  .btn.ghost{background:transparent; border-color:var(--line);}
+  .pill{
+    display:inline-flex; align-items:center; gap:6px;
+    padding:3px 9px; border-radius:999px; font-size:11px;
+    background: var(--surface-2); color:var(--text-dim);
+    border:1px solid var(--line);
+    font-family:var(--mono);
+  }
+
+  /* ---------- cover slide ---------- */
+  .cover{
+    position:relative; height:100%; width:100%; overflow:hidden;
+    background: radial-gradient(1200px 600px at 20% 20%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 60%),
+                radial-gradient(900px 500px at 90% 90%, color-mix(in oklab, var(--info) 8%, transparent), transparent 60%),
+                var(--bg);
+  }
+  .cover .inner{position:absolute; inset:0; padding:110px 110px;}
+  .cover .kicker{display:flex; align-items:center; gap:14px; margin-bottom:40px;}
+  .cover .mark{
+    width:56px; height:56px; border-radius:14px;
+    background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent), #fff 20%));
+    display:flex; align-items:center; justify-content:center;
+    color:#041; font-weight:800; font-size:24px;
+    box-shadow: 0 0 40px var(--accent-soft);
+  }
+  .cover h1{
+    font-size: 104px; font-weight:700; letter-spacing:-0.035em; line-height:0.95;
+    margin:0;
+  }
+  .cover h1 em{font-family:var(--serif); font-style:italic; font-weight:400; color:var(--accent);}
+  .cover .meta{
+    position:absolute; left:110px; right:110px; bottom:80px;
+    display:flex; justify-content:space-between; align-items:flex-end;
+    border-top:1px solid var(--line); padding-top:24px;
+  }
+  .cover .meta .col{max-width: 420px;}
+  .cover .meta h4{margin:0 0 8px; font-size:11px; font-family:var(--mono); text-transform:uppercase; letter-spacing:0.14em; color:var(--text-mute);}
+  .cover .meta p{margin:0; color:var(--text-dim); font-size:15px; line-height:1.5;}
+  .cover .chips{display:flex; gap:8px; flex-wrap:wrap;}
+
+  /* ---------- section header ---------- */
+  .section-hd{
+    display:flex; align-items:baseline; gap:16px;
+    padding: 60px 80px 24px;
+  }
+  .section-hd .num{
+    font-family:var(--serif); font-size:80px; font-style:italic; line-height:1;
+    color:var(--accent);
+  }
+  .section-hd .label{font-size:12px; color:var(--text-mute); font-family:var(--mono); text-transform:uppercase; letter-spacing:0.14em;}
+  .section-hd h2{font-size:48px; font-weight:700; letter-spacing:-0.025em; margin:4px 0 0;}
+  .section-hd .sub{color:var(--text-dim); margin-top:6px; max-width:720px; line-height:1.5;}
+</style>
+</head>
+<body>
+
+<deck-stage width="1920" height="1080">
+
+<!-- ============================================================ -->
+<!-- SLIDE 1 — COVER                                               -->
+<!-- ============================================================ -->
+<section data-label="Cover">
+  <div class="cover">
+    <div class="grid-bg" style="position:absolute;inset:0;opacity:0.25;"></div>
+    <div class="inner">
+      <div class="kicker">
+        <div class="mark">A</div>
+        <div>
+          <div class="eyebrow">Design review · v2.1</div>
+          <div style="font-size:18px; margin-top:4px;">Acceptafy — Email Mastery Suite</div>
+        </div>
+      </div>
+
+      <h1>
+        From a sidebar<br/>
+        of 30+ tools to a<br/>
+        <em>mission control</em><br/>
+        for deliverability.
+      </h1>
+    </div>
+
+    <div class="meta">
+      <div class="col">
+        <h4>Scope</h4>
+        <p>A–H: Navigation, Dashboard, Grader, Tool hubs, Deliverability, Alerts, Mobile, and visual tokens. 11 slides with rationale, component inventory, and mobile annotations.</p>
+      </div>
+      <div class="col">
+        <h4>Constraints</h4>
+        <p>React 18 + TypeScript, ShadCN/Radix primitives, Tailwind, Lucide icons. No new frameworks. Dark-first, desktop primary (1280+), mobile supported (375+).</p>
+      </div>
+      <div class="chips">
+        <span class="badge"><span class="dot accent-dot"></span>Dark · Restrained palette</span>
+        <span class="badge">11 slides</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 2 — PRINCIPLES + DESIGN SYSTEM                          -->
+<!-- ============================================================ -->
+<section data-label="Principles">
+  <div style="position:absolute; inset:0; padding:80px 100px; display:grid; grid-template-columns: 1fr 1fr; gap:60px;">
+    <div>
+      <div class="eyebrow">Design rationale</div>
+      <h2 style="font-size:54px; font-weight:700; letter-spacing:-0.025em; line-height:1.02; margin:12px 0 24px;">
+        One accent, many&nbsp;jobs.
+      </h2>
+      <p style="color:var(--text-dim); font-size:17px; line-height:1.55; max-width: 540px;">
+        The current multi-gradient-per-section approach (blue Create, violet Optimize, amber Analytics…) trains the eye to treat color as <em>decoration</em>. That breaks when we need color to mean something — a critical alert, a failing score, a passed DNS check.
+      </p>
+      <p style="color:var(--text-dim); font-size:17px; line-height:1.55; max-width: 540px; margin-top:14px;">
+        We reserve <span style="color:var(--accent); font-weight:600;">one accent (green)</span> for success and CTAs, amber for warnings, red for critical. Sections get a silent icon identity only. Grades use a dedicated A–F ramp.
+      </p>
+
+      <div style="margin-top:40px; display:grid; grid-template-columns: repeat(2,1fr); gap:14px; max-width:540px;">
+        <div class="card" style="padding:14px 16px;">
+          <div class="eyebrow" style="font-size:10px;">Principle 01</div>
+          <div class="h3" style="margin-top:6px;">Progressive disclosure</div>
+          <div class="muted" style="font-size:12.5px; margin-top:4px; line-height:1.45;">Overall grade first. The top 3 fixes. Then everything else, collapsed.</div>
+        </div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="eyebrow" style="font-size:10px;">Principle 02</div>
+          <div class="h3" style="margin-top:6px;">Every screen has a next step</div>
+          <div class="muted" style="font-size:12.5px; margin-top:4px; line-height:1.45;">No "dead ends." Every result links to the tool that fixes it.</div>
+        </div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="eyebrow" style="font-size:10px;">Principle 03</div>
+          <div class="h3" style="margin-top:6px;">Grade in 2 clicks</div>
+          <div class="muted" style="font-size:12.5px; margin-top:4px; line-height:1.45;">⌘K from anywhere. Grader reachable in a single tap on mobile.</div>
+        </div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="eyebrow" style="font-size:10px;">Principle 04</div>
+          <div class="h3" style="margin-top:6px;">Earn the celebration</div>
+          <div class="muted" style="font-size:12.5px; margin-top:4px; line-height:1.45;">Gamification is ambient. Celebrate real milestones, not every action.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- tokens panel -->
+    <div style="align-self:center;">
+      <div class="card" style="padding:28px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+          <div>
+            <div class="eyebrow">Tokens</div>
+            <div class="h2" style="margin-top:2px;">Design system</div>
+          </div>
+          <span class="pill">ShadCN + Tailwind</span>
+        </div>
+
+        <!-- colors -->
+        <div style="display:grid; grid-template-columns: repeat(6, 1fr); gap:8px;">
+          <div><div style="height:54px; border-radius:10px; background:var(--bg); border:1px solid var(--line);"></div><div class="mono" style="font-size:10px; margin-top:6px;">bg</div><div class="dim mono" style="font-size:9.5px;">#0B0C0E</div></div>
+          <div><div style="height:54px; border-radius:10px; background:var(--surface); border:1px solid var(--line);"></div><div class="mono" style="font-size:10px; margin-top:6px;">surface</div><div class="dim mono" style="font-size:9.5px;">#14161A</div></div>
+          <div><div style="height:54px; border-radius:10px; background:var(--surface-2); border:1px solid var(--line);"></div><div class="mono" style="font-size:10px; margin-top:6px;">surface-2</div><div class="dim mono" style="font-size:9.5px;">#1A1D22</div></div>
+          <div><div style="height:54px; border-radius:10px; background:var(--accent);"></div><div class="mono" style="font-size:10px; margin-top:6px;">accent</div><div class="dim mono" style="font-size:9.5px;">oklch .78</div></div>
+          <div><div style="height:54px; border-radius:10px; background:var(--warn);"></div><div class="mono" style="font-size:10px; margin-top:6px;">warn</div><div class="dim mono" style="font-size:9.5px;">oklch .80</div></div>
+          <div><div style="height:54px; border-radius:10px; background:var(--crit);"></div><div class="mono" style="font-size:10px; margin-top:6px;">crit</div><div class="dim mono" style="font-size:9.5px;">oklch .70</div></div>
+        </div>
+
+        <!-- type -->
+        <div style="margin-top:24px; border-top:1px solid var(--line); padding-top:20px;">
+          <div style="display:grid; grid-template-columns: 100px 1fr; gap:16px; align-items:baseline; margin-bottom:10px;">
+            <div class="mono dim" style="font-size:10px;">display / 54</div>
+            <div style="font-size:32px; font-weight:700; letter-spacing:-0.025em;">Inbox placement</div>
+          </div>
+          <div style="display:grid; grid-template-columns: 100px 1fr; gap:16px; align-items:baseline; margin-bottom:10px;">
+            <div class="mono dim" style="font-size:10px;">h1 / 28</div>
+            <div style="font-size:22px; font-weight:600; letter-spacing:-0.015em;">Deliverability hub</div>
+          </div>
+          <div style="display:grid; grid-template-columns: 100px 1fr; gap:16px; align-items:baseline; margin-bottom:10px;">
+            <div class="mono dim" style="font-size:10px;">body / 14</div>
+            <div style="font-size:14px;">Your domain was found on 2 blacklists. Spamhaus ZEN and Barracuda.</div>
+          </div>
+          <div style="display:grid; grid-template-columns: 100px 1fr; gap:16px; align-items:baseline;">
+            <div class="mono dim" style="font-size:10px;">mono / 12</div>
+            <div class="mono" style="font-size:13px;">score 87.4 · v=spf1 include:_spf</div>
+          </div>
+        </div>
+
+        <!-- grade ramp -->
+        <div style="margin-top:22px; border-top:1px solid var(--line); padding-top:18px;">
+          <div class="eyebrow" style="margin-bottom:10px;">Grade ramp</div>
+          <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:8px;">
+            <div style="padding:12px; border-radius:10px; background:oklch(78% 0.18 145); color:#052; font-weight:800; text-align:center; font-size:22px;">A</div>
+            <div style="padding:12px; border-radius:10px; background:oklch(80% 0.15 110); color:#132; font-weight:800; text-align:center; font-size:22px;">B</div>
+            <div style="padding:12px; border-radius:10px; background:oklch(82% 0.14 80); color:#321; font-weight:800; text-align:center; font-size:22px;">C</div>
+            <div style="padding:12px; border-radius:10px; background:oklch(75% 0.17 45); color:#301; font-weight:800; text-align:center; font-size:22px;">D</div>
+            <div style="padding:12px; border-radius:10px; background:oklch(70% 0.22 25); color:#fff; font-weight:800; text-align:center; font-size:22px;">F</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 3 — A · NAVIGATION ARCHITECTURE                         -->
+<!-- ============================================================ -->
+<section data-label="A — Navigation">
+  <div class="section-hd">
+    <div class="num">A</div>
+    <div>
+      <div class="label">Navigation architecture</div>
+      <h2>Icon rail + contextual nav + ⌘K palette.</h2>
+      <div class="sub">Three layers replace the 12-item scrollable sidebar. The rail shows 8 domains; the contextual column shows tools inside the active domain; the palette is the fast path for power users.</div>
+    </div>
+  </div>
+
+  <!-- compare old vs new -->
+  <div style="position:absolute; left:80px; right:80px; top:300px; bottom:60px; display:grid; grid-template-columns: 1fr 1fr; gap:40px;">
+
+    <!-- BEFORE -->
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span class="pill" style="background:transparent;">Before</span>
+        <span class="dim mono" style="font-size:11px;">3-level nested sidebar · 30+ items · scrolls</span>
+      </div>
+      <div style="height: 600px; background:var(--bg-2); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:grid; grid-template-columns: 260px 1fr;">
+        <div style="background:#0E1013; padding:14px; border-right:1px solid var(--line); font-size:12.5px; color:var(--text-dim); overflow:hidden;">
+          <div style="color:var(--text); font-weight:600; margin-bottom:10px;">Acceptafy</div>
+          <div style="padding:5px 8px; background:var(--surface-2); border-radius:6px; color:var(--text);">● Dashboard</div>
+          <div style="padding:5px 8px;">● Ask Acceptafy</div>
+          <div style="padding:5px 8px;">● Email Grader</div>
+          <div style="padding:5px 8px;">● List Cleaner</div>
+          <div style="padding:5px 8px; display:flex; justify-content:space-between;">▾ Create <span class="dim">7</span></div>
+          <div style="padding:3px 8px 3px 24px; font-size:11.5px;">Content Generator</div>
+          <div style="padding:3px 8px 3px 24px; font-size:11.5px;">Email Builder</div>
+          <div style="padding:3px 8px 3px 24px; font-size:11.5px;">Rewrite · Follow-ups</div>
+          <div style="padding:3px 8px 3px 24px; font-size:11.5px;">Templates · Tone · Import</div>
+          <div style="padding:5px 8px; display:flex; justify-content:space-between;">▾ Optimize <span class="dim">6</span></div>
+          <div style="padding:3px 8px 3px 24px; font-size:11.5px; color:var(--text-mute);">A/B · Preview · Spam…</div>
+          <div style="padding:5px 8px; display:flex; justify-content:space-between;">▾ Analytics <span class="dim">3</span></div>
+          <div style="padding:5px 8px; display:flex; justify-content:space-between;">▾ Deliverability <span class="dim">7</span></div>
+          <div style="padding:5px 8px; display:flex; justify-content:space-between;">▾ Connections <span class="dim">2</span></div>
+          <div style="padding:5px 8px; color:var(--text-mute);">↓ History · Academy · Affiliate</div>
+          <div style="padding:5px 8px; color:var(--text-mute);">↓ Account · Alerts</div>
+          <div style="margin-top:14px; padding:10px; background:var(--surface); border-radius:8px; font-size:11px;">
+            <div class="dim">LVL 7 · 🔥 12-day streak</div>
+            <div style="height:4px; background:var(--surface-2); border-radius:2px; margin-top:6px;"><div style="width:60%; height:100%; background:linear-gradient(90deg, #a855f7, #ec4899);"></div></div>
+          </div>
+        </div>
+        <div style="padding:20px; color:var(--text-mute); font-size:12px;">
+          <div class="mono">— Main content —</div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="badge" style="color:var(--crit); border-color: color-mix(in oklab, var(--crit) 30%, var(--line));">Pain · Scrolls on 1080p</span>
+        <span class="badge" style="color:var(--crit); border-color: color-mix(in oklab, var(--crit) 30%, var(--line));">Pain · 3 levels deep</span>
+        <span class="badge" style="color:var(--crit); border-color: color-mix(in oklab, var(--crit) 30%, var(--line));">Pain · Gradient-per-section noise</span>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+        <span class="pill" style="background:var(--accent-soft); color:var(--accent); border-color: var(--accent-line);">After</span>
+        <span class="dim mono" style="font-size:11px;">2 levels · 8 rail domains · ⌘K everywhere</span>
+      </div>
+
+      <div style="height: 600px; background:var(--bg-2); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:grid; grid-template-columns: 64px 220px 1fr;">
+        <!-- rail -->
+        <div style="background:#0E1013; padding:16px 0; display:flex; flex-direction:column; align-items:center; gap:6px; border-right:1px solid var(--line);">
+          <div class="rail-logo" style="width:32px; height:32px; border-radius:9px; font-size:14px; margin-bottom:6px;">A</div>
+          <div class="rail-btn" title="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-7 9 7v11a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg></div>
+          <div class="rail-btn active" title="Grade"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h12l4 4v12H4zM8 12h8M8 16h5M8 8h6"/></svg></div>
+          <div class="rail-btn" title="Create"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M3 12h18"/></svg></div>
+          <div class="rail-btn" title="Optimize"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20l6-6 4 4 6-8"/><path d="M20 6V4h-2"/></svg></div>
+          <div class="rail-btn" title="Deliverability"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10V7z"/></svg></div>
+          <div class="rail-btn" title="Analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10m6 10V4m6 16v-6m6 6V8"/></svg></div>
+          <div class="rail-divider"></div>
+          <div class="rail-btn" title="Academy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 9l10-5 10 5-10 5zM6 11v6c3 2 9 2 12 0v-6"/></svg></div>
+          <div class="rail-btn" title="Connections"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="12" r="3"/><path d="M9 12h6"/></svg></div>
+          <div style="margin-top:auto; display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <div class="rail-btn" title="Alerts" style="position:relative;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/></svg>
+              <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--crit); box-shadow:0 0 0 2px #0E1013;"></span>
+            </div>
+            <div class="avatar" style="width:32px; height:32px; font-size:12px;">JM</div>
+          </div>
+        </div>
+        <!-- contextual -->
+        <div style="background:#0E1013; padding:14px 10px; font-size:12.5px; color:var(--text-dim); border-right:1px solid var(--line);">
+          <div style="padding:4px 8px 10px; color:var(--text); font-weight:600; font-size:13.5px; display:flex; justify-content:space-between; align-items:center;">
+            Grade & Results <span class="dim mono" style="font-size:10px;">⌘G</span>
+          </div>
+          <div class="side-item active"><span class="ico"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12l4 4v12H4z"/></svg></span>Email Grader</div>
+          <div class="side-item"><span class="ico">●</span>Ask Acceptafy</div>
+          <div class="side-item"><span class="ico">●</span>Spam Checker</div>
+          <div class="side-item"><span class="ico">●</span>Sentiment</div>
+          <div class="side-item"><span class="ico">●</span>Preview (clients)</div>
+          <div class="side-item"><span class="ico">●</span>History</div>
+          <div class="side-group">Related</div>
+          <div class="side-item"><span class="ico">↗</span>AI Rewrite <span class="kbd">⌘R</span></div>
+          <div class="side-item"><span class="ico">↗</span>A/B Subject Lab</div>
+        </div>
+        <div style="padding:18px; color:var(--text-mute); font-size:12px;">
+          <div style="padding:6px 10px; border:1px solid var(--line); border-radius:8px; display:inline-flex; gap:8px; align-items:center; background:var(--bg);">
+            <span class="mono" style="font-size:11px; color:var(--text-dim);">⌘K</span>
+            <span>Grade · Rewrite · Check domain · Open alert…</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
+        <span class="badge" style="color:var(--accent); border-color: var(--accent-line);">Win · 2-click max to any tool</span>
+        <span class="badge" style="color:var(--accent); border-color: var(--accent-line);">Win · Rail never scrolls</span>
+        <span class="badge" style="color:var(--accent); border-color: var(--accent-line);">Win · ⌘K = 1 keystroke</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- rationale strip -->
+  <div style="position:absolute; left:80px; right:80px; bottom:20px; display:none;"></div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 4 — B · DASHBOARD: MISSION CONTROL                     -->
+<!-- ============================================================ -->
+<section data-label="B — Dashboard">
+  <div class="app" style="inset:110px 40px 40px 40px;">
+    <!-- rail -->
+    <div class="rail">
+      <div class="rail-logo">A</div>
+      <div class="rail-btn active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-7 9 7v11a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h12l4 4v12H4zM8 12h8M8 16h5"/></svg></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v18M3 12h18"/></svg></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20l6-6 4 4 6-8"/></svg></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10V7z"/></svg></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 20V10m6 10V4m6 16v-6m6 6V8"/></svg></div>
+      <div class="rail-divider"></div>
+      <div class="rail-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 9l10-5 10 5-10 5z"/></svg></div>
+      <div class="rail-foot">
+        <div class="rail-btn" style="position:relative;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"/></svg>
+          <span style="position:absolute; top:6px; right:6px; width:8px; height:8px; border-radius:50%; background:var(--crit); box-shadow:0 0 0 2px #0E1013;"></span>
+        </div>
+        <div class="avatar">JM</div>
+      </div>
+    </div>
+
+    <!-- contextual side -->
+    <div class="side">
+      <div class="side-head">
+        <div class="side-title">Home</div>
+        <div class="side-sub">Mission control</div>
+      </div>
+      <div class="side-list">
+        <div class="side-item active"><span class="ico">●</span>Overview <span class="kbd">⌘1</span></div>
+        <div class="side-item"><span class="ico">●</span>My tools</div>
+        <div class="side-item"><span class="ico">●</span>Recent grades</div>
+        <div class="side-item"><span class="ico">●</span>Achievements</div>
+        <div class="side-group">Pinned</div>
+        <div class="side-item"><span class="ico">↗</span>Grader</div>
+        <div class="side-item"><span class="ico">↗</span>Domain Health</div>
+        <div class="side-item"><span class="ico">↗</span>Send Time</div>
+      </div>
+      <div class="side-foot">
+        <div class="xp-row">
+          <div class="xp-level">7</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; font-size:11px;"><span>Level 7</span><span class="dim mono">1,820 / 2,500</span></div>
+            <div class="xp-bar" style="margin-top:4px;"><div class="xp-fill" style="width:72%;"></div></div>
+          </div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-mute);">
+          <span class="streak">🔥 12-day streak</span>
+          <span class="mono">680 XP to L8</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <div class="crumb">Home <span style="margin:0 6px; color:var(--text-mute);">/</span><b>Overview</b></div>
+        <div class="search"><span class="mono">⌘K</span><span>Grade email, rewrite subject, check domain…</span></div>
+        <span class="pill">Pro</span>
+      </div>
+
+      <div style="padding: 28px 32px; overflow:hidden; display:flex; flex-direction:column; gap:20px;">
+
+        <!-- Hero row: greeting + contextual prompt -->
+        <div style="display:grid; grid-template-columns: 1fr 380px; gap:20px;">
+          <div>
+            <div class="eyebrow">Monday, April 21 · 9:42 AM</div>
+            <h1 style="font-size:44px; font-weight:700; letter-spacing:-0.025em; margin:8px 0 2px; line-height:1;">
+              Good morning, Jess.
+            </h1>
+            <div class="muted" style="font-size:17px;">Two things need attention before your 11am send.</div>
+
+            <!-- action prompt -->
+            <div class="card" style="margin-top:22px; border-color: color-mix(in oklab, var(--crit) 40%, var(--line)); background: linear-gradient(180deg, color-mix(in oklab, var(--crit) 6%, var(--surface)), var(--surface)); padding:18px 20px;">
+              <div style="display:flex; align-items:flex-start; gap:14px;">
+                <div style="width:36px; height:36px; border-radius:10px; background: color-mix(in oklab, var(--crit) 25%, transparent); color:var(--crit); display:flex; align-items:center; justify-content:center; font-size:18px;">!</div>
+                <div style="flex:1;">
+                  <div class="h3">acceptafy.com was found on <span style="color:var(--crit);">2 blacklists</span></div>
+                  <div class="muted" style="font-size:13px; margin-top:4px;">Spamhaus ZEN and Barracuda Reputation Block List detected this morning. Postmaster reputation dropped to <span class="mono" style="color:var(--warn);">MEDIUM</span>.</div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn ghost">Dismiss</button>
+                  <button class="btn primary">Open Domain Health →</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- streak / XP card -->
+          <div class="card accent" style="padding:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div class="eyebrow" style="color:var(--accent);">You're on track</div>
+                <div style="font-size:44px; font-weight:700; margin-top:4px;">L7</div>
+                <div class="muted" style="font-size:13px;">Email Grandmaster</div>
+              </div>
+              <div class="streak" style="font-size:15px;">🔥 12</div>
+            </div>
+            <div style="margin-top:18px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-dim);">
+                <span>1,820 XP</span><span class="mono">680 to L8</span>
+              </div>
+              <div style="height:8px; background:var(--surface-2); border-radius:4px; margin-top:6px; overflow:hidden;">
+                <div style="width:72%; height:100%; background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent), #fff 30%));"></div>
+              </div>
+            </div>
+            <div style="margin-top:16px; display:flex; gap:6px;">
+              <div style="flex:1; padding:8px 10px; border-radius:8px; background:var(--surface-2); font-size:11px;">
+                <div class="dim">Next unlock</div>
+                <div style="margin-top:2px;">BIMI Builder</div>
+              </div>
+              <div style="flex:1; padding:8px 10px; border-radius:8px; background:var(--surface-2); font-size:11px;">
+                <div class="dim">Achievements</div>
+                <div class="mono" style="margin-top:2px;">14 / 42</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: quick actions + recent grades -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+          <div class="card" style="padding:0;">
+            <div style="display:flex; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--line);">
+              <div class="h3">Your most-used tools</div>
+              <span class="dim mono" style="font-size:11px;">Personalized</span>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:var(--line);">
+              <div style="background:var(--surface); padding:16px 18px;">
+                <div class="mono dim" style="font-size:10.5px;">⌘G · 42 USES</div>
+                <div class="h3" style="margin-top:4px;">Grade email</div>
+                <div class="muted" style="font-size:12.5px; margin-top:4px;">Paste → A–F in ~4s</div>
+              </div>
+              <div style="background:var(--surface); padding:16px 18px;">
+                <div class="mono dim" style="font-size:10.5px;">⌘R · 28 USES</div>
+                <div class="h3" style="margin-top:4px;">AI Rewrite</div>
+                <div class="muted" style="font-size:12.5px; margin-top:4px;">Fix spam triggers automatically</div>
+              </div>
+              <div style="background:var(--surface); padding:16px 18px;">
+                <div class="mono dim" style="font-size:10.5px;">18 USES</div>
+                <div class="h3" style="margin-top:4px;">Domain Health</div>
+                <div class="muted" style="font-size:12.5px; margin-top:4px;">DNS · Postmaster · Blacklists</div>
+              </div>
+              <div style="background:var(--surface); padding:16px 18px;">
+                <div class="mono dim" style="font-size:10.5px;">9 USES</div>
+                <div class="h3" style="margin-top:4px;">Send Time</div>
+                <div class="muted" style="font-size:12.5px; margin-top:4px;">Your list's best window</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;">
+            <div style="display:flex; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--line);">
+              <div class="h3">Recent grades</div>
+              <span class="dim mono" style="font-size:11px;">Last 7 days</span>
+            </div>
+            <div>
+              <div style="display:grid; grid-template-columns: 44px 1fr 80px 60px; gap:12px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line);">
+                <div style="width:36px; height:36px; border-radius:8px; background:oklch(78% 0.18 145); color:#052; font-weight:800; display:flex; align-items:center; justify-content:center;">A</div>
+                <div><div style="font-size:13.5px; font-weight:500;">Spring collection launch — early access</div><div class="dim mono" style="font-size:11px;">to 12.4k · Apr 20</div></div>
+                <div class="mono" style="font-size:13px;">94.2</div>
+                <div class="dim mono" style="font-size:11px;">2d ago</div>
+              </div>
+              <div style="display:grid; grid-template-columns: 44px 1fr 80px 60px; gap:12px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line);">
+                <div style="width:36px; height:36px; border-radius:8px; background:oklch(82% 0.14 80); color:#321; font-weight:800; display:flex; align-items:center; justify-content:center;">C</div>
+                <div><div style="font-size:13.5px; font-weight:500;">⚡ 48hrs only — don't miss out!!</div><div class="dim mono" style="font-size:11px;">draft · 3 spam triggers</div></div>
+                <div class="mono" style="font-size:13px;">71.0</div>
+                <div class="dim mono" style="font-size:11px;">5d ago</div>
+              </div>
+              <div style="display:grid; grid-template-columns: 44px 1fr 80px 60px; gap:12px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--line);">
+                <div style="width:36px; height:36px; border-radius:8px; background:oklch(80% 0.15 110); color:#132; font-weight:800; display:flex; align-items:center; justify-content:center;">B</div>
+                <div><div style="font-size:13.5px; font-weight:500;">Welcome to the family · onboarding 2</div><div class="dim mono" style="font-size:11px;">to new users · sequence</div></div>
+                <div class="mono" style="font-size:13px;">84.6</div>
+                <div class="dim mono" style="font-size:11px;">7d ago</div>
+              </div>
+              <div style="padding:12px 18px; text-align:center;">
+                <span class="dim mono" style="font-size:12px;">View all history →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div style="position:absolute; top:56px; left:60px; right:60px; display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:baseline; gap:12px;">
+      <div class="num" style="font-family:var(--serif); font-size:32px; font-style:italic; color:var(--accent);">B</div>
+      <div class="eyebrow">Dashboard · mission control</div>
+    </div>
+    <div class="dim mono" style="font-size:11px;">contextual · actionable · gamified, not distracting</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 5 — C.1 · GRADER INPUT                                 -->
+<!-- ============================================================ -->
+<section data-label="C — Grader input">
+  <div class="section-hd" style="padding-bottom:12px;">
+    <div class="num">C</div>
+    <div>
+      <div class="label">Email Grader — input</div>
+      <h2 style="font-size:40px;">Split panel. Live feedback as you type.</h2>
+      <div class="sub">The textarea is the hero but never alone. The right rail shows pre-grade signals — length, reading level, detected triggers — so users improve before hitting Grade.</div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:80px; right:80px; top:280px; bottom:60px;">
+    <div style="height:100%; background:var(--bg-2); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:grid; grid-template-columns: 1.3fr 1fr;">
+
+      <!-- input -->
+      <div style="display:flex; flex-direction:column; border-right:1px solid var(--line);">
+        <div style="padding:14px 20px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:10px;">
+          <span class="pill">Paste</span>
+          <span class="dim mono" style="font-size:11px;">or</span>
+          <span class="pill">Import HTML</span>
+          <span class="dim mono" style="font-size:11px;">or</span>
+          <span class="pill">From ESP</span>
+          <div style="margin-left:auto; display:flex; gap:8px;">
+            <button class="btn ghost">Clear</button>
+            <button class="btn primary">Grade email <span class="mono" style="opacity:.7;">⌘↵</span></button>
+          </div>
+        </div>
+
+        <div style="padding:22px 24px; display:flex; flex-direction:column; gap:14px; flex:1;">
+          <div style="display:grid; grid-template-columns: 90px 1fr; gap:12px; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--line);">
+            <div class="dim mono" style="font-size:11px;">SUBJECT</div>
+            <div style="font-size:18px; font-weight:500;">⚡ 48hrs only — don't miss out!!</div>
+          </div>
+          <div style="display:grid; grid-template-columns: 90px 1fr; gap:12px; align-items:center; padding-bottom:12px; border-bottom:1px solid var(--line);">
+            <div class="dim mono" style="font-size:11px;">PREHEADER</div>
+            <div style="font-size:14px; color:var(--text-dim);">Last chance to save big on everything in store</div>
+          </div>
+
+          <div style="flex:1; position:relative; overflow:hidden;">
+            <div style="font-size:14.5px; line-height:1.7; color:var(--text); max-height: 340px; overflow:hidden;">
+              Hey there,<br><br>
+              We're running our <span style="background:color-mix(in oklab, var(--crit) 30%, transparent); padding:1px 4px; border-radius:3px;">biggest sale ever</span> — and it's ending in 48 hours. <span style="background:color-mix(in oklab, var(--crit) 30%, transparent); padding:1px 4px; border-radius:3px;">Don't miss out!</span> Click below <span style="background:color-mix(in oklab, var(--warn) 30%, transparent); padding:1px 4px; border-radius:3px;">right now</span> before the deals are gone forever.<br><br>
+              <span style="background:color-mix(in oklab, var(--crit) 30%, transparent); padding:1px 4px; border-radius:3px;">100% FREE SHIPPING</span> on all orders over $25. Use code <span class="mono" style="background:var(--surface-2); padding:1px 6px; border-radius:3px;">FLASH48</span> at checkout.<br><br>
+              This is a limited-time offer you won't want to miss. <span style="background:color-mix(in oklab, var(--warn) 30%, transparent); padding:1px 4px; border-radius:3px;">Act fast</span> — once it's gone, it's gone.<br><br>
+              <span class="dim">— The team</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:12px 24px; border-top:1px solid var(--line); display:flex; gap:18px; font-size:12px; color:var(--text-mute);" class="mono">
+          <span>247 words</span>
+          <span>·</span>
+          <span>Reading level: grade 6</span>
+          <span>·</span>
+          <span>Image ratio: 0 / 100</span>
+          <span style="margin-left:auto;">Autosaved 3s ago</span>
+        </div>
+      </div>
+
+      <!-- live feedback -->
+      <div style="padding:20px 22px; overflow:hidden; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div class="h3">Live signals</div>
+          <span class="dim mono" style="font-size:11px;">updates as you type</span>
+        </div>
+
+        <!-- score preview -->
+        <div class="card" style="padding:16px; background: linear-gradient(180deg, color-mix(in oklab, var(--warn) 6%, var(--surface)), var(--surface)); border-color: color-mix(in oklab, var(--warn) 30%, var(--line));">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="dim mono" style="font-size:11px;">ESTIMATED</div>
+              <div style="display:flex; align-items:baseline; gap:10px;">
+                <div style="font-size:44px; font-weight:800; color:var(--warn);">C</div>
+                <div class="mono muted" style="font-size:15px;">~71.0</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div class="dim mono" style="font-size:11px;">INBOX PLACEMENT</div>
+              <div class="mono" style="font-size:18px; color:var(--warn);">68%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- live triggers -->
+        <div class="card" style="padding:0;">
+          <div style="padding:12px 14px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between;">
+            <div style="font-size:13px; font-weight:600;">Spam triggers detected</div>
+            <span class="mono" style="font-size:12px; color:var(--crit);">4</span>
+          </div>
+          <div style="padding:8px 14px; display:flex; justify-content:space-between; font-size:12.5px;">
+            <span class="mono" style="color:var(--crit);">"100% FREE"</span>
+            <span class="dim">all-caps + %</span>
+          </div>
+          <div style="padding:8px 14px; display:flex; justify-content:space-between; font-size:12.5px;">
+            <span class="mono" style="color:var(--crit);">"Don't miss out"</span>
+            <span class="dim">pressure</span>
+          </div>
+          <div style="padding:8px 14px; display:flex; justify-content:space-between; font-size:12.5px;">
+            <span class="mono" style="color:var(--warn);">"Act fast"</span>
+            <span class="dim">urgency</span>
+          </div>
+          <div style="padding:8px 14px; display:flex; justify-content:space-between; font-size:12.5px; border-top:1px solid var(--line);">
+            <span class="mono" style="color:var(--warn);">Subject: 2 exclamation marks</span>
+            <span class="dim">soft</span>
+          </div>
+        </div>
+
+        <!-- dim checks -->
+        <div class="card" style="padding:0;">
+          <div style="padding:12px 14px; border-bottom:1px solid var(--line); font-size:13px; font-weight:600;">Dimensions</div>
+          <div style="padding:10px 14px; display:grid; grid-template-columns: 1fr auto; gap:8px; font-size:12.5px;">
+            <span>Subject line</span><span style="color:oklch(80% 0.15 110); font-family:var(--mono);">B · 82</span>
+            <span>Content quality</span><span style="color:oklch(75% 0.17 45); font-family:var(--mono);">D · 64</span>
+            <span>Sender setup</span><span style="color:var(--accent); font-family:var(--mono);">A · 96</span>
+            <span>Spam triggers</span><span style="color:var(--crit); font-family:var(--mono);">F · 48</span>
+            <span>Benchmark vs. retail</span><span style="color:oklch(82% 0.14 80); font-family:var(--mono);">C · 74</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 6 — C.2 · GRADER RESULTS                               -->
+<!-- ============================================================ -->
+<section data-label="C — Grader results">
+  <div class="section-hd" style="padding:40px 80px 12px;">
+    <div class="num" style="font-size:48px;">C.2</div>
+    <div>
+      <div class="label">Results hub</div>
+      <h2 style="font-size:36px;">Grade first. Top 3 fixes. Then everything else.</h2>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:80px; right:80px; top:220px; bottom:40px; display:grid; grid-template-columns: 420px 1fr; gap:24px;">
+
+    <!-- huge grade -->
+    <div class="card" style="padding:32px; display:flex; flex-direction:column; gap:20px;">
+      <div class="eyebrow">Overall grade</div>
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+        <!-- ring -->
+        <svg width="320" height="320" viewBox="0 0 200 200" style="position:absolute;">
+          <circle cx="100" cy="100" r="88" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
+          <circle cx="100" cy="100" r="88" fill="none" stroke="oklch(82% 0.14 80)" stroke-width="10"
+            stroke-dasharray="553" stroke-dashoffset="160" stroke-linecap="round"
+            transform="rotate(-90 100 100)"/>
+        </svg>
+        <div style="font-size:180px; font-weight:800; color:oklch(82% 0.14 80); letter-spacing:-0.06em; line-height:0.85;">C</div>
+        <div class="mono muted" style="font-size:20px; margin-top:4px;">71.0 / 100</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div style="padding:12px; background:var(--surface-2); border-radius:10px;">
+          <div class="dim mono" style="font-size:10px;">INBOX PLACEMENT</div>
+          <div class="mono" style="font-size:22px; color:var(--warn); margin-top:2px;">68%</div>
+        </div>
+        <div style="padding:12px; background:var(--surface-2); border-radius:10px;">
+          <div class="dim mono" style="font-size:10px;">PREDICTED OPEN</div>
+          <div class="mono" style="font-size:22px; margin-top:2px;">22.4%</div>
+        </div>
+      </div>
+
+      <button class="btn primary" style="justify-content:center; padding:14px;">
+        <span style="font-weight:700;">Fix all 3 issues with AI →</span>
+      </button>
+      <div class="dim mono" style="font-size:11px; text-align:center;">Opens Rewrite with email pre-loaded · ⌘R</div>
+    </div>
+
+    <!-- priority fixes + dimensions -->
+    <div style="display:flex; flex-direction:column; gap:20px; overflow:hidden;">
+
+      <div class="card" style="padding:0;">
+        <div style="display:flex; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--line);">
+          <div>
+            <div class="h2" style="font-size:20px;">Top 3 fixes</div>
+            <div class="dim mono" style="font-size:11px; margin-top:2px;">Ranked by impact on inbox placement</div>
+          </div>
+          <span class="pill" style="color:var(--accent); border-color:var(--accent-line);">+23 pts if all fixed</span>
+        </div>
+
+        <!-- fix 1 -->
+        <div style="display:grid; grid-template-columns: 56px 1fr auto; gap:16px; padding:16px 20px; border-bottom:1px solid var(--line); align-items:center;">
+          <div style="width:44px; height:44px; border-radius:12px; background:color-mix(in oklab, var(--crit) 18%, transparent); color:var(--crit); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:18px;">1</div>
+          <div>
+            <div style="font-size:15.5px; font-weight:600;">Remove 4 spam-trigger phrases</div>
+            <div class="muted" style="font-size:13px; margin-top:3px;">"100% FREE", "Don't miss out", "Act fast", and double exclamation in subject. These alone cost ~14 points.</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="color:var(--accent); font-size:14px; font-weight:600;">+14 pts</div>
+            <button class="btn" style="margin-top:6px; font-size:12px;">Fix with AI →</button>
+          </div>
+        </div>
+
+        <!-- fix 2 -->
+        <div style="display:grid; grid-template-columns: 56px 1fr auto; gap:16px; padding:16px 20px; border-bottom:1px solid var(--line); align-items:center;">
+          <div style="width:44px; height:44px; border-radius:12px; background:color-mix(in oklab, var(--warn) 18%, transparent); color:var(--warn); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:18px;">2</div>
+          <div>
+            <div style="font-size:15.5px; font-weight:600;">Subject line too urgent · soften tone</div>
+            <div class="muted" style="font-size:13px; margin-top:3px;">"⚡ 48hrs only — don't miss out!!" triggers urgency filters. Consider "Early access ends Wednesday" — same intent, calmer.</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="color:var(--accent); font-size:14px; font-weight:600;">+6 pts</div>
+            <button class="btn" style="margin-top:6px; font-size:12px;">Open A/B Lab →</button>
+          </div>
+        </div>
+
+        <!-- fix 3 -->
+        <div style="display:grid; grid-template-columns: 56px 1fr auto; gap:16px; padding:16px 20px; align-items:center;">
+          <div style="width:44px; height:44px; border-radius:12px; background:var(--surface-2); color:var(--text-dim); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:18px;">3</div>
+          <div>
+            <div style="font-size:15.5px; font-weight:600;">Add a plain-text alternative</div>
+            <div class="muted" style="font-size:13px; margin-top:3px;">HTML-only emails score lower with Gmail and Outlook spam filters. Auto-generate in one click.</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="mono" style="color:var(--accent); font-size:14px; font-weight:600;">+3 pts</div>
+            <button class="btn" style="margin-top:6px; font-size:12px;">Generate →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- dimensions traffic light -->
+      <div class="card" style="padding:0;">
+        <div style="padding:14px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between;">
+          <div class="h3">All dimensions</div>
+          <span class="dim mono" style="font-size:11px;">Click to drill in</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(5, 1fr); gap:1px; background:var(--line);">
+          <div style="background:var(--surface); padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:oklch(80% 0.15 110);"></span><span class="dim mono" style="font-size:10px;">SUBJECT</span></div>
+            <div style="font-size:26px; font-weight:800; margin-top:4px;">B</div>
+            <div class="mono muted" style="font-size:12px;">82</div>
+          </div>
+          <div style="background:var(--surface); padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:oklch(75% 0.17 45);"></span><span class="dim mono" style="font-size:10px;">CONTENT</span></div>
+            <div style="font-size:26px; font-weight:800; margin-top:4px;">D</div>
+            <div class="mono muted" style="font-size:12px;">64</div>
+          </div>
+          <div style="background:var(--surface); padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--accent);"></span><span class="dim mono" style="font-size:10px;">SENDER</span></div>
+            <div style="font-size:26px; font-weight:800; margin-top:4px;">A</div>
+            <div class="mono muted" style="font-size:12px;">96</div>
+          </div>
+          <div style="background:var(--surface); padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--crit);"></span><span class="dim mono" style="font-size:10px;">TRIGGERS</span></div>
+            <div style="font-size:26px; font-weight:800; margin-top:4px;">F</div>
+            <div class="mono muted" style="font-size:12px;">48</div>
+          </div>
+          <div style="background:var(--surface); padding:14px;">
+            <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:oklch(82% 0.14 80);"></span><span class="dim mono" style="font-size:10px;">BENCHMARK</span></div>
+            <div style="font-size:26px; font-weight:800; margin-top:4px;">C</div>
+            <div class="mono muted" style="font-size:12px;">74</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 7 — D · TOOL OVERVIEW PAGES                            -->
+<!-- ============================================================ -->
+<section data-label="D — Tool hubs">
+  <div class="section-hd">
+    <div class="num">D</div>
+    <div>
+      <div class="label">Tool overview pages</div>
+      <h2>Featured on top. Advanced below the fold.</h2>
+      <div class="sub">Each section opens to a two-tier grid: a hero card for the primary tool (with preview), four secondary cards, and an "Advanced" row that collapses by default. Related tools from other sections surface in a right rail.</div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:80px; right:80px; top:280px; bottom:60px;">
+    <div style="height:100%; background:var(--bg-2); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:grid; grid-template-columns: 1fr 280px;">
+      <div style="padding:28px; overflow:hidden;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:18px;">
+          <div>
+            <div class="eyebrow">Deliverability</div>
+            <div style="font-size:30px; font-weight:700; letter-spacing:-0.02em; margin-top:2px;">7 tools to keep you in the inbox</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <span class="pill">All</span>
+            <span class="pill">Monitor</span>
+            <span class="pill">Configure</span>
+          </div>
+        </div>
+
+        <!-- FEATURED -->
+        <div style="display:grid; grid-template-columns: 1.4fr 1fr 1fr; gap:14px;">
+          <!-- hero -->
+          <div class="card accent" style="padding:0; overflow:hidden; grid-row: span 2;">
+            <div style="padding:20px 22px;">
+              <div style="display:flex; justify-content:space-between;">
+                <span class="pill" style="color:var(--accent); border-color:var(--accent-line);">Featured</span>
+                <span class="dim mono" style="font-size:11px;">You used this 18 times</span>
+              </div>
+              <div class="h2" style="margin-top:14px; font-size:26px;">Domain Health</div>
+              <div class="muted" style="margin-top:4px; font-size:13.5px; line-height:1.5;">Real Google Postmaster data, DNS records, blacklist checks, and reputation history in a single dashboard.</div>
+            </div>
+            <!-- preview -->
+            <div style="margin: 0 18px 18px; height:190px; background: linear-gradient(180deg, var(--bg), var(--surface)); border:1px solid var(--line); border-radius:10px; padding:14px; display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+              <div><div class="dim mono" style="font-size:9px;">DNS</div><div style="font-size:18px; font-weight:700; color:var(--accent);">✓ 4/4</div></div>
+              <div><div class="dim mono" style="font-size:9px;">POSTMASTER</div><div style="font-size:18px; font-weight:700; color:var(--warn);">MED</div></div>
+              <div><div class="dim mono" style="font-size:9px;">BLACKLIST</div><div style="font-size:18px; font-weight:700; color:var(--crit);">2 hit</div></div>
+              <div><div class="dim mono" style="font-size:9px;">BIMI</div><div style="font-size:18px; font-weight:700; color:var(--text-mute);">—</div></div>
+              <div style="grid-column: span 4; height:70px; background:var(--surface-2); border-radius:6px; position:relative; overflow:hidden;">
+                <svg viewBox="0 0 200 60" style="width:100%; height:100%;"><polyline points="0,45 20,30 40,38 60,28 80,32 100,20 120,30 140,42 160,35 180,38 200,40" fill="none" stroke="var(--accent)" stroke-width="1.5"/><polyline points="0,45 20,30 40,38 60,28 80,32 100,20 120,30 140,42 160,35 180,38 200,40" fill="url(#g1)" stroke="none" opacity="0.2"/><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop stop-color="oklch(78% 0.18 145)" offset="0"/><stop stop-color="oklch(78% 0.18 145)" stop-opacity="0" offset="1"/></linearGradient></defs></svg>
+              </div>
+            </div>
+            <div style="padding: 0 22px 20px; display:flex; gap:10px;">
+              <button class="btn primary">Open →</button>
+              <button class="btn ghost">Share report</button>
+            </div>
+          </div>
+
+          <!-- secondary tiles -->
+          <div class="card" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between;"><div class="h3">DNS Records</div><span class="mono dim" style="font-size:11px;">18 uses</span></div>
+            <div class="muted" style="font-size:12.5px; margin-top:4px;">SPF · DKIM · DMARC validation with one-click copy.</div>
+            <div style="margin-top:14px; padding:8px; background:var(--surface-2); border-radius:6px; font-family:var(--mono); font-size:11px;">
+              <span style="color:var(--accent);">✓</span> v=DMARC1; p=reject; rua=…
+            </div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between;"><div class="h3">Blacklist Monitor</div><span class="mono dim" style="font-size:11px; color:var(--crit);">2 hits</span></div>
+            <div class="muted" style="font-size:12.5px; margin-top:4px;">Scans 80+ RBLs hourly. Spamhaus, Barracuda, SORBS.</div>
+            <div style="margin-top:12px; display:flex; gap:4px;">
+              <div style="flex:1; height:18px; background:var(--accent-soft); border-radius:3px;"></div>
+              <div style="flex:1; height:18px; background:var(--accent-soft); border-radius:3px;"></div>
+              <div style="flex:1; height:18px; background:color-mix(in oklab, var(--crit) 40%, transparent); border-radius:3px;"></div>
+              <div style="flex:1; height:18px; background:color-mix(in oklab, var(--crit) 40%, transparent); border-radius:3px;"></div>
+              <div style="flex:1; height:18px; background:var(--accent-soft); border-radius:3px;"></div>
+            </div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between;"><div class="h3">Sender Score</div><span class="mono dim" style="font-size:11px;">87.4</span></div>
+            <div class="muted" style="font-size:12.5px; margin-top:4px;">Return Path IP reputation, 30-day trend.</div>
+            <div style="margin-top:10px; font-family:var(--mono); font-size:13px; color:var(--accent);">↗ +4.2 this week</div>
+          </div>
+          <div class="card" style="padding:16px;">
+            <div style="display:flex; justify-content:space-between;"><div class="h3">Warm-up Planner</div><span class="mono dim" style="font-size:11px;">New domain</span></div>
+            <div class="muted" style="font-size:12.5px; margin-top:4px;">30-day schedule for new sending IPs or domains.</div>
+            <div style="margin-top:10px; font-family:var(--mono); font-size:11px; color:var(--text-dim);">Day 8 / 30 · 120 emails today</div>
+          </div>
+        </div>
+
+        <!-- advanced -->
+        <div style="margin-top:20px; border-top:1px solid var(--line); padding-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; gap:10px; align-items:center;">
+              <span class="eyebrow">Advanced</span>
+              <span class="dim" style="font-size:12px;">3 specialized tools · collapsed by default</span>
+            </div>
+            <span class="dim mono" style="font-size:11px;">▾ Expand</span>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:10px; opacity:0.7;">
+            <div style="padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:13px; display:flex; justify-content:space-between;">BIMI Builder <span class="dim mono" style="font-size:10px;">Pro</span></div>
+            <div style="padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:13px; display:flex; justify-content:space-between;">Campaign Risk <span class="dim mono" style="font-size:10px;">Scale</span></div>
+            <div style="padding:10px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px; font-size:13px; display:flex; justify-content:space-between;">MX Lookup <span class="dim mono" style="font-size:10px;">Free</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- related rail -->
+      <div style="background:#0E1013; border-left:1px solid var(--line); padding:20px;">
+        <div class="eyebrow">Related</div>
+        <div style="margin-top:12px; display:flex; flex-direction:column; gap:10px;">
+          <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:10px;">
+            <div style="font-size:13px; font-weight:600;">Spam Checker</div>
+            <div class="dim" style="font-size:11.5px; margin-top:2px;">From Optimize · run alongside grading</div>
+          </div>
+          <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:10px;">
+            <div style="font-size:13px; font-weight:600;">Sentiment</div>
+            <div class="dim" style="font-size:11.5px; margin-top:2px;">From Optimize · tone check</div>
+          </div>
+          <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:10px;">
+            <div style="font-size:13px; font-weight:600;">ESP Settings</div>
+            <div class="dim" style="font-size:11.5px; margin-top:2px;">From Connections · fix DNS at source</div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <div class="eyebrow">Learn</div>
+          <div style="margin-top:10px; padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:10px;">
+            <div style="font-size:13px; font-weight:600;">Why DMARC matters →</div>
+            <div class="dim" style="font-size:11.5px; margin-top:4px;">Academy · 6 min read</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 8 — E · DELIVERABILITY HUB                             -->
+<!-- ============================================================ -->
+<section data-label="E — Deliverability hub">
+  <div class="section-hd" style="padding-bottom:16px;">
+    <div class="num">E</div>
+    <div>
+      <div class="label">Deliverability hub</div>
+      <h2 style="font-size:40px;">One page. Every signal. Every drill-down.</h2>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:80px; right:80px; top:230px; bottom:40px;">
+    <div style="height:100%; background:var(--bg-2); border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; flex-direction:column;">
+
+      <!-- summary bar -->
+      <div style="padding:20px 24px; border-bottom:1px solid var(--line); display:grid; grid-template-columns: 1.4fr repeat(4, 1fr); gap:20px; align-items:center;">
+        <div>
+          <div class="eyebrow">Domain</div>
+          <div style="font-size:20px; font-weight:600; margin-top:2px;">acceptafy.com</div>
+          <div class="dim mono" style="font-size:11px;">mx: mail.acceptafy.com · verified 2h ago</div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--accent);"></span><div class="dim mono" style="font-size:11px;">DNS</div></div>
+          <div style="font-size:22px; font-weight:700; color:var(--accent); margin-top:2px;">4 / 4</div>
+          <div class="dim" style="font-size:11px;">SPF · DKIM · DMARC · MX</div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--warn);"></span><div class="dim mono" style="font-size:11px;">POSTMASTER</div></div>
+          <div style="font-size:22px; font-weight:700; color:var(--warn); margin-top:2px;">MEDIUM</div>
+          <div class="dim" style="font-size:11px;">Gmail · live data</div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--crit);"></span><div class="dim mono" style="font-size:11px;">BLACKLIST</div></div>
+          <div style="font-size:22px; font-weight:700; color:var(--crit); margin-top:2px;">2 hits</div>
+          <div class="dim" style="font-size:11px;">Spamhaus · Barracuda</div>
+        </div>
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;"><span class="dot" style="background:var(--text-mute);"></span><div class="dim mono" style="font-size:11px;">BIMI</div></div>
+          <div style="font-size:22px; font-weight:700; color:var(--text-mute); margin-top:2px;">—</div>
+          <div class="dim" style="font-size:11px;">Not configured</div>
+        </div>
+      </div>
+
+      <!-- body -->
+      <div style="flex:1; display:grid; grid-template-columns: 1fr 1fr; gap:1px; background:var(--line);">
+
+        <!-- postmaster real data -->
+        <div style="background:var(--bg-2); padding:22px; display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; justify-content:space-between;">
+            <div>
+              <div class="h2" style="font-size:20px;">Google Postmaster</div>
+              <div class="dim" style="font-size:12px; margin-top:2px;">Live reputation data · 30 days</div>
+            </div>
+            <span class="pill" style="color:var(--accent); border-color:var(--accent-line);">● Connected</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+            <div style="padding:12px; background:var(--surface); border-radius:10px;">
+              <div class="dim mono" style="font-size:10px;">IP REPUTATION</div>
+              <div style="font-size:20px; font-weight:700; color:var(--warn); margin-top:2px;">MEDIUM</div>
+            </div>
+            <div style="padding:12px; background:var(--surface); border-radius:10px;">
+              <div class="dim mono" style="font-size:10px;">DOMAIN REP</div>
+              <div style="font-size:20px; font-weight:700; color:var(--accent); margin-top:2px;">HIGH</div>
+            </div>
+            <div style="padding:12px; background:var(--surface); border-radius:10px;">
+              <div class="dim mono" style="font-size:10px;">SPAM RATE</div>
+              <div style="font-size:20px; font-weight:700; margin-top:2px;">0.14<span class="dim" style="font-size:12px;">%</span></div>
+            </div>
+          </div>
+
+          <!-- chart -->
+          <div style="flex:1; background:var(--surface); border-radius:10px; padding:16px; position:relative;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+              <div style="font-size:13px; font-weight:600;">Spam rate trend</div>
+              <div class="dim mono" style="font-size:11px;">0.14% today · 0.31% week ago</div>
+            </div>
+            <svg viewBox="0 0 400 140" style="width:100%; height:160px;">
+              <defs><linearGradient id="grd" x1="0" x2="0" y1="0" y2="1"><stop stop-color="oklch(78% 0.18 145)" offset="0"/><stop stop-color="oklch(78% 0.18 145)" stop-opacity="0" offset="1"/></linearGradient></defs>
+              <line x1="0" y1="90" x2="400" y2="90" stroke="var(--line-2)" stroke-dasharray="2,4"/>
+              <text x="4" y="88" fill="var(--text-mute)" font-family="JetBrains Mono" font-size="9">0.3% threshold</text>
+              <polyline points="0,65 25,70 50,58 75,75 100,90 125,82 150,75 175,68 200,50 225,45 250,55 275,48 300,60 325,40 350,38 375,42 400,35" fill="none" stroke="oklch(78% 0.18 145)" stroke-width="2"/>
+              <polyline points="0,65 25,70 50,58 75,75 100,90 125,82 150,75 175,68 200,50 225,45 250,55 275,48 300,60 325,40 350,38 375,42 400,35 400,140 0,140" fill="url(#grd)" opacity="0.25"/>
+              <circle cx="400" cy="35" r="4" fill="oklch(78% 0.18 145)"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- blacklist + DNS -->
+        <div style="background:var(--bg-2); padding:22px; display:flex; flex-direction:column; gap:14px;">
+          <div class="card" style="padding:0; border-color: color-mix(in oklab, var(--crit) 35%, var(--line));">
+            <div style="display:flex; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--line);">
+              <div>
+                <div class="h3">Blacklist hits</div>
+                <div class="dim" style="font-size:11.5px; margin-top:2px;">Detected 2h 14m ago · notified by email</div>
+              </div>
+              <button class="btn primary" style="font-size:12px; padding:6px 12px;">Request removal →</button>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 1fr 120px 100px; gap:10px; align-items:center; border-bottom:1px solid var(--line); font-size:13px;">
+              <div><div style="font-weight:600;">Spamhaus ZEN</div><div class="dim" style="font-size:11px;">High-traffic RBL · blocks Gmail, Yahoo</div></div>
+              <span class="mono" style="color:var(--crit); font-size:11px;">CRITICAL</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">2h ago</span>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 1fr 120px 100px; gap:10px; align-items:center; font-size:13px;">
+              <div><div style="font-weight:600;">Barracuda BRBL</div><div class="dim" style="font-size:11px;">Medium-traffic · some enterprise filters</div></div>
+              <span class="mono" style="color:var(--warn); font-size:11px;">WARNING</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">2h ago</span>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;">
+            <div style="padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between;">
+              <div class="h3">DNS records</div>
+              <span class="mono" style="color:var(--accent); font-size:11px;">All 4 valid</span>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 70px 1fr 60px; gap:10px; align-items:center; font-size:13px; border-bottom:1px solid var(--line);">
+              <span class="mono" style="color:var(--accent);">✓ SPF</span>
+              <span class="mono dim" style="font-size:11px;">v=spf1 include:_spf.acceptafy.com ~all</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">copy</span>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 70px 1fr 60px; gap:10px; align-items:center; font-size:13px; border-bottom:1px solid var(--line);">
+              <span class="mono" style="color:var(--accent);">✓ DKIM</span>
+              <span class="mono dim" style="font-size:11px;">default._domainkey · 2048 bit</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">copy</span>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 70px 1fr 60px; gap:10px; align-items:center; font-size:13px; border-bottom:1px solid var(--line);">
+              <span class="mono" style="color:var(--accent);">✓ DMARC</span>
+              <span class="mono dim" style="font-size:11px;">p=reject · rua=mailto:dmarc@…</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">copy</span>
+            </div>
+            <div style="padding:12px 18px; display:grid; grid-template-columns: 70px 1fr 60px; gap:10px; align-items:center; font-size:13px;">
+              <span class="mono" style="color:var(--accent);">✓ MX</span>
+              <span class="mono dim" style="font-size:11px;">mail.acceptafy.com · priority 10</span>
+              <span class="dim mono" style="font-size:11px; text-align:right;">copy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 9 — F · ALERTS PANEL                                   -->
+<!-- ============================================================ -->
+<section data-label="F — Alerts panel">
+  <div class="section-hd">
+    <div class="num">F</div>
+    <div>
+      <div class="label">Alerts</div>
+      <h2>Severity, time, and a fix — in one glance.</h2>
+      <div class="sub">Stays as a slide-out Sheet (Radix primitive), but every row upgrades to a severity icon on tinted background, relative timestamp, expand-to-detail, and a contextual "Fix in [tool]" CTA that deep-links to the exact fix.</div>
+    </div>
+  </div>
+
+  <!-- alerts sheet over a dimmed app -->
+  <div style="position:absolute; left:80px; right:80px; top:300px; bottom:60px; display:grid; grid-template-columns: 1fr 440px; gap:0;">
+
+    <!-- dimmed app preview -->
+    <div style="background:var(--bg); border:1px solid var(--line); border-right:0; border-radius:16px 0 0 16px; position:relative; overflow:hidden;">
+      <div style="position:absolute; inset:0; opacity:0.35;" class="grid-bg"></div>
+      <div style="position:absolute; inset:24px; background:var(--bg-2); border:1px solid var(--line); border-radius:12px; opacity:0.6;">
+        <div style="padding:18px 22px; border-bottom:1px solid var(--line); font-size:13px; color:var(--text-dim);">acceptafy.com / Deliverability / Domain Health</div>
+        <div style="padding:22px; display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;">
+          <div class="card" style="padding:12px;"><div class="dim mono" style="font-size:10px;">DNS</div><div style="font-size:20px; color:var(--accent); font-weight:700;">4/4</div></div>
+          <div class="card" style="padding:12px;"><div class="dim mono" style="font-size:10px;">POSTMASTER</div><div style="font-size:20px; color:var(--warn); font-weight:700;">MED</div></div>
+          <div class="card" style="padding:12px;"><div class="dim mono" style="font-size:10px;">BLACKLIST</div><div style="font-size:20px; color:var(--crit); font-weight:700;">2</div></div>
+          <div class="card" style="padding:12px;"><div class="dim mono" style="font-size:10px;">BIMI</div><div style="font-size:20px; color:var(--text-mute); font-weight:700;">—</div></div>
+        </div>
+      </div>
+      <!-- scrim -->
+      <div style="position:absolute; inset:0; background:rgba(0,0,0,0.45);"></div>
+    </div>
+
+    <!-- sheet -->
+    <div style="background:var(--bg-2); border:1px solid var(--line); border-radius: 0 16px 16px 0; display:flex; flex-direction:column; box-shadow: -30px 0 60px -20px rgba(0,0,0,0.6);">
+      <div style="padding:20px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div class="h2" style="font-size:22px;">Alerts</div>
+          <div class="dim mono" style="font-size:11px; margin-top:2px;">2 critical · 1 warning · 3 info</div>
+        </div>
+        <div style="display:flex; gap:6px;">
+          <span class="pill">All</span>
+          <span class="pill" style="color:var(--crit); border-color: color-mix(in oklab, var(--crit) 35%, var(--line));">Critical</span>
+          <span class="pill">Unread</span>
+        </div>
+      </div>
+
+      <div style="overflow:hidden;">
+        <!-- critical 1, expanded -->
+        <div style="padding:16px 20px; border-bottom:1px solid var(--line); background: color-mix(in oklab, var(--crit) 6%, transparent);">
+          <div style="display:flex; gap:12px;">
+            <div style="width:32px; height:32px; border-radius:8px; background:color-mix(in oklab, var(--crit) 25%, transparent); color:var(--crit); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">!</div>
+            <div style="flex:1;">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div style="font-size:14px; font-weight:600;">Listed on Spamhaus ZEN</div>
+                <span class="dim mono" style="font-size:11px;">2h ago</span>
+              </div>
+              <div class="dim" style="font-size:12.5px; margin-top:3px;">acceptafy.com added to CBL. Affects Gmail, Yahoo, Outlook. Average impact: 22–40% inbox drop.</div>
+              <div style="margin-top:10px; padding:10px; background:var(--surface); border-radius:8px; font-size:12px; font-family:var(--mono); color:var(--text-dim);">
+                cbl.abuseat.org · 192.0.2.44 · listed 14:22 UTC
+              </div>
+              <div style="margin-top:10px; display:flex; gap:8px;">
+                <button class="btn primary" style="font-size:12px; padding:7px 12px;">Fix in Blacklist Monitor →</button>
+                <button class="btn ghost" style="font-size:12px; padding:7px 12px;">Snooze 24h</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- critical 2 -->
+        <div style="padding:16px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:color-mix(in oklab, var(--crit) 25%, transparent); color:var(--crit); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">!</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between;"><div style="font-size:14px; font-weight:600;">Listed on Barracuda BRBL</div><span class="dim mono" style="font-size:11px;">2h ago</span></div>
+            <div class="dim" style="font-size:12.5px; margin-top:2px;">Medium-traffic RBL. Some enterprise filters.</div>
+            <div style="margin-top:6px;"><span class="mono" style="color:var(--accent); font-size:12px;">Fix in Blacklist Monitor →</span></div>
+          </div>
+        </div>
+
+        <!-- warning -->
+        <div style="padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:color-mix(in oklab, var(--warn) 25%, transparent); color:var(--warn); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">△</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between;"><div style="font-size:14px; font-weight:600;">Postmaster: IP reputation → MEDIUM</div><span class="dim mono" style="font-size:11px;">5h ago</span></div>
+            <div class="dim" style="font-size:12.5px; margin-top:2px;">Dropped from HIGH 3 days ago. Correlated with spam complaints on last send.</div>
+            <div style="margin-top:6px;"><span class="mono" style="color:var(--accent); font-size:12px;">Fix in Domain Health →</span></div>
+          </div>
+        </div>
+
+        <!-- info -->
+        <div style="padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:color-mix(in oklab, var(--info) 25%, transparent); color:var(--info); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">i</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between;"><div style="font-size:14px; font-weight:500;">A/B subject test reached significance</div><span class="dim mono" style="font-size:11px;">1d ago</span></div>
+            <div class="dim" style="font-size:12.5px; margin-top:2px;">"Early access ends Wednesday" won by 12.4%.</div>
+          </div>
+        </div>
+        <div style="padding:14px 20px; display:flex; gap:12px;">
+          <div style="width:32px; height:32px; border-radius:8px; background:color-mix(in oklab, var(--accent) 18%, transparent); color:var(--accent); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700;">✓</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between;"><div style="font-size:14px; font-weight:500;">DMARC record verified</div><span class="dim mono" style="font-size:11px;">2d ago</span></div>
+            <div class="dim" style="font-size:12.5px; margin-top:2px;">p=reject active. No failures in 48h.</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:auto; padding:14px 20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
+        <span class="dim mono" style="font-size:11px;">6 total · last scan 3m ago</span>
+        <button class="btn ghost" style="font-size:12px;">Mark all read</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 10 — G · MOBILE                                        -->
+<!-- ============================================================ -->
+<section data-label="G — Mobile">
+  <div class="section-hd">
+    <div class="num">G</div>
+    <div>
+      <div class="label">Mobile — 375px</div>
+      <h2>Bottom tabs. Sheet-based drill-ins. Thumb-reachable Grade.</h2>
+      <div class="sub">The rail becomes a 5-tab bottom bar. Contextual nav collapses into the top title with a Sheet for sub-tools. The Grader moves the Grade button to a pinned footer so it's always one thumb away.</div>
+    </div>
+  </div>
+
+  <div style="position:absolute; left:80px; right:80px; top:280px; bottom:60px; display:grid; grid-template-columns: repeat(3, 1fr); gap:30px; justify-items:center;">
+
+    <!-- phone 1: home -->
+    <div>
+      <div style="width: 360px; height: 720px; background: #000; border-radius: 48px; padding: 8px; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); border:1px solid #1a1a1a;">
+        <div style="width:100%; height:100%; border-radius:40px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column;">
+          <!-- status -->
+          <div style="padding:10px 24px 0; display:flex; justify-content:space-between; font-size:12px; font-weight:600;"><span>9:41</span><span style="display:flex; gap:4px;">••• <span class="mono">100%</span></span></div>
+          <!-- notch -->
+          <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:26px; background:#000; border-radius:14px;"></div>
+          <!-- header -->
+          <div style="padding:32px 20px 10px;">
+            <div class="eyebrow">Mon · Apr 21</div>
+            <div style="font-size:26px; font-weight:700; letter-spacing:-0.02em; margin-top:4px;">Good morning,<br>Jess.</div>
+          </div>
+          <!-- alert -->
+          <div style="margin:8px 16px; padding:14px; border-radius:12px; background: linear-gradient(180deg, color-mix(in oklab, var(--crit) 10%, var(--surface)), var(--surface)); border:1px solid color-mix(in oklab, var(--crit) 35%, var(--line));">
+            <div style="display:flex; gap:10px; align-items:flex-start;">
+              <div style="width:24px; height:24px; border-radius:7px; background:color-mix(in oklab, var(--crit) 25%, transparent); color:var(--crit); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;">!</div>
+              <div><div style="font-size:13px; font-weight:600;">2 blacklist hits</div><div class="dim" style="font-size:11px; margin-top:2px;">Spamhaus · Barracuda · tap to fix</div></div>
+            </div>
+          </div>
+          <!-- quick actions -->
+          <div style="margin:12px 16px 0; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px;"><div style="font-size:13px; font-weight:600;">Grade</div><div class="dim" style="font-size:10.5px;">⌘G</div></div>
+            <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px;"><div style="font-size:13px; font-weight:600;">Rewrite</div><div class="dim" style="font-size:10.5px;">AI</div></div>
+            <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px;"><div style="font-size:13px; font-weight:600;">Domain</div><div class="dim" style="font-size:10.5px;">Health</div></div>
+            <div style="padding:12px; background:var(--surface); border:1px solid var(--line); border-radius:12px;"><div style="font-size:13px; font-weight:600;">Send Time</div><div class="dim" style="font-size:10.5px;">Best now</div></div>
+          </div>
+          <!-- recent -->
+          <div style="margin:14px 16px 0;">
+            <div class="eyebrow" style="font-size:10px;">Recent</div>
+            <div style="margin-top:8px; display:flex; align-items:center; gap:10px;">
+              <div style="width:28px; height:28px; border-radius:6px; background:oklch(78% 0.18 145); color:#052; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:13px;">A</div>
+              <div style="flex:1;"><div style="font-size:12.5px;">Spring launch — early access</div><div class="dim" style="font-size:10.5px;">2d</div></div>
+            </div>
+          </div>
+
+          <!-- tab bar -->
+          <div style="margin-top:auto; display:grid; grid-template-columns: repeat(5, 1fr); border-top:1px solid var(--line); padding:10px 0 22px; background:#0E1013;">
+            <div style="text-align:center; color:var(--accent);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0 auto;"><path d="M3 10l9-7 9 7v11a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg><div style="font-size:10px; margin-top:3px;">Home</div></div>
+            <div style="text-align:center; color:var(--text-mute);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0 auto;"><path d="M4 4h12l4 4v12H4z"/></svg><div style="font-size:10px; margin-top:3px;">Grade</div></div>
+            <div style="text-align:center; color:var(--text-mute);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0 auto;"><path d="M12 3l9 4v6c0 5-4 9-9 10-5-1-9-5-9-10V7z"/></svg><div style="font-size:10px; margin-top:3px;">Health</div></div>
+            <div style="text-align:center; color:var(--text-mute);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0 auto;"><path d="M4 20V10m6 10V4m6 16v-6m6 6V8"/></svg><div style="font-size:10px; margin-top:3px;">Stats</div></div>
+            <div style="text-align:center; color:var(--text-mute); position:relative;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="margin:0 auto;"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/></svg><div style="font-size:10px; margin-top:3px;">Alerts</div><span style="position:absolute; top:4px; right:28px; width:8px; height:8px; background:var(--crit); border-radius:50%;"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="dim mono" style="text-align:center; font-size:11px; margin-top:12px;">Home — contextual greeting + next-action</div>
+    </div>
+
+    <!-- phone 2: grader input -->
+    <div>
+      <div style="width: 360px; height: 720px; background: #000; border-radius: 48px; padding: 8px; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); border:1px solid #1a1a1a;">
+        <div style="width:100%; height:100%; border-radius:40px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column;">
+          <div style="padding:10px 24px 0; display:flex; justify-content:space-between; font-size:12px; font-weight:600;"><span>9:41</span><span>•••</span></div>
+          <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:26px; background:#000; border-radius:14px;"></div>
+          <div style="padding:32px 16px 12px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line);">
+            <div><div class="eyebrow" style="font-size:10px;">Grade</div><div style="font-size:18px; font-weight:600;">New email</div></div>
+            <span class="pill">Paste</span>
+          </div>
+          <div style="padding:14px 16px; flex:1; overflow:hidden;">
+            <input value="⚡ 48hrs only — don't miss out!!" readonly style="width:100%; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:10px 12px; color:var(--text); font-size:14px; font-weight:500;"/>
+            <div style="margin-top:10px; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:8px; font-size:13px; line-height:1.55; color:var(--text-dim); height: 260px; overflow:hidden;">
+              Hey there,<br><br>We're running our <span style="background:color-mix(in oklab, var(--crit) 30%, transparent); padding:1px 3px; border-radius:2px; color:var(--text);">biggest sale ever</span> and it's ending in 48 hours. <span style="background:color-mix(in oklab, var(--crit) 30%, transparent); padding:1px 3px; border-radius:2px; color:var(--text);">Don't miss out</span>! Click below <span style="background:color-mix(in oklab, var(--warn) 30%, transparent); padding:1px 3px; border-radius:2px; color:var(--text);">right now</span>…
+            </div>
+            <div class="dim mono" style="font-size:10px; margin-top:8px; display:flex; justify-content:space-between;"><span>247 words · grade 6</span><span>4 triggers</span></div>
+          </div>
+          <!-- live mini -->
+          <div style="margin: 0 16px; padding:10px 12px; background: color-mix(in oklab, var(--warn) 8%, var(--surface)); border:1px solid color-mix(in oklab, var(--warn) 30%, var(--line)); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div><div class="dim mono" style="font-size:10px;">ESTIMATED</div><div style="font-size:20px; font-weight:800; color:var(--warn);">C · 71</div></div>
+            <div style="text-align:right;"><div class="dim mono" style="font-size:10px;">INBOX</div><div class="mono" style="font-size:14px; color:var(--warn);">68%</div></div>
+          </div>
+          <!-- pinned grade -->
+          <div style="padding:12px 16px 22px; background:#0E1013; border-top:1px solid var(--line); margin-top:12px;">
+            <button class="btn primary" style="width:100%; justify-content:center; padding:14px; font-size:15px; font-weight:700;">Grade email</button>
+          </div>
+        </div>
+      </div>
+      <div class="dim mono" style="text-align:center; font-size:11px; margin-top:12px;">Grader — pinned action footer, no scroll-to-submit</div>
+    </div>
+
+    <!-- phone 3: result -->
+    <div>
+      <div style="width: 360px; height: 720px; background: #000; border-radius: 48px; padding: 8px; box-shadow: 0 30px 60px -30px rgba(0,0,0,0.6); border:1px solid #1a1a1a;">
+        <div style="width:100%; height:100%; border-radius:40px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column;">
+          <div style="padding:10px 24px 0; display:flex; justify-content:space-between; font-size:12px; font-weight:600;"><span>9:41</span><span>•••</span></div>
+          <div style="position:absolute; top:8px; left:50%; transform:translateX(-50%); width:90px; height:26px; background:#000; border-radius:14px;"></div>
+          <div style="padding:32px 16px 8px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="font-size:12px; color:var(--text-mute);">← Back</div>
+            <div style="font-size:13px; font-weight:600;">Results</div>
+            <div class="dim mono" style="font-size:11px;">Share</div>
+          </div>
+          <!-- big grade -->
+          <div style="padding:24px 16px 10px; text-align:center;">
+            <div class="eyebrow" style="font-size:10px;">Overall</div>
+            <div style="font-size:140px; font-weight:800; color:oklch(82% 0.14 80); letter-spacing:-0.05em; line-height:0.9;">C</div>
+            <div class="mono muted" style="font-size:14px;">71.0 · inbox 68%</div>
+          </div>
+          <!-- fixes -->
+          <div style="padding:4px 16px; flex:1; overflow:hidden;">
+            <div class="eyebrow" style="font-size:10px;">Top 3 fixes · +23 pts</div>
+            <div style="margin-top:8px; display:flex; flex-direction:column; gap:8px;">
+              <div style="padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:12.5px; font-weight:600;">Remove 4 spam phrases</div><div class="dim" style="font-size:10.5px;">+14 pts</div></div>
+                <span class="mono" style="font-size:11px; color:var(--accent);">Fix →</span>
+              </div>
+              <div style="padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:12.5px; font-weight:600;">Soften subject urgency</div><div class="dim" style="font-size:10.5px;">+6 pts</div></div>
+                <span class="mono" style="font-size:11px; color:var(--accent);">Fix →</span>
+              </div>
+              <div style="padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><div style="font-size:12.5px; font-weight:600;">Add plain-text alt</div><div class="dim" style="font-size:10.5px;">+3 pts</div></div>
+                <span class="mono" style="font-size:11px; color:var(--accent);">Fix →</span>
+              </div>
+            </div>
+          </div>
+          <!-- pinned -->
+          <div style="padding:12px 16px 22px; background:#0E1013; border-top:1px solid var(--line);">
+            <button class="btn primary" style="width:100%; justify-content:center; padding:14px; font-size:15px; font-weight:700;">Fix all with AI</button>
+          </div>
+        </div>
+      </div>
+      <div class="dim mono" style="text-align:center; font-size:11px; margin-top:12px;">Results — grade fills hero, fixes stack, CTA pinned</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- SLIDE 11 — H · VISUAL REFINEMENTS + COMPONENT INVENTORY       -->
+<!-- ============================================================ -->
+<section data-label="H — Components & tokens">
+  <div style="position:absolute; inset:0; padding:60px 80px;">
+    <div style="display:flex; align-items:baseline; gap:14px;">
+      <div class="num" style="font-family:var(--serif); font-size:72px; font-style:italic; color:var(--accent); line-height:1;">H</div>
+      <div>
+        <div class="label eyebrow">Component inventory & handoff</div>
+        <h2 style="font-size:40px; font-weight:700; letter-spacing:-0.025em; margin:4px 0 0;">What's reused. What's new. What's deferred on mobile.</h2>
+      </div>
+    </div>
+
+    <div style="margin-top:36px; display:grid; grid-template-columns: 1.3fr 1fr; gap:28px;">
+
+      <!-- inventory table -->
+      <div class="card" style="padding:0;">
+        <div style="padding:14px 20px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between;">
+          <div class="h3">ShadCN / Radix mapping</div>
+          <span class="dim mono" style="font-size:11px;">0 new libraries</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1.2fr 1fr 1.2fr; background:var(--line); gap:1px;">
+          <div style="background:var(--surface); padding:10px 20px; font-family:var(--mono); font-size:10px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.1em;">UI element</div>
+          <div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:10px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.1em;">Primitive</div>
+          <div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:10px; color:var(--text-mute); text-transform:uppercase; letter-spacing:0.1em;">Notes</div>
+
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Icon rail</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Tooltip · Button</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Fixed 64px, always visible</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">⌘K palette</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Command (cmdk)</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Already in ShadCN</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Tool overview tabs</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Tabs · Card</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Featured / advanced filters</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Grader input triggers</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">HoverCard · Popover</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Inline spans, click to expand</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Grade ring</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--warn);">Custom SVG</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Animated stroke-dashoffset</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Top 3 fixes</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Card · Button</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Deep-links to Rewrite/A-B</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Health summary bar</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Card · Tooltip</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Reuses severity tokens</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Alerts panel</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Sheet · Collapsible</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Expand-in-place detail</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Tier / XP</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Progress · Badge</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Single restrained progress</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Mobile tab bar</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--warn);">Custom</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">New · 5 tabs · Radix Tooltip</div>
+          <div style="background:var(--surface); padding:10px 20px; font-size:13px;">Upgrade nudge</div><div style="background:var(--surface); padding:10px 16px; font-family:var(--mono); font-size:12px; color:var(--accent);">Progress · Popover</div><div style="background:var(--surface); padding:10px 16px; font-size:12.5px; color:var(--text-dim);">Shown in rail footer, not inline</div>
+        </div>
+      </div>
+
+      <!-- right: rationale + mobile rules -->
+      <div style="display:flex; flex-direction:column; gap:16px;">
+
+        <div class="card" style="padding:20px;">
+          <div class="eyebrow">Nav rationale</div>
+          <p style="color:var(--text-dim); font-size:13.5px; line-height:1.55; margin:8px 0 0;">
+            Marketers work in <span style="color:var(--text); font-weight:500;">domain-bursts</span>: grade → rewrite → re-grade, or health → DNS → re-check. A fixed rail + contextual column keeps the burst's tools one click apart without hiding the full app. ⌘K is the power-user exit hatch and the primary wayfinder on mobile.
+          </p>
+        </div>
+
+        <div class="card" style="padding:20px;">
+          <div class="eyebrow">Mobile rules</div>
+          <div style="margin-top:10px; font-size:13px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:grid; grid-template-columns: 64px 1fr; gap:10px;"><span class="mono dim" style="font-size:11px;">collapses</span><span>Rail → bottom tabs · contextual column → Sheet · breadcrumb → back arrow</span></div>
+            <div style="display:grid; grid-template-columns: 64px 1fr; gap:10px;"><span class="mono dim" style="font-size:11px;">stacks</span><span>Dashboard hero · grade ring + fixes · health summary (4-wide → 2×2)</span></div>
+            <div style="display:grid; grid-template-columns: 64px 1fr; gap:10px;"><span class="mono dim" style="font-size:11px;">defers</span><span>Related rail · Academy card · advanced tools (accessible via ⌘K)</span></div>
+            <div style="display:grid; grid-template-columns: 64px 1fr; gap:10px;"><span class="mono dim" style="font-size:11px;">pins</span><span>Grade email button, Fix with AI, primary CTA — always footer</span></div>
+          </div>
+        </div>
+
+        <div class="card accent" style="padding:20px;">
+          <div class="eyebrow" style="color:var(--accent);">Build effort</div>
+          <div style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:13px;">
+            <div><div class="mono dim" style="font-size:11px;">REUSED</div><div style="font-size:20px; font-weight:700;">82%</div><div class="dim" style="font-size:11px;">ShadCN + Radix</div></div>
+            <div><div class="mono dim" style="font-size:11px;">CUSTOM</div><div style="font-size:20px; font-weight:700;">3</div><div class="dim" style="font-size:11px;">Ring · mobile tabs · live-signal card</div></div>
+          </div>
+        </div>
+
+        <div style="font-size:11px; color:var(--text-mute); font-family:var(--mono); margin-top:auto;">END · A–H delivered · 11 slides · dark-first · mobile-annotated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</deck-stage>
+</body>
+</html>
