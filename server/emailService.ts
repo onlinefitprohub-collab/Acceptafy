@@ -68,7 +68,7 @@ export const generateEmailPreview = (subject: string, body: string, previewText:
       ${safePreviewText ? `<p>${safePreviewText}</p>` : ''}
     </div>
     <div class="content">
-      <p>${htmlContent}</p>
+      ${htmlContent}
     </div>
     <div class="footer">
       <p>Acceptafy - Email Marketing Intelligence</p>

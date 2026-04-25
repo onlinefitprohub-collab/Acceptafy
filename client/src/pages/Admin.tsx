@@ -3456,7 +3456,7 @@ export default function Admin() {
                                 setSelectedArticleId(article.id.toString());
                                 setEmailSubject(`New on the Acceptafy Blog: ${article.title}`);
                                 setEmailPreviewLine(article.metaDescription || '');
-                                setEmailBody(`<p>Hi {{firstName}},</p><p>We just published a new article you'll love:</p><p><strong>${article.title}</strong></p><p>${article.metaDescription || ''}</p><p>Don't miss it — <a href="https://acceptafy.com/academy/${article.slug}">Read the full article here</a>.</p><p>Happy learning!<br>The Acceptafy Team</p>`);
+                                setEmailBody(`<p>Hi {{firstName}},</p><p>We just published a new article we think you'll find genuinely useful:</p><p><a href="https://acceptafy.com/resources/${article.slug}"><strong>${article.title}</strong></a></p><p>${article.metaDescription || ''}</p><p><a href="https://acceptafy.com/resources/${article.slug}">Read the full article →</a></p><p>Happy learning!<br>The Acceptafy Team</p>`);
                               }
                             } else {
                               setSelectedArticleId(null);
