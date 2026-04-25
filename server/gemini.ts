@@ -362,7 +362,34 @@ CRITICAL FORMATTING REQUIREMENTS:
 - Bullet points or lists should be preserved with single newlines between items.
 - Signature blocks (e.g., "Best regards, Name") should be on their own lines.
 - NEVER return the body as one long continuous block of text.
-- The body should be formatted for easy reading with clear visual breaks.`;
+- The body should be formatted for easy reading with clear visual breaks.
+- If you see [LINK:N:text] markers in the body, you MUST include each one in your rewrite output. You may rewrite the link text inside the marker, but NEVER remove the marker. Example: [LINK:0:Read more here] must remain as [LINK:0:your new text].`;
+
+// Extract hyperlinks from HTML and replace with [LINK:N:text] placeholders so
+// the AI can rewrite surrounding text without losing the href values.
+function extractLinks(html: string): { processedHtml: string; links: Array<{ id: number; href: string }> } {
+  const links: Array<{ id: number; href: string }> = [];
+  let id = 0;
+  const processedHtml = html.replace(/<a\s+[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (_match, href, inner) => {
+    const text = inner.replace(/<[^>]+>/g, '').trim();
+    links.push({ id, href });
+    const placeholder = `[LINK:${id}:${text || 'Link'}]`;
+    id++;
+    return placeholder;
+  });
+  return { processedHtml, links };
+}
+
+// Replace [LINK:N:text] markers back with proper <a> tags using the saved hrefs.
+function restoreLinks(text: string, links: Array<{ id: number; href: string }>): string {
+  return text.replace(/\[LINK:(\d+):([^\]]*)\]/g, (_match, idStr, linkText) => {
+    const link = links.find(l => l.id === parseInt(idStr));
+    if (link) {
+      return `<a href="${link.href}">${linkText.trim() || 'Link'}</a>`;
+    }
+    return linkText.trim();
+  });
+}
 
 function stripHtmlToPlainText(html: string): string {
   if (!/<[a-z][\s\S]*>/i.test(html)) return html;
@@ -371,7 +398,7 @@ function stripHtmlToPlainText(html: string): string {
   text = text.replace(/<\/p>\s*<p[^>]*>/gi, '\n\n');
   text = text.replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n');
   text = text.replace(/<li[^>]*>/gi, '- ');
-  text = text.replace(/<a\s+[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '$2 ($1)');
+  // Note: [LINK:N:text] placeholders are left intact (they are not HTML tags)
   text = text.replace(/<[^>]+>/g, '');
   text = text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
   text = text.replace(/\n{3,}/g, '\n\n').trim();
@@ -388,7 +415,9 @@ function plainTextToHtml(text: string): string {
 
 export const rewriteCopy = async (emailBody: string, subject: string, previewText: string, goal: string): Promise<RewrittenEmail> => {
   try {
-    const plainBody = stripHtmlToPlainText(emailBody);
+    // Extract links before stripping HTML so we can restore them after the AI rewrites
+    const { processedHtml, links } = extractLinks(emailBody);
+    const plainBody = stripHtmlToPlainText(processedHtml);
     const content = `---Original Email---\nSubject: ${subject}\nPreview: ${previewText}\n\n---Body---\n${plainBody}`;
     
     let systemInstruction: string;
@@ -431,10 +460,12 @@ Return the result as a single JSON object.`;
     const parsed = JSON.parse(jsonString) as RewrittenEmail;
     
     const rawBody = (parsed.body?.replace(/\\n/g, '\n') || '').trim();
+    // If the original had links, restore them from the [LINK:N:text] placeholders
+    const bodyWithLinks = links.length > 0 ? restoreLinks(rawBody, links) : rawBody;
     return {
       subject: parsed.subject?.replace(/\\n/g, '\n') || '',
       previewText: parsed.previewText?.replace(/\\n/g, '\n') || '',
-      body: plainTextToHtml(rawBody),
+      body: plainTextToHtml(bodyWithLinks),
     };
 
   } catch (error) {

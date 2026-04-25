@@ -457,6 +457,11 @@ const SEGMENT_LABELS: Record<string, string> = {
   'approaching-limits': 'Near Limit',
 };
 
+// Returns true when the HTML body has no visible text content (e.g. an empty Tiptap editor produces "<p></p>")
+function isBodyEffectivelyEmpty(html: string): boolean {
+  return html.replace(/<[^>]*>/g, '').replace(/\s/g, '').length === 0;
+}
+
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -3691,7 +3696,7 @@ export default function Admin() {
                                   guidance: rewriteGuidance,
                                 });
                               }}
-                              disabled={emailRewriterMutation.isPending || !emailBody}
+                              disabled={emailRewriterMutation.isPending || isBodyEffectivelyEmpty(emailBody)}
                               data-testid="button-rewrite-score"
                             >
                               {emailRewriterMutation.isPending ? (
@@ -3817,7 +3822,7 @@ export default function Admin() {
                           setPreviewLoading(false);
                           setShowEmailPreview(true);
                         }}
-                        disabled={!emailSubject || !emailBody || previewLoading}
+                        disabled={!emailSubject || isBodyEffectivelyEmpty(emailBody) || previewLoading}
                         data-testid="button-preview-email"
                       >
                         {previewLoading ? (
@@ -3839,7 +3844,7 @@ export default function Admin() {
                             isBulk: isBulkEmail,
                           });
                         }}
-                        disabled={sendEmailMutation.isPending || !emailSubject || !emailBody || (!isBulkEmail && !emailRecipient)}
+                        disabled={sendEmailMutation.isPending || !emailSubject || isBodyEffectivelyEmpty(emailBody) || (!isBulkEmail && !emailRecipient)}
                         data-testid="button-send-email"
                       >
                         {sendEmailMutation.isPending ? (

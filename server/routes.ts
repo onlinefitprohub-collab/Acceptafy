@@ -2758,6 +2758,9 @@ Return your response as a JSON object with this exact structure:
       if (!recipientEmail || !subject || !body) {
         return res.status(400).json({ error: 'recipientEmail, subject, and body are required' });
       }
+      if (body.replace(/<[^>]*>/g, '').replace(/\s/g, '').length === 0) {
+        return res.status(400).json({ error: 'Email body cannot be empty' });
+      }
 
       // Get user data for variable replacement
       // Try to find user by ID first, then by email
@@ -2868,6 +2871,9 @@ Return your response as a JSON object with this exact structure:
       
       if (!segment || !subject || !body) {
         return res.status(400).json({ error: 'segment, subject, and body are required' });
+      }
+      if (body.replace(/<[^>]*>/g, '').replace(/\s/g, '').length === 0) {
+        return res.status(400).json({ error: 'Email body cannot be empty' });
       }
       
       // Helper to replace merge tags with user data
